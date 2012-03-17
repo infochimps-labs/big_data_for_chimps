@@ -1,4 +1,4 @@
-# Pig UDFs
+# Chapter 19: Pig UDFs
 
 Up til now we've avoided writing any Java. Sometimes -- for performance, to use a powerful library, or to interface with an outside system -- Java is the best choice.
 

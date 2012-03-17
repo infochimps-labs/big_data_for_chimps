@@ -1,1 +1,1 @@
-# Statistics
+# Chapter 6: Statistics

@@ -1,4 +1,4 @@
-# Black-Box Machine Learning
+# Chapter 15: Black-Box Machine Learning
 
 Most machine-learning discussions begin with an amuse-bouche about infinite-dimensional vector spaces or multinomial distributions over simplices as a way of easing in to the really hard stuff. 
 

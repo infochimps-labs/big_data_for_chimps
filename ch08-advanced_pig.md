@@ -1,4 +1,4 @@
-# Advanced Pig
+# Chapter 8: Advanced Pig
 
 
 ### Map-side Join
