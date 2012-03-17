@@ -1,1 +1,2 @@
-Welcome to the big_data_for_chimps wiki!
+
+See [the list of pages](_pages) for a list of pages
