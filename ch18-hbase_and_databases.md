@@ -1,3 +1,3 @@
-# Chapter 15: HBase and Databases
+# Chapter 18: HBase and Databases
 
 
