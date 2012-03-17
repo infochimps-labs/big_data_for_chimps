@@ -1,4 +1,4 @@
-## Chapter 2: Label - Group - Stream
+# Chapter 3: Label - Group - Stream
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just couldn't keep up with the scale of requests.
 

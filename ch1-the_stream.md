@@ -1,8 +1,4 @@
-## Chapter 1: Processing in Batches
-
-
-
-
+# Chapter 1: The Stream
 
 ## A Simple Streamer
 

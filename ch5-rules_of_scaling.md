@@ -1,3 +1,5 @@
+# Chapter 5: Rules of Scaling
+
 
 ### The rules of scaling
 
