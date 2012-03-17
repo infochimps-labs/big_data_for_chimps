@@ -94,6 +94,7 @@ Now join observations to grid cells and reduce each grid cell.
      10.10.11
      10.10.00
      10.11.--
+     
 
     
 

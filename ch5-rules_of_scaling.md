@@ -112,6 +112,10 @@ total sort        | hdfs    => hdfs
 ##### Big Midflight Output
 
 
+##### Many Midflight Records
+
+adjacency list 
+
 ##### Big Reduce Output
 
 cross | hdfs => hdfs
