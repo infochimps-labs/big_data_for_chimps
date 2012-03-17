@@ -1,0 +1,10 @@
+# Black-Box Machine Learning
+
+Most machine-learning discussions begin with an amuse-bouche about infinite-dimensional vector spaces or multinomial distributions over simplices as a way of easing in to the really hard stuff. 
+
+It makes for fascinating leisure reading, but to get stuff done the Chimpanzee Way says to use Powerful Black Boxes and Beautiful Glue.
+
+So we're going to 
+
+* show you how to picture the transformation
+* 
