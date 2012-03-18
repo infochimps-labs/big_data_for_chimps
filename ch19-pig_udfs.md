@@ -4,8 +4,8 @@ Up til now we've avoided writing any Java. Sometimes -- for performance, to use 
 
 When this happens around the office, we sing this little dirge [1]:
 
-    Life, sometimes, is Russian Novel, with unhappy marriage and much snow and little vodka.
-    But when Russian Novel it is short, then we can quickly finishing and again read Sweet Valley High.
+    Life, sometimes, is Russian Novel. Is having unhappy marriage and much snow and little vodka.
+    But when the Russian Novel it is short, then quickly we finish and again read Sweet Valley High.
 
 What we *don't* do is write a pure Hadoop-API Java program. There's poor reusability.
 

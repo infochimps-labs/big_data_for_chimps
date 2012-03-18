@@ -6,7 +6,6 @@ Here's a brain dump of things to do or not do
 
 ### File Organization
 
-
 * do not: try to have a uniform naming scheme for all files
 * do: have a controlled set of uniform naming scheme for all files
 * do: crisply separate production and development
@@ -21,6 +20,13 @@ There's a tendency -- one that I've only screwed up about nine times
 your filenames start encoding more and more metadata, with files storing simple blobs
 
 these are the features of a datastore
+
+### Truth
+
+* managing truth makes up a huge portion of the difficulties in designing systems at scale
+
+* I've lost a lot more time dealing with the problems caused by having multiple versions of a file than dealing with the problems of having *no* versions of that file.
+
 
 
 ### At scale
