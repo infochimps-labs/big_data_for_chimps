@@ -1,6 +1,14 @@
 # Chapter 2: Map / Reduce
 
 
+Hadoop solves three problems:
+
+* Locality of reference and the speed of light
+* "Disk is the new tape" -- Random access on bulk storage is very slow
+* "MPI is a soul-sucking hellscape" -- Resilient distributed frameworks have traditionally been very conceptually complex
+
+## Locality of Reference
+
 Ever since there were        [] [] [] [] 
                              [] [] [] [] eight computers and a network, 
 programmers have wished that eight computers solved problems 
@@ -41,8 +49,53 @@ __________________________________________________________________________
 
 [3] http://en.wikipedia.org/wiki/K_computer
 
-[4] "Simple beats clever" is a general pattern in scalable systems.
+[4] You're going to meet this pattern in scalable systems over and over: the result of Simplicity, Decoupling and Embracing Constraint is great power.
 
 [5] you may be saying to yourself, "Self, I seem to recall my teacher writing on the chalkboard that sorting records takes more than linear time -- in fact, I recall it is `O(N log N)`". This is true. But in practice you typically buy more computers in proportion to the size of data, so the amount of data you have on each computer remains about the same. This means that the sort stage takes the same amount of time as long as your data is reasonably well-behaved. In fact, because disk speeds are so slow compared to RAM, and because the merge sort algorithm is very elegant, it takes longer to read or process the data than to sort it.
     
     
+## Disk is the new tape
+
+Doug Cutting's example comparing speed of searching by index vs. searching by full table scan 
+
+For each of 
+
+* Local Disk
+* EBS
+* SSD
+* S3
+* MySQL (local)
+* MySQL (network)
+* HBase (network)
+* in-memory
+* Redis (local)
+*  Redis (network)
+
+Compare throughput of:
+
+* random readss    
+* streaming reads  
+* random writes 
+* streaming writes
+
+
+
+
+## Simple Resilient Scalable distributed framework
+
+Walk into any good Hot Rod shop and you'll see a sign reading "Fast, Good or Cheap, choose any two". Hadoop is the first distributed computing framework that can claim "Simple, Resilient, Scalable, choose all three".
+
+The key, as you might now be getting sick of hearing, is that simplicity + decoupling + embracing constraint 
+unlocks significant power.
+
+Heaven knows Hadoop has its flaws, and its codebase is long and hairy, but its core is 
+
+* speculative execution
+* compressed data transport
+* memory management of buffers
+* selective application of combiners
+* fault-tolerance and retry
+* distributed counters
+* logging
+* serialization
+

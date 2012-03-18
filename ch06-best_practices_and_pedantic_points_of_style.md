@@ -1,0 +1,52 @@
+# Chapter 6 or so: Best Practices and Pedantic Points of Style
+
+Here's a brain dump of things to do or not do
+
+
+
+### File Organization
+
+
+* do not: try to have a uniform naming scheme for all files
+* do: have a controlled set of uniform naming scheme for all files
+* do: crisply separate production and development
+
+* do not: put one million files in a directory, on either hdfs or local disk 
+
+
+A filesystem is not a database
+
+There's a tendency -- one that I've only screwed up about nine times 
+
+your filenames start encoding more and more metadata, with files storing simple blobs
+
+these are the features of a datastore
+
+
+### At scale
+
+* identify SPOF -- there are more than you think
+* rate limit dangerous actions
+
+
+### In general, things to never do
+
+While I have your attention, please don't do any of these things
+
+* write a static configuration language.
+* use XML. If you do use XML, use a disciplined subset that I can parse naively.
+* implement your own RPC or data serialization format
+
+* rewrite
+  - unless the fundamental conceptual models are unrecognizable. Even then, tread carefully.
+
+Unless any of the following is your full-time job and area of specific expertise, never:
+
+* write a parser
+* implement your own security layer
+* adopt a programming language unless it has libraries to handle { OAuth over SSL, Hebrew Calendar translation, a simple Matrix Solver, and a LOGO interpreter }
+* touch raw sockets
+* matrix solver
+
+Proposed rule: "Never adopt a new lang until it has libs for OAuth+SSL, matrix solving, & LOGO" // Which 3 would you choose?
+
