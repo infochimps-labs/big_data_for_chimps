@@ -1,4 +1,4 @@
-# Chapter 0: Tao Te Chimp
+# Appendix A: Tao Te Chimp
 
 What follows are the points of our way as a set of *decision criteria* -- points of practice whose common sense and precise statement are agreed to in a period of calm, so they may be deployed in a period of action.
 
