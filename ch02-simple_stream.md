@@ -1,4 +1,10 @@
-# Chapter 1: The Stream
+# Chapter 2: The Stream
+
+In the system outlined in the previous chapter, a set of workers map each incoming letter to the order forms for each requested toy.
+
+The letters come in from all over the world, though, and so we need a first step to translate them into the common tongue of the North Pole -- which as we all know is Pig Latin.
+
+Let's write a program that can translate documents into Pig Latin by the billions.
 
 ## A Simple Streamer
 
@@ -7,6 +13,7 @@ The usual rules for changing standard English into Pig Latin are as follows:
 * In words that begin with consonant sounds, the initial consonant or consonant cluster is moved to the end of the word, and "ay" is added, as in the following examples:
   - happy → appy-hay
   - question → estion-quay
+  
 * In words that begin with vowels, the syllable "way" is simply added to the end of the word.
   - another → another-way
   - about   → about-way
