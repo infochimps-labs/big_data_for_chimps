@@ -13,35 +13,36 @@ The chimps came in, and singing a rather bawdy version of the Map-Reduce Haiku, 
 
 In stage one, a chimpanzee reads each letter and fills out a work form for each requested toy. Some examples:
 
-        --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister.         
-                                                                                                                           
-        Deer SANTA                                     robot | type="optimus prime" recipient="Joe"                        
-                                                       hat   | type="girl's small"  recipient="Joe's sister Julia"         
-        I wood like an optimus prime robot             
-        and a hat for my sister julia                  
-        
+        --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister.
+
+        Deer SANTA                                     robot | type="optimus prime" recipient="Joe"
+                                                       hat   | type="girl's small"  recipient="Joe's sister Julia"
+        I wood like an optimus prime robot
+        and a hat for my sister julia
+
         I have been good this year
-        
+
         love joe
-        
-        
+
+
         --------------------------------------          # Frank is a jerk. He will get coal.
-                                                                                                                                 
-        HEY SANTA I WANT A PONY AND NOT ANY             coal  | type="anthracity" recipient="Frank" reason="doesn't like to read"
-        DUMB BOOKS THIS YEAR                           
-                                                       
+
+        HEY SANTA I WANT A PONY AND NOT ANY             coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
+        DUMB BOOKS THIS YEAR
+
         FRANK
 
         ---------------------------------------         # Spam, no action
-        
-        Greetings to you Mr Claus, I came to know 
-        of you in my search for a  reliable and 
-        reputable person to handle a very confidential 
-        business transaction, which involves the 
+
+        Greetings to you Mr Claus, I came to know
+        of you in my search for a  reliable and
+        reputable person to handle a very confidential
+        business transaction, which involves the
         transfer of a huge sum of money...
-        
-        
-  
+
+        ---------------------------------------
+
+
 ### Order Delivery
 
 Each type of toy request -- robot, hat, coal, etc -- is handled by a different set of elves.
@@ -54,14 +55,13 @@ Each toy wish is placed in the slot for that kind of toy. As the chimp is done w
 
 ### Toy Assembly
 
-Lastly, the toy wishes come to dedicated workstations
-
+Lastly, the toy wishes come to dedicated workstations:
 
          ROBOTS               PARCHEESI               COAL
          ROOMBAS              PONIES                  COAL
          RAZOR SCOOTERS       QUIDDITCH BROOMS        SCHOOL SUPPLIES
 
-All wishes for a kind of toy go to the same workstation -- the station that sees wishes for Ponies sees every Pony wish. A station might handle several types of toys in a factory run, but it always sees them in a continuous batch. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from trying to wrap a Quidditch Broom.
+All wishes for a kind of toy go to the same workstation -- the station that sees wishes for Ponies sees every Pony wish. A station might handle several types of toys in a factory run, but it always sees them in a continuous batch. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for gift-wrapping Quidditch Brooms.
 
 ### Why it's efficient
 
@@ -70,5 +70,5 @@ Now it is still true that each elf workstation has incoming mail from every lett
 * mail stage is partitioned
 * letters have no guaranteed order
 
-* consistent hashing smooths the workload 
+* consistent hashing smooths the workload
   - but if it's a great year for Real American Dolls, that workstation can be overloaded. This is the problem of "skew", and we'll talk about this in some detail later.
