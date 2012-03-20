@@ -86,11 +86,11 @@ Next, run each script three times, mixing up the order. Write down
 * the average of those times
 * the actual percentage difference in run time between each script and the null.rb script
 
-script     | est % incr | run 1 | run 2 | run 3 | avg run time | actual % incr |
-null:      |            |       |       |       |              |               |
-identity:  |            |       |       |       |              |               |
-reverse:   |            |       |       |       |              |               |
-pig_latin: |            |       |       |       |              |               |
+        script     | est % incr | run 1 | run 2 | run 3 | avg run time | actual % incr |
+        null:      |            |       |       |       |              |               |
+        identity:  |            |       |       |       |              |               |
+        reverse:   |            |       |       |       |              |               |
+        pig_latin: |            |       |       |       |              |               |
 
 Most people are surprised by the result.
 
@@ -102,4 +102,4 @@ Notes:
 
 * The `String` methods `chomp`, `length`, `bytesize`, `split` are useful here.
 * Do not include the end-of-line characters (`\n` or `\r`) in your count.
-* As a reminder, the byte count describes how much space a string occupies -- it depends on arcane details of how strings are stored. For English text the byte count and length are typically similar, but the funny characters in a string like "Iñtërnâtiônàlizætiøn" require more than one byte each.
+* As a reminder -- for English text the byte count and length are typically similar, but the funny characters in a string like "Iñtërnâtiônàlizætiøn" require more than one byte each. The character count says how many distinct 'letters' the string contains, regardless of how it's stored in the computer. The byte count describes how much space a string occupies, and depends on arcane details of how strings are stored. 
