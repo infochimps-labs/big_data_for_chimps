@@ -13,33 +13,34 @@ The chimps came in, and singing a rather bawdy version of the Map-Reduce Haiku, 
 
 In stage one, a chimpanzee reads each letter and fills out a work form for each requested toy. Some examples:
 
-        input                                          output
-        --------------------------------------         
-                             
-        Deer SANTA                                     # Joe is clearly a good kid, and thoughtful for his sister.         
-         
-        I wood like an optimus prime robot             robot | type="optimus prime" recipient="Joe"
-        and a hat for my sister julia                  hat   | type="girl's small"  recipient="Joe's sister Julia"
+        --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister.         
+                                                                                                                           
+        Deer SANTA                                     robot | type="optimus prime" recipient="Joe"                        
+                                                       hat   | type="girl's small"  recipient="Joe's sister Julia"         
+        I wood like an optimus prime robot             
+        and a hat for my sister julia                  
         
         I have been good this year
         
         love joe
         
         
-        --------------------------------------
-        
-        HEY SANTA I WANT A PONY AND NOT ANY            # Frank is a jerk.
+        --------------------------------------          # Frank is a jerk. He will get coal.
+                                                                                                                                 
+        HEY SANTA I WANT A PONY AND NOT ANY             coal  | type="anthracity" recipient="Frank" reason="doesn't like to read"
         DUMB BOOKS THIS YEAR                           
-                                                       coal  | type="anthracity" recipient="Frank" reason="doesn't like to read"
+                                                       
         FRANK
 
-        ---------------------------------------
+        ---------------------------------------         # Spam, no action
         
-        I came to know of you in my search for a       # Spam, no action
-        reliable and reputable person to handle 
-        a very confidential business transaction, 
-        which involves the transfer of a huge sum 
-        of money...
+        Greetings to you Mr Claus, I came to know 
+        of you in my search for a  reliable and 
+        reputable person to handle a very confidential 
+        business transaction, which involves the 
+        transfer of a huge sum of money...
+        
+        
   
 ### Order Delivery
 
