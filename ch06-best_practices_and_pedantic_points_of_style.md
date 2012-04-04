@@ -3,9 +3,6 @@
 Here's a brain dump of things to do or not do
 
 
-
-
-
 ### File Organization
 
 * do not: try to have a uniform naming scheme for all files

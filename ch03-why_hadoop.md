@@ -78,7 +78,7 @@ Compare throughput of:
 
 Walk into any good Hot Rod shop and you'll see a sign reading "Fast, Good or Cheap, choose any two". Hadoop is the first distributed computing framework that can claim "Simple, Resilient, Scalable, choose all three".
 
-The key, as you might now be getting sick of hearing, is that simplicity + decoupling + embracing constraint 
+The key, is that simplicity + decoupling + embracing constraint 
 unlocks significant power.
 
 Heaven knows Hadoop has its flaws, and its codebase is long and hairy, but its core is 
