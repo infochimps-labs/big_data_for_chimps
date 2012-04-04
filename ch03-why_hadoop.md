@@ -93,6 +93,37 @@ Heaven knows Hadoop has its flaws, and its codebase is long and hairy, but its c
 * serialization
 
 
+### Economics:
+
+Say you want to store a billion objects, each 10kb in size. At commodity cloud storage prices in 2012, this will cost roughly [^1]
+
+* $250,000 a month to store in RAM
+* $ 25,000 a month to store it in a database with a 1:10 ram-to-storage ratio
+* $  1,500 a month to store it flat on disk
+
+CPU
+
+
+A 30-machine cluster with 240 CPU cores, 2000 GB total RAM and 50 TB of raw disk [^1]:
+
+* purchase: (-> find out purchase price)
+* cloud: about $60/hr; $10,000 to run for 8 hours a day every work day.
+
+
+By contrast, it costs [^1]
+
+* $  1,600 a month to hire an intern for 25 hours a week
+* $ 10,000 a month to hire an experienced data scientist, if you can find one
+
+In a database world, the dominant cost of an engineering project is infrastructure. In a hadoop world, the dominant cost is engineers.
+
+
+
+[^1] I admit these are not apples-to-apples comparisons. But the differences are orders of magnitude: subtly isn't called for
+
+
+
+
 ## Notes
 __________________________________________________________________________
 
