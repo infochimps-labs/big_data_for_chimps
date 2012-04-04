@@ -1,5 +1,9 @@
 ## What this book covers
 
+'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools. 
+
+It contains
+
 * Detailed example programs applying Hadoop to interesting problems in context
 * Advice and best practices for efficient software development
 * How to think at scale -- equipping you with a deep understanding of how to break a problem into efficient data transformations, and of how data must flow through the cluster to effect those transformations.
@@ -11,9 +15,11 @@ All of the examples use real data, and describe patterns found in many problem d
 * Searching, filtering and herding records in bulk
 * Advanced queries against spatial or time-series data sets.
 
-Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters. 
+The emphasis on simplicity and fun should make this book especially appealing to beginners, but it is not a beginner's-only book. We recommend this approach because it's in most cases the right one to follow, and almost all of the code is adapted from programs we wrote at Infochimps. There's a section describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
 
 Most of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Let me put that more strongly: if you're a beginning user, you should not *read* this book -- you should have it open next to you while you *write* whatever code each chapter inspires you to produce. The book's website has sample solutions, and data sets to compare against your output.
+
+Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters. 
 
 ## Who this book is for
 
@@ -21,11 +27,16 @@ You should be familiar with at least one programming language, but it doesn't ha
 
 All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You don't *need* to have an existing Hadoop installation, but you won't really be learning unless you spend some time on a real environment. The book gives straightforward instructions for creating a Hadoop cluster on the Amazon EC2 cloud.
 
+You should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
+
 ## Who this book is not for
 
 This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
 
-There is some content on machine learning with Hadoop, on provisioning and deploying hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
+That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production. 
+
+The book does have some content on machine learning with Hadoop, on provisioning and deploying hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
+
 
 ## How this book is being written
 
