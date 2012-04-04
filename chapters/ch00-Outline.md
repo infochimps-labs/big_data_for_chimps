@@ -15,7 +15,7 @@
   - How to think at scale
   -	Pedantic Points of Style 
   - Best Practices
-3. 	Herding `cat`s -- mechanics of 
+3. 	Herding `cat`s: the mechanics of 
   - getting data within Hadoop's reach
   - launching jobs
   - seeing the data
