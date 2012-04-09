@@ -116,10 +116,10 @@ For each use weather data on weather stations.
 
 ## Pig and HBase
 
-
+TBD
 
 ## Pig and JSON
 
-
+TBD
 __________________________________________________________________________
 
