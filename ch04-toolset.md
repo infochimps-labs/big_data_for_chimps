@@ -1,5 +1,4 @@
 
-
 ## Standard Datasets
 
 We will use these datasets repeatedly:
@@ -36,6 +35,12 @@ a 5-machine cluster of `m1.large` machines
 
 ### Ruby & Wukong
 
+TBD
+
 ### Pig
 
-### ...
+TBD
+
+###
+
+TBD
