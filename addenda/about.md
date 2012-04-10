@@ -15,7 +15,7 @@ All of the examples use real data, and describe patterns found in many problem d
 * Searching, filtering and herding records in bulk
 * Advanced queries against spatial or time-series data sets.
 
-The emphasis on simplicity and fun should make this book especially appealing to beginners, but it is not a beginner's-only book. We recommend this approach because it's in most cases the right one to follow, and almost all of the code is adapted from programs we wrote at Infochimps. There's a section describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
+This is not a beginner's book. There is emphasis on simplicity and fun, which should make this book especially appealing to beginners, but this is not an approach you'll outgrow. We emphasize simplicity and fun because it's a far more powerful approach, and one that generates the most value: humans are important, robots are cheap. The code you see is adapted from programs we write at Infochimps. There are sections describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
 
 Most of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Let me put that more strongly: if you're a beginning user, you should not *read* this book -- you should have it open next to you while you *write* whatever code each chapter inspires you to produce. The book's website has sample solutions, and data sets to compare against your output.
 
@@ -24,6 +24,8 @@ Feel free to hop around among chapters; the application chapters don't have larg
 ## Who this book is for
 
 You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should correspond cleanly to languages like Python or Scala.
+
+You should a
 
 All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You don't *need* to have an existing Hadoop installation, but you won't really be learning unless you spend some time on a real environment. The book gives straightforward instructions for creating a Hadoop cluster on the Amazon EC2 cloud.
 

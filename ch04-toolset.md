@@ -39,3 +39,13 @@ a 5-machine cluster of `m1.large` machines
 ### Pig
 
 ### ...
+
+
+## Wukong
+
+Narrative Method Structure
+
+* Gather input
+* Perform work
+* Deliver results
+* Handle failure

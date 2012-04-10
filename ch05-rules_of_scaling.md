@@ -3,24 +3,56 @@
 
 ### The rules of scaling
 
-* Storage (Disk)                    is free, and infinite in size 
-* Processing (CPU)                  is free, except when it isn't
-* Flash Storage (SSD)               is pricey, and cruelly limited in size 
-* Memory (RAM)                      is expensive, and cruelly limited in size 
+* Storage (Disk)                             is free, and infinite in size 
+* Processing (CPU)                           is free, except when it isn't
+* Flash Storage (SSD)                        is pricey, and cruelly limited in size 
+* Memory (RAM)                               is expensive, and cruelly limited in size 
 
-* Memory                            is infinitely fast.
-* Streaming data across the network is ever-so-slightly faster than streaming from disk
-* Streaming data from disk          is the limiting factor in speed if you're doing things right...
-* ... unless processing (CPU)       is the limiting factor in speed
-* Reading data in pieces from SSD   is adequate if you plan ahead and can fit
-* Reading data in pieces from disk  is infinitely slow
-* Reading data in pieces from across the network is even slower
+* Memory                                     is infinitely fast.
+* Streaming data across the network          is ever-so-slightly faster than streaming from disk
+* Streaming data from disk                   is the limiting factor if you're doing things right...
+* ... unless processing (CPU)                is the limiting factor in speed
+* Reading data in pieces from SSD            is adequate in some cases, assuming you fit
+* Reading data in pieces from disk           is infinitely slow
+* Reading data in pieces across the network  is even slower
 
-### Prices
+Most importantly,
 
-Here are prices in 
+* Humans are important, robots are cheap.
+ 
+### Optimize first, and typically only, for Joy
 
-To store 10 Billion records with an average size of 1 kB costs
+The most important rule for writing scalable code is
+
+    Optimize first, and typically only, for Joy
+
+There's no robust measure for programmer productivity. 'Lines of code' certainly isn't -- this book mostly exists to help you write as few lines of code as possible.
+
+But the fundamental personality traits that drive people to become programmers and data scientists are a love of a) discovering answers, b) discovering simplicities, c) discovering efficiencies.
+
+Phase 1: discover answer
+
+Do this quickly 
+
+For anything that stops our solution doesn't have to be elegant as long as it is readable.
+
+If this is a process that will endure, your next step is to simplify it
+
+Do not even think about what is happening inside the mapper and reducer until you have arrived at the simplest transformation flow you can.
+
+Optimizing your code path might subtract 30% of your run time at the cost of simplicity.
+Optimizing your data path can in many cases subtract 90% of your run time
+
+Find the parts that are annoying -- 
+
+
+Corrolaries:
+
+    Automate out of boredom or terror, never efficiency
+
+### Humans are important, robots are cheap.
+
+To store 10 Billion records with an average size of 1 kB -- that's 10 TB -- it costs
 
 * $200,000 /month to store it all on ram       ($1315/mo for 150 68.4 GB machines)
 * $ 20,000 /month to have it 10% backed by ram ($1315/mo for  15 68.4 GB machines)
@@ -46,6 +78,10 @@ Suppose you have a job that runs daily, taking 3 hours on a 10-machine cluster o
 
 If you tasked a junior engineer to spend three days optimizing that job, with a 10-machine cluster running the whole time, it would cost you about $1100. If she made the job run three times faster -- so it ran in 1 hour instead of 3 -- the job would now cost about $200. However, it will take three months to reach break-even.
 
+As a rule of thumb, 
+
+    Size your cluster so that it is either almost-always-idle or healthily exceeds the opportunity cost to the humans working on it.
+
 Takeaways:
 
 * Engineers are more expensive than compute. 
@@ -66,6 +102,25 @@ Takeaways:
 * If you are CPU-bound, use the fastest machines available, as many of them as you care to get
 * If the shuffle is the slowest step, use a cluster that is 50% to 100% as large as the mid-flight data.
 
+For each of 
+
+* Local Disk
+* EBS
+* SSD
+* S3
+* MySQL (local)
+* MySQL (network)
+* HBase (network)
+* in-memory
+* Redis (local)
+*  Redis (network)
+
+Compare throughput of:
+
+* random readss    
+* streaming reads  
+* random writes 
+* streaming writes
 
 ##### Transfer
 

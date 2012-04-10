@@ -52,26 +52,7 @@ If you notice, the only time data moves from one machine to another is when the 
 
 Doug Cutting's example comparing speed of searching by index vs. searching by full table scan 
 
-For each of 
-
-* Local Disk
-* EBS
-* SSD
-* S3
-* MySQL (local)
-* MySQL (network)
-* HBase (network)
-* in-memory
-* Redis (local)
-*  Redis (network)
-
-Compare throughput of:
-
-* random readss    
-* streaming reads  
-* random writes 
-* streaming writes
-
+see ch05, 'the rules of scaling'.
 
 
 ## Hadoop is Secretly Fun
