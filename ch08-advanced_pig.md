@@ -45,6 +45,7 @@ Quoting Pig docs:
 
 #### Example: ? counting triangles in wikipedia page graph ? OR ? Pageview counts ?
 
+TBD 
 
 ## Efficiency and Scalability
 
@@ -77,6 +78,7 @@ The Pig Documentation has a comprehensive section on [Performance and Efficiency
 
 ### Magic Combiners
 
+TBD
 
 ### Turn off Optimizations
 
@@ -116,10 +118,10 @@ For each use weather data on weather stations.
 
 ## Pig and HBase
 
-
+TBD
 
 ## Pig and JSON
 
-
+TBD
 __________________________________________________________________________
 

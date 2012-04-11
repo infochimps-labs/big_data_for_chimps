@@ -1,5 +1,3 @@
-
-
 ## Standard Datasets
 
 We will use these datasets repeatedly:
