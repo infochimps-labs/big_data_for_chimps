@@ -1,4 +1,7 @@
-# Outline
+# Big Data for Chimps
+## A Seriously Fun guide to Hadoop and Terabyte-scale data processing
+
+### Outline
 
 1.	 Chimpanzee and Elephant Save Christmas
   - stream of disordered records
@@ -66,5 +69,3 @@
 16.	 Installing and Operating a Cluster
 17.	 Tuning
 18.	 HBase and Databases
-
-99.   Appendix A: Tao Te Chimp
