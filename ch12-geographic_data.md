@@ -3,9 +3,7 @@
 
 ### Weather Near You
 
-
 #### Find the Voronoi Polygon for each Weather Station
-
 
 #### Map Polygons to Grid Tiles
 
@@ -75,6 +73,15 @@ Now join observations to grid cells and reduce each grid cell.
 
 #### Adaptive Grid Size
 
+Most of the world is water. Lots of it is Kansas.
+
+Take each grid cell; if it needs subfeatures, divide it else emit directly.
+
+You must emit high-level grid cells with the lsb filled with XX or something that sorts after a normal cell; this means that to find the value for a point,
+
+* Find the corresponding tile ID, 
+* Index into the table to find the first tile whose ID is larger than the given one.
+ This is why you must split in four parts
 
      00.00.00
      00.00.01
@@ -96,5 +103,10 @@ Now join observations to grid cells and reduce each grid cell.
      10.11.--
      
 
+## GeoJSON
     
 
+Using polymaps to view results
+
+
+## K-means clustering to summarize

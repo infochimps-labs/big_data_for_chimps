@@ -1,5 +1,18 @@
 # Chapter 5: Data Formats and Schemata
 
+### TSV
+
+As mentioned there's only three data serialization formats you should use: TSV, JSON, or Avro. 
+
+Don't do any quoting -- just escaping
+
+*best practice*
+
+* Restartable - If you have a corrupt record, you only have to look for the next un-escaped newline 
+* Keep regexes simple - Quotes and nested parens are hard, 
+
+Don't use CSV -- you're sure to have *some* data with free form text, and then find yourself doing quoting acrobatics or using a different format.
+
 ## TSV
 
 

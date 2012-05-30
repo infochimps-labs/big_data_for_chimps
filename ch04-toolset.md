@@ -32,6 +32,9 @@ a 5-machine cluster of `m1.large` machines
 ## Programs
 
 
+Why not Hive? The appealing thing about Hive is that it feels a lot like SQL. The dismal thing about Hive is that it feels a lot like SQL. Similarly, the wonderful thing about Pig is that its operations more closely mirror the underlying map-reduce setup, making it easier to reason about the performance of your tasks; this however means more brain-bendy at the outset for a traditional DBA. Lastly, Hive organizes your data -- useful for a multi-analyst setup - but it's a pain when using a polyglot toolset. Ultimately, Hive is better for an Enterprise Data Warehouse experience, or if you're already a SQL expert. but all else equal, for exploratory analysis and Data science, you're better off with Pig.
+
+
 ### Ruby & Wukong
 
 ### Pig

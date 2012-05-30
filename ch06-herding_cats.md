@@ -2,14 +2,16 @@
 
 ## Moving things to and fro
 
+TIMINGS
+Show hdp-shovel 
+Show distcp
 
 To put something on the HDFS directly from a pipe:
 
     hdp-mkdir infochimps.com
     curl 'http://infochimps.com' | hdp-put - infochimps.com/index.html
 
-
-
+Don't use NFS
 
 ## Stupid Hadoop Tricks
 

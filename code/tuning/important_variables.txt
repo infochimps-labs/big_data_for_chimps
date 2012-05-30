@@ -1,72 +1,72 @@
 http://archive.cloudera.com/cdh/3/hadoop/mapred-default.html
 
-fs.default.name
+fs.default
 
-fs.checkpoint.dir
-hadoop.tmp.dir
+fs.checkpoint
+hadoop.tmp
 
-fs.trash.interval
-io.file.buffer.size
-io.compression.codecs
+fs.trash
+io.file
+io.compression
 
-webinterface.private.actions
+webinterface.private
 
-hadoop.rpc.socket.factory.class.default
-hadoop.rpc.socket.factory.class.ClientProtocol
-hadoop.rpc.socket.factory.class.JobSubmissionProtocol
+hadoop.rpc
+hadoop.rpc
+hadoop.rpc
 
-fs.s3.awsAccessKeyId
-fs.s3n.awsAccessKeyId
-fs.s3.awsSecretAccessKey
-fs.s3n.awsSecretAccessKey
-fs.s3.block.size
-fs.s3n.block.size
-topology.script.file.name
+fs.s3
+fs.s3n
+fs.s3
+fs.s3n
+fs.s3
+fs.s3n
+topology.script
 
-mapred.job.tracker
-mapred.job.tracker.http.address
-mapred.task.tracker.http.address
+mapred.job
+mapred.job
+mapred.task
 
-mapred.local.dir
-mapred.system.dir
-mapreduce.jobtracker.staging.root.dir
+mapred.local
+mapred.system
+mapreduce.jobtracker
 
-io.sort.mb
-io.sort.record.percent
-mapred.min.split.size
+io.sort
+io.sort
+mapred.min
 
-io.sort.factor
-mapred.inmem.merge.threshold
-mapred.job.reduce.input.buffer.percent
-mapred.reduce.parallel.copies
+io.sort
+mapred.inmem
+mapred.job
+mapred.reduce
 
-mapred.child.java.opts
-mapred.child.ulimit
-mapred.job.reuse.jvm.num.tasks
+mapred.child
+mapred.child
+mapred.job
 
-mapred.tasktracker.map.tasks.maximum
-mapred.tasktracker.reduce.tasks.maximum
-tasktracker.http.threads
-mapred.job.tracker.handler.count
+mapred.tasktracker
+mapred.tasktracker
+tasktracker.http
+mapred.job
 
-mapred.output.compress
-mapred.output.compression.type
-mapred.output.compression.codec
-mapred.compress.map.output
-mapred.map.output.compression.codec
+mapred.output
+mapred.output
+mapred.output
+mapred.compress
+mapred.map
 
-mapred.map.tasks.speculative.execution
-mapred.reduce.tasks.speculative.execution
-mapred.reduce.slowstart.completed.maps
-mapred.submit.replication
+mapred.map
+mapred.reduce
+mapred.reduce
+mapred.submit
 
-mapred.jobtracker.taskScheduler
-mapred.fairscheduler.allocation.file
+mapred.jobtracker
+mapred.fairscheduler
 
-mapred.userlog.retain.hours
-mapred.jobtracker.retirejob.interval
-mapred.jobtracker.retirejob.check
-mapred.jobtracker.completeuserjobs.maximum
+mapred.userlog
+mapred.jobtracker
+mapred.jobtracker
+mapred.jobtracker
 
-mapred.job.tracker.retiredjobs.cache.size
-mapred.jobtracker.restart.recover
+mapred.job
+mapred.jobtracker

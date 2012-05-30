@@ -3,6 +3,7 @@
 * Humans are important, robots are cheap
   - Optimize first, and typically only, for Joy
   - Automate out of boredom or terror, never efficiency.
+  - Readable code is maintainable code.
 
 * Simplicity yields Scalability, Scalability yields Efficiency
   - don't worry about writing performant code: write scalable code

@@ -1,1 +1,13 @@
 # Chapter 20: Flume and Stream Processing
+
+
+
+## Concerns
+
+You should be doing exactly one of the following two things:
+
+* thinking about shuffling abstract blobs of data around
+* doing stuff to data, with no thought given as to how it will be shuffled around.
+
+* connecting "the right way to think about it" to "the way it's gotta be"
+* using the right-way-tothink-about-it, the right way.

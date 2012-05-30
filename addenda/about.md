@@ -39,7 +39,6 @@ That is because for almost everyone, the cost of the cluster is far less than th
 
 The book does have some content on machine learning with Hadoop, on provisioning and deploying hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 
-
 ## How this book is being written
 
 I plan to push chapters to the publicly-viewable ['Hadoop for Chimps' git repo](http://github.com/infochimps-labs/big_data_for_chimps) as they are written, and to post them periodically to the [the Infochimps blog](http://blog.infochimps.com) after minor cleanup.
@@ -55,5 +54,7 @@ __________________________________________________________________________
 
 ## Questions
 
-* "Big Data for Chimps" or "Hadoop for Chimps"?
-* Can we get a Chimpanzee for the cover animal?
+## Acknowledgements
+
+* http://objectsonrails.com/#sec-3-4
+

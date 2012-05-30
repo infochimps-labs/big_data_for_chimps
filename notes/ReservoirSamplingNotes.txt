@@ -1,0 +1,97 @@
+__TOC__
+
+== Random Sampling ==
+
+To take a random sample, fraction ''p'' of the full dataset:
+* write a mapper that emits lines with probability ''p''
+* use a null reducer or no reducer ("-D mapred.reduce.tasks=0")
+
+A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby example] is available in the wukong examples:
+
+<pre>
+#
+# Probabilistically emit some fraction of record/lines
+#
+# Set the sampling fraction at the command line using the
+#   --sampling_fraction=
+# option: for example, to take a random 1/1000th of the lines in huge_files,
+#  ./examples/sample_records.rb --sampling_fraction=0.001 --go huge_files sampled_files
+#
+class Mapper < Wukong::Streamer::LineStreamer
+  include Wukong::Streamer::Filter
+
+  #
+  # floating-point number between 0 and 1 giving the fraction of lines to emit:
+  # at sampling_fraction=1 all records are emitted, at 0 none are.
+  #
+  def sampling_fraction
+    @sampling_fraction ||= ( options[:sampling_fraction] && options[:sampling_fraction].to_f ) or
+      raise "Please supply a --sampling_fraction= argument, a decimal number between 0 and 1"
+  end
+
+  # randomly decide to emit +sampling_fraction+ fraction of lines
+  def emit? line
+    rand < self.sampling_fraction
+  end
+end
+
+# Execute the script with nil reducer
+Script.new( Mapper, nil ).run
+</pre>
+
+== Consistent Sampling ==
+
+See this [http://blog.rapleaf.com/dev/?p=187 rapleaf blog post]
+
+
+== Constant-Memory "Reservoir" Sampling ==
+
+From @dataspora's [http://github.com/dataspora/big-data-tools/blob/master/samplen.py Big Data Tools]:
+
+"The reservoir sampling algorithm outputs a sample of N lines from a file of undetermined size. It does so in a single pass, using memory proportional to N. These two features -- (i) a constant memory footprint and (ii) a capacity to operate on files of indeterminate size -- make it ideal for working with very large data sets common to event processing. "
+
+Working python code (see [http://github.com/dataspora/big-data-tools/blob/master/samplen.py Big Data Tools] for current version):
+
+  import sys
+  import random
+  
+  if len(sys.argv) == 3:
+      input = open(sys.argv[2],'r')
+  elif len(sys.argv) == 2:
+      input = sys.stdin;
+  else:
+      sys.exit("Usage:  python samplen.py <lines> <?file>")
+  
+  N = int(sys.argv[1]);
+  sample = [];
+  
+  for i,line in enumerate(input):
+      if i < N:
+          sample.append(line)
+      elif i >= N and random.random() < N/float(i+1):
+          replace = random.randint(0,len(sample)-1)
+          sample[replace] = line
+  
+  for line in sample:
+      sys.stdout.write(line)
+
+Note that it doesn't straightforwardly generalize to multiprocessor shared-nothing environment. In the case where the data is so large you don't want to run a pass to count your dataset, and where each block of data is large enough with respect to the reservoir size as to tolerate a small sampling error, you can try the following.  (The error is due to integer roundoff, which is neglected in the following sketch).
+
+For a dataset of size N, where you wish to extract a uniform sample of size M (N >> M) distributed across p shared-nothing processors,
+
+* From each processor, apply the reservoir algorithm to extract a full sample of size M (or its full size n_i, whichever is reached first).  
+* Dispatch to each processor the total size n_1 ... n_p of each data block, and the sampled size m_1 ... m_p.
+* Now each block knows the desired sampling fraction T = M / N, and its own buffer's sampling fraction s_i = m_i / n_i.
+* Have each node reservoir resample its buffer, with size o_i = m_i ( T / s_i ) = n_i ( M / N) (In practice, you need to jiggle the numbers o_i around so that they total to M with minimal error.  Each node will applies same algorithm locally).
+
+The original sample gave each row on its given node the same fighting chance
+  s_i = m_i / n_i
+of being in its resampling buffer.  The resampling was also uniform (neglecting roundoff) with fraction
+  o_i / m_i  = (n_i M) / (m_i N)
+The final probability is then
+  t_i = (probability chosen in 1st sampling) * (prob chosen in 2nd sampling)
+  t_i = (m_i / n_i) * ((n_i M) / (m_i N))
+      = (m_i n_i M) / (n_i m_i N)
+      = M / N
+
+Note that both passes are map-only filter passes -- the whole point is to *not* send the data around!

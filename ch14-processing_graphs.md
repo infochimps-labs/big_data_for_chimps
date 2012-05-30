@@ -1,2 +1,241 @@
 # Chapter 14: Processing Graphs
 
+Assumptions:
+
+* V fits in ram 
+* E does not fit in ram
+* Graph is sparse -- E/V^2 << 1 (the typical degree is smear less than V)
+* 
+
+## Notation
+ 
+TODO: move this to early in book
+TODO: reconcile with pig notation
+
+    {a, b} -- record with fields a and b
+    <P | a, b> -- reduce able record with partition key P
+    <P | S | a, b> -- reduceable record with partition key P and secondary sort key S (all objects with same P arrive to same reducer, sorted by P then S)
+    <P1, P2 | S1, S2 | a, b> -- partitioned by P1 and P2, sorted by P1 then by P2 then by S1 then by S2. Objects with the same P1 may go to different reducers.
+    {a, b, {(c})} -- bag field c
+    
+### Airline Passenger Flow Network
+
+http://www.infochimps.com/datasets/35-million-us-domestic-flights-from-1990-to-2009
+
+> Over 3.5 million monthly domestic flight records from 1990 to 2009. Data are arranged as an adjacency list with metadata. Ready for immediate database import and analysis.
+> Fields:
+
+    Origin             	String	 Three letter airport code of the origin airport
+    Destination       	String	 Three letter airport code of the destination airport
+    Origin City        	String	 Origin city name
+    Destination City	String	 Destination city name
+    Passengers        	Integer	 Number of passengers transported from origin to destination
+    Seats            	Integer	 Number of seats available on flights from origin to destination
+    Flights            	Integer	 Number of flights between origin and destination (multiple records for one month, many with flights > 1)
+    Distance        	Integer	 Distance (to nearest mile) flown between origin and destination
+    Fly Date        	Integer	 The date (yyyymm) of flight
+    Origin Population	Integer	 Origin city’s population as reported by US Census
+    Destination Population	Integer	 Destination city’s population as reported by US Census
+
+
+### Minimum Spanning Tree
+
+
+Best practice: recapitulable
+
+Make edge weights unique by using node id as lsb.
+
+TODO: verify size estimates below.
+
+* Send each edge `{a,b,weight}` to `<rk=pt(a)%k,pt(b)%k | weight | a, b>` and `<rk=pt(b)%k,pt(a)%k | weight | a, b>`. The input size is E (the number of edges); the output size is less than 2E.
+* For each partitioned graph, find the MST. 
+* Emit `{a,b,weight}`. There are C(2,k) partitioned graphs; each reducer emits at most one edge per node (the one connecting it to its parent).  There are thus C(2,k) * 2V/k output edges.
+*  Repeat -- Probably using one reducer this time.
+
+
+
+#### Union Find
+
+From http://en.wikipedia.org/wiki/Union-find --
+
+> The first way, called union by rank, is to always attach the smaller tree to the root of the larger tree, rather than vice versa. Since it is the depth of the tree that affects the running time, the tree with smaller depth gets added under the root of the deeper tree, which only increases the depth if the depths were equal. In the context of this algorithm, the term rank is used instead of depth since it stops being equal to the depth if path compression (described below) is also used. One-element trees are defined to have a rank of zero, and whenever two trees of the same rank r are united, the rank of the result is r+1. Just applying this technique alone yields a worst-case running-time of  per MakeSet, Union, or Find operation. Pseudocode for the improved MakeSet and Union:
+> 
+>      function MakeSet(x)
+>          x.parent := x
+>          x.rank   := 0
+>      function Union(x, y)
+>          xRoot := Find(x)
+>          yRoot := Find(y)
+>          if xRoot == yRoot
+>              return
+> 
+>          // x and y are not already in same set. Merge them.
+>          if xRoot.rank < yRoot.rank
+>              xRoot.parent := yRoot
+>          else if xRoot.rank > yRoot.rank
+>              yRoot.parent := xRoot
+>          else
+>              yRoot.parent := xRoot
+>              xRoot.rank := xRoot.rank + 1
+>              
+> The second improvement, called path compression, is a way of flattening the structure of the tree whenever Find is used on it. The idea is that each node visited on the way to a root node may as well be attached directly to the root node; they all share the same representative. To effect this, as Find recursively traverses up the tree, it changes each node's parent reference to point to the root that it found. The resulting tree is much flatter, speeding up future operations not only on these elements but on those referencing them, directly or indirectly. Here is the improved Find:
+>   
+>      function Find(x)
+>          if x.parent != x
+>             x.parent := Find(x.parent)
+>          return x.parent
+> 
+
+## Recommendations / biparte blah blah
+
+Make note about smoothing votes to a prior (2 votes of 5 stars << 293 votes avg 4.78 stars). Can use a principled prior (see Imdb top 100) or just use an offset (eg 10 dummy votes at 65th %ile).
+
+Need to scale by underlying enthusiasm (all students are above average!)
+
+## k-means
+
+## canopy clustering 
+
+## Mahout 
+
+Mahout has
+
+Collaborative Filtering
+User and Item based recommenders
+K-Means, Fuzzy K-Means clustering
+Mean Shift clustering
+Dirichlet process clustering
+Latent Dirichlet Allocation
+Singular value decomposition
+Parallel Frequent Pattern mining
+Complementary Naive Bayes classifier
+Random forest decision tree based classifier
+
+In time series, pondering 
+
+* anomaly detection
+* predictive models
+* sessionizing
+
+Also:
+
+Simple regression
+Logistic regression
+
+## Full Mahout list:
+
+Algorithms
+This section contains links to information, examples, use cases, etc. for the various algorithms we intend to implement. Click the individual links to learn more. The initial algorithms descriptions have been copied here from the original project proposal. The algorithms are grouped by the application setting, they can be used for. In case of multiple applications, the version presented in the paper was chosen, versions as implemented in our project will be added as soon as we are working on them.
+
+Original Paper: Map Reduce for Machine Learning on Multicore
+
+Papers related to Map Reduce:
+
+Evaluating MapReduce for Multi-core and Multiprocessor Systems
+Map Reduce: Distributed Computing for Machine Learning
+For Papers, videos and books related to machine learning in general, see Machine Learning Resources
+
+All algorithms are either marked as integrated, that is the implementation is integrated into the development version of Mahout. Algorithms that are currently being developed are annotated with a link to the JIRA issue that deals with the specific implementation. Usually these issues already contain patches that are more or less major, depending on how much work was spent on the issue so far. Algorithms that have so far not been touched are marked as open.
+
+What, When, Where, Why (but not How or Who) - Community tips, tricks, etc. for when to use which algorithm in what situations, what to watch out for in terms of errors. That is, practical advice on using Mahout for your problems.
+
+Classification
+A general introduction to the most common text classification algorithms can be found at Google Answers: http://answers.google.com/answers/main?cmd=threadview&id=225316 For information on the algorithms implemented in Mahout (or scheduled for implementation) please visit the following pages.
+
+Logistic Regression (SGD)
+
+Bayesian
+
+Support Vector Machines (SVM) (open: MAHOUT-14, MAHOUT-232 and MAHOUT-334)
+
+Perceptron and Winnow (open: MAHOUT-85)
+
+Neural Network (open, but MAHOUT-228 might help)
+
+Random Forests (integrated - MAHOUT-122, MAHOUT-140, MAHOUT-145)
+
+Restricted Boltzmann Machines (open, MAHOUT-375, GSOC2010)
+
+Online Passive Aggressive (integrated, MAHOUT-702)
+
+Boosting (awaiting patch commit, MAHOUT-716)
+
+Hidden Markov Models (HMM) (MAHOUT-627, MAHOUT-396, MAHOUT-734) - Training is done in Map-Reduce
+
+Clustering
+Reference Reading
+
+* Canopy Clustering (MAHOUT-3 - integrated)
+* 
+* K-Means Clustering (MAHOUT-5 - integrated)
+* 
+* Fuzzy K-Means (MAHOUT-74 - integrated)
+* 
+* Expectation Maximization (EM) (MAHOUT-28)
+* 
+* Mean Shift Clustering (MAHOUT-15 - integrated)
+* 
+* Hierarchical Clustering (MAHOUT-19)
+* 
+* Dirichlet Process Clustering (MAHOUT-30 - integrated)
+* 
+* Latent Dirichlet Allocation (MAHOUT-123 - integrated)
+* 
+* Spectral Clustering (MAHOUT-363 - integrated)
+* 
+* Minhash Clustering (MAHOUT-344 - integrated)
+* 
+* Top Down Clustering (MAHOUT-843 - integrated)
+* 
+* Pattern Mining
+* Parallel FP Growth Algorithm (Also known as Frequent Itemset mining)
+* 
+* Regression
+* Locally Weighted Linear Regression (open)
+* 
+* Dimension reduction
+* Singular Value Decomposition and other Dimension Reduction Techniques (available since 0.3)
+* 
+* Stochastic Singular Value Decomposition with PCA workflow (PCA workflow now integrated)
+* 
+* Principal Components Analysis (PCA) (open)
+* 
+* Independent Component Analysis (open)
+* 
+Gaussian Discriminative Analysis (GDA) (open)
+
+Evolutionary Algorithms
+see also: MAHOUT-56 (integrated)
+
+You will find here information, examples, use cases, etc. related to Evolutionary Algorithms.
+
+Introductions and Tutorials:
+
+Evolutionary Algorithms Introduction
+How to distribute the fitness evaluation using Mahout.GA
+Examples:
+
+Traveling Salesman
+Class Discovery
+
+### Recommenders / Collaborative Filtering
+
+Mahout contains both simple non-distributed recommender implementations and distributed Hadoop-based recommenders.
+
+* Non-distributed recommenders ("Taste") (integrated)
+* Distributed Item-Based Collaborative Filtering (integrated)
+* Collaborative Filtering using a parallel matrix factorization (integrated)
+* First-timer FAQ
+
+### Vector Similarity
+
+Mahout contains implementations that allow one to compare one or more vectors with another set of vectors. This can be useful if one is, for instance, trying to calculate the pairwise similarity between all documents (or a subset of docs) in a corpus.
+
+* RowSimilarityJob – Builds an inverted index and then computes distances between items that have co-occurrences. This is a fully distributed calculation.
+* VectorDistanceJob – Does a map side join between a set of "seed" vectors and all of the input vectors.
+
+### Other
+* Collocations
+
+
+

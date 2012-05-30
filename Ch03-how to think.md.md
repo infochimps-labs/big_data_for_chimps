@@ -1,0 +1,158 @@
+When you're thinking about a Hadoop job, you want to be fluidly shifting among these three patterns:
+
+* Rendezvous (cogroup): thinking about getting objects to the same place as a group -- For example, getting each 
+* Message passing
+* Set operations,familiar to anyone who knows SQL -- JOIN, union, intersect, and so forth.
+* Graph operations
+* Partition and Recombine
+* Simple stream
+* `cat` herding (simple streaming, and abuse of Hadoop as a distributed computing supervisor)
+
+
+Now of course there's no difference among these things -- they're all conceptual layers atop the fundamental Map/Reduce Haiku. Pig very naturally expresses the set operations and to some extent the rendezvous mode. Wukong or any other direct M/R layer will be most expressive with message passing and rendezvous. For graph operations, Google's [[Pregel]] project is a beautiful computing paradigm; unfortunately there's not yet a mature clone in the wild. We'll see how to instead map graph exchanges to pig and map/reduce operations.
+
+
+## Locality Rendezvous (co-group)
+
+I urge you to think about this intermediate stage as a /group/, not a sort. Yes, it's true that's the way the grouping is *implemented* uses a partitioned sort; that's a happy accident (and has the important side-effect of leaving each group sorted as well). But very few problems present themselves in terms of a sorted list. Instead, the fundamental challenge of massive-scale distributed computing is locality, and a lot of problems present themselves in that sense.
+
+* Santa's workshop - The elves want all toys of the same type to land at the same workstation. This is a natural fit for rendezvous, so explaining it in the other modes would be stretching the point (see, however, problem 1 below.)
+
+Instead,  Inverting a graph -- Consider the wikipedia link graph (or Twitter, or the web).   This is fundamentally a graph operation: we want to count the "out-degree" of each node. But it's productive to think of it in the other three modes:
+- 
+* **rendezvous**: gather each edge together based on its "into" node.count the size of the crowd that shoews up.
+* **message passing**: each node sends one jellybean to the nodes that it links to. Then each node counts the jellybeans it receives.
+* **set ops**: SELECT COUNT(*) From edges group by "into"
+    * Into-adjlistm= group edges by into;
+    * Indefree = for each generate **FIXME**
+* Graph - Out-degree
+* 
+
+A note to experienced data scientists: at this point you're ready to throw the book across the room saying "zomg he just said the same thing four times in a row! Those are all the same!" that's because you've forgotten that you ever thought they were different. (not to be chauvinists but physicists 
+It's like 
+
+So if you're new to this, concentrate on what's the same -- try to see the deep connection behind them. If you in the obvious example heard me say "cogroup, cogroup, cogroup, cogroup", then concentrate on the difference; try slipping your brain out of cogroup and thing about the physical model that lies behind it.
+
+* Feature Similarity - Take an object, identify its most important features in a "feature vector". Dispatch each vector (with the object's ID as cargo) multiple times
+  - For example, (example)
+* 
+* 
+
+
+Exercises
+
+Explain in prose how to think about the Santa's workshop activity in terms of message passing, set operations, and a grab operation.
+  - Hint: graph is biparte From kids to toys
+
+Explain the following SQL primitives as rendezvous operations:
+
+* Select * From WikipediaPages join WikipediaLinks
+* Slelct pageid, year, month, sum(hitcount) from WpViews group by year, month
+
+TODO: go into depth on COGROUP.
+
+Describe how to implement these set operations atop basic map/reduce:
+
+* Union
+* Distinct union
+* Join
+* Cross
+
+
+* 
+
+
+## Histogram
+
+A histogram shows you the distribution of values 
+
+You remember in school, how you learned about the law of large numbers -- and then spent most of your time talking about balls pulled from urns and 1000-person medical trials with p-values, and in general spent all your time in a place where numbers were not large. Well, this is big data -- the law of large numbers is THE LAW around here, and you can set your ruler off the distributions when the mechanics are simple.
+
+Here's something that's generally true, inasmuch as the interesting part of your job is to find out how and why it isn't: at scale, every process with a simple explanation is either long-tail or normally distributed. (See justification at field spotters guide)
+
+___________________________
+Statistical Distributions, a field spotters guide
+
+In writing, they say there's only about twenty plots. Here are all the interesting stories you can tell with a cast of billions:
+
+1. Most things are at a certain value; various unrelated things perturb it in one direction or the other. (normal distribution)
+1. A winner-take-all process, where popularity attracts popularity; a graph process, where the chances of having a link grow as the number of links; (TODO: what is the other ranking mechanism) -- long-tail distribution.
+1. A process is repeated, and the chance that it happens each time is the same (binomial)
+1. two of the above at the same time: bimodal (norm/norm); weibull (norm/geom); dirichlet (binomial + long tail)
+
+For example, let's pull some statistics from our reference datasets:
+
+* Word length (normal)
+* Word frequency (long-tail distribution)
+*  page link in dist ( long-tail distribution)
+* Page link out
+* Categories
+* Temperature, humidity, on weather observations
+* Length of service of weather stations (¡Not normal or long tail -- About geometric I think?)
+
+We're going to spend a little time while we're here on statistics, because they're really useful for reasoning about job performance 
+
+_______________________
+
+Word count (histogram of Wikipedia words) 
+ 
+    tk_lines = FOREACH line GENERATE tokenize(line) AS word;
+    words = FLATTEN tk_lines;
+    grouped_words = GROUP words BY word;
+    word_counts = FOREACH grouped_words GENERATE group AS word, count(*) AS count;
+    histogram = ORDER word_counts BY count DESC;
+    
+    word_lengths = FOREACH words GENERATE str_length(word) as len; -- explain piggybank
+    grouped_lengths = GROUP word_lengths BY len;
+    word_counts = FOREACH grouped_words GENERATE group AS word, count(*) AS count;
+    histogram = ORDER word_counts BY count DESC;
+    
+__________________________
+
+Bored yet? Show using swineherd to templatize this.
+
+__________________________
+
+Here's 
+
+The long tail has two important parameters.As you normally see I given, these are the exponent and the total number. 
+
+We're only talking about N >> 10,000 
+
+What you want to do is chunk. One is by percentile another is by decade of rank.
+
+
+By the time you get to say #100, the distribution has typically become fairly tame,by construction: 
+If #100 is `A = f_100 = H/100^s`, then #1000 is `f_1000 = H/(1000^s) = 10^-s A`. 
+
+
+    Int[ H n^-b ] = [ (1-b)H n n^-b ] -> (1-b)H ((A-a)^(1-s) - (A+a)^(1-s))
+
+on a percentage basis
+
+
+
+
+    
+__________________________
+
+Word count example -- look at running time of longest machine. 
+
+    Count of words in output file vs time of reducer (see job tracker)
+    
+    For R reducers, choosing 25/R at random from the top 25, what is expected excess of worst (most) over average? Over fewest? (spread between fewest and best should be small)
+   
+
+
+
+
+_______________________
+
+Sidebar: for all Hadoop jobs, list the 
+
+* Expected run-time on (5+1)xm1.large cluster
+* Amount of map in, midstream, reduce out data
+* Any per-job settings
+
+
+V

@@ -1,0 +1,5 @@
+http://objectsonrails.com/#sec-3-4
+
+> The challenge in writing about code patterns is to come up with examples that are simple and clear enough that the supporting code doesn't get in the way of understanding the specific technique being demonstrated–while still hopefully avoiding examples that feel completely contrived. Unfortunately, if you succeed in that, you are often confronted with a new problem: the example problems you carefully distilled down to their essence now seem so simple, so trivial that whatever refactoring or abstraction you're trying to illustrate seems superfluous and a waste of effort.
+>
+> The application I work through in these pages is a deliberately simple one, and many of the techniques I demonstrate may seem like massive overkill for the task at hand. Please understand, as you read through the examples, that these are patterns and idioms intended to make the development and evolution of large-scale applications more tractable. While they may seem less than compelling in the context of a "toy" app, hopefully you can visualize how they might be helpful for larger-scale development.
