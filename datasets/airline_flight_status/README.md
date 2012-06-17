@@ -1,8 +1,12 @@
 # Airline Flight Status -- Airline On-Time Statistics and Delay Causes
 
+> This data set is from the [ASA Statistical Computing / Statistical Graphics](http://stat-computing.org/dataexpo/2009/the-data.html) section 2009 contest. The documentation below is largely adapted from that site.
+
 The U.S. Department of Transportation's (DOT) Bureau of Transportation Statistics (BTS) tracks the on-time performance of domestic flights operated by large air carriers. Summary information on the number of on-time, delayed, canceled and diverted flights appears in DOT's monthly Air Travel Consumer Report, published about 30 days after the month's end, as well as in summary tables posted on this website. BTS began collecting details on the causes of flight delays in June 2003. Summary statistics and raw data are made available to the public at the time the Air Travel Consumer Report is released.
 
-The data consists of flight arrival and departure details for all commercial flights within the USA, from October 1987 to April 2008. This is a large dataset: there are nearly 120 million records in total, and takes up 1.6 gigabytes of space compressed and 12 gigabytes when uncompressed. To make sure that you're not overwhelmed by the size of the data, we've provide two brief introductions to some useful tools: linux command line tools and sqlite, a simple sql database.
+The data consists of flight arrival and departure details for all commercial flights within the USA, from October 1987 to April 2008. This is a large dataset: there are nearly 120 million records in total, and takes up 1.6 gigabytes of space compressed and 12 gigabytes when uncompressed. 
+
+The data comes originally from the DOT's [Research and Innovative Technology Administration (RITA)](http://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) group, where it is [described in detail](http://www.transtats.bts.gov/Fields.asp?Table_ID=236). You can download the original data there. The files here have derivable variables removed, are packaged in yearly chunks and have been more heavily compressed than the originals.
 
 Here are a few ideas to get you started exploring the data:
 
@@ -14,36 +18,36 @@ Here are a few ideas to get you started exploring the data:
 
 ### Fields:
 
-     -	Name             	Description
-     1	Year             	1987-2008                                                                
-     2	Month            	1-12                                                                     
-     3	DayofMonth       	1-31                                                                     
-     4	DayOfWeek        	1 (Monday) - 7 (Sunday)                                                  
-     5	DepTime          	actual departure time (local, hhmm)                                      
-     6	CRSDepTime       	scheduled departure time (local, hhmm)                                   
-     7	ArrTime          	actual arrival time (local, hhmm)                                        
-     8	CRSArrTime       	scheduled arrival time (local, hhmm)                                     
-     9	UniqueCarrier    	unique carrier code                                                      
-    10	FlightNum        	flight number                                                            
-    11	TailNum          	plane tail number                                                        
-    12	ActualElapsedTime	in minutes                                                               
-    13	CRSElapsedTime   	in minutes                                                               
-    14	AirTime          	in minutes                                                               
-    15	ArrDelay         	arrival delay, in minutes                                                
-    16	DepDelay         	departure delay, in minutes                                              
-    17	Origin           	origin IATA airport code                                                 
-    18	Dest             	destination IATA airport code                                            
-    19	Distance         	in miles                                                                 
-    20	TaxiIn           	taxi in time, in minutes                                                 
-    21	TaxiOut          	taxi out time in minutes                                                 
-    22	Cancelled        	was the flight cancelled?                                                
-    23	CancellationCode 	reason for cancellation (A = carrier, B = weather, C = NAS, D = security)
-    24	Diverted         	1 = yes, 0 = no                                                          
-    25	CarrierDelay     	in minutes                                                               
-    26	WeatherDelay     	in minutes                                                               
-    27	NASDelay         	in minutes                                                               
-    28	SecurityDelay    	in minutes                                                               
-    29	LateAircraftDelay	in minutes                                                               
+     1	Year             	int       	1987-2008                                                                
+     2	Month            	int       	1-12                                                                     
+     3	DayofMonth       	int       	1-31                                                                     
+     4	DayOfWeek        	int       	1 (Monday) - 7 (Sunday)                                                  
+     5	DepTime          	int       	actual departure time (local, hhmm)                                      
+     6	CRSDepTime       	int       	scheduled departure time (local, hhmm)                                   
+     7	ArrTime          	int       	actual arrival time (local, hhmm)                                        
+     8	CRSArrTime       	int       	scheduled arrival time (local, hhmm)                                     
+     9	UniqueCarrier    	varchar(5)	unique carrier code                                                      
+    10	FlightNum        	int       	flight number                                                            
+    11	TailNum          	varchar(8)	plane tail number                                                        
+    12	ActualElapsedTime	int       	in minutes                                                               
+    13	CRSElapsedTime   	int       	in minutes                                                               
+    14	AirTime          	int       	in minutes                                                               
+    15	ArrDelay         	int       	arrival delay, in minutes                                                
+    16	DepDelay         	int       	departure delay, in minutes                                              
+    17	Origin           	varchar(3)	origin IATA airport code                                                 
+    18	Dest             	varchar(3)	destination IATA airport code                                            
+    19	Distance         	int       	in miles                                                                 
+    20	TaxiIn           	int       	taxi in time, in minutes                                                 
+    21	TaxiOut          	int       	taxi out time in minutes                                                 
+    22	Cancelled        	int       	was the flight cancelled?                                                
+    23	CancellationCode 	varchar(1)	reason for cancellation (A = carrier, B = weather, C = NAS, D = security)
+    24	Diverted         	varchar(1)	1 = yes, 0 = no                                                          
+    25	CarrierDelay     	int       	in minutes                                                               
+    26	WeatherDelay     	int       	in minutes                                                               
+    27	NASDelay         	int       	in minutes                                                               
+    28	SecurityDelay    	int       	in minutes                                                               
+    29	LateAircraftDelay	int       	in minutes                                                               
+
 
 ## Supplementary data
 
