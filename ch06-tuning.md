@@ -40,11 +40,7 @@ _note: I may go with min/TB, to have them be directly comparable. Throughput is 
 
 
 
-
 ### Measuring your system: practical limits
-
-
-
 
 * Understand the practical maximum throughput baseline performance against the fundamental limits of the system
 
