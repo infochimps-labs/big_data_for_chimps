@@ -14,6 +14,11 @@ Coarsely speaking, jobs are constrained by one of these four capabilities:
 * Network IO: Network throughput, and
 * CPU: Computational throughput.
 
+In practice,
+
+* You either have enough RAM, or you do not -- make sure you do.
+* If throughput isn't near the IO-bound limit, there is probably a discoverable reason.
+
 Your job is to
 
 * **Recognize when your job significantly underperforms** the practical expected throughput, and if so, whether you should worry about it. If your job's throughput on a small cluster is within a factor of two of a job that does nothing, it's not worth tuning. If that job runs nightly and costs $1000 per run, it is.
@@ -38,7 +43,11 @@ _note: I may go with min/TB, to have them be directly comparable. Throughput is 
 * Do some increasingly expensive computations to see where CPU begins to dominate IO. 
 * Get a rough understanding of how much RAM you should reserve for the operating system's caches and buffers, and other overhead -- it's more than you think.
 
+### Mesuring your system: imaginary limits
 
+* [Bonnie](http://www.textuality.com/bonnie/advice.html) for disk 
+* [Bonnie++](http://www.coker.com.au/bonnie++/)  for disk 
+* [Phoronix](http://www.phoronix-test-suite.com/?k=downloads) for a broad-based test
 
 ### Measuring your system: practical limits
 
