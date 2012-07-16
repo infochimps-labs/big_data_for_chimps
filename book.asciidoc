@@ -1,5 +1,29 @@
+include::Ch03-how to think.asciidoc.asciidoc[]
+
+include::Home.asciidoc[]
+
+include::ch02-tao_te_chimp.asciidoc[]
+
+include::ch05-data_formats (fleepfon's conflicted copy 2012-05-25).asciidoc[]
+
+include::TODO.asciidoc.asciidoc[]
+
+include::ch03-why_hadoop.asciidoc[]
+
+include::ch06-best_practices_and_pedantic_points_of_style.asciidoc[]
+
+include::ch05-data_modeling.asciidoc[]
+
+include::ch05-rules_of_scaling.asciidoc[]
+
+include::ch05-semi_structured_data.asciidoc[]
+
+include::ch05-data_formats.asciidoc[]
+
+include::ch04-toolset.asciidoc[]
+
 include::ch01-chimps_and_elephants.asciidoc[]
 
 include::ch02-simple_stream.asciidoc[]
 
-include::ch02-tao_te_chimp.asciidoc[]
+include::README.asciidoc[]
