@@ -31,7 +31,11 @@ A map-side (aka 'fragment replicate') join
 
 Quoting Pig docs:
 
-> "You will also see better performance if the data in the left table is partitioned evenly across part files (no significant skew and each part file contains at least one full block of data)."
+
+____________________________________________________________________
+You will also see better performance if the data in the left table is partitioned evenly across part files (no significant skew and each part file contains at least one full block of data).
+____________________________________________________________________
+
 
 == Example: merge join of user graph with page rank iteration ==
 
