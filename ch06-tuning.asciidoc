@@ -27,7 +27,7 @@ Your job is to
 * **Not get in Hadoop's way**. There are a few easily-remedied things to watch for that will significantly hamper throughput by causing unneccesary disk writes or network traffic.
 * **When reasonable, adjust the RAM/IO/CPU tradeoffs**. For example, with plenty of RAM and not too much data, increasing the size of certain buffers can greatly reduce the number of disk writes: you've traded RAM for Disk IO.
 
-==== Measuring your system: theoretical limits ====
+=== Measuring your system: theoretical limits ===
 
 What we need here is a ready-reckoner for calculating the real costs of processing. We'll measure two primary metrics:
 
@@ -43,13 +43,13 @@ _note: I may go with min/TB, to have them be directly comparable. Throughput is 
 * Do some increasingly expensive computations to see where CPU begins to dominate IO. 
 * Get a rough understanding of how much RAM you should reserve for the operating system's caches and buffers, and other overhead -- it's more than you think.
 
-==== Mesuring your system: imaginary limits ====
+=== Mesuring your system: imaginary limits ===
 
 * [Bonnie](http://www.textuality.com/bonnie/advice.html) for disk 
 * [Bonnie++](http://www.coker.com.au/bonnie++/)  for disk 
 * [Phoronix](http://www.phoronix-test-suite.com/?k=downloads) for a broad-based test
 
-==== Measuring your system: practical limits ====
+=== Measuring your system: practical limits ===
 
 * Understand the practical maximum throughput baseline performance against the fundamental limits of the system
 

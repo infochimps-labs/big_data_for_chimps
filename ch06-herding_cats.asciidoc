@@ -1,6 +1,6 @@
-== Chapter 9: Herding `cat`s ==
+= Chapter 9: Herding `cat`s =
 
-=== Moving things to and fro ===
+== Moving things to and fro ==
 
 TIMINGS
 Show hdp-shovel 
@@ -13,10 +13,10 @@ To put something on the HDFS directly from a pipe:
 
 Don't use NFS
 
-=== Stupid Hadoop Tricks ===
+== Stupid Hadoop Tricks ==
 
 
-==== Mappers that process filenames, not file contents ====
+=== Mappers that process filenames, not file contents ===
 
 You can output anything you want in your mappers. 
 
@@ -36,7 +36,7 @@ Be careful: hadoop has no rate limiting. It will quite happily obliterate any sy
 
 __________________________________________________________________________
 
-==== Benign DDOS ====
+=== Benign DDOS ===
 
 Speaking of which... So you have an API. And you think it's working well, and in fact you think it's working really well. Want to simulate a 200x load spike? Replay a week's worth of request logs at your server, accelerated to all show up in an hour. Each mapper reads a section of the logs, and makes the corresponding request (setting its browser string and referer URL accordingly). It emits the response duration, HTTP status code, and content size. There are [dedicated tools to do this kind of HTTP benchmarking](https://github.com/wg/wrk), but they typically make the same request over and over. Replaying a real load at higher speed means that your caching strategy is properly exercised.
 

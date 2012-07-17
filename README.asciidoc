@@ -1,7 +1,7 @@
-== Big Data for Chimps ==
-=== A Seriously Fun guide to Hadoop and Terabyte-scale data processing ===
+= Big Data for Chimps =
+== A Seriously Fun guide to Hadoop and Terabyte-scale data processing ==
 
-==== Outline ====
+=== Outline ===
 
 1.	 Chimpanzee and Elephant Save Christmas
   - stream of disordered records

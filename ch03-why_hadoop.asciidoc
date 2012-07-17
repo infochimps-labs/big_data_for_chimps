@@ -1,10 +1,10 @@
-== Chapter 3: Why Hadoop Works ==
+= Chapter 3: Why Hadoop Works =
 
 * Locality of reference and the speed of light
 * Disk is the new tape -- Random access on bulk storage is very slow
 * Fun -- Resilient distributed frameworks have traditionally been very conceptually complex, where by complex I mean "MPI is a soul-sucking hellscape"
 
-=== Locality of Reference ===
+== Locality of Reference ==
 
 Ever since there were        [] [] [] [] 
                              [] [] [] [] eight computers and a network, 
@@ -48,14 +48,14 @@ As each pile of output products starts to accumulate, we can begin to group them
 If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
 
     
-=== Disk is the new tape ===
+== Disk is the new tape ==
 
 Doug Cutting's example comparing speed of searching by index vs. searching by full table scan 
 
 see ch05, 'the rules of scaling'.
 
 
-=== Hadoop is Secretly Fun ===
+== Hadoop is Secretly Fun ==
 
 Walk into any good Hot Rod shop and you'll see a sign reading "Fast, Good or Cheap, choose any two". Hadoop is the first distributed computing framework that can claim "Simple, Resilient, Scalable, choose all three".
 
@@ -74,7 +74,7 @@ Heaven knows Hadoop has its flaws, and its codebase is long and hairy, but its c
 * serialization
 
 
-==== Economics: ====
+=== Economics: ===
 
 Say you want to store a billion objects, each 10kb in size. At commodity cloud storage prices in 2012, this will cost roughly [^1]
 
@@ -105,7 +105,7 @@ In a database world, the dominant cost of an engineering project is infrastructu
 
 
 
-=== Notes ===
+== Notes ==
 __________________________________________________________________________
 
 [1] "Linear" means that increasing your cluster size by a factor of `S` increases the rate of progress by a factor of `S` and thus solves problems in `1/S` the amount of time. 

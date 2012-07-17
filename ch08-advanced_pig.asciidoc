@@ -1,6 +1,6 @@
-== Chapter 8: Advanced Pig ==
+= Chapter 8: Advanced Pig =
 
-=== Advanced Join Fu ===
+== Advanced Join Fu ==
 
 Pig has three special-purpose join strategies: the "map-side" (aka 'fragment replicate') join 
 
@@ -13,19 +13,19 @@ They're also a great illustration of three key scalability patterns.
 Once you have a clear picture of how these joins work,
 you can be confident you understand the map/reduce paradigm deeply.
 
-==== Map-side Join ====
+=== Map-side Join ===
 
 A map-side (aka 'fragment replicate') join
 
-===== How a map-side join works =====
+==== How a map-side join works ====
 
 (explanation) 
 
-===== Example: map-side join of wikipedia page metadata with wikipedia pageview stats =====
+==== Example: map-side join of wikipedia page metadata with wikipedia pageview stats ====
 
-==== Merge Join ====
+=== Merge Join ===
 
-===== How a merge join works =====
+==== How a merge join works ====
 
 (explanation) 
 
@@ -37,24 +37,24 @@ You will also see better performance if the data in the left table is partitione
 ____________________________________________________________________
 
 
-=== Example: merge join of user graph with page rank iteration ===
+== Example: merge join of user graph with page rank iteration ==
 
-==== Skew Join ====
+=== Skew Join ===
 
 (explanation of when needed)
 
-===== How a skew join works =====
+==== How a skew join works ====
 
 (explanation how)
 
-===== Example: ? counting triangles in wikipedia page graph ? OR ? Pageview counts ? =====
+==== Example: ? counting triangles in wikipedia page graph ? OR ? Pageview counts ? ====
 
 TBD 
 
-=== Efficiency and Scalability ===
+== Efficiency and Scalability ==
 
 
-==== Do's and Don'ts ====
+=== Do's and Don'ts ===
 
 The Pig Documentation has a comprehensive section on [Performance and Efficiency in Pig](http://pig.apache.org/docs/r0.9.2/perf.html). We won't try to improve on it, but here are some highlights:
 
@@ -67,7 +67,7 @@ The Pig Documentation has a comprehensive section on [Performance and Efficiency
   in a join, all the records rendezvous at the reducer
   if you reject nulls at the map side, you will reduce network load
 
-==== Join Optimizations ====
+=== Join Optimizations ===
 
 __________________________________________________________________________
 "Make sure the table with the largest number of tuples per key is the last table in your query. 
@@ -82,11 +82,11 @@ __________________________________________________________________________
 
 (come up with a clever mnemonic that doesn't involve sex, or get permission to use the mnemonic that does.)
 
-==== Magic Combiners ====
+=== Magic Combiners ===
 
 TBD
 
-==== Turn off Optimizations ====
+=== Turn off Optimizations ===
 
 After you've been using Pig for a while, you might enjoy learning about all those wonderful optimizations, but it's rarely necessary to think about them.
 
@@ -98,7 +98,7 @@ To turn off an optimization
 
       TODO: instructions
 
-==== Exercises ====
+=== Exercises ===
 
 1. Quoting Pig docs:
   > "You will also see better performance if the data in the left table is partitioned evenly across part files (no significant skew and each part file contains at least one full block of data)."
@@ -122,11 +122,11 @@ To turn off an optimization
 For each use weather data on weather stations.
 
 
-=== Pig and HBase ===
+== Pig and HBase ==
 
 TBD
 
-=== Pig and JSON ===
+== Pig and JSON ==
 
 TBD
 __________________________________________________________________________
