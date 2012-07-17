@@ -34,10 +34,10 @@ or:
 
 Be careful: hadoop has no rate limiting. It will quite happily obliterate any system you point it at, for whom there's no apparent difference between Hadoop and a concentrated Distributed Denial of Service attack.
 
-__________________________________________________________________________
+``````````````````````````````````````````````````````````````````````````
 
 ==== Benign DDOS ====
 
 Speaking of which... So you have an API. And you think it's working well, and in fact you think it's working really well. Want to simulate a 200x load spike? Replay a week's worth of request logs at your server, accelerated to all show up in an hour. Each mapper reads a section of the logs, and makes the corresponding request (setting its browser string and referer URL accordingly). It emits the response duration, HTTP status code, and content size. There are [dedicated tools to do this kind of HTTP benchmarking](https://github.com/wg/wrk), but they typically make the same request over and over. Replaying a real load at higher speed means that your caching strategy is properly exercised.
 
-__________________________________________________________________________
+``````````````````````````````````````````````````````````````````````````

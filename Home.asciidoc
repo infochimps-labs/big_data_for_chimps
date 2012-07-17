@@ -1,2 +1,3 @@
+== Big Data for Chimps ==
 
-See [the list of pages](https://github.com/mrflip/big_data_for_chimps/wiki/_pages) for a list of pages
+See https://github.com/mrflip/big_data_for_chimps/wiki/_pages[the list of pages].
