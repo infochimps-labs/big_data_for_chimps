@@ -8,6 +8,8 @@ include::ch02-simple_stream.asciidoc[]
 
 include::ch02-tao_te_chimp.asciidoc[]
 
+include::ch03-how_to_think.asciidoc[]
+
 include::ch03-why_hadoop.asciidoc[]
 
 include::ch05-data_modeling.asciidoc[]
