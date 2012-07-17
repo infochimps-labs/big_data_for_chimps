@@ -1,9 +1,9 @@
-= Chapter 6 or so: Best Practices and Pedantic Points of Style =
+== Chapter 6 or so: Best Practices and Pedantic Points of Style ==
 
 Here's a brain dump of things to do or not do
 
 
-=== File Organization ===
+==== File Organization ====
 
 * do not: try to have a uniform naming scheme for all files
 * do: have a controlled set of uniform naming scheme for all files
@@ -20,7 +20,7 @@ your filenames start encoding more and more metadata, with files storing simple 
 
 these are the features of a datastore
 
-=== Truth ===
+==== Truth ====
 
 * managing truth makes up a huge portion of the difficulties in designing systems at scale
 
@@ -28,13 +28,13 @@ these are the features of a datastore
 
 
 
-=== At scale ===
+==== At scale ====
 
 * identify SPOF -- there are more than you think
 * rate limit dangerous actions
 
 
-=== In general, things to never do ===
+==== In general, things to never do ====
 
 While I have your attention, please don't do any of these things
 

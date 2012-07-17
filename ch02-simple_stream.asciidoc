@@ -1,4 +1,4 @@
-= Chapter 2: The Stream =
+== Chapter 2: The Stream ==
 
 In the system outlined in the previous chapter, a set of workers map each incoming letter to the order forms for each requested toy.
 
@@ -6,7 +6,7 @@ The letters come in from all over the world, though, and so we need a first step
 
 Let's write a program that can translate documents into Pig Latin by the billions.
 
-== A Simple Streamer ==
+=== A Simple Streamer ===
 
 The usual rules for changing standard English into Pig Latin are as follows:
 
@@ -56,14 +56,14 @@ The last line should look like
 **sidebar**: As a politeness to people coming here from other languages, code snippets in these early chapters are much wordier than what a ruby native would construct. We'll ease into a more vernacular style as the programs become more complex.
 
 
-== About Streamers ==
+=== About Streamers ===
 
 
 TBD
 
-== Exercises ==
+=== Exercises ===
 
-=== Exercise 1.1: Three Stupid but Useful Scripts ===
+==== Exercise 1.1: Three Stupid but Useful Scripts ====
 
 Write the following scripts:
 
@@ -72,7 +72,7 @@ Write the following scripts:
 
 These are kinda stupid, but useful for testing -- see exercise 1.2 for example.
 
-=== Exercise 1.2: Running time ===
+==== Exercise 1.2: Running time ====
 
 It's important to build your intuition about what makes a program fast or slow. 
 
@@ -94,7 +94,7 @@ Next, run each script three times, mixing up the order. Write down
 
 Most people are surprised by the result.
 
-=== Exercise 1.3: Word count by Line ===
+==== Exercise 1.3: Word count by Line ====
 
 Create a script, `wc.rb`, that emit the length of each line, the count of bytes it occupies, and the number of words it contains. 
 

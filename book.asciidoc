@@ -6,8 +6,6 @@ include::ch01-chimps_and_elephants.asciidoc[]
 
 include::ch02-simple_stream.asciidoc[]
 
-include::ch02-tao_te_chimp.asciidoc[]
-
 include::ch03-why_hadoop.asciidoc[]
 
 include::ch05-data_modeling.asciidoc[]

@@ -1,4 +1,4 @@
-= Standard Datasets =
+== Standard Datasets ==
 
 We will use these datasets repeatedly:
 
@@ -11,10 +11,15 @@ We will use these datasets repeatedly:
 * (may need to add another dataset that is more clearly OLAP'y)
 * (Possibly also the  Airport-Airport flight graph)
 
-(-> download instructions)
-(-> Amazon public data sets)
+=== download instructions ===
 
-== Your cluster ==
+bigdata.chimpy.us
+
+=== Amazon public data sets ===
+
+aws instructions
+
+=== Your cluster ===
 
 Designed for a "write and debug it on your laptop, run it in the cloud"
 
@@ -26,19 +31,21 @@ a 5-machine cluster of `m1.large` machines - cost is ~ $2.00/hr.
 
 (-> Instructions for launching using ironfan)
 
-== Programs ==
+=== Programs ===
 
 
 Why not Hive? The appealing thing about Hive is that it feels a lot like SQL. The dismal thing about Hive is that it feels a lot like SQL. Similarly, the wonderful thing about Pig is that its operations more closely mirror the underlying map-reduce setup, making it easier to reason about the performance of your tasks; this however means more brain-bendy at the outset for a traditional DBA. Lastly, Hive organizes your data -- useful for a multi-analyst setup - but it's a pain when using a polyglot toolset. Ultimately, Hive is better for an Enterprise Data Warehouse experience, or if you're already a SQL expert. but all else equal, for exploratory analysis and Data science, you're better off with Pig.
 
 
-== Ruby & Wukong ==
+=== Ruby & Wukong ===
 
+xx
 
-== Pig ==
+=== Pig ===
 
+xx
 
-== Wukong ==
+=== Wukong ===
 
 Narrative Method Structure
 

@@ -1,4 +1,4 @@
-
+== Tao Te Chimp
 
 * Humans are important, robots are cheap
   - Optimize first, and typically only, for Joy

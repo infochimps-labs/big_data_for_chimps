@@ -1,4 +1,4 @@
-= Chapter 14: Processing Graphs =
+== Chapter 14: Processing Graphs ==
 
 Assumptions:
 
@@ -7,7 +7,7 @@ Assumptions:
 * Graph is sparse -- E/V^2 << 1 (the typical degree is smear less than V)
 * 
 
-== Notation ==
+=== Notation ===
  
 TODO: move this to early in book
 TODO: reconcile with pig notation
@@ -18,7 +18,7 @@ TODO: reconcile with pig notation
     <P1, P2 | S1, S2 | a, b> -- partitioned by P1 and P2, sorted by P1 then by P2 then by S1 then by S2. Objects with the same P1 may go to different reducers.
     {a, b, {(c})} -- bag field c
     
-=== Airline Passenger Flow Network ===
+==== Airline Passenger Flow Network ====
 
 http://www.infochimps.com/datasets/35-million-us-domestic-flights-from-1990-to-2009
 
@@ -41,7 +41,7 @@ Fields:
 __________________________________________________________________________
 
 
-=== Minimum Spanning Tree ===
+==== Minimum Spanning Tree ====
 
 
 Best practice: recapitulable
@@ -57,7 +57,7 @@ TODO: verify size estimates below.
 
 
 
-==== Union Find ====
+===== Union Find =====
 
 From http://en.wikipedia.org/wiki/Union-find --
 
@@ -91,17 +91,17 @@ The second improvement, called path compression, is a way of flattening the stru
 __________________________________________________________________________
 
 
-== Recommendations / biparte blah blah ==
+=== Recommendations / biparte blah blah ===
 
 Make note about smoothing votes to a prior (2 votes of 5 stars << 293 votes avg 4.78 stars). Can use a principled prior (see Imdb top 100) or just use an offset (eg 10 dummy votes at 65th %ile).
 
 Need to scale by underlying enthusiasm (all students are above average!)
 
-== k-means ==
+=== k-means ===
 
-== canopy clustering  ==
+=== canopy clustering  ===
 
-== Mahout  ==
+=== Mahout  ===
 
 Mahout has
 
@@ -127,7 +127,7 @@ Also:
 Simple regression
 Logistic regression
 
-== Full Mahout list: ==
+=== Full Mahout list: ===
 
 Algorithms
 This section contains links to information, examples, use cases, etc. for the various algorithms we intend to implement. Click the individual links to learn more. The initial algorithms descriptions have been copied here from the original project proposal. The algorithms are grouped by the application setting, they can be used for. In case of multiple applications, the version presented in the paper was chosen, versions as implemented in our project will be added as soon as we are working on them.
@@ -223,7 +223,7 @@ Examples:
 Traveling Salesman
 Class Discovery
 
-=== Recommenders / Collaborative Filtering ===
+==== Recommenders / Collaborative Filtering ====
 
 Mahout contains both simple non-distributed recommender implementations and distributed Hadoop-based recommenders.
 
@@ -232,14 +232,14 @@ Mahout contains both simple non-distributed recommender implementations and dist
 * Collaborative Filtering using a parallel matrix factorization (integrated)
 * First-timer FAQ
 
-=== Vector Similarity ===
+==== Vector Similarity ====
 
 Mahout contains implementations that allow one to compare one or more vectors with another set of vectors. This can be useful if one is, for instance, trying to calculate the pairwise similarity between all documents (or a subset of docs) in a corpus.
 
 * RowSimilarityJob – Builds an inverted index and then computes distances between items that have co-occurrences. This is a fully distributed calculation.
 * VectorDistanceJob – Does a map side join between a set of "seed" vectors and all of the input vectors.
 
-=== Other ===
+==== Other ====
 * Collocations
 
 

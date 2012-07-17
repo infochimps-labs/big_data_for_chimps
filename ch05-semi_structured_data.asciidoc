@@ -1,7 +1,10 @@
+== Semi-Structured Data ==
+
 
 === How to choose keys ===
 
-/best practices/
+=== best practices ===
+
 * Truth flows from the edge inward
 * Keep your data flows recapitulateable - This ensures confidence in provenance, is enormously helpful for debugging and validation, and is a sign you're thinking correctly
 * Data size is cheaper than you think. Compression is cheaper and much better than you'd think.
