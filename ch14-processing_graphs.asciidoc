@@ -22,8 +22,10 @@ TODO: reconcile with pig notation
 
 http://www.infochimps.com/datasets/35-million-us-domestic-flights-from-1990-to-2009
 
-> Over 3.5 million monthly domestic flight records from 1990 to 2009. Data are arranged as an adjacency list with metadata. Ready for immediate database import and analysis.
-> Fields:
+__________________________________________________________________________
+
+Over 3.5 million monthly domestic flight records from 1990 to 2009. Data are arranged as an adjacency list with metadata. Ready for immediate database import and analysis.
+Fields:
 
     Origin             	String	 Three letter airport code of the origin airport
     Destination       	String	 Three letter airport code of the destination airport
@@ -36,6 +38,7 @@ http://www.infochimps.com/datasets/35-million-us-domestic-flights-from-1990-to-2
     Fly Date        	Integer	 The date (yyyymm) of flight
     Origin Population	Integer	 Origin city’s population as reported by US Census
     Destination Population	Integer	 Destination city’s population as reported by US Census
+__________________________________________________________________________
 
 
 === Minimum Spanning Tree ===
@@ -58,33 +61,35 @@ TODO: verify size estimates below.
 
 From http://en.wikipedia.org/wiki/Union-find --
 
-> The first way, called union by rank, is to always attach the smaller tree to the root of the larger tree, rather than vice versa. Since it is the depth of the tree that affects the running time, the tree with smaller depth gets added under the root of the deeper tree, which only increases the depth if the depths were equal. In the context of this algorithm, the term rank is used instead of depth since it stops being equal to the depth if path compression (described below) is also used. One-element trees are defined to have a rank of zero, and whenever two trees of the same rank r are united, the rank of the result is r+1. Just applying this technique alone yields a worst-case running-time of  per MakeSet, Union, or Find operation. Pseudocode for the improved MakeSet and Union:
-> 
->      function MakeSet(x)
->          x.parent := x
->          x.rank   := 0
->      function Union(x, y)
->          xRoot := Find(x)
->          yRoot := Find(y)
->          if xRoot == yRoot
->              return
-> 
->          // x and y are not already in same set. Merge them.
->          if xRoot.rank < yRoot.rank
->              xRoot.parent := yRoot
->          else if xRoot.rank > yRoot.rank
->              yRoot.parent := xRoot
->          else
->              yRoot.parent := xRoot
->              xRoot.rank := xRoot.rank + 1
->              
-> The second improvement, called path compression, is a way of flattening the structure of the tree whenever Find is used on it. The idea is that each node visited on the way to a root node may as well be attached directly to the root node; they all share the same representative. To effect this, as Find recursively traverses up the tree, it changes each node's parent reference to point to the root that it found. The resulting tree is much flatter, speeding up future operations not only on these elements but on those referencing them, directly or indirectly. Here is the improved Find:
->   
->      function Find(x)
->          if x.parent != x
->             x.parent := Find(x.parent)
->          return x.parent
-> 
+__________________________________________________________________________
+The first way, called union by rank, is to always attach the smaller tree to the root of the larger tree, rather than vice versa. Since it is the depth of the tree that affects the running time, the tree with smaller depth gets added under the root of the deeper tree, which only increases the depth if the depths were equal. In the context of this algorithm, the term rank is used instead of depth since it stops being equal to the depth if path compression (described below) is also used. One-element trees are defined to have a rank of zero, and whenever two trees of the same rank r are united, the rank of the result is r+1. Just applying this technique alone yields a worst-case running-time of  per MakeSet, Union, or Find operation. Pseudocode for the improved MakeSet and Union:
+
+     function MakeSet(x)
+         x.parent := x
+         x.rank   := 0
+     function Union(x, y)
+         xRoot := Find(x)
+         yRoot := Find(y)
+         if xRoot == yRoot
+             return
+
+         // x and y are not already in same set. Merge them.
+         if xRoot.rank < yRoot.rank
+             xRoot.parent := yRoot
+         else if xRoot.rank > yRoot.rank
+             yRoot.parent := xRoot
+         else
+             yRoot.parent := xRoot
+             xRoot.rank := xRoot.rank + 1
+             
+The second improvement, called path compression, is a way of flattening the structure of the tree whenever Find is used on it. The idea is that each node visited on the way to a root node may as well be attached directly to the root node; they all share the same representative. To effect this, as Find recursively traverses up the tree, it changes each node's parent reference to point to the root that it found. The resulting tree is much flatter, speeding up future operations not only on these elements but on those referencing them, directly or indirectly. Here is the improved Find:
+  
+     function Find(x)
+         if x.parent != x
+            x.parent := Find(x.parent)
+         return x.parent
+__________________________________________________________________________
+
 
 == Recommendations / biparte blah blah ==
 

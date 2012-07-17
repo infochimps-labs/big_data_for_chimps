@@ -69,12 +69,14 @@ The Pig Documentation has a comprehensive section on [Performance and Efficiency
 
 === Join Optimizations ===
 
-> "Make sure the table with the largest number of tuples per key is the last table in your query. 
->  In some of our tests we saw 10x performance improvement as the result of this optimization.
->
->      small = load 'small_file' as (t, u, v);
->      large = load 'large_file' as (x, y, z);
->       C = join small by t, large by x;
+__________________________________________________________________________
+"Make sure the table with the largest number of tuples per key is the last table in your query. 
+ In some of our tests we saw 10x performance improvement as the result of this optimization.
+
+     small = load 'small_file' as (t, u, v);
+     large = load 'large_file' as (x, y, z);
+      C = join small by t, large by x;
+__________________________________________________________________________
 
 (explain why)
 
