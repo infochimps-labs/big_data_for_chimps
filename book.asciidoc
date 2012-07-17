@@ -13,13 +13,3 @@ include::ch03-why_hadoop.asciidoc[]
 include::ch05-data_modeling.asciidoc[]
 
 include::ch05-semi_structured_data.asciidoc[]
-
-include::ch06-tuning.asciidoc[]
-
-include::ch08-advanced_pig.asciidoc[]
-
-include::ch15-simple_machine_learning.asciidoc[]
-
-include::ch16-operations.asciidoc[]
-
-include::TODO.asciidoc[]

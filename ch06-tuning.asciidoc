@@ -1,3 +1,4 @@
+= Tuning
 
 There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747, and some of them interact surprisingly. Here's our approach to configuring and optimizing Hadoop.
 
