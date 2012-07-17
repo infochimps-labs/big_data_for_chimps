@@ -56,7 +56,7 @@ TBD
 
 ==== Do's and Don'ts ====
 
-The Pig Documentation has a comprehensive section on [Performance and Efficiency in Pig](http://pig.apache.org/docs/r0.9.2/perf.html). We won't try to improve on it, but here are some highlights:
+The Pig Documentation has a comprehensive section on http://pig.apache.org/docs/r0.9.2/perf.html[Performance and Efficiency in Pig]. We won't try to improve on it, but here are some highlights:
 
 * As early as possible, reduce the size of your data:
   - LIMIT
@@ -129,5 +129,5 @@ TBD
 === Pig and JSON ===
 
 TBD
-``````````````````````````````````````````````````````````````````````````
+''''
 

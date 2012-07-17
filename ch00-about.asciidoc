@@ -41,13 +41,13 @@ The book does have some content on machine learning with Hadoop, on provisioning
 
 == How this book is being written ==
 
-I plan to push chapters to the publicly-viewable ['Hadoop for Chimps' git repo](http://github.com/infochimps-labs/big_data_for_chimps) as they are written, and to post them periodically to the [the Infochimps blog](http://blog.infochimps.com) after minor cleanup.
+I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[the Infochimps blog] after minor cleanup.
 
-We really mean it about the github thing -- please [comment](https://github.com/blog/622-inline-commit-notes) on the text, [file issues](http://github.com/infochimps-labs/big_data_for_chimps/issues) and send pull requests. 
+We really mean it about the github thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. 
 
 However! We might not use your feedback, no matter how dazzlingly cogent it is. Also, we are soliciting comments from readers -- but we are not seeking out content from collaborators. Do not run off and craft a dazzlingly lucid explanation of some topic, far excelling whatever hackish tripe I would have coughed out, and then expect us to include it[^1]. I have strong opinions about what the book should cover and a fixed budget of pages; and while I am trying my hand at author, I have no interest in being an editor. Don't prepare original content unless you get in touch first.
 
-``````````````````````````````````````````````````````````````````````````
+```
 
 [^1] Do craft dazzlingly lucid explanations, though! Always! And tell us about it -- we won't use it for the book, but we'd probably enjoy linking to it.
 

@@ -49,7 +49,7 @@ Each type of toy request -- robot, hat, coal, etc -- is handled by a different s
 
 A line of pygmy elephants stands near each letter-reading station, one for each of the toymaking elves' workstations, and on the back of each elephant is a vertical file like you see on a very organized person's desk, with a slot for each type of toy:
 
-![paper sorter](images/paper_sorter.jpeg)
+!images/paper_sorter.jpeg[paper sorter]
 
 Each toy wish is placed in the slot for that kind of toy. As the chimp is done with each mailbag, the elephants all trundle off to bring the elves a fresh batch of wishes, and a new line of elephants take their place.
 

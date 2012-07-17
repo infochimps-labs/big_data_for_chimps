@@ -69,7 +69,7 @@ One of the great things
 placeholder
 
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''''
 
 [^1] Doesn't have to be Pig -- Hive, Cascading, and Crunch and other high-level frameworks abstract out the boring stuff while still making it easy to write custom components.
 

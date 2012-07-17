@@ -1,4 +1,4 @@
-= Tuning
+== Tuning
 
 There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747, and some of them interact surprisingly. Here's our approach to configuring and optimizing Hadoop.
 
@@ -46,9 +46,9 @@ _note: I may go with min/TB, to have them be directly comparable. Throughput is 
 
 ==== Mesuring your system: imaginary limits ====
 
-* [Bonnie](http://www.textuality.com/bonnie/advice.html) for disk 
-* [Bonnie++](http://www.coker.com.au/bonnie++/)  for disk 
-* [Phoronix](http://www.phoronix-test-suite.com/?k=downloads) for a broad-based test
+* http://www.textuality.com/bonnie/advice.html[Bonnie] for disk 
+* http://www.coker.com.au/bonnie++/[Bonnie++]  for disk 
+* http://www.phoronix-test-suite.com/?k=downloads[Phoronix] for a broad-based test
 
 ==== Measuring your system: practical limits ====
 

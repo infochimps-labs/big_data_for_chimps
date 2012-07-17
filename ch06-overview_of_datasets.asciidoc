@@ -31,7 +31,7 @@
 
 * IP to Geo
 
-* [Google Books Ngrams](http://aws.amazon.com/datasets/8172056142375670)
+* http://aws.amazon.com/datasets/8172056142375670[Google Books Ngrams]
   - 2_000 GB 
   - graph, linguistics 
 
@@ -39,7 +39,7 @@
   - 60_000 GB 
   - text
 
-* [Apache Software Foundation Public Mail Archives](http://aws.amazon.com/datasets/7791434387204566)
+* http://aws.amazon.com/datasets/7791434387204566[Apache Software Foundation Public Mail Archives]
   - 200 GB
   - corpus 
   - A collection of all publicly available mail archives from the Apache55 Software Foundation (ASF)
@@ -69,12 +69,12 @@
 
 ==== Patents ====
 
-* [Google Patent Collection](http://www.google.com/googlebooks/uspto-patents.html)
+* http://www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
 
 
 ==== Other ====
 
-* [Book Crossing](http://www.informatik.uni-freiburg.de/~cziegler/BX/) Collected by Cai-Nicolas Ziegler in a 4-week crawl (August / September 2004) from the Book-Crossing community with kind permission from Ron Hornbaker, CTO of Humankind Systems. Contains 278,858 users (anonymized but with demographic information) providing 1,149,780 ratings (explicit / implicit) about 271,379 books. Freely available for research use when acknowledged with the following reference (further details on the dataset are given in this publication): Improving Recommendation Lists Through Topic Diversification, Cai-Nicolas Ziegler, Sean M. McNee, Joseph A. Konstan, Georg Lausen; Proceedings of the 14th International World Wide Web Conference (WWW '05), May 10-14, 2005, Chiba, Japan. To appear. As a courtesy, if you use the data, I would appreciate knowing your name, what research group you are in, and the publications that may result.	
+* http://www.informatik.uni-freiburg.de/~cziegler/BX/[Book Crossing] Collected by Cai-Nicolas Ziegler in a 4-week crawl (August / September 2004) from the Book-Crossing community with kind permission from Ron Hornbaker, CTO of Humankind Systems. Contains 278,858 users (anonymized but with demographic information) providing 1,149,780 ratings (explicit / implicit) about 271,379 books. Freely available for research use when acknowledged with the following reference (further details on the dataset are given in this publication): Improving Recommendation Lists Through Topic Diversification, Cai-Nicolas Ziegler, Sean M. McNee, Joseph A. Konstan, Georg Lausen; Proceedings of the 14th International World Wide Web Conference (WWW '05), May 10-14, 2005, Chiba, Japan. To appear. As a courtesy, if you use the data, I would appreciate knowing your name, what research group you are in, and the publications that may result.	
 
 
 Format
@@ -89,10 +89,10 @@ Books are identified by their respective ISBN. Invalid ISBNs have already been r
 BX-Book-Ratings
 Contains the book rating information. Ratings (`Book-Rating`) are either explicit, expressed on a scale from 1-10 (higher values denoting higher appreciation), or implicit, expressed by 0.
 
-* [Westbury Usenet Archive](http://www.psych.ualberta.ca/~westburylab/downloads/usenetcorpus.download.html) -- USENET corpus (2005-2010) [BETA VERSION] This corpus is a collection of public USENET postings. This corpus was collected between Oct 2005 and Jan 2011, and covers 47860 English language, non-binary-file news groups. Despite our best effots, this corpus includes a very small number of non-English words, non-words, and spelling errors. The corpus is untagged, raw text. It may be neccessary to process the corpus further to put the corpus in a format that suits your needs.
+* http://www.psych.ualberta.ca/~westburylab/downloads/usenetcorpus.download.html[Westbury Usenet Archive] -- USENET corpus (2005-2010) http://labrosa.ee.columbia.edu/millionsong/[BETA VERSION] This corpus is a collection of public USENET postings. This corpus was collected between Oct 2005 and Jan 2011, and covers 47860 English language, non-binary-file news groups. Despite our best effots, this corpus includes a very small number of non-English words, non-words, and spelling errors. The corpus is untagged, raw text. It may be neccessary to process the corpus further to put the corpus in a format that suits your needs.
 
 
-* [Million Song Dataset](http://labrosa.ee.columbia.edu/millionsong/) -- The Million Song Dataset is a freely-available collection of audio features and metadata for a million contemporary popular music tracks.
+* [Million Song Dataset] -- The Million Song Dataset is a freely-available collection of audio features and metadata for a million contemporary popular music tracks.
 
 Its purposes are:
 
@@ -111,7 +111,7 @@ Taste Profile subset -> user data
 
 ==== Google / Stanford Crosswiki  ====
 
-[wikipedia_words](http://www-nlp.stanford.edu/pubs/crosswikis-data.tar.bz2/)
+http://www-nlp.stanford.edu/pubs/crosswikis-data.tar.bz2/[wikipedia_words]
 
 
 This data set accompanies
@@ -143,7 +143,7 @@ translate into millions of exceptions, over billions of datums.
 
 ==== Reference Energy Disaggregation Dataset (REDD) ====
 
-[Reference Energy Disaggregation Data Set](http://redd.csail.mit.edu/)
+http://redd.csail.mit.edu/[Reference Energy Disaggregation Data Set]
 
 Initial REDD Release, Version 1.0
 
@@ -155,9 +155,9 @@ Those wishing to use the dataset in academic work should cite this paper as the 
 
 ==== Access Logs from the Internet Traffic Archive ====
 
-[Internet Traffic Archive](http://ita.ee.lbl.gov/html/traces.html)
+http://ita.ee.lbl.gov/html/traces.html[Internet Traffic Archive]
 
-* [star wars kid access logs](http://waxy.org/2008/05/star_wars_kid_the_data_dump/) from waxy.org
+* http://waxy.org/2008/05/star_wars_kid_the_data_dump/[star wars kid access logs] from waxy.org
 
 
 ==== Metaindexes ====
@@ -169,23 +169,23 @@ http://thedatahub.org/
 ==== Not using ====
 
 
-* [Crunchbase](http://crunchbase.com)
-* [World Bank](http://data.worldbank.org)
+* http://crunchbase.com[Crunchbase]
+* http://data.worldbank.org[World Bank]
 
-* [US Legislative CoSponsorship](http://jhfowler.ucsd.edu/cosponsorship.htm)
-* [VoteView](http://voteview.org/downloads.asp) DW-NOMINATE Rank Orderings all Houses and Senates
+* http://jhfowler.ucsd.edu/cosponsorship.htm[US Legislative CoSponsorship]
+* http://voteview.org/downloads.asp[VoteView] DW-NOMINATE Rank Orderings all Houses and Senates
 
-* [Record of American Democracy](http://road.hmdc.harvard.edu/pages/road-documentation) -- The Record Of American Democracy (ROAD) data includes election returns, socioeconomic summaries, and demographic measures of the American public at unusually low levels of geographic aggregation. The NSF-supported ROAD project covers every state in the country from 1984 through 1990 (including some off-year elections). One collection of data sets includes every election at and above State House, along with party registration and other variables, in each state for the roughly 170,000 precincts nationwide (about 60 times the number of counties). Another collection has added to these (roughly 30-40) political variables an additional 3,725 variables merged from the 1990 U.S. Census for 47,327 aggregate units (about 15 times the number of counties) about the size one or more cities or towns. These units completely tile the U.S. landmass. The collection also includes geographic boundary files so users can easily draw maps with these data.
+* http://road.hmdc.harvard.edu/pages/road-documentation[Record of American Democracy] -- The Record Of American Democracy (ROAD) data includes election returns, socioeconomic summaries, and demographic measures of the American public at unusually low levels of geographic aggregation. The NSF-supported ROAD project covers every state in the country from 1984 through 1990 (including some off-year elections). One collection of data sets includes every election at and above State House, along with party registration and other variables, in each state for the roughly 170,000 precincts nationwide (about 60 times the number of counties). Another collection has added to these (roughly 30-40) political variables an additional 3,725 variables merged from the 1990 U.S. Census for 47,327 aggregate units (about 15 times the number of counties) about the size one or more cities or towns. These units completely tile the U.S. landmass. The collection also includes geographic boundary files so users can easily draw maps with these data.
 
 
 
-* [Human Mortality DB](http://www.mortality.org/) The Human Mortality Database (HMD) was created to provide detailed mortality and population data to researchers, students, journalists, policy analysts, and others interested in the history of human longevity. The project began as an outgrowth of earlier projects in the Department of Demography at the University of California, Berkeley, USA, and at the Max Planck Institute for Demographic Research in Rostock, Germany (see history). It is the work of two teams of researchers in the USA and Germany (see research teams), with the help of financial backers and scientific collaborators from around the world (see acknowledgements).
+* http://www.mortality.org/[Human Mortality DB] The Human Mortality Database (HMD) was created to provide detailed mortality and population data to researchers, students, journalists, policy analysts, and others interested in the history of human longevity. The project began as an outgrowth of earlier projects in the Department of Demography at the University of California, Berkeley, USA, and at the Max Planck Institute for Demographic Research in Rostock, Germany (see history). It is the work of two teams of researchers in the USA and Germany (see research teams), with the help of financial backers and scientific collaborators from around the world (see acknowledgements).
 
-* [FCC Antenna locations](http://transition.fcc.gov/mb/databases/cdbs/)
+* http://transition.fcc.gov/mb/databases/cdbs/[FCC Antenna locations]
 
-* [Pew Research Datasets](http://pewinternet.org/Static-Pages/Data-Tools/Download-Data/Data-Sets.aspx)
+* http://pewinternet.org/Static-Pages/Data-Tools/Download-Data/Data-Sets.aspx[Pew Research Datasets]
 
-* [Facebook 100](http://masonporter.blogspot.com/2011/02/facebook100-data-set.html) -- http://archive.org/details/oxford-2005-facebook-matrix
+* http://masonporter.blogspot.com/2011/02/facebook100-data-set.html[Facebook 100] -- http://archive.org/details/oxford-2005-facebook-matrix
 
-* [Youtube Related Videos](http://netsg.cs.sfu.ca/youtubedata/)
+* http://netsg.cs.sfu.ca/youtubedata/[Youtube Related Videos]
 

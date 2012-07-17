@@ -244,12 +244,12 @@ If you're reading from S3, dial up the min split size as large as 1-2 GB (but no
 
         hadoop_performance_settings.each{|k,v| default[:hadoop][k] = v }
 
-_______________________
+''''''''''''''''''''''''
 
 === JVM Tuning ===
 
 Abandon Hope All Ye who Enter Here
- From [InfoQ: Attila Szegedi on JVM and GC Performance Tuning at Twitter]( http://www.infoq.com/interviews/szegedi-performance-tuning)
+ From  http://www.infoq.com/interviews/szegedi-performance-tuning[InfoQ: Attila Szegedi on JVM and GC Performance Tuning at Twitter]
 
 __________________________________________________________________________
 So when go and deal with a performance problem with some team within Twitter, are you looking at the code first or do you tend to look at the way the garbage collector’s configured or where do you start?
