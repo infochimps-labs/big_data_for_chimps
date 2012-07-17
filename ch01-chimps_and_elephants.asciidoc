@@ -1,4 +1,4 @@
-= Chapter 1: Chimpanzee and Elephant Save Christmas =
+== Chapter 1: Chimpanzee and Elephant Save Christmas ==
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just couldn't keep up with the scale of requests.
 
@@ -8,7 +8,7 @@ But they knew their friends at the Chimpanzee & Elephant Computing Company could
 
 The chimps came in, and singing a rather bawdy version of the Map-Reduce Haiku, built the following system:
 
-=== Letters => Toy Requests ===
+==== Letters => Toy Requests ====
 
 
 In stage one, a chimpanzee reads each letter and fills out a work form for each requested toy. Some examples:
@@ -43,7 +43,7 @@ In stage one, a chimpanzee reads each letter and fills out a work form for each 
         ---------------------------------------
 
 
-=== Order Delivery ===
+==== Order Delivery ====
 
 Each type of toy request -- robot, hat, coal, etc -- is handled by a different set of elves.
 
@@ -53,7 +53,7 @@ A line of pygmy elephants stands near each letter-reading station, one for each 
 
 Each toy wish is placed in the slot for that kind of toy. As the chimp is done with each mailbag, the elephants all trundle off to bring the elves a fresh batch of wishes, and a new line of elephants take their place.
 
-=== Toy Assembly ===
+==== Toy Assembly ====
 
 Lastly, the toy wishes come to dedicated workstations:
 
@@ -63,7 +63,7 @@ Lastly, the toy wishes come to dedicated workstations:
 
 All wishes for a kind of toy go to the same workstation -- the station that sees wishes for Ponies sees every Pony wish. A station might handle several types of toys in a factory run, but it always sees them in a continuous batch. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for gift-wrapping Quidditch Brooms.
 
-=== Why it's efficient ===
+==== Why it's efficient ====
 
 Now it is still true that each elf workstation has incoming mail from every letter-reader. A constant stream of elephants are constantly dropping off order batches, some light, some heavy, even occasionally a shrug and an empty load. But the delivery isn't harum-scarum all-at-once, it's orderly and purposeful. If one workstation is slow, the elephants wait patiently -- it doesn't slow down the entire operation. And most importantly, all the work of organizing the work requests happens in parallel with reading the letters. It's pretty impressive.
 

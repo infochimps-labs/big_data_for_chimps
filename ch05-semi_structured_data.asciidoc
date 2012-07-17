@@ -1,5 +1,5 @@
 
-=== How to choose keys ===
+==== How to choose keys ====
 
 /best practices/
 * Truth flows from the edge inward

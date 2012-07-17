@@ -1,7 +1,7 @@
-= Chapter 5: Rules of Scaling =
+== Chapter 5: Rules of Scaling ==
 
 
-=== The rules of scaling ===
+==== The rules of scaling ====
 
 * Storage (Disk)                             is free, and infinite in size 
 * Processing (CPU)                           is free, except when it isn't
@@ -20,7 +20,7 @@ Most importantly,
 
 * Humans are important, robots are cheap.
  
-=== Optimize first, and typically only, for Joy ===
+==== Optimize first, and typically only, for Joy ====
 
 The most important rule for writing scalable code is
 
@@ -50,7 +50,7 @@ Corrolaries:
 
     Automate out of boredom or terror, never efficiency
 
-=== Humans are important, robots are cheap. ===
+==== Humans are important, robots are cheap. ====
 
 To store 10 Billion records with an average size of 1 kB -- that's 10 TB -- it costs
 
@@ -88,7 +88,7 @@ Takeaways:
 * Use elastic clusters for your data science team
 
 
-=== Steps ===
+==== Steps ====
 
     (read and label the data)
     (send the data across the network)
@@ -96,7 +96,7 @@ Takeaways:
     (process the data in each batch and output it)
 
 
-== How to size your cluster ==
+=== How to size your cluster ===
 
 * If you are IO-bound, use the cheapest machines available, as many of them as you care to get
 * If you are CPU-bound, use the fastest machines available, as many of them as you care to get

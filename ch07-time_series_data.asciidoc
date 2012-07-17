@@ -1,10 +1,10 @@
-= Chapter 7: Time Series =
+== Chapter 7: Time Series ==
 
 
-== anomaly detection ==
+=== anomaly detection ===
 
 
-== predictive models ==
+=== predictive models ===
 
 
-== sessionizing ==
+=== sessionizing ===
