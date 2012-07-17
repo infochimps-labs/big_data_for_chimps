@@ -12,23 +12,23 @@ include::ch03-how_to_think.asciidoc[]
 
 include::ch03-why_hadoop.asciidoc[]
 
+// include::ch04-toolset.asciidoc[]
+
 include::ch05-data_modeling.asciidoc[]
 
-include::ch04-toolset.asciidoc[]
-
-include::ch06-overview_of_datasets.asciidoc[]
-
-include::ch05-rules_of_scaling.asciidoc[]
+// include::ch05-rules_of_scaling.asciidoc[]
 
 include::ch05-semi_structured_data.asciidoc[]
 
-include::ch05-data_formats.asciidoc[]
+// include::ch05-data_formats.asciidoc[]
 
-include::ch06-herding_cats.asciidoc[]
+// include::ch06-overview_of_datasets.asciidoc[]
+
+// include::ch06-herding_cats.asciidoc[]
 
 include::ch06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
-include::ch17-tuning.asciidoc[]
+// include::ch17-tuning.asciidoc[]
 
 include::ch06-tuning.asciidoc[]
 
@@ -38,20 +38,20 @@ include::ch07-time_series_data.asciidoc[]
 
 include::ch08-advanced_pig.asciidoc[]
 
-include::ch11-processing_text.asciidoc[]
+// include::ch11-processing_text.asciidoc[]
 
-include::ch12-geographic_data.asciidoc[]
+// include::ch12-geographic_data.asciidoc[]
 
-include::ch14-processing_graphs.asciidoc[]
+// include::ch14-processing_graphs.asciidoc[]
 
 include::ch15-simple_machine_learning.asciidoc[]
 
 include::ch16-operations.asciidoc[]
 
-include::ch18-hbase_and_databases.asciidoc[]
+// include::ch18-hbase_and_databases.asciidoc[]
 
-include::ch19-pig_udfs.asciidoc[]
+// include::ch19-pig_udfs.asciidoc[]
 
-include::ch20-flume_and_stream_processing.asciidoc[]
+// include::ch20-flume_and_stream_processing.asciidoc[]
 
 include::TODO.asciidoc[]
