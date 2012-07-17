@@ -9,7 +9,7 @@ Log counts and combinators (see blekko posts)
 
 
 
-==== Median ====
+=== Median ===
 
 Naïve: 
 * do a total sort.
@@ -19,7 +19,7 @@ Compare :
 Count bins (histogram)
 For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possible values?
 
-===== Approximate methods =====
+==== Approximate methods ====
 
 We can also just approximate. 
 

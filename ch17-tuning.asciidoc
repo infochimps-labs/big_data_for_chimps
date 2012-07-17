@@ -10,7 +10,7 @@
   - mapred.reduce.parallel.copies
 
 
-==== Tuning the Cluster to the Job ====
+=== Tuning the Cluster to the Job ===
 
 Our usual work pattern is
 
@@ -18,7 +18,7 @@ Our usual work pattern is
   - for a wukong job, you don't even need hadoop; use `cat` and pipes.
 * Profile its run time on a small cluster
 
-==== Conclusions ====
+=== Conclusions ===
 
 For data that will be read much more often than it's written, 
 
@@ -29,12 +29,11 @@ For data that will be read much more often than it's written,
 
 Tuning and coupling constants the example GC says look at what it constraints is and look at the natural time scale of the system for instance you can turn on data into time using throughput so to think about the palm case of the reducer there's trade-off between Emery just fine bio for network
 
-==== Happy Mappers ====
+=== Happy Mappers ===
 
-===== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**. =====
-===== A Really Happy Mapper has no Reducer =====
+==== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**. =====
 
-##### Well-fed
+==== A Happy Mapper is Well-fed
 
 The amount of data each mapper sees is governed by
 
@@ -44,7 +43,7 @@ The amount of data each mapper sees is governed by
 
 * Map tasks should take longer to run than to start. If mappers finish in less than a minute or two, and you have control over how the input data is allocated, try to feed each more data. In general, 128MB is sufficient; we set our HDFS block size to that value.
 
-==== finishes with its friends ====
+==== A Happy Mapper finishes with its friends ====
 
 Assuming well-fed mappers, you would like every mapper to finish at roughly the same time. The reduce cannot start until all mappers have finished. Why would different mappers take different amounts of time?
 
@@ -52,7 +51,7 @@ Assuming well-fed mappers, you would like every mapper to finish at roughly the 
 * large variation in load -- for example, if the distribution of reducers is uneven, the machines with multiple reducers will run more slowly in general
 * on a large cluster, long-running map tasks will expose which machines are slowest.
 
-==== Busy ====
+==== A Happy Mapper is Busy ====
 
 Assuming mappers are well fed and prompt, you would like to have nearly every mapper running a job.
 
@@ -63,6 +62,8 @@ Assuming mappers are well fed and prompt, you would like to have nearly every ma
 Pig can use the combine splits setting to make this intelligently faster. Watch out for weirdness with newer versions of pig and older versions of HBase.
 
 If you're reading from S3, dial up the min split size as large as 1-2 GB (but not 
+
+==== A Happy Mapper has no Reducer =====
 
 
 ==== Match the reducer heap size to the data it processes ====

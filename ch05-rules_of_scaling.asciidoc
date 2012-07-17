@@ -1,7 +1,7 @@
 == Chapter 5: Rules of Scaling ==
 
 
-==== The rules of scaling ====
+=== The rules of scaling ===
 
 * Storage (Disk)                             is free, and infinite in size 
 * Processing (CPU)                           is free, except when it isn't
@@ -20,7 +20,7 @@ Most importantly,
 
 * Humans are important, robots are cheap.
  
-==== Optimize first, and typically only, for Joy ====
+=== Optimize first, and typically only, for Joy ===
 
 The most important rule for writing scalable code is
 
@@ -50,7 +50,7 @@ Corrolaries:
 
     Automate out of boredom or terror, never efficiency
 
-==== Humans are important, robots are cheap. ====
+=== Humans are important, robots are cheap. ===
 
 To store 10 Billion records with an average size of 1 kB -- that's 10 TB -- it costs
 
@@ -122,7 +122,7 @@ Compare throughput of:
 * random writes 
 * streaming writes
 
-##### Transfer
+==== Transfer ====
 
 cp                | A.1     => A.1
 cp                | A.1     => A.2
@@ -139,7 +139,7 @@ db read/write     | hbase-T => hbase-U
 
 db write          | hdfs-X  => hbase-T
 
-##### Map-only
+==== Map-only ====
 
 null              | s3      => hdfs
 null              | hdfs    => s3
@@ -157,7 +157,7 @@ pig_latin         | s3      => hdfs
 pig_latin         | hdfs    => s3
 pig_latin         | s3      => s3
 
-##### Reduce
+=== Reduce ===
 
 partitioned sort  | hdfs    => hdfs
 partitioned sort  | s3      => hdfs
@@ -166,18 +166,18 @@ partitioned sort  | s3      => s3
 
 total sort        | hdfs    => hdfs
 
-##### Big Midflight Output
+=== Big Midflight Output ===
 
 
-##### Many Midflight Records
+=== Many Midflight Records ===
 
 adjacency list 
 
-##### Big Reduce Output
+=== Big Reduce Output ===
 
 cross | hdfs => hdfs
 
-##### High CPU
+=== High CPU ===
 
 bcrypt line       | hdfs => hdfs
 

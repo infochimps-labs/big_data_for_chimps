@@ -76,9 +76,9 @@ Statistical Distributions, a field spotters guide
 In writing, they say there's only about twenty plots. Here are all the interesting stories you can tell with a cast of billions:
 
 1. Most things are at a certain value; various unrelated things perturb it in one direction or the other. (normal distribution)
-1. A winner-take-all process, where popularity attracts popularity; a graph process, where the chances of having a link grow as the number of links; (TODO: what is the other ranking mechanism) -- long-tail distribution.
-1. A process is repeated, and the chance that it happens each time is the same (binomial)
-1. two of the above at the same time: bimodal (norm/norm); weibull (norm/geom); dirichlet (binomial + long tail)
+2. A winner-take-all process, where popularity attracts popularity; a graph process, where the chances of having a link grow as the number of links; (TODO: what is the other ranking mechanism) -- long-tail distribution.
+3. A process is repeated, and the chance that it happens each time is the same (binomial)
+4. two of the above at the same time: bimodal (norm/norm); weibull (norm/geom); dirichlet (binomial + long tail)
 
 For example, let's pull some statistics from our reference datasets:
 

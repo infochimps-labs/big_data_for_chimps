@@ -149,7 +149,7 @@ Initial REDD Release, Version 1.0
 
 This is the home page for the REDD data set. Below you can download an initial version of the data set, containing several weeks of power data for 6 different homes, and high-frequency current/voltage data for the main power supply of two of these homes. The data itself and the hardware used to collect it are described more thoroughly in the Readme below and in the paper:
 
-J. Zico Kolter and Matthew J. Johnson. REDD: A public data set for energy disaggregation research. In proceedings of the SustKDD workshop on Data Mining Applications in Sustainability, 2011. [pdf]
+\J. Zico Kolter and Matthew J. Johnson. REDD: A public data set for energy disaggregation research. In proceedings of the SustKDD workshop on Data Mining Applications in Sustainability, 2011. [pdf]
 
 Those wishing to use the dataset in academic work should cite this paper as the reference. Although the data set is freely available, for the time being we still ask those interested in the downloading the data to email us (kolter@csail.mit.edu) to receive the username/password to download the data. See the readme.txt file for a full description of the different downloads and their formats
 
