@@ -10,8 +10,6 @@ include::ch02-tao_te_chimp.asciidoc[]
 
 include::ch03-why_hadoop.asciidoc[]
 
-include::ch03-how to think.asciidoc[]
-
 include::ch05-data_modeling.asciidoc[]
 
 include::ch04-toolset.asciidoc[]
