@@ -12,7 +12,7 @@ When you're thinking about a Hadoop job, you want to be fluidly shifting among t
 Now of course there's no difference among these things -- they're all conceptual layers atop the fundamental Map/Reduce Haiku. Pig very naturally expresses the set operations and to some extent the rendezvous mode. Wukong or any other direct M/R layer will be most expressive with message passing and rendezvous. For graph operations, Google's [[Pregel]] project is a beautiful computing paradigm; unfortunately there's not yet a mature clone in the wild. We'll see how to instead map graph exchanges to pig and map/reduce operations.
 
 
-## Locality Rendezvous (co-group)
+== Locality Rendezvous (co-group) ==
 
 I urge you to think about this intermediate stage as a /group/, not a sort. Yes, it's true that's the way the grouping is *implemented* uses a partitioned sort; that's a happy accident (and has the important side-effect of leaving each group sorted as well). But very few problems present themselves in terms of a sorted list. Instead, the fundamental challenge of massive-scale distributed computing is locality, and a lot of problems present themselves in that sense.
 
@@ -62,7 +62,7 @@ Describe how to implement these set operations atop basic map/reduce:
 * 
 
 
-## Histogram
+== Histogram ==
 
 A histogram shows you the distribution of values 
 

@@ -62,17 +62,17 @@
 
 * 2008 TIGER/Line Shapefiles -- 125 GB -- geo -- This data set is a complete set of Census 2000 and Current shapefiles for American states, counties, subdivisions, districts, places, and areas. The data is available as shapefiles suitable for use in GIS, along with their associated metadata. The official source of this data is the US Census Bureau, Geography Division.
 
-### Amazon Co-Purchasing Data
+=== Amazon Co-Purchasing Data ===
 
 * http://snap.stanford.edu/data/amazon0312.html
 
 
-### Patents
+=== Patents ===
 
 * [Google Patent Collection](http://www.google.com/googlebooks/uspto-patents.html)
 
 
-### Other
+=== Other ===
 
 * [Book Crossing](http://www.informatik.uni-freiburg.de/~cziegler/BX/) Collected by Cai-Nicolas Ziegler in a 4-week crawl (August / September 2004) from the Book-Crossing community with kind permission from Ron Hornbaker, CTO of Humankind Systems. Contains 278,858 users (anonymized but with demographic information) providing 1,149,780 ratings (explicit / implicit) about 271,379 books. Freely available for research use when acknowledged with the following reference (further details on the dataset are given in this publication): Improving Recommendation Lists Through Topic Diversification, Cai-Nicolas Ziegler, Sean M. McNee, Joseph A. Konstan, Georg Lausen; Proceedings of the 14th International World Wide Web Conference (WWW '05), May 10-14, 2005, Chiba, Japan. To appear. As a courtesy, if you use the data, I would appreciate knowing your name, what research group you are in, and the publications that may result.	
 
@@ -109,7 +109,7 @@ musiXmatch dataset -> lyrics
 Last.fm dataset -> song-level tags and similarity
 Taste Profile subset -> user data
 
-### Google / Stanford Crosswiki 
+=== Google / Stanford Crosswiki  ===
 
 [wikipedia_words](http://www-nlp.stanford.edu/pubs/crosswikis-data.tar.bz2/)
 
@@ -141,7 +141,7 @@ fault-tolerant code...  keep in mind that even tiny error rates
 translate into millions of exceptions, over billions of datums.
 
 
-### Reference Energy Disaggregation Dataset (REDD)
+=== Reference Energy Disaggregation Dataset (REDD) ===
 
 [Reference Energy Disaggregation Data Set](http://redd.csail.mit.edu/)
 
@@ -153,20 +153,20 @@ J. Zico Kolter and Matthew J. Johnson. REDD: A public data set for energy disagg
 
 Those wishing to use the dataset in academic work should cite this paper as the reference. Although the data set is freely available, for the time being we still ask those interested in the downloading the data to email us (kolter@csail.mit.edu) to receive the username/password to download the data. See the readme.txt file for a full description of the different downloads and their formats
 
-### Access Logs from the Internet Traffic Archive
+=== Access Logs from the Internet Traffic Archive ===
 
 [Internet Traffic Archive](http://ita.ee.lbl.gov/html/traces.html)
 
 * [star wars kid access logs](http://waxy.org/2008/05/star_wars_kid_the_data_dump/) from waxy.org
 
 
-### Metaindexes
+=== Metaindexes ===
 
 
 http://www.kdnuggets.com/datasets/
 http://thedatahub.org/
 
-### Not using
+=== Not using ===
 
 
 * [Crunchbase](http://crunchbase.com)

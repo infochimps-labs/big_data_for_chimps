@@ -1,4 +1,4 @@
-# Chapter 5: Data Formats and Schemata
+= Chapter 5: Data Formats and Schemata =
 
 All of the following examples could be ambiguously referred to as "encoding":
 
@@ -13,7 +13,7 @@ All of the following examples could be ambiguously referred to as "encoding":
 
 there's only three data serialization formats you should use: TSV, JSON, or Avro. 
 
-### TSV
+=== TSV ===
 
 For data exploration, wherever reasonable use tab-separated values (TSV). Emit one record per line, ASCII-only, with no quoting, and html enttity escaping where necessary. The advantage of TSV:
 
@@ -57,7 +57,7 @@ Don't use it when
 * Bulk documents
 * 
 
-## JSON
+== JSON ==
 
 Individual JSON records stored one-per-line are your best bet for denormalized objects,
 
@@ -72,7 +72,7 @@ and for schema-free records:
     {"_ts":"","":"","data":{"_type":"ev.hadoop_job",...}}
     {"_ts":"","":"","data":{"_type":"ev.web_form",...}}
 
-## structured to model.
+== structured to model. ==
 
 TODO: receive should take an owner field 
 
@@ -111,15 +111,15 @@ This is a very rubyist way of thinking other languages pleass chime in.
 
 aa
 
-### tagged net strings and null-delimited documents 
+=== tagged net strings and null-delimited documents  ===
 
 Not restartable.
 
 Can't represent a document with a null
 
-## Crap Formats
+== Crap Formats ==
 
-### XML
+=== XML ===
 
  Once you've recapitulated the original raw data structure, 
 
@@ -129,14 +129,14 @@ Attributes, CDATA, model boundaries, document text
 
 If you do it, consider emitting not with a serde but with a template engine. Pretty-print fields so can use cmdline tools
 
-### N3 triples
+=== N3 triples ===
 
 Like most semweb things, is antagonistic to thought.
 
 If you must deal with this, pretty-print the fields and ensure delimiters are clean
 
 
-### Flat format
+=== Flat format ===
 
 WALKTHROUGH: converting the weather fields. 
 
@@ -156,16 +156,16 @@ To handle the elevation fields, override the receive method:
 Note that we call super *first* here , because we want an int to divide; in the previous case, we want to catch 9999 before it goes in for conversion.
 Wukong has some helpers for unit conversion too.
 
-### Web log and Regexpable
+=== Web log and Regexpable ===
 
 WALKTHROUGH: apache web logs of course.
 - 
 Regexp to tuple.
 Just capture substructure 
 
-### Others
+=== Others ===
 
-## Avro Schema
+== Avro Schema ==
 
 that there is no essential difference among
 
@@ -176,9 +176,9 @@ that there is no essential difference among
         
 Avro says these are imperfect reflections for the same thing: a method to send data in space and time, to yourself or others. This is a very big idea [^1].
 
-### Avro
+=== Avro ===
 
-## Glyphing (string encoding), Unicode,UTF-8
+== Glyphing (string encoding), Unicode,UTF-8 ==
 
 My best advice is 
 
@@ -191,15 +191,15 @@ My best advice is
   -   URL encoding only makes sense when you're shipping urls anyway.
   - TODO: check those character strings for correctness. Also, that I'm using "glyph" correctly
 
-## ICSS
+== ICSS ==
 
 ICSS uses 
 
 
-### Schema.org Types
+=== Schema.org Types ===
  
 
-### Munging
+=== Munging ===
 
 
     class RawWeatherStation
@@ -224,7 +224,7 @@ ICSS uses
           type:  float
       # ...
       
-### More      
+=== More       ===
 
 ICSS gives
 

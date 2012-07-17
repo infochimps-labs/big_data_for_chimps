@@ -1,14 +1,14 @@
-# Chapter 19a: The Hadoop Java API
+= Chapter 19a: The Hadoop Java API =
 
-## When to use the Hadoop Java API
+== When to use the Hadoop Java API ==
 
 Don't.
 
-## How to use the Hadoop Java API
+== How to use the Hadoop Java API ==
 
 Decompose your problem into small isolable transformations. Implement each as a Pig Load/StoreFunc or UDF (User-Defined Function) making calls to the Hadoop API.[^1]
 
-## The Skeleton of a Hadoop Java API program
+== The Skeleton of a Hadoop Java API program ==
 
 I'll trust that for very good reasons -- to interface with an outside system, performance, a powerful library with a Java-only API -- Java is the best choice to implement
 
@@ -43,22 +43,22 @@ Instead, we write
 
       A PIG SCRIPT
 
-# Chapter 19: Pig UDFs
+= Chapter 19: Pig UDFs =
 
-### Pig UDFs
-
-
-
-### LoadFunc / StoreFunc
+=== Pig UDFs ===
 
 
 
-### Algebraic UDFs let Pig go fast
+=== LoadFunc / StoreFunc ===
+
+
+
+=== Algebraic UDFs let Pig go fast ===
 
 One of the great things
 
 
-### Wonderdog -- an ElasticSearch UDF
+=== Wonderdog -- an ElasticSearch UDF ===
 
 
 
