@@ -47,7 +47,7 @@ _note: I may go with min/TB, to have them be directly comparable. Throughput is 
 === Mesuring your system: imaginary limits ===
 
 * http://www.textuality.com/bonnie/advice.html[Bonnie] for disk 
-* http://www.coker.com.au/bonnie++/[Bonnie++]  for disk 
+* http://www.coker.com.au/bonnie/[Bonnie++]  for disk 
 * http://www.phoronix-test-suite.com/?k=downloads[Phoronix] for a broad-based test
 
 === Measuring your system: practical limits ===
