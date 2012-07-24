@@ -33,7 +33,6 @@ end
 # sync; time dd ibs=1048576 obs=1048576 count=1024 if=/dev/zero of=/u07/app/test/gigfile
 
 
-
 # Formatador.models_table(ExampleMachines.values)
 #
 # Formatador.models_table(SystemBaseliner.assets.values)
@@ -67,53 +66,15 @@ end
 
 # [Hitachi-HTS725050A9A362](http://www.hgst.com/tech/techlib.nsf/techdocs/3FDCAB792901CF4B862575D8005AB39B/$file/TS7K500_DS.pdf)
 
-# worblehat ~/ics/core/swineherd$ bonnie -d /tmp -s 2000 -m worblehat-Hitachi-HTS725050A9A362
-# File '/tmp/Bonnie.97743', size: 2097152000
-# Writing with putc()...done
-# Rewriting...done
-# Writing intelligently...done
-# Reading with getc()...done
-# Reading intelligently...done
-# Seeker 1...Seeker 2...Seeker 3...start 'em...done...done...done...
-#               -------Sequential Output-------- ---Sequential Input-- --Random--
-#               -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
-# Machine    GB M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
-# worbleha    2  58.4 54.2  92.2 13.3  57.9  6.2 157.9 100.0 5592.7 100.0  2067  2.6
-#
-# worblehat ~/ics/core/swineherd$ bonnie -d /tmp -s 32000 -m worblehat-Hitachi-HTS725050A9A362
-# File '/tmp/Bonnie.97751', size: 33554432000
-# Writing with putc()...done
-# Rewriting...done
-# Writing intelligently...done
-# Reading with getc()...bonnie -d /tmp -s 8000 -m worblehat-Hitachi-HTS725050A9A362
-# done
-# Reading intelligently...done
-# Seeker 2...Seeker 1...Seeker 3...start 'em...done...done...done...
-#               -------Sequential Output-------- ---Sequential Input-- --Random--
-#               -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
-# Machine    GB M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
-# worbleha   32  48.7 55.0  53.4 18.6  22.6  2.7  54.4 47.7  55.8  4.8    76  1.2
-# worblehat ~/ics/core/swineherd$ bonnie -d /tmp -s 8000 -m worblehat-Hitachi-HTS725050A9A362
-# File '/tmp/Bonnie.98359', size: 8388608000
-# Writing with putc()...done
-# Rewriting...done
-# Writing intelligently...done
-# Reading with getc()...done
-# Reading intelligently...done
-# Seeker 1...Seeker 2...Seeker 3...start 'em...done...done...done...
-#               -------Sequential Output-------- ---Sequential Input-- --Random--
-#               -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
-# Machine    GB M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
-# worbleha    8  73.6 67.6  70.6 10.2  31.6  4.2  68.9 59.6  53.8  3.8   185  1.8
-
-
-
 # Using [bonnie](http://www.textuality.com/bonnie/advice.html) for disk benchmarking:
+# worblehat ~/ics/core/swineherd$ bonnie -d /tmp -s 8000 -m worblehat-Hitachi-HTS725050A9A362
 #
 #                  -------Sequential Output-------- ---Sequential Input-- --Random--
 #                  -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
 # Machine       GB M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
-# worblehat 1    2  58.4 54.2  92.2 13.3  57.9  6.2 157.9  100 5593   100  2067  2.6   bonnie -d /tmp -s 2000 -m worblehat-Hitachi-HTS725050A9A362 / File '/tmp/Bonnie.97743', size: 2097152000
+# worblehat  2    2  58.4 54.2  92.2 13.3  57.9  6.2 157.9 100   5593  100  2067  2.6   bonnie -d /tmp -s 2000 -m worblehat-Hitachi-HTS725050A9A362 / File '/tmp/Bonnie.97743', size: 2097152000
+# worblehat  8    8  73.6 67.6  70.6 10.2  31.6  4.2  68.9 59.6  53.8  3.8   185  1.8
+# worblehat 32   32  48.7 55.0  53.4 18.6  22.6  2.7  54.4 47.7  55.8  4.8    76  1.2
 #
 
 # worblehat ||                      | This test was run with the option -m worblehat. "worblehat" is the label for the test.
@@ -131,7 +92,6 @@ end
 # 2067      || r  rand seeks /sec   | Bonnie created 4 child processes, and had them execute 4000 seeks to random locations in the file. On 10% of these seeks, they changed the block that they had read and re-wrote it. The effective seek rate was 2067 seeks per second.
 #    2.6    || r  rand seeks %CPU   | During the seeking process, the operating system reported that this work consumed 2.6% of one CPU's time.
 #
-
 
 # Configuration
 # SATA 3Gb/s              | Interface
@@ -176,13 +136,3 @@ end
 #                         | == Ambient temperature ==
 # 2.5                     | Idle (typical, Bels)
 # 2.8                     | Seek (typical, Bels
-
-
-# average disk seek latency (ms)          4.2   ms
-# average random disk  IOPS             119.52  IOPS
-# disk access density (IOPS/GiB)          0.26  IOPS/GiB
-# with 0 cache:
-# average random IOPS (1024K/io)         23.90  IOPS
-# bandwidth (MiB/s)                      23.90  MiB/s
-# average random IOPS (1024K/io)         23.90  IOPS
-# bandwidth (MiB/s)                      23.90  MiB/s

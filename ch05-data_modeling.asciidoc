@@ -1,5 +1,95 @@
 == Data Modeling
 
+=== Philosophy 101A: Ontology (What We Know) ===
+
+One of the most wonderful and surprising aspects of Big Data is how frequently, at the far reaches of a certified hard-core engineering problem, we bump up against fundamental questions of Philosophy footnote:(Or maybe not: it's a new frontier, this ability to quantify completely a whole range of natural and human phenomena.). Here, the language of Ontology (what we know) is helpful. Later, we'll talk about Epistemology (how we know it) -- the practice data analysis at scale is epistemologically distinct from the scientific method.
+// FIXME: too many words
+
+As ever, a certain amount of this formalism is essential. but don't carry the point too far; an art critic's advice may elevate a carpenter's aesthetic but ultimately only  of them produces furniture. Come back to this when you have a data model that doesn't feel quite right
+
+==== Model ====
+
+In an Avro/ICSS schema, define a model using the `keyword` type.
+
+==== Properties ====
+
+_Model Properties_ (...).
+A `Weather::Observation` has properties `air_temperature`, `description`, and `coordinates`. A `Wikipedia::Topic` has properties `name`, `categories` and `article_body`.
+In Avro and Wukong, you define a property with the `field` statement.
+
+Properties are
+* intrinsic: they belong to the domain of interest, and use domain language. 
+* essential: they can't be recreated.
+
+Give your properties globally-meaningful names, and respect that meaning. If the `keywords` property is always and only "a list of freeform tags used to describe this content", you can fearlessly index them consistently in a search database, connect them in a tag cloud, or apply a black-box clustering algorithm.
+
+==== Identifiers ====
+
+A `Weather::Observation` has the record identifier `weather_observation_id`, along with foreign key identifiers `weather_station_id`. A `Wikipedia::Topic` has a `wikipedia_id`
+A page
+* if it is a collection of topics recounting the human experience, a page and each of its "disambiguation" entries is 
+* if they are 
+* if it is a collection of web pages on the internet, the URL 
+
+
+In the actual wikipedia dataset,
+* 
+But several of the datasets are large enough that we can't justify shipping around (let alone joining on) an unbounded string. We denormalize in the wikipedia numeric ID; make clear where the truth lies 
+
+==== Choosing keys ====
+
+Wherever possible, use intrinsic metadata to assign identifiers. 
+
+This means you can assign identity at the edge. An auto increment field requires locality - something has to keep track of the counter; or you'd need to do a total sort.
+
+You can use the task id as prefix or suffix and number lines.
+
+When I was born, my identity was assigned at the edge: Philip Frederick Kromer IV. This identifier has three data elements that serve to scope my record, and a disambiguating index. It's not a synthetic index, though -- Philip Frederick Kromer III (my dad) was uniquely involved in supplying the basis for the auto increment field.
+
+People coming from the SQL world find this barbaric, and a hard habit to break. remember: data and compression are cheap, locality is expensive. If you're worried about it, sort on the SHA-HMAC of your identifying fields, number as if the auto increment fairy brought it
+
+==== Virtual Attributes ====
+
+There are often model attributes that are not properties :
+
+* You've pulled an object from a remote API or database that you're raiding for information
+* In the `Cargo` model,
+  - `handle` is a property holding enough information to locate its contents. It's implemented as a record field. 
+  - `filename` is a virtual property holding the concrete location of those conents on a specific filesystem. It's implemented as a method.
+  - `file`, a transient file object that actually mediates reading, writing and so forth.
+
+* In a model with nested model properties, the contained objects might retain a reference to their parent
+
+You can implement virtual attributes a few ways:
+
+// (FIXME: find out the java term for instance variable and supply as an alias)
+* Instance variables: 
+  - If the values it depends on are not immutable, you will need to make sure 
+* Virtual accessors: a method that masquerades as a 
+
+==== Metadata ====
+
+
+
+==== Normalization ====
+
+Normalize where it's pragmatic (leads to fewer joins or fewer lines of code) or essential to reasonable performance.
+You can do so freely in any model that's clearly synthetic.
+But use care when you're denormalizing reference data: data in two places can be more dangerous than data in zero places. I've lost more engineer hours to untangling two mostly-consistent forks than to reconstructing a calculation from the start. Indicate denormalized fields clearly, and ensure that every record draws its values from the same dataset.
+
+Retain a direct foreign-key identifier for any denormalized attribute. To correlate airline flight delays with weather, you might denormalize the properties of  `flight.airport.nearest_weather_station.observation_for(flight.time_scheduled)` into the flight record. If you do, denormalize the observation's id as well. You'll make it easy to trace the provenance of a value, and you can join directly on the observations dataset if you have to update the attribute.
+
+=== Best practices ===
+
+TODO: collect the best practices back at "How to think"
+
+* Data size is cheaper than you think. Compression is cheaper and much better than you'd think.
+* Wherever possible, use intrinsic metadata to assign identifiers. 
+* Truth flows from the edge inward
+* Keep your data flows recapitulateable - This ensures confidence in provenance, is enormously helpful for debugging and validation, and is a sign you're thinking correctly
+
+=== Dataset ===
+
 There are six and a half shapes of record-oriented datasets:
 
 * Tables,
