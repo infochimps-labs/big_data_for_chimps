@@ -9,7 +9,7 @@ When you're thinking about a Hadoop job, you want to be fluidly shifting among t
 * `cat` herding (simple streaming, and abuse of Hadoop as a distributed computing supervisor)
 
 
-Now of course there's no difference among these things -- they're all conceptual layers atop the fundamental Map/Reduce Haiku. Pig very naturally expresses the set operations and to some extent the rendezvous mode. Wukong or any other direct M/R layer will be most expressive with message passing and rendezvous. For graph operations, Google's [[Pregel]] project is a beautiful computing paradigm; unfortunately there's not yet a mature clone in the wild. We'll see how to instead map graph exchanges to pig and map/reduce operations.
+Now of course there's no difference among these things -- they're all conceptual layers atop the fundamental Map/Reduce Haiku. Pig very naturally expresses the set operations and to some extent the rendezvous mode. Wukong or any other direct M/R layer will be most expressive with message passing and rendezvous. For graph operations, Google's http://fix.me/FIXME[Pregel] project is a beautiful computing paradigm; unfortunately there's not yet a mature clone in the wild. We'll see how to instead map graph exchanges to pig and map/reduce operations.
 
 
 === Locality Rendezvous (co-group) ===
@@ -19,12 +19,17 @@ I urge you to think about this intermediate stage as a /group/, not a sort. Yes,
 * Santa's workshop - The elves want all toys of the same type to land at the same workstation. This is a natural fit for rendezvous, so explaining it in the other modes would be stretching the point (see, however, problem 1 below.)
 
 Instead,  Inverting a graph -- Consider the wikipedia link graph (or Twitter, or the web).   This is fundamentally a graph operation: we want to count the "out-degree" of each node. But it's productive to think of it in the other three modes:
-- 
+
 * **rendezvous**: gather each edge together based on its "into" node.count the size of the crowd that shoews up.
 * **message passing**: each node sends one jellybean to the nodes that it links to. Then each node counts the jellybeans it receives.
-* **set ops**: SELECT COUNT(*) From edges group by "into"
-    * Into-adjlistm= group edges by into;
-    * Indefree = for each generate **FIXME**
+* **set ops**:
+
+--------------------
+SELECT COUNT(*) From edges group by "into"
+into_adjlist= group edges by into;
+Indegree = for each generate FIXME:
+--------------------
+
 * Graph - Out-degree
 * 
 
@@ -46,8 +51,8 @@ Explain in prose how to think about the Santa's workshop activity in terms of me
 
 Explain the following SQL primitives as rendezvous operations:
 
-* Select * From WikipediaPages join WikipediaLinks
-* Slelct pageid, year, month, sum(hitcount) from WpViews group by year, month
+* `Select * From WikipediaPages join WikipediaLink`s
+* `Select pageid, year, month, sum(hitcount) from WpViews group by year, month`
 
 TODO: go into depth on COGROUP.
 
@@ -58,10 +63,6 @@ Describe how to implement these set operations atop basic map/reduce:
 * Join
 * Cross
 
-
-* 
-
-
 === Histogram ===
 
 A histogram shows you the distribution of values 
@@ -71,6 +72,7 @@ You remember in school, how you learned about the law of large numbers -- and th
 Here's something that's generally true, inasmuch as the interesting part of your job is to find out how and why it isn't: at scale, every process with a simple explanation is either long-tail or normally distributed. (See justification at field spotters guide)
 
 ___________________________
+
 Statistical Distributions, a field spotters guide
 
 In writing, they say there's only about twenty plots. Here are all the interesting stories you can tell with a cast of billions:
@@ -94,26 +96,27 @@ We're going to spend a little time while we're here on statistics, because they'
 
 _______________________
 
-Word count (histogram of Wikipedia words) 
- 
-    tk_lines = FOREACH line GENERATE tokenize(line) AS word;
-    words = FLATTEN tk_lines;
-    grouped_words = GROUP words BY word;
-    word_counts = FOREACH grouped_words GENERATE group AS word, count(*) AS count;
-    histogram = ORDER word_counts BY count DESC;
-    
-    word_lengths = FOREACH words GENERATE str_length(word) as len; -- explain piggybank
-    grouped_lengths = GROUP word_lengths BY len;
-    word_counts = FOREACH grouped_words GENERATE group AS word, count(*) AS count;
-    histogram = ORDER word_counts BY count DESC;
-    
-__________________________
+This pig script constructs
 
-Bored yet? Show using swineherd to templatize this.
+* a histogram counting how often each term appears in the Wikipedia corpus (the term `the` appears XX times, the term `zeugma` only XX times)
+* a histogram counting how often words of a given length appear (3-letter words appear XX times, 15-letter terms appear XX times)
 
-__________________________
+FIXME: enter counts
 
-Here's 
+--------------------
+tk_lines = FOREACH line GENERATE tokenize(line) AS word;
+words = FLATTEN tk_lines;
+grouped_words = GROUP words BY word;
+word_counts = FOREACH grouped_words GENERATE group AS word, count(*) AS count;
+histogram = ORDER word_counts BY count DESC;
+
+word_lengths = FOREACH words GENERATE str_length(word) as len; -- explain piggybank
+grouped_lengths = GROUP word_lengths BY len;
+word_counts = FOREACH grouped_words GENERATE group AS word, count(*) AS count;
+histogram = ORDER word_counts BY count DESC;
+--------------------    
+
+As you can see, there's a repeatable stanza for generating these histograms footnote:[Later we'll use swineherd to templatize this.]
 
 The long tail has two important parameters.As you normally see I given, these are the exponent and the total number. 
 
@@ -125,15 +128,13 @@ What you want to do is chunk. One is by percentile another is by decade of rank.
 By the time you get to say #100, the distribution has typically become fairly tame,by construction: 
 If #100 is `A = f_100 = H/100^s`, then #1000 is `f_1000 = H/(1000^s) = 10^-s A`. 
 
-
     Int[ H n^-b ] = [ (1-b)H n n^-b ] -> (1-b)H ((A-a)^(1-s) - (A+a)^(1-s))
 
 on a percentage basis
 
 
+* a histogram counting how many articles or a given size appear (100-character files appear XX times, 10,000-character files appear XX times, and there are some )
 
-
-    
 __________________________
 
 Word count example -- look at running time of longest machine. 
@@ -141,10 +142,6 @@ Word count example -- look at running time of longest machine.
     Count of words in output file vs time of reducer (see job tracker)
     
     For R reducers, choosing 25/R at random from the top 25, what is expected excess of worst (most) over average? Over fewest? (spread between fewest and best should be small)
-   
-
-
-
 
 _______________________
 
@@ -153,6 +150,3 @@ Sidebar: for all Hadoop jobs, list the
 * Expected run-time on (5+1)xm1.large cluster
 * Amount of map in, midstream, reduce out data
 * Any per-job settings
-
-
-V
