@@ -1,6 +1,5 @@
 == Semi-Structured Data ==
 
-
 image::images/semistructured_data_workflow.png[Semistructured Data Workflow]
 
 * Raw data, as it comes from the source. This could be unstructured (lines of text,
@@ -94,8 +93,11 @@ mapper do
 end
 --------------------
 
-
 ==== Wikipedia Corpus ====
+
+The Wikipedia corpus is a good introduction to handling XML input. It lacks some of the really hairy aspects of XML handling foonote:[FIXME: make into references see the section on XML for a list of drawbacks], which will let us concentrate on the basics.
+
+The raw data is a single XML file, 8 GB compressed and about 40 GB uncompressed. After a brief irrelevant header, it's simply several million records that look like this:
 
 --------------------
   <page>
@@ -110,12 +112,23 @@ end
       </contributor>
       <minor />
       <comment>Dating maintenance tags: {{Page needed}}</comment>
-      <text xml:space="preserve">...</text>
+      <text xml:space="preserve">...(contents omitted; they
+are XML-encoded (that&apos;s helpful)
+  with spacing      preserved 
+including newlines)...</text>
     </revision>
   </page>
 --------------------
 
-So the raw source domain model is
+I've omitted the article contents, which are cleanly XML encoded and not in a CDATA block, so there's no risk of a spurious XML tag in an inappropriate place; avoid CDATA blocks if you can. The contents preserve all the whitespace of the original body, so we'll need to ensure that our XML parser does so as well.
+
+From this, we'd like to extract the title, numeric page id, timestamp, and text, and re-emit each record in one of our favorite formats.
+
+* Treat the entire document as XML.
+* Treat it as text to break up the records, and then use an XML library to parse each record
+* Steal code from others: the http://mahout.apache.org/[Mahout project] has a set of tools in the raw Java API, and Oliver Grisel (@ogrisel) has some https://github.com/ogrisel/pignlproc[pig tools] for extracting the Wikipedia corpus.
+
+As it turns out, the Mahout and Pig code mentioned earlier take the same approach.
 
 --------------------
 class Wikipedia::RawArticle
@@ -129,3 +142,5 @@ class Wikipedia::RawArticleRevision
   field :text,      String
 end
 --------------------
+
+You need to ensure that Hadoop splits the file at a record boundary: after `</page>`, before the next `<page>` tag. If you're using streaming (Wukong, MrJob, etc) Hadoop ships with an `StreamXmlRecordReader` (http://hadoop.apache.org/mapreduce/docs/r0.21.0/api/org/apache/hadoop/streaming/StreamXmlRecordReader.html[doc] / https://github.com/apache/hadoop-common/blob/branch-0.21/mapreduce/src/contrib/streaming/src/java/org/apache/hadoop/streaming/StreamXmlRecordReader.java[source]); if you're using the pure hadoop API look at Mahout's XmlInputFormat  (https://github.com/apache/mahout/blob/trunk/integration/src/main/java/org/apache/mahout/text/wikipedia/XmlInputFormat.java[src])
