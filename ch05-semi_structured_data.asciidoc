@@ -124,11 +124,23 @@ I've omitted the article contents, which are cleanly XML encoded and not in a CD
 
 From this, we'd like to extract the title, numeric page id, timestamp, and text, and re-emit each record in one of our favorite formats.
 
-* Treat the entire document as XML.
-* Treat it as text to break up the records, and then use an XML library to parse each record
-* Steal code from others: the http://mahout.apache.org/[Mahout project] has a set of tools in the raw Java API, and Oliver Grisel (@ogrisel) has some https://github.com/ogrisel/pignlproc[pig tools] for extracting the Wikipedia corpus.
+Now we meet our first two XML-induced complexities: _splitting_ the file among mappers, so that you don't send the first half of an article to one task and the rest to a different one; and _recordizing_ the file from a stream of lines into discrete XML fragments, each describing one article.
 
-As it turns out, the Mahout and Pig code mentioned earlier take the same approach.
+===== Custom Splitter / InputFormat =====
+
+At 40GB uncompressed, the articles file will occupy about 320 HDFS blocks (assuming 128MB blocks), each destined for its own mapper. However, the division points among blocks is arbitrary: it might occur in the middle of a word in the middle of a record with no regard for your feelings about the matter. However, if you do it the courtesy of pointing to the first point within a block that a split _should_ have occurred, Hadoop will handle the details of patching it onto the trailing end of the preceding block. Pretty cool.
+
+You need to ensure that Hadoop splits the file at a record boundary: after `</page>`, before the next `<page>` tag.
+
+If you're
+
+Writing an input format and splitter is only as hard as your input format makes it, but it's the kind of pesky detail that lies right at the "do it right" vs "do it (stupid/simpl)ly" decision point. Luckily there's a third option, which is to steal somebody else's code footnote:[see Hadoop the Definitive Guide, chapter FIXME: XX for details of building your own splitter]. Oliver Grisel (@ogrisel) has written an Wikipedia XML reader as a raw Java API reader in the http://mahout.apache.org/[Mahout project], and as a Pig loader in his https://github.com/ogrisel/pignlproc[pignlproc] project.
+Mahout's XmlInputFormat  (https://github.com/apache/mahout/blob/trunk/integration/src/main/java/org/apache/mahout/text/wikipedia/XmlInputFormat.java[src])
+
+===== Brute Force =====
+
+If all you need to do is yank the data out of it's ill-starred format, or if the data format's complexity demands the agility of a high-level language, you can use Hadoop Streaming as a brute-force solution. In this case, we'll still be reading the data as a stream of lines, and use native libraries to do the XML parsing. We only need to ensure that the splits are correct, and the  `StreamXmlRecordReader` (http://hadoop.apache.org/mapreduce/docs/r0.21.0/api/org/apache/hadoop/streaming/StreamXmlRecordReader.html[doc] / https://github.com/apache/hadoop-common/blob/branch-0.21/mapreduce/src/contrib/streaming/src/java/org/apache/hadoop/streaming/StreamXmlRecordReader.java[source]); 
+that ships with Hadoop is sufficient.
 
 --------------------
 class Wikipedia::RawArticle
@@ -143,4 +155,3 @@ class Wikipedia::RawArticleRevision
 end
 --------------------
 
-You need to ensure that Hadoop splits the file at a record boundary: after `</page>`, before the next `<page>` tag. If you're using streaming (Wukong, MrJob, etc) Hadoop ships with an `StreamXmlRecordReader` (http://hadoop.apache.org/mapreduce/docs/r0.21.0/api/org/apache/hadoop/streaming/StreamXmlRecordReader.html[doc] / https://github.com/apache/hadoop-common/blob/branch-0.21/mapreduce/src/contrib/streaming/src/java/org/apache/hadoop/streaming/StreamXmlRecordReader.java[source]); if you're using the pure hadoop API look at Mahout's XmlInputFormat  (https://github.com/apache/mahout/blob/trunk/integration/src/main/java/org/apache/mahout/text/wikipedia/XmlInputFormat.java[src])

@@ -135,10 +135,10 @@ If you have to emit XML for downstream consumption, yet have any control over it
       <author><name>William Carlos William</name><id>88</id></author>
       <id>12345</id>
       <title>This is Just to Say</title>
-      <dtstart>2012-01-02T12:34:56 CST</dtstart>
+      <dtstart>2012-04-26T12:34:56 CST</dtstart>
       <text>I have eaten&#10;the plums&#10;that were in&#10;the icebox&#10;&#10;and which&#10;you were probably&#10;saving&#10;for breakfast&#10;&#10;Forgive me&#10;they were delicious&#10;so sweet&#10;and so cold</text>
       <comments>
-        <comment><author>Holly</author><id>98765</id><text>Your poem made up for it...  &lt;em&gt;barely&lt;/em&gt;</text></comment>
+        <comment><commenter-name>Holly</commenter-name><id>98765</id><text>Your poem made up for it...  &lt;em&gt;barely&lt;/em&gt;</text></comment>
       </comments>
       <replies></replies>
     </post>
@@ -150,47 +150,72 @@ The example to the side is pretty-printed for clarity; in production, you should
 * Text contents are fully encoded (`&lt;em&gt;barely&lt;/em&gt;`, not `<em>barely</em>`), including whitespace (`&amp;10;` in the post text, not a literal newline). All the XML tags you see belong to the record.
 * The nesting  `comments` tag makes clear that it is an array-of-length-one, in contrast to a singular property like `author`. The `replies` tag is present, representing an empty array, rather than being omitted.
 * It has a predictable structure, making it easily `grep`'able
-    
+
+If you have to write XML against a specific format, consider using a template language like erubis, moustache or the like. Before I learned this trick, I'd end up with a whole bunch of over-wrough soupy code just for the purpose of putting open and close tags in the right place. 
+
+    .Well-formed XML
+    [This has been split across multiple lines, but in production eliminate the whitespace as well]
+    --------------------
+    <post>
+      <author><name><%= record.author.name.to_xml %></name><id><%= record.author.id.to_xml %></id></author>
+      <id><%=      record.id.to_xml         %></id>
+      <title><%=   record.title.to_xml      %></title>
+      <dtstart><%= record.created_at.to_xml %></dtstart>
+      <text><%=    record.text.to_xml       %></text>
+      <comments>
+        <% record.comments.each do |comment| -%>
+        <comment>
+          <commenter-name><%= comment.commenter_name.to_xml %></commenter-name>
+          <id><%=   comment.id.to_xml %></id>
+          <text><%= comment.text.to_xml %></text>
+        </comment>
+        <% end -%>
+      </comments>
+      <replies></replies>
+    </post>
+    --------------------
+
+This template generates XML with a consistent structure. The `<%= %>` blocks interpolate data -- an equals-sign `<%= %>` causes output, a plain `<% %>` block is for control statements. When you're inside a funny-braces block, you're in ruby; everything else is literal content. Control blocks (like the `<% record.comments.each do |comment| %>`) stamp out their contents as you'd expect.
+
+===== Airing of Grievances =====
 
 A good serialization format should map smoothly to and from the data structures languages use.
     
 Here's what you get instead:
 
 * **It doesn't preserve simple types**: the only primitive data type is a string; there's no standard way to distinguish an integer, a floating-point number, or a date without external hints.
-* **It doesn't preserve complex types**: there's no
+* **It doesn't preserve complex types**: You will find data stored with
   - mixed attributes and data:
 
-    --------------------
-    <post date="2012-01-02T12:34:56 CST" author="adam"><body>I just had a bacon sandwich</body></post>`
-    --------------------
+--------------------
+<post date="2012-01-02T12:34:56 CST" author="William Carlos Williams">
+<body>I have eaten&#10;the plums&#10;that were in...</body>
+</post>
+--------------------
 
     - mixed data and text:
 
-    --------------------
-    <post><title>Great News!</title>I <span dtstart="2012-01-02T12:34:56 CST">just</span> had a bacon sandwich!</post>`
-    --------------------
+--------------------
+<post>
+<title>This is Just to Say</title>
+I have eaten the plums that ... you were probably saving for <span dtstart="2012-04-27T08:00:00 CST">breakfast</span>. Forgive me ...
+</post>
+--------------------
 
-* **inconsistent cardinality**:
+* **inconsistent cardinality**: In this example, there's no way to distinguish a singular property like `title` from a list-of-length-one like `comment`; simple XML readers will return`{"title":"...", "comment":{"text":"..."}}` when there is one, and `{"title":"...", "comment":[{"text":"..."},{"text":"..."}]}` when there are many.
 
-    --------------------
-    <post>
-      <author>Adam</author>
-      <title>Great News!</title>
-      <text>I just had a bacon sandwich!</text>
-      <comment><author>Holly</author><text>Mmmmm...</text></comment>
-    </post>
-    --------------------
-
-    
+--------------------
+<post>
+  <title>This is just to say</title>
+  <comment><text>Your poem made up for it</text></comment>
+</post>
+--------------------
 
 * **It's not restartable.**: you can only properly understand an XML file by reading it from beginning to end. CDATA blocks are especially treacherous; they can in principle hold nearly anything, including
 * **It's not unique**: there are multiple ways to represent the same final context
 An apostrophe might be represented directly (`'`), hex-encoded (`&amp;#x0027;`), decimal-encoded (`&#39;`), or using an SGML entity (`&amp;apos;`), which properly depends on interpreting an external DTD that in practice may not be declared.
-**It's not regex-able**
+* **it's complex**: the technical standard for XML is fiendishly complex, and even mature libraries in widespread use still report bugs parsing complex or ill-formed input.
 
-* **it's fiendishly complex to do right**: the technical standard for XML is fiendishly complex, and even mature libraries in widespread use still report bugs parsing complex or ill-formed input.
-
-footnote:[there are no CDATA blocks; tags hold data or other tags, not both; values are only in tag bodies, and not also in tag attributes]
 
 Once you've recapitulated the original raw data structure, 
 
