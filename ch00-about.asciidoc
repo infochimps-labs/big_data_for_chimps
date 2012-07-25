@@ -1,4 +1,6 @@
-== What this book covers ==
+== About  ==
+
+=== What this book covers ===
 
 'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools. 
 
@@ -21,7 +23,7 @@ Most of the chapters have exercises included. If you're a beginning user, I high
 
 Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters. 
 
-== Who this book is for ==
+=== Who this book is for ===
 
 You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should correspond cleanly to languages like Python or Scala.
 
@@ -31,7 +33,7 @@ All of the code in this book will run unmodified on your laptop computer and on 
 
 You should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
 
-== Who this book is not for ==
+=== Who this book is not for ===
 
 This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
 
@@ -39,21 +41,10 @@ That is because for almost everyone, the cost of the cluster is far less than th
 
 The book does have some content on machine learning with Hadoop, on provisioning and deploying hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 
-== How this book is being written ==
+=== How this book is being written ===
 
 I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[the Infochimps blog] after minor cleanup.
 
 We really mean it about the github thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. 
 
-However! We might not use your feedback, no matter how dazzlingly cogent it is. Also, we are soliciting comments from readers -- but we are not seeking out content from collaborators. Do not run off and craft a dazzlingly lucid explanation of some topic, far excelling whatever hackish tripe I would have coughed out, and then expect us to include it[^1]. I have strong opinions about what the book should cover and a fixed budget of pages; and while I am trying my hand at author, I have no interest in being an editor. Don't prepare original content unless you get in touch first.
-
-```
-
-[^1] Do craft dazzlingly lucid explanations, though! Always! And tell us about it -- we won't use it for the book, but we'd probably enjoy linking to it.
-
-== Questions ==
-
-== Acknowledgements ==
-
-* http://objectsonrails.com/#sec-3-4
-
+However! We might not use your feedback, no matter how dazzlingly cogent it is. Also, we are soliciting comments from readers -- but we are not seeking out content from collaborators. Do not run off and craft a dazzlingly lucid explanation of some topic, far excelling whatever hackish tripe I would have coughed out, and then expect us to include it footnote:[Do craft dazzlingly lucid explanations, though! Always!. I have strong opinions about what the book should cover and a fixed budget of pages; and while I am trying my hand at author, I have no interest in being an editor. Don't prepare original content unless you get in touch first.
