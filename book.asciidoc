@@ -16,8 +16,6 @@ include::ch04-toolset.asciidoc[]
 
 include::ch05-data_modeling.asciidoc[]
 
-include::ch05-data_formats.asciidoc[]
-
 include::ch05-semi_structured_data.asciidoc[]
 
 include::ch05-rules_of_scaling.asciidoc[]
@@ -47,6 +45,8 @@ include::ch15-simple_machine_learning.asciidoc[]
 include::ch16-operations.asciidoc[]
 
 include::ch17-tuning.asciidoc[]
+
+include::ch05-data_formats.asciidoc[]
 
 include::ch18-hbase_and_databases.asciidoc[]
 
