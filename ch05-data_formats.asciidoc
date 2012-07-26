@@ -151,7 +151,7 @@ The example to the side is pretty-printed for clarity; in production, you should
 * The nesting  `comments` tag makes clear that it is an array-of-length-one, in contrast to a singular property like `author`. The `replies` tag is present, representing an empty array, rather than being omitted.
 * It has a predictable structure, making it easily `grep`'able
 
-If you have to write XML against a specific format, consider using a template language like erubis, moustache or the like. Before I learned this trick, I'd end up with a whole bunch of over-wrough soupy code just for the purpose of putting open and close tags in the right place. 
+If you have to write XML against a specific format, consider using a template language like erubis, moustache or the like. Before I learned this trick, I'd end up with a whole bunch of over-wrough soupy code just for the purpose of putting open and close tags in the right place. When 90% of the complexity is writing the xml and 10% 
 
     .Well-formed XML
     [This has been split across multiple lines, but in production eliminate the whitespace as well]
@@ -179,12 +179,10 @@ This template generates XML with a consistent structure. The `<%= %>` blocks int
 
 ===== Airing of Grievances =====
 
-A good serialization format should map smoothly to and from the data structures languages use.
-    
-Here's what you get instead:
+XML is like the English Measurement System -- just ubiquitous enough, and just barely useful enough, that it's near-impossible to weed out. A good serialization format should map smoothly to and from the data structures languages use; XML is both too extensible and too limited to do so well. In the case that you need to make the case against XML to a colleague, I arm you with the following List of Grievances:
 
-* **It doesn't preserve simple types**: the only primitive data type is a string; there's no standard way to distinguish an integer, a floating-point number, or a date without external hints.
-* **It doesn't preserve complex types**: You will find data stored with
+* **Does not preserve simple types**: the only primitive data type is a string; there's no standard way to distinguish an integer, a floating-point number, or a date without external hints.
+* **Does not preserve complex types**: You will find data stored with
   - mixed attributes and data:
 
 --------------------
@@ -202,7 +200,7 @@ I have eaten the plums that ... you were probably saving for <span dtstart="2012
 </post>
 --------------------
 
-* **inconsistent cardinality**: In this example, there's no way to distinguish a singular property like `title` from a list-of-length-one like `comment`; simple XML readers will return`{"title":"...", "comment":{"text":"..."}}` when there is one, and `{"title":"...", "comment":[{"text":"..."},{"text":"..."}]}` when there are many.
+* **Inconsistent cardinality**: In this example, there's no way to distinguish a singular property like `title` from a list-of-length-one like `comment`; simple XML readers will return`{"title":"...", "comment":{"text":"..."}}` when there is one, and `{"title":"...", "comment":[{"text":"..."},{"text":"..."}]}` when there are many.
 
 --------------------
 <post>
@@ -211,15 +209,12 @@ I have eaten the plums that ... you were probably saving for <span dtstart="2012
 </post>
 --------------------
 
-* **It's not restartable.**: you can only properly understand an XML file by reading it from beginning to end. CDATA blocks are especially treacherous; they can in principle hold nearly anything, including
-* **It's not unique**: there are multiple ways to represent the same final context
-An apostrophe might be represented directly (`'`), hex-encoded (`&amp;#x0027;`), decimal-encoded (`&#39;`), or using an SGML entity (`&amp;apos;`), which properly depends on interpreting an external DTD that in practice may not be declared.
-* **it's complex**: the technical standard for XML is fiendishly complex, and even mature libraries in widespread use still report bugs parsing complex or ill-formed input.
+* **Not restartable.**: you can only properly understand an XML file by reading it from beginning to end. CDATA blocks are especially treacherous; they can in principle hold nearly anything, including out-of-band XML.
 
+* **Not unique**: even  are multiple ways to represent the same final context. 
+An apostrophe might be represented directly (`'`), hex-encoded (`&amp;#x0027;`), decimal-encoded (`&#39;`), or as an SGML footnote:[SGML= Standard Generalized Markup Language, the highly-complex document format that inspired HTML] entity (`&amp;apos;`). (You may even find people using SGML entities in the absence of the DTD footnote:[DTD = Document Type Declaration; an over-enthusiastic DTD can make XML mutable to the point of incomprehensibility.] that is technically required to interpret them.) 
 
-Once you've recapitulated the original raw data structure, 
-
-It's unambiguously ser/deseriaalizimg 
+* **Complex**: the technical standard for XML is fiendishly complex, and even mature libraries in widespread use still report bugs parsing complex or ill-formed input.
 
 Attributes, CDATA, model boundaries, document text
 
