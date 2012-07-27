@@ -436,4 +436,41 @@ Yes, that’s the thing that bites us, yes.
 What are the main factors that contribute to that within HotSpot. Do you use HotSpot? So within the HotSpot collector?
 Yes. So, within HotSpot, the frequency and duration of the garbage collector pauses; well, generally: if you had a JVM with infinite memory, then you will never have to GC, right? And if you have a JVM with a single byte of free memory then you are GC-ing all the time. And between the two extremes, you have an asymptotically decreasing proportion of your CPU going towards GC which basically means that the best way to minimize the frequencies of your GC is to give your JVM as much memory as you can. Specifically, the frequency of minor GCs is pretty much exactly inversely proportional to the size of the new generation. And as for the old generation GCs, but you really want to avoid those altogether. So, you want to tune your systems so that those never happen. It’s another question whether it’s actually possible to achieve in a non-trivial system with a HotSpot, it’s hard.
 __________________________________________________________________________
-  
+
+
+Using http://www.textuality.com/bonnie/advice.html[bonnie] for disk benchmarking:
+
+--------------------
+$ bonnie -d /tmp -s 2000 -m worblehat-Hitachi-HTS725050A9A362 / File '/tmp/Bonnie.97743', size: 2097152000
+
+                 -------Sequential Output-------- ---Sequential Input-- --Random--
+                 -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
+Machine      GB   M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
+worblehat     2    58.4 54.2  92.2 13.3  57.9  6.2 157.9 100   5593  100  2067  2.6   
+worblehat     8    73.6 67.6  70.6 10.2  31.6  4.2  68.9 59.6  53.8  3.8   185  1.8
+worblehat    32    48.7 55.0  53.4 18.6  22.6  2.7  54.4 47.7  55.8  4.8    76  1.2
+
+
+In phase 1, Bonnie wrote the file by doing 2000 million putc() macro invocations
+In phase 2, Bonnie wrote the 2000-Mb file using efficient block writes
+In phase 3, Bonnie ran through the 2000-Mb file just created, changing each block and rewriting it
+In phase 4, Bonnie read the file using 2000 million gets() macro invocations
+In phase 5, Bonnie read the 2000-Mb file using efficient block reads
+In phase 6, Bonnie created 4 child processes, and had them execute 4000 seeks to random locations in the file. On 10% of these seeks, they changed the block that they had read and re-wrote it.
+
+worblehat ||                      | 
+2000      || MB                   | 
+  58.4    || r  seq char   M/sec  | An output rate of 58.4 M per second.
+  54.2    || r  seq char   %CPU   | ... consuming 54.2% of one CPU's time.
+  92.2    || r  seq block  M/sec  | Output rate of 92.2 M per second.
+  12.3    || r  seq block  %CPU   | ... consuming 12.3% of one CPU's time.
+  57.9    || rw seq rewrt  M/sec  | Cover 57.9 M per second.
+   6.2    || rw seq rewrt  %CPU   | ... consuming 6.2% of one CPU's time.
+ 157.9    || w  seq char   M/sec  | Input rate of 157.9 M per second.
+ 100      || w  seq char   %CPU   | This work consumed 100% of one CPU's time. This is amazingly high. The 2GB file is probably too small to be an effective test.
+5593      || w  seq block  M/sec  | Input rate of 5592 M per second.
+ 100      || w  seq block  %CPU   | ... this work consumed 100% of one CPU's time.
+2067      || r  rand seeks /sec   | Effective seek rate was 2067 seeks per second.
+   2.6    || r  rand seeks %CPU   | ... consuming 2.6% of one CPU's time.
+
+--------------------
