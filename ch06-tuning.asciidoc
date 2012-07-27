@@ -153,7 +153,8 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
   - `mapred.output.compression.type`
   - `mapred.output.compression.codec`
 
-* `mapred.reduce.slowstart.completed.maps`
+* `mapred.reduce.slowstart.completed.maps`: default `X`, recommended `0.2` for a single-purpose cluster, `0.8` for a multi-user cluster. Controls how long, as a fraction of the full map run, the reducers should wait to start. Set this too high, and you use the network poorly -- reducers will be waiting to copy all their data. Set this too low, and you will hog all the reduce slots.
+
 * `mapred.map.tasks.speculative.execution`: default: `true`, recommended: `true`. Speculative execution (FIXME: explain). So this setting makes jobs finish faster, but makes cluster utilization higher; the tradeoff is typically worth it, especially in a development environment. Disable this for any map-only job that writes to a database or has side effects besides its output. Also disable this if the map tasks are expensive and your cluster utilization is high.
 * `mapred.reduce.tasks.speculative.execution`: default `false`, recommended: `false`.
 
