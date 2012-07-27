@@ -1,4 +1,4 @@
-== Chapter 5: Data Formats and Schemata ==
+== Data Formats and Schemata ==
 
 All of the following examples could be ambiguously referred to as "encoding":
 

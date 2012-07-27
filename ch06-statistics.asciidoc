@@ -1,4 +1,4 @@
-== Chapter 6: Statistics ==
+== Statistics ==
 
 
 Describe long-tail and normal distribution

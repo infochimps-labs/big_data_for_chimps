@@ -1,4 +1,4 @@
-== Chapter 19a: The Hadoop Java API ==
+== The Hadoop Java API ==
 
 
 The Java API provides direct access but requires you to write the entirety of your program from boilerplate
@@ -46,7 +46,7 @@ Instead, we write
 
       A PIG SCRIPT
 
-== Chapter 19: Pig UDFs ==
+== Pig UDFs ==
 
 placeholder
 

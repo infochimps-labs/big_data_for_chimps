@@ -1,4 +1,4 @@
-== Chapter 18: HBase and Databases ==
+== HBase and Databases ==
 
 Region splitting and hot potatoes
 

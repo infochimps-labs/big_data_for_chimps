@@ -16,6 +16,8 @@ include::ch04-toolset.asciidoc[]
 
 include::ch05-data_modeling.asciidoc[]
 
+include::ch05-data_formats.asciidoc[]
+
 include::ch05-semi_structured_data.asciidoc[]
 
 include::ch05-rules_of_scaling.asciidoc[]
@@ -25,8 +27,6 @@ include::ch06-herding_cats.asciidoc[]
 include::ch06-overview_of_datasets.asciidoc[]
 
 include::ch06-statistics.asciidoc[]
-
-include::ch06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
 include::ch06-tuning.asciidoc[]
 
@@ -44,15 +44,13 @@ include::ch15-simple_machine_learning.asciidoc[]
 
 include::ch16-operations.asciidoc[]
 
-include::ch17-tuning.asciidoc[]
-
-include::ch05-data_formats.asciidoc[]
-
 include::ch18-hbase_and_databases.asciidoc[]
 
 include::ch19-pig_udfs.asciidoc[]
 
 include::ch20-flume_and_stream_processing.asciidoc[]
+
+include::ch06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
 include::ch22-authors.asciidoc[]
 

@@ -1,4 +1,4 @@
-== Chapter 12: Geo Data ==
+== Geo Data ==
 
 
 === Weather Near You ===

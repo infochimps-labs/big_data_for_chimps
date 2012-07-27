@@ -1,4 +1,4 @@
-== Chapter 14: Processing Graphs ==
+== Processing Graphs ==
 
 Assumptions:
 

@@ -1,4 +1,4 @@
-== Chapter 2: The Stream ==
+== The Stream ==
 
 In the system outlined in the previous chapter, a set of workers map each incoming letter to the order forms for each requested toy.
 

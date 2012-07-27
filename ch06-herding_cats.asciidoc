@@ -1,4 +1,4 @@
-== Chapter 9: Herding `cat`s ==
+== Herding `cat`s ==
 
 === Moving things to and fro ===
 

@@ -1,4 +1,4 @@
-== Chapter 7: Time Series ==
+== Time Series ==
 
 
 === anomaly detection ===

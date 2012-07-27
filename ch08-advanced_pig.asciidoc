@@ -1,4 +1,4 @@
-== Chapter 8: Advanced Pig ==
+== Advanced Pig ==
 
 === Advanced Join Fu ===
 

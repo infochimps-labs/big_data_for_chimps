@@ -1,4 +1,4 @@
-== Chapter 3: Why Hadoop Works ==
+== Why Hadoop Works ==
 
 * Locality of reference and the speed of light
 * Disk is the new tape -- Random access on bulk storage is very slow

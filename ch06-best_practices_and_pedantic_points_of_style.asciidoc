@@ -1,4 +1,4 @@
-== Chapter 6 or so: Best Practices and Pedantic Points of Style ==
+== Best Practices and Pedantic Points of Style ==
 
 Here's a brain dump of things to do or not do
 

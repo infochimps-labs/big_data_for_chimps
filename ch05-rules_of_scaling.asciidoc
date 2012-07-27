@@ -1,4 +1,4 @@
-== Chapter 5: Rules of Scaling ==
+== Rules of Scaling ==
 
 
 === The rules of scaling ===
