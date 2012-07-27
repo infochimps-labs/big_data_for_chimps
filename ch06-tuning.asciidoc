@@ -67,7 +67,7 @@ Tuning your cluster to your job makes life simple
 **Cluster Layout**
 
 * Choose the number of mappers and reducers
-  - To make best use of your CPUs, you want the number of running tasks to be `cores` or `cores-1`. If reduce-heavy jobs are rare, you can set the number of mappers to `cores`.
+  - To make best use of your CPUs, you want the number of running tasks to be at least `cores-1`; as long as there's enough ram, go as high as mappers = `cores * 3/4` and reducers = `cores * 1/2`.  For a cluster purpose-built to run jobs with minimal reduce tasks, run as many mappers as cores.
   - The total heap allocated to the datanode, tasktracker, mappers and reducers should be less than but close to the size of RAM on the machine.
   - The mappers should get at least twice as much total ram as your typical mapper output size (which is to say, at least twice as much ram as your HDFS block size).
   - The more memory on your reducers the better. If at all possible, size your cluster to at least half as much RAM as your reduce input data size. 
@@ -99,7 +99,15 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 * It's standard practice to disable swap -- you're better off OOM'ing footnote[OOM = Out of Memory error, causing the kernel to start killing processes outright] than swapping. If you do not disable swap, make sure to reduce the `swappiness` sysctl (5 is reasonable). Also consider setting `overcommit_memory` (1) and `overcommit_ratio` (100). Your sysadmin might get angry when you suggest these changes -- on a typical server, OOM errors cause pagers to go off. A misanthropically funny T-shirt, or whiskey, will help establish your bona fides.
 
-* `io.sort.mb` default `X`, recommended `1.5 * typical output size`. You can devote up to 70% of the child heap size to this value; you should always use a bit more than the block size.
+* `io.sort.mb` default `X`, recommended at least `1.25 * typical output size` (so for a 128MB block size, 160). It's reasonable to devote up to 70% of the child heap size to this value.
+
+* `io.sort.factor`: default `X`, recommended `io.sort.mb * 0.x5 * (seeks/s) / (thruput MB/s)`
+  - you want transfer time to dominate seek time; too many input streams and the disk will spend more time switching among them than reading them.
+  - you want the CPU well-fed: too few input streams and the merge sort will run the sort buffers dry.
+  - My laptop does 76 seeks/s and has 56 MB/s throughput, so with `io.sort.mb = 320` I'd set `io.sort.factor` to 27.
+  - A server that does 100 seeks/s with 100 MB/s throughput and a 160MB sort buffer should set `io.sort.factor` to 80.
+
+* `io.sort.record.percent` default `X`, recommended `X` (but adjust for certain jobs)
 
 * `mapred.reduce.parallel.copies`: default `X`, recommended  to be in the range of `sqrt(Nw*Nm)` to `Nw*Nm/2`  You should see the shuffle/copy phase of your reduce tasks speed up.
 
@@ -124,6 +132,8 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 * `mapred.system.dir`: default `X` recommende `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
 
 * Ensure the HDFS data dirs (`dfs.name.dir`, `dfs.data.dir` and `fs.checkpoint.dir`), and the mapreduce local scratch dirs (`mapred.system.dir`) include all your data volumes (and are off the root partition). The more volumes to write to the better. Include all the volumes in all of the preceding. If you have a lot of volumes, you'll need to ensure they're all attended to; have 0.5-2x the number of cores as physical volumes.
+
+* Solid-state drives are unjustifiable from a cost perspective. Though they're radically better on seek they don't improve performance on bulk transfer, which is what limits Hadoop. Use regular disks.
 
 * Do not construct a RAID partition for Hadoop -- it is happiest with a large JBOD. (There's no danger to having hadoop sit on top of a RAID volume; you're just hurting performance).
 
