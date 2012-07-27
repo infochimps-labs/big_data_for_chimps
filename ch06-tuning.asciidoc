@@ -64,13 +64,19 @@ Tuning your cluster to your job makes life simple
 
 == Hadoop System configurations ==
 
+**Cluster Layout**
+
 * Choose the number of mappers and reducers
   - To make best use of your CPUs, you want the number of running tasks to be `cores` or `cores-1`. If reduce-heavy jobs are rare, you can set the number of mappers to `cores`.
   - The total heap allocated to the datanode, tasktracker, mappers and reducers should be less than but close to the size of RAM on the machine.
   - The mappers should get at least twice as much total ram as your typical mapper output size (which is to say, at least twice as much ram as your HDFS block size).
   - The more memory on your reducers the better. If at all possible, size your cluster to at least half as much RAM as your reduce input data size. 
 
-Here's the plausible configuration for a 16-GB physical machine with 8 cores:
+* If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer) -- the 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
+
+**Memory**
+
+Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 --------------------  
   `mapred.tasktracker.reduce.tasks.maximum`   = 2
@@ -91,51 +97,43 @@ Here's the plausible configuration for a 16-GB physical machine with 8 cores:
 
   - If you find that most of your time is spent in reduce, you can grant the reducers more RAM with `mapred.reduce.child.java.opts` (in which case lower the child heap size setting for the mappers to compensate).
 
-* It's standard practice to disable swap -- you're better off OOM'ing than swapping. If you do not disable swap, make sure to reduce the `swappiness` sysctl (5 is reasonable). Also consider setting `overcommit_memory` (1) and `overcommit_ratio` (100). Your sysadmin might get angry when you suggest these changes; do your best to convince her.
+* It's standard practice to disable swap -- you're better off OOM'ing footnote[OOM = Out of Memory error, causing the kernel to start killing processes outright] than swapping. If you do not disable swap, make sure to reduce the `swappiness` sysctl (5 is reasonable). Also consider setting `overcommit_memory` (1) and `overcommit_ratio` (100). Your sysadmin might get angry when you suggest these changes -- on a typical server, OOM errors cause pagers to go off. A misanthropically funny T-shirt, or whiskey, will help establish your bona fides.
 
-* `io.sort.mb` is set to 512 on some nodes, and 256 on others, which is unusual. You can devote up to 70% of the child heap size to this value; you should always use a bit more than the block size.
+* `io.sort.mb` default `X`, recommended `1.5 * typical output size`. You can devote up to 70% of the child heap size to this value; you should always use a bit more than the block size.
 
-* With 14 nodes and 5 mappers per node, consider increasing `mapred.reduce.parallel.copies` to be more like 20 (in the range of 9 to 35) You should see the shuffle/copy phase of your reduce tasks speed up.
+* `mapred.reduce.parallel.copies`: default `X`, recommended  to be in the range of `sqrt(Nw*Nm)` to `Nw*Nm/2`  You should see the shuffle/copy phase of your reduce tasks speed up.
 
-* `mapred.job.reuse.jvm.num.tasks` can usually be changed to `-1` -- if a job requires a fresh JVM for each process, you can override that in its jobconf.
+* `mapred.job.reuse.jvm.num.tasks` default `1`, recommended `-1`. If a job requires a fresh JVM for each process, you can override that in its jobconf.
 
 * You never want Java to be doing stop-the-world garbage collection, but for large JVM heap sizes (above 4GB) they can become especially dangerous. If a full garbage collect takes too long, sockets can time out, causing loads to increase, causing garbage collects to happen, causing... trouble, as you can guess.
 
-* Handlers and threads
-  - `dfs.namenode.handler.count` to 14 (size of cluster) or higher.
-  - `tasktracker.http.threads` default `X`, recommended `X`
+* Given the number of files and amount of data you're storing, I would set the NN heap size agressively - at least 4GB to start, and keep an eye on it. Having the NN run out of memory is Not Good. Always make sure the secondary name node has the same heap setting as the name node.
+
+**Handlers and threads**
+
+* `dfs.namenode.handler.count`: default `X`, recommended: `(0.1 to 1) * size of cluster`, depending on how many blocks your HDFS holds.
+* `tasktracker.http.threads` default `X`, recommended `X`
 
 * Set `mapred.reduce.tasks` so that all your reduce slots are utilized -- If you typically only run one job at a time on the cluster, that means set it to the number of reduce slots. (You can adjust this per-job too). Roughly speaking: keep `number of reducers * reducer memory` within a factor of two of your reduce data size.
 
-**storage**
+* `dfs.datanode.handler.count`:  controls how many connections the datanodes can maintain. It's set to 3 -- you need to account for the constant presence of the flume connections. I think this may be causing the datanode problems. Something like 8-10 is appropriate.
+* You've increased `dfs.datanode.max.xcievers` to 8k, which is good.
+
+**Storage**
   
-* Consider moving the mapreduce system HDFS directory (`mapred.system.dir`) out of `/tmp`; it's a system directory. `/hadoop/mapred/system` is what we use. You'll need to pay attention to HDFS user perms as you do. (Note that this is a path on the HDFS, not the filesystem)
+* `mapred.system.dir`: default `X` recommende `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
 
 * Ensure the HDFS data dirs (`dfs.name.dir`, `dfs.data.dir` and `fs.checkpoint.dir`), and the mapreduce local scratch dirs (`mapred.system.dir`) include all your data volumes (and are off the root partition). The more volumes to write to the better. Include all the volumes in all of the preceding. If you have a lot of volumes, you'll need to ensure they're all attended to; have 0.5-2x the number of cores as physical volumes.
 
 * Do not construct a RAID partition for Hadoop -- it is happiest with a large JBOD. (There's no danger to having hadoop sit on top of a RAID volume; you're just hurting performance).
 
-* We use `xfs`; I'd avoid `ext3` Set the `noatime` option (turns off tracking of last-access-time) -- otherwise the OS updates the disk on every read.
+* We use `xfs`; I'd avoid `ext3`.
 
-* If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer). The 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
+* Set the `noatime` option (turns off tracking of last-access-time) -- otherwise the OS updates the disk on every read.
 
-* `dfs.datanode.handler.count`:  controls how many connections the datanodes can maintain. It's set to 3 -- you need to account for the constant presence of the flume connections. I think this may be causing the datanode problems. Something like 8-10 is appropriate. You've increased `dfs.datanode.max.xcievers` to 8k, which is good.
+* Increase the ulimits for open file handles (`nofile`) and number of processes (`nproc`) to a large number for the `hdfs` and `mapred` users: we use `32768` and `50000`.
 
-* As discussed, increase the ulimits for open file handles (`nofile`) and number of processes (`nproc`) to a large number for the `hdfs` and `mapred` users: we use `32768` and `50000`.
-
-* Given the number of files and amount of data you're storing, I would set the NN heap size agressively - at least 4GB to start, and keep an eye on it. Having the NN run out of memory is Not Good. Always make sure the secondary name node has the same heap setting as the name node.
-
-* It looks like the hadoop logs are going to /var/log/hadoop, which I assume is on the root partition. As long as the root partition isn't under heavy load during high usage, this is correct. Check the Jobtracker however -- it typically has a much larger log volume than the others, and low disk utilization otherwise.
-
-* Since you don't have a ton of people using the cluster, consider increasing the amount of time the jobtracker holds log and job info; it's nice to be able to look back a couple days at least. Also increase `mapred.jobtracker.completeuserjobs.maximum` to a larger value while you're getting things shook out on the cluster. These are just for politeness to the folks writing jobs.
-  - `mapred.userlog.retain.hours`
-  - `mapred.jobtracker.retirejob.interval`
-  - `mapred.jobtracker.retirejob.check`
-  - `mapred.jobtracker.completeuserjobs.maximum`
-  - `mapred.job.tracker.retiredjobs.cache`
-  - `mapred.jobtracker.restart.recover`
-
-* Consider increasing the `fs.trash.interval`. I've found that files are either a) so huge I want them gone immediately, or b) of no real concern. A setting of 2880 (two days) lets you realize in the afternoon that you made a mistake yesterday morning, 
+**Other**
 
 * `mapred.map.output.compression.codec`: default XX, recommended ``. Enable Snappy codec for intermediate task output.
   - `mapred.compress.map.output`
@@ -146,3 +144,15 @@ Here's the plausible configuration for a 16-GB physical machine with 8 cores:
 * `mapred.reduce.slowstart.completed.maps`
 * `mapred.map.tasks.speculative.execution`: default: `true`, recommended: `true`. Speculative execution (FIXME: explain). So this setting makes jobs finish faster, but makes cluster utilization higher; the tradeoff is typically worth it, especially in a development environment. Disable this for any map-only job that writes to a database or has side effects besides its output. Also disable this if the map tasks are expensive and your cluster utilization is high.
 * `mapred.reduce.tasks.speculative.execution`: default `false`, recommended: `false`.
+
+* (hadoop log location): default `/var/log/hadoop`, recommended `/var/log/hadoop` (usually). As long as the root partition isn't under heavy load, store the logs on the root partition. Check the Jobtracker however -- it typically has a much larger log volume than the others, and low disk utilization otherwise. In other words: use the disk with the least competition.
+
+* `fs.trash.interval` default `1440` (one day), recommended `2880` (two days). I've found that files are either a) so huge I want them gone immediately, or b) of no real concern. A setting of two days lets you to realize in the afternoon today that you made a mistake in the morning yesterday, 
+
+* Unless you have a ton of people using the cluster, increase the amount of time the jobtracker holds log and job info; it's nice to be able to look back a couple days at least. Also increase `mapred.jobtracker.completeuserjobs.maximum` to a larger value. These are just for politeness to the folks writing jobs.
+  - `mapred.userlog.retain.hours`
+  - `mapred.jobtracker.retirejob.interval`
+  - `mapred.jobtracker.retirejob.check`
+  - `mapred.jobtracker.completeuserjobs.maximum`
+  - `mapred.job.tracker.retiredjobs.cache`
+  - `mapred.jobtracker.restart.recover`
