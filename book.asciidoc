@@ -20,15 +20,15 @@ include::ch05-data_formats.asciidoc[]
 
 include::ch05-semi_structured_data.asciidoc[]
 
+include::ch06-overview_of_datasets.asciidoc[]
+
+include::ch06-tuning.asciidoc[]
+
 include::ch05-rules_of_scaling.asciidoc[]
 
 include::ch06-herding_cats.asciidoc[]
 
-include::ch06-overview_of_datasets.asciidoc[]
-
 include::ch06-statistics.asciidoc[]
-
-include::ch06-tuning.asciidoc[]
 
 include::ch07-time_series_data.asciidoc[]
 

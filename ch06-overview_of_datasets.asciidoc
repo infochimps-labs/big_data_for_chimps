@@ -1,3 +1,35 @@
+== Overview of Datasets ==
+
+===  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD) === 
+  - 20 GB
+  - geo, stats
+
+
+=== Wikipedia Page Traffic Statistic V3  ===
+  - 
+  - a 150 GB sample of the data used to power trendingtopics.org. It includes a full 3 months of hourly page traffic statistics from Wikipedia (1/1/2011-3/31/2011).
+
+* Twilio/Wigle.net Street Vector Data Set --  -- geo -- Twilio/Wigle.net database of mapped US street names and address ranges.
+
+* 2008 TIGER/Line Shapefiles -- 125 GB -- geo -- This data set is a complete set of Census 2000 and Current shapefiles for American states, counties, subdivisions, districts, places, and areas. The data is available as shapefiles suitable for use in GIS, along with their associated metadata. The official source of this data is the US Census Bureau, Geography Division.
+
+==== Amazon Co-Purchasing Data ====
+
+* http://snap.stanford.edu/data/amazon0312.html
+
+
+==== Patents ====
+
+* http://www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
+
+===  Marvel Universe Social Graph ===
+
+  - 1 GB
+  - graph
+  - Social collaboration network of the Marvel comic book universe based on co-appearances.
+
+==== Other ====
+
 
 * Yahoo Stocks
 * Wikipedia Pageviews
@@ -44,42 +76,12 @@
   - corpus 
   - A collection of all publicly available mail archives from the Apache55 Software Foundation (ASF)
 
-* Marvel Universe Social Graph 
-  - 1 GB
-  - graph
-  - Social collaboration network of the Marvel comic book universe based on co-appearances.
-
-* Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD)
-  - 20 GB
-  - geo, stats
-
-
-* Wikipedia Page Traffic Statistic V3 
-  - 
-  - a 150 GB sample of the data used to power trendingtopics.org. It includes a full 3 months of hourly page traffic statistics from Wikipedia (1/1/2011-3/31/2011).
-
-* Twilio/Wigle.net Street Vector Data Set --  -- geo -- Twilio/Wigle.net database of mapped US street names and address ranges.
-
-* 2008 TIGER/Line Shapefiles -- 125 GB -- geo -- This data set is a complete set of Census 2000 and Current shapefiles for American states, counties, subdivisions, districts, places, and areas. The data is available as shapefiles suitable for use in GIS, along with their associated metadata. The official source of this data is the US Census Bureau, Geography Division.
-
-==== Amazon Co-Purchasing Data ====
-
-* http://snap.stanford.edu/data/amazon0312.html
-
-
-==== Patents ====
-
-* http://www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
-
-
-==== Other ====
+=== The Book-Crossing dataset ===
 
 * http://www.informatik.uni-freiburg.de/~cziegler/BX/[Book Crossing] Collected by Cai-Nicolas Ziegler in a 4-week crawl (August / September 2004) from the Book-Crossing community with kind permission from Ron Hornbaker, CTO of Humankind Systems. Contains 278,858 users (anonymized but with demographic information) providing 1,149,780 ratings (explicit / implicit) about 271,379 books. Freely available for research use when acknowledged with the following reference (further details on the dataset are given in this publication): Improving Recommendation Lists Through Topic Diversification, Cai-Nicolas Ziegler, Sean M. McNee, Joseph A. Konstan, Georg Lausen; Proceedings of the 14th International World Wide Web Conference (WWW '05), May 10-14, 2005, Chiba, Japan. To appear. As a courtesy, if you use the data, I would appreciate knowing your name, what research group you are in, and the publications that may result.	
 
-
-Format
-
 The Book-Crossing dataset comprises 3 tables.
+
 BX-Users
 Contains the users. Note that user IDs (`User-ID`) have been anonymized and map to integers. Demographic data is provided (`Location`, `Age`) if available. Otherwise, these fields contain NULL-values.
 
@@ -92,7 +94,9 @@ Contains the book rating information. Ratings (`Book-Rating`) are either explici
 * http://www.psych.ualberta.ca/~westburylab/downloads/usenetcorpus.download.html[Westbury Usenet Archive] -- USENET corpus (2005-2010) http://labrosa.ee.columbia.edu/millionsong/[BETA VERSION] This corpus is a collection of public USENET postings. This corpus was collected between Oct 2005 and Jan 2011, and covers 47860 English language, non-binary-file news groups. Despite our best effots, this corpus includes a very small number of non-English words, non-words, and spelling errors. The corpus is untagged, raw text. It may be neccessary to process the corpus further to put the corpus in a format that suits your needs.
 
 
-* [Million Song Dataset] -- The Million Song Dataset is a freely-available collection of audio features and metadata for a million contemporary popular music tracks.
+=== Million Song Dataset ===
+
+The Million Song Dataset is a freely-available collection of audio features and metadata for a million contemporary popular music tracks.
 
 Its purposes are:
 

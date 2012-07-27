@@ -12,9 +12,7 @@ All of the following examples could be ambiguously referred to as "encoding":
 
 there's only three data serialization formats you should use: TSV, JSON, or Avro. 
 
-== Good Formats
-
-=== TSV
+=== Good Format 1: TSV (It's simple) ===
 
 For data exploration, wherever reasonable use tab-separated values (TSV). Emit one record per line, ASCII-only, with no quoting, and html enttity escaping where necessary. The advantage of TSV:
 
@@ -56,7 +54,7 @@ Don't use it when
 * Structured data
 * Bulk documents
 
-=== JSON
+=== Good Format 2: JSON (It's Generic and Ubiquitous) ===
 
 Individual JSON records stored one-per-line are your best bet for denormalized objects,
 
@@ -71,7 +69,7 @@ and for schema-free records:
     {"_ts":"","":"","data":{"_type":"ev.hadoop_job",...}}
     {"_ts":"","":"","data":{"_type":"ev.web_form",...}}
 
-=== structured to model.
+==== structured to model.
 
 TODO: receive should take an owner field 
 
@@ -103,24 +101,28 @@ Receiver:
 
 Important that receeiver is not setter - floppy inassertive model with no sense of its own identity. Like the security line at the airport: horrible inexplicable things, more complicated then it seems like it should, but once past the security line you can g back to being a human again.
 
+Do not make filedls that represent objects and keys -- if there's a user fields put it in `user`, its id in user_id, and use virtual accessors to mask the difference.
 
-Do not make filedls that represent objects and keys -- if,there's a user fields put it in `user`, its id in user_id, and use virtual accessors to mask the difference.
 
-This is a very rubyist way of thinking other languages pleass chime in.
 
-aa
+=== Good Format #3: Avro (It does everything right) ===
 
-=== tagged net strings and null-delimited documents 
+that there is no essential difference among
+
+        File Format         Schema          API
+        RPC (Remote Procedure Call) Definition
+        JPG                 CREATE TABLE    Twitter API     
+        HTML DTD            db defn.
+        
+Avro says these are imperfect reflections for the same thing: a method to send data in space and time, to yourself or others. This is a very big idea [^1].
+
+=== Other reasonable choices: tagged net strings and null-delimited documents  ===
 
 Not restartable.
 
 Can't represent a document with a null
 
-== Crap Formats
-
-Avoid
-
-=== XML
+=== Crap format #1: XML
 
 XML is disastrous as a data transport format. It's also widely used in enterprise systems and on the web, and so you will have to learn how to work with it. Wherever possible, implement decoupled code whose only job is to translate the XML into a sane format, and write all downstream code to work with that.
 
@@ -221,14 +223,13 @@ Attributes, CDATA, model boundaries, document text
 
 If you do it, consider emitting not with a serde but with a template engine. Pretty-print fields so can use cmdline tools
 
-=== N3 triples
+=== Crap Format #2: N3 triples ===
 
-Like most semweb things, is antagonistic to thought.
+Like most Semantic-Web developed technology, N3 is antagonistic to thought and action.
 
-If you must deal with this, pretty-print the fields and ensure delimiters are clean
+If you must deal with this, pretty-print the fields and ensure delimiters are clean. 
 
-
-=== Flat format
+=== Crap Format #3: Flat format ===
 
 WALKTHROUGH: converting the weather fields. 
 
@@ -255,22 +256,7 @@ WALKTHROUGH: apache web logs of course.
 Regexp to tuple.
 Just capture substructure 
 
-=== Others
-
-== Avro Schema
-
-that there is no essential difference among
-
-        File Format         Schema          API             RPC (Remote Procedure Call) Definition
-        
-        JPG                 CREATE TABLE    Twitter API     Cassandra RPC
-        HTML DTD            db defn.
-        
-Avro says these are imperfect reflections for the same thing: a method to send data in space and time, to yourself or others. This is a very big idea [^1].
-
-=== Avro
-
-== Glyphing (string encoding), Unicode,UTF-8
+=== Glyphing (string encoding), Unicode,UTF-8 ===
 
 My best advice is 
 
@@ -283,12 +269,12 @@ My best advice is
   -   URL encoding only makes sense when you're shipping urls anyway.
   - TODO: check those character strings for correctness. Also, that I'm using "glyph" correctly
 
-== ICSS
+=== ICSS ===
 
 ICSS uses 
 
 
-=== Schema.org Types
+==== Schema.org Types ====
  
 
 === Munging
@@ -316,14 +302,6 @@ ICSS uses
           type:  float
       # ...
       
-=== More
-
-ICSS gives
-
-
-`_domain_id` and other identifiers
-
-
 
 
 ''''
