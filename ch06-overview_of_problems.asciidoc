@@ -1,0 +1,94 @@
+
+
+* Go in order of topic (as below) or of how-to-thinkness? 
+
+=== Munging
+
+* Wikipedia
+  - (DL) corpus 
+  - (DL) pagelinks
+  - (DL) Pageview Counts
+  - (DBpedia info)
+* Flight Stats
+* Weather (hourly? daily?)
+* Logs
+  - World Cup
+  - Star Wars Kid
+
+DL:
+
+* pageview stats
+* (redirected)
+* parse corpus
+  - figure out splitter
+  - make it be one line per file (by `&#XX;`'ing the newlines
+  - recover / add interesting metadata
+* Logs
+  - figure out apache log parser in pig
+* page links
+  - X prepare
+  - label category pages, redirect, etc
+  - adjacency list + minimal metadata & labelled low-id-first edge list
+  - calculate degree (in, out, symmetric) & other simple stats, add to page metadata table.
+  
+=== `cat` herding
+
+* Simple (!) munging
+* total sort
+* sampling
+
+=== Statistics
+
+* Average, StdDev, etc of a huge spreadsheet
+* Exact Percentiles (Median) of a huge spreadsheet
+* Approximate Percentiles (Median) of a huge spreadsheet
+* Histogram
+
+
+=== Text Processing
+
+* Inverted Index (word count)
+* Minhash 
+
+
+=== Time Series
+
+* Correlate two time series
+  - weather & wikipedia
+  - weather & flight delays
+* Predict (?)
+  - flight delay from weather
+* Anomaly detection
+  - Wikipedia Pageview
+  - Flight delays
+  - World Cup
+  
+=== Log Processing
+
+* Sessionizing a log
+* (munging)
+
+==== Graph
+
+* Adjacency List / Edge List conversion
+* Minimal Spanning Tree
+* Pagerank
+* Undirecting a graph
+  - Assemble a min-index Adj. list 
+* Breadth-First Search
+  - Min-degree undirected graph
+
+=== Geographic
+
+* (mechanics of handling geo data)
+  - Statistics on grid cells
+* Clustering
+* (Pointwise mutual information)
+
+
+=== ???
+
+* (collaborative filtering)
+  - (voteview)
+  - ?? wikipedia user edits
+  - 
