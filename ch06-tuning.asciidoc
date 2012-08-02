@@ -62,7 +62,21 @@ Tuning your cluster to your job makes life simple
 
 
 
+=== Physics of Tuning constants
+
+
+There are some things that should grow square-root-ishly as the size of the cluster -- handler counts, some buffer sizes, and others. 
+
+Let's think about the datanode handler count. Suppose you double the size of your cluster -- double the datanodes and double the tasktrackers. Now the cluster has twice as many customers for datanodes (2x the peer traffic from datanodes and 2x the tasktrackers requesting data), but the cluster also has twice as many datanodes to service those customers. So the average number of customers per datanode has not changed.  However, the number of workers that might gang up on one datanode simultaneously has increased; roughly speaking, this kind of variance increases as the square root, so it would be reasonable to increase that handler count by 1.4 (the square root of 2). Any time you have a setting that a) is sized to accommodate the peak number of inbound activity, and b) the count of producers and consumers grows in tandem, you're thinking about a square root.
+
+That is, however, from intra-cluster traffic. By contrast, flume connections are long-lived, and so you should account for them as some portion of the datanode handler count -- each agent will be connected to one datanode at a time (as directed by the namenode for that particular block at th). Doubling the number of flume writers should double that portion; doubling the number of datanodes should halve that portion.
+
+
+
 == Hadoop System configurations ==
+
+Here first are some general themes to keep in mind:
+The default settings are those that satisfy in some mixture the constituencies of a) Yahoo, Facebook, Twitter, etc; and b) Hadoop developers, ie. peopl who *write* Hadoop but rarely *use* Hadoop. This means that many low-stakes settings (like keeping jobs stats around for more than a few hours) are at the values that make sense when you have a petabyte-scale cluster and a hundred data engineers; 
 
 **Cluster Layout**
 
@@ -134,6 +148,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 * `mapred.system.dir`: default `X` recommende `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
 
 * Ensure the HDFS data dirs (`dfs.name.dir`, `dfs.data.dir` and `fs.checkpoint.dir`), and the mapreduce local scratch dirs (`mapred.system.dir`) include all your data volumes (and are off the root partition). The more volumes to write to the better. Include all the volumes in all of the preceding. If you have a lot of volumes, you'll need to ensure they're all attended to; have 0.5-2x the number of cores as physical volumes.
+  - HDFS-3652 -- don't name your dirs `/data1/hadoop/nn`, name them `/data1/hadoop/nn1`  ( final element differs).
 
 * Solid-state drives are unjustifiable from a cost perspective. Though they're radically better on seek they don't improve performance on bulk transfer, which is what limits Hadoop. Use regular disks.
 
@@ -144,6 +159,10 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 * Set the `noatime` option (turns off tracking of last-access-time) -- otherwise the OS updates the disk on every read.
 
 * Increase the ulimits for open file handles (`nofile`) and number of processes (`nproc`) to a large number for the `hdfs` and `mapred` users: we use `32768` and `50000`.
+  - be aware: you need to fix the ulimit for root (?instead ? as well?)
+
+* `dfs.blockreport.intervalMsec`: default 3_600_000 (1 hour); recommended 21_600_000 (6 hours)  for a large cluster.
+  - 100_000 blocks per data node for a good ratio of CPU to disk
 
 **Other**
 
@@ -170,6 +189,8 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
   - `mapred.job.tracker.retiredjobs.cache`
   - `mapred.jobtracker.restart.recover`
 
+
+* Bump `mapreduce.job.counters.limit` -- it's not configurable per-job.
 
 == Tuning pt 2 ==
 

@@ -4,118 +4,139 @@
 ==== Outline ====
 
 1. **Chimpanzee and Elephant Save Christmas**
-  - stream of disordered records
-  - group/sort records by their label
-  - process each group of records
+  ** stream of disordered records
+  ** group/sort records by their label
+  ** process each group of records
   
 2.  **Heraclitus and the Stream**
-  - Simple disordered stream (map-only) in Wukong
-  - Simple ordered-group transform (map+reduce) in Wukong
+  ** Simple disordered stream (map-only) in Wukong
+  ** Simple ordered-group transform (map+reduce) in Wukong
   
 3.  **Why Hadoop Works**
-  - the locality problem
-  - the Hadoop haiku
-  - robots are inexpensive, programmers are not
+  ** the locality problem
+  ** the Hadoop haiku
+  ** robots are inexpensive, programmers are not
 
-5.  **Herding `cat`s: the mechanics of wrangling massive data**
-  - getting data within Hadoop's reach
-  - launching jobs
-  - seeing the data
-  - seeing the logs
-  - simple debugging
-  - wu-lign
+4.  **Herding `cat`s: the mechanics of wrangling massive data**
+  ** getting data within Hadoop's reach
+  ** launching jobs
+  ** seeing the data
+  ** seeing the logs
+  ** clicking to 
+  ** simple debugging
+  ** wu-lign
 
 6. **Data Formats**
 
 7. **Semi-structured Data**
 
-  - Wikipedia
-    - Datasets:
-      - Full-text of Articles (`wikipedia_articles`)
-      - Wikipedia Page properties (`wikipedia_pageinfos`)
-      - Wikipedia Pagelinks (`wikipedia_links`)
-      - Pageview Counts (`wikipedia_pageviews`)
-      - (Page Properties from DBpedia) (`wikipedia_dbpedia`)
-    - Scripts
-      - `parse_raw_articles` (xml splitter, xml parser)
-      - `parse_raw_links` (sql dump)
-      - `parse_pageinfos` (sql dump)
-      - `parse_raw_pageviews` (simple tsv load)
-      - `prepare_articles`
-      - `prepare_links`
-  - Airline Flights and Flight Delays
-    - Datasets:
-      - Airline Flights with delay information (`airline_flights/flights`)
-      - Airlines (`airline_flights/airlines`)
-      - Airports (`airline_flights/airports`)
-      - Airplanes (`airline_flights/airplanes`)
-    - Scripts:
-      - `parse_raw_wikipedia_identifiers`
-      - `parse_raw_openflights_airports`
-      - `parse_raw_dataexpo_airports`
-      - `prepare_timezone_mapping`
-      - `parse_dataexpo_flights`
-      - `reconcile_airports`
-      - `timezoneize_flights`
-  - Global Weather
-    - Daily observations (`weather/daily_observations`)
-    - Hourly observations (`weather/hourly_observations`) (we'll only use one of daily vs hourly)
-    - Weather stations (`weather/weather_stations`)
-  - Logs
-    - World Cup (`weblogs/worldcup_apachelogs`)
-    - Star Wars Kid (`weblogs/starwarskid_apachelogs`)
+  ** Wikipedia
+  ** Datasets:
+  ** Full-text of Articles (`wikipedia_articles`) -- TSV
+  ** Wikipedia Page properties (`wikipedia_pageinfos`) -- TSV
+  ** Wikipedia Pagelinks (`wikipedia_links`) -- TSV
+  ** Pageview Counts (`wikipedia_pageviews`) -- TSV
+  ** (Page Properties from DBpedia) (`wikipedia_dbpedia`) -- TSV
+  ** Munging:
+  ** `parse_raw_articles` (xml splitter, xml parser)
+  ** figure out splitter
+  ** make it be one line per file (by `&#XX;`'ing the newlines
+  ** keep any interesting metadata
+  ** `parse_raw_links` (sql dump)
+  ** `parse_pageinfos` (sql dump)
+  ** `parse_raw_pageviews` (simple tsv load)
+  ** `prepare_articles`
+  ** add minimal metadata
+  ** `prepare_links`
+  ** minimal metadata; label category pages, redirect, etc
+  ** adjacency list? labelled low-id-first edge list
+  ** `prepare_pages`
+  ** calculate degree (in, out, symmetric) & other simple stats, add to page metadata table.
+      
+  ** Airline Flights and Flight Delays
+  ** Datasets:
+  ** Airline Flights with delay information (`airline_flights/flights`)
+  ** Airlines (`airline_flights/airlines`)
+  ** Airports (`airline_flights/airports`)
+  ** Airplanes (`airline_flights/airplanes`)
+  ** Munging:
+  ** `parse_raw_wikipedia_identifiers`
+  ** `parse_raw_openflights_airports`
+  ** `parse_raw_dataexpo_airports`
+  ** `prepare_timezone_mapping`
+  ** `parse_dataexpo_flights`
+  ** `reconcile_airports`
+  ** `timezoneize_flights`
+  ** Global Weather
+  ** Datasets
+  ** Daily observations (`weather/daily_observations`)
+  ** Hourly observations (`weather/hourly_observations`) (we'll only use one of daily vs hourly)
+  ** Weather stations (`weather/weather_stations`)
+  ** Munging:
+  ** Logs
+  ** World Cup (`weblogs/worldcup_apachelogs`)
+  ** Star Wars Kid (`weblogs/starwarskid_apachelogs`)
+* Logs
+  ** figure out apache log parser in pig
+* page links
+  ** X prepare
 
 6.  **Statistics**
-  - sum, average, standard deviation, etc (airline_flights, )
-  - medians and percentiles
-  - construct a histogram
-  - normalize data by mapping to percentile
-  - normalize data by mapping to Z-score
+  ** sum, average, standard deviation, etc (airline_flights)
+  ** medians and percentiles
+  ** construct a histogram
+  ** normalize data by mapping to percentile
+  ** normalize data by mapping to Z-score
   
 7.  Advanced Pig
-  - map-side join
-  - merge join
-  - skew joins
-  - Performance and efficiency
+  ** map-side join
+  ** merge join
+  ** skew joins
+  ** Performance and efficiency
   
 8.  Processing Text
-  - grep'ing for simple matches
-  - tokenize text
-  - simple document analysis
-  - minhash clustering
+  ** grep'ing for simple matches
+  ** tokenize text
+  ** simple document analysis
+  ** minhash clustering
   
 9.  Geo Data
-  - quadkeys and grid coordinate system
-  - k-means clustering to produce readable summaries
-  - partial quad keys for "area" data
-  - voronoi cells to do "nearby"-ness
-  - Using polymaps to see results
+  ** quadkeys and grid coordinate system
+  ** `skkkkkkkkk` -- map wikipedia 
+  ** k-means clustering to produce readable summaries
+  ** partial quad keys for "area" data
+  ** voronoi cells to do "nearby"-ness
+  ** Scripts:
+  ** `calculate_voronoi_cells` -- use weather station locations to calculate voronoi polygons
+  ** `voronoi_grid_assignment` -- cells that have a piece of border, or the largest grid cell that has no border on it
+  ** `asdfk`
+  ** Using polymaps to see results
 10.  Processing Graphs
-  - subuniverse extraction
-  - Pagerank
-  - identify strong links
-  - clustering coefficient
+  ** subuniverse extraction
+  ** Pagerank
+  ** identify strong links
+  ** clustering coefficient
 11.  Black-Box Machine Learning
-  - Simple Naive Bayes classification
-  - Document clustering
+  ** Simple Naive Bayes classification
+  ** Document clustering
 12.  Flume and Stream Processing
-  - sources, sinks and decorators
-  - deploying a wukong script as a decorator
-  - parse the twitter stream API feed
+  ** sources, sinks and decorators
+  ** deploying a wukong script as a decorator
+  ** parse the twitter stream API feed
 13.  Time Series
-  - windowing
-  - simple anomaly detection
-  - rolling statistics
+  ** windowing
+  ** simple anomaly detection
+  ** rolling statistics
 14.  Pig UDFs
-  - Basic UDF
-  - why algebraic is awesome and how to be algebraic
-  - Wonderdog: a LoadFunc / StoreFunc for elasticsearch 
+  ** Basic UDF
+  ** why algebraic is awesome and how to be algebraic
+  ** Wonderdog: a LoadFunc / StoreFunc for elasticsearch 
 15.  Installing and Operating a Cluster
 16.  Tuning
 17.  HBase and Databases
   
 4.  How to Scale Dirty and its Influence on People
-  - How to think at scale
-  - Pedantic Points of Style 
-  - Best Practices
+  ** How to think at scale
+  ** Pedantic Points of Style 
+  ** Best Practices
   

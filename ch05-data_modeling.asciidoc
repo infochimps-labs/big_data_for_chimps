@@ -1,5 +1,22 @@
 == Data Modeling
 
+=== Datasets ===
+
+There are six and a half shapes of record-oriented datasets:
+
+* Tables,
+* Structured objects, 
+* Sparse tables,
+* Adjacency List Graphs, 
+* Edge list / Tuple piles,
+* Data frame / tensor
+* Blobs
+
+If the details of storing an object or a table as tuples poke though to the programmer, it is a moral failure and everyone who brought this about should feel shame.
+
+Graphs: row key as node id; node metadata as out-of-band cells; into edges as column titles; edge metadata as cell values.
+
+
 === Philosophy 101A: Ontology (What We Know) ===
 
 One of the most wonderful and surprising aspects of Big Data is how frequently, at the far reaches of a certified hard-core engineering problem, we bump up against fundamental questions of Philosophy footnote:(Or maybe not: it's a new frontier, this ability to quantify completely a whole range of natural and human phenomena.). Here, the language of Ontology (what we know) is helpful. Later, we'll talk about Epistemology (how we know it) -- the practice data analysis at scale is epistemologically distinct from the scientific method.
@@ -87,19 +104,3 @@ TODO: collect the best practices back at "How to think"
 * Wherever possible, use intrinsic metadata to assign identifiers. 
 * Truth flows from the edge inward
 * Keep your data flows recapitulateable - This ensures confidence in provenance, is enormously helpful for debugging and validation, and is a sign you're thinking correctly
-
-=== Dataset ===
-
-There are six and a half shapes of record-oriented datasets:
-
-* Tables,
-* Structured objects, 
-* Sparse tables,
-* Adjacency List Graphs, 
-* Edge list / Tuple piles,
-* Data frame / tensor
-* Blobs
-
-If the details of storing an object or a table as tuples poke though to the programmer, it is a moral failure and everyone who brought this about should feel shame.
-
-Graphs: row key as node id; node metadata as out-of-band cells; into edges as column titles; edge metadata as cell values.

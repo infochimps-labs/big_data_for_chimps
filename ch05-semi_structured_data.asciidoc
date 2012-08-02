@@ -163,3 +163,4 @@ The Wikipedia datasets a bug that is unfortunately common and appallingly diffic
 Perhaps, people from the future, Wikipedia will have  a `cut: stdin: Illegal byte sequence`
  `-e:1:in <main>: invalid byte sequence in UTF-8 (ArgumentError)`
 
+// include::blogpost_media_processing.txt[depth=1]
