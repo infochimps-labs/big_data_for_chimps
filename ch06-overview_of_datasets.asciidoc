@@ -68,7 +68,7 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
 === Other Datasets ===
 
 
-
+--------------------
    approx size	M recs	source Data
          huge		US Patent Data from Google                          	www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
          huge	      1	Mathematical constants to billion+'th-place         	www.numberworld.org/ftp
@@ -130,7 +130,7 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
           		Pew Research Datasets                                	pewinternet.org/Static-Pages/Data-Tools/Download-Data/Data-Sets.aspx
           		Youtube Related Videos                                	netsg.cs.sfu.ca/youtubedata
 			Westbury Usenet Archive	www.psych.ualberta.ca/~westburylab/downloads/usenetcorpus.download.html	 USENET corpus (2005-2010) http://labrosa.ee.columbia.edu/millionsong/[BETA VERSION] This corpus is a collection of public USENET postings. This corpus was collected between Oct 2005 and Jan 2011, and covers 47860 English language, non-binary-file news groups. Despite our best effots, this corpus includes a very small number of non-English words, non-words, and spelling errors. The corpus is untagged, raw text. It may be neccessary to process the corpus further to put the corpus in a format that suits your needs.
-                        
+--------------------                        
 
 
 === Wikibench.eu Wikipedia Log traces
