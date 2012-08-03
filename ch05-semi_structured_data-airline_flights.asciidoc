@@ -1,0 +1,45 @@
+
+
+=== Domain Models
+
+Here are the models for Airport, Airline and Flight:
+
+.Airport Models
+----
+include::code/munging/airline_flights/airport.rb[depth=1]
+----
+
+.Airplane Models
+----
+include::code/munging/airline_flights/airplane.rb[depth=1]
+----
+
+.Airline Models
+----
+include::code/munging/airline_flights/airline.rb[depth=1]
+----
+
+.Flight Models
+----
+include::code/munging/airline_flights/flight.rb[depth=1]
+----
+
+=== Data Extraction
+
+Most of the extraction is straightforward. For reasons explained below, we have two sources of airline and airplane data, and another 
+
+
+
+=== Recovering Time Zone
+
+So far, the airline data is fairly straightforward to import. However, Loki the Trickster rarely stays clear when it comes to adapting datasets across domains. The flight data has *local* actual/scheduled times, and it has airports, and it has the date -- but it has neither the *absolute* time nor the time zone.
+
+So, you need a map from airports to time zones. Good news: Openflights.org has that data. In fact, it's more comprehensive and adds some other interesting columns. Bad news: its data is somewhat messier and its identifiers don't cleanly reconcile against the `airline_flights` table. So, you need a "*gazette*": a unified table listing the IATA, ICAO and FAA id of each airport. Wikipedia has a table indexing airports by IATA (and some, but not all, pairings with ICAO and FAA); and a table indexing airports by ICAO (and some, but not all, pairings with IATA and FAA) -- and they mostly agree, but with a couple hundred (about 2% of nearly 10,000 airports) in conflict.
+
+If you're keeping track: for want of a time zone, we need an airport-TZ map; for want of common  identifiers, we need an ICAO-IATA-FAA identifier gazette; for want of clean resolution anywhere we end up reconciling two datasets against two different gazettes and hand-curating the _identifiable_ errors in the mapping footnote:[The technical term for this recursively unbound descent into the sunk-cost fallacy is "Yak Shaving"]. I won't go into the boring details of reconciling the airports: they're boring, and detailed in the code (see `munging/airline_flights/reconcile*.rb`).
+
+But it's important to share that there is no royal road to clean data. It's easy to account for the work required to correct the obvious, surface messiness in the data. The **common case** is that correcting the 2% of outliers, reconciling conflicting assertions, dealing with ill-formatted records or broken encodings, and the rest of the "chimpanzee" work takes more time than anything else involved in semi-structured data extraction.  Most importantly, that work is not a programming problem -- it requires you to understand obscure details from the source domain not otherwise needed to solve your problem at hand footnote:[I now know far more about the pecadilloes of international airport identifier schemes than I ever wished to know. Airports may have an IATA id, an ICAO id, and (in the US and its territories) an FAA id. In the _continental_ US, the ICAO is always the FAA id preceded by a "K": Austin-Bergstrom airport has FAA id `AUS`, IATA id `AUS` and ICAO id `KAUS`. However:
+* Not all airports have ICAO ids, and not all airports have IATA ids.
+* The FAA id often, but not always, matches the IATA id; this is the primary source of errors in the airport metadata, as people blithely assign the FAA id to an IATA-id-less airport.
+* There is yet another identifier, the METAR id, used to identify the weather station at an airport; it was once the same as the ICAO id but they are now maintained independently.
+Yet, somehow, all those planes typically land at the right place.].
