@@ -52,6 +52,10 @@ include::ch20-flume_and_stream_processing.asciidoc[]
 
 include::ch06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
+include::zd0-datasets.asciidoc[]
+
+include::zd3-airline_flights.asciidoc[]
+
 include::ch22-authors.asciidoc[]
 
 include::TODO.asciidoc[]
