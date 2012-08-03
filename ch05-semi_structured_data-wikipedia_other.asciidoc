@@ -1,0 +1,75 @@
+
+=== Wikipedia Target Domain Model ===
+
+First step is to give some thought to the target domain model. There's a clear match to the Schema.org `Article` type, itself a subclass of `CreativeWork`, so we'll use the property names and descriptions:
+
+--------------------
+class Wikipedia::WpArticle
+  field      :id,                     String,    doc: "Unique identifier for the article; it forms the tail-end of the traditional URL"
+  field      :wp_page_id,             Integer,   doc: "Numeric serial ID for the page (as opposed to the article's topic)"
+  field      :name,                   String,    doc: "Topic name (human-readable)"
+  field      :description,            String,    doc: "Short abstract of the content"
+  field      :keywords,    Array, of: String,    doc: "List of freeform tags for the topic"
+  field      :article_body,           String     doc: "Contents of the article"
+  field      :coordinates, Geo::Coordinates,     doc: "Primary location for the topic"
+  field      :content_location, Geo::Place,      doc: "The location of the topic"
+  field      :in_language,            String,    doc: "Language identifier"
+  collection :same_as_ids,            String,    doc: "Articles that redirect to this one"
+  collection :wp_links,               Hyperlink, doc: "Links to Wikipedia Articles from this article"
+  collection :external_links,         Hyperlink, doc: "Links to external sites from this article"
+  field      :wp_project,             String,    doc: "Wikipedia project identifier; main wikipedia a, wikibooks b, wiktionary d, wikimedia m, wikipedia mobile mw, wikinews n, wikiquote q, wikisource s, wikiversity v, mediawiki w"
+  field      :extended_properties,    Hash,      doc: "Interesting properties for this topic, extracted by DBpedia. For example, the topic 'Abraham Lincoln' has properties vice_president:         \"Andrew_Johnson\", spouse: \"Mary_Todd_Lincoln\" and so forth."
+end
+--------------------
+
+=== TSV Data (Wikipedia Pageview Stats) ===
+
+This shows up as a `.tsv` file with columns for `lang_and_project`, `page_id`, `request_count`, `transferred_bytesize`. Since it's a tsv, parsing is as easy as defining the model and calling `from_tuple`:
+
+--------------------
+class Wikipedia::RawPageview < Wikipedia::Base
+  field :lang_and_project,     String
+  field :id,                   String
+  field :request_count,        Integer
+  field :transferred_bytesize, Integer
+end
+mapper do
+  input > from_tsv >
+    ->(vals   ){ Wikipedia::RawPageview.from_tuple(vals) } >
+    to_json > output
+end
+--------------------
+
+
+We're going to make the following changes:
+
+* split the `lang_and_project` attribute into `in_language` and `wp_project`. They're different properties, and there's no good reason to leave them combined.
+* add the numeric id of the article
+* add the numeric id of the redirect-resolved article: this will make it easy to group page views under their topic
+
+===== Translation =====
+
+The translation is light, and the original model is of little interest, so we can just put the translation code into the raw model.
+First, we'll add the `in_language` and `wp_project` properties as virtual accessors:
+
+--------------------
+class Wikipedia::RawPageview < Wikipedia::Base
+  # ... (cont) ...
+  
+  def in_language() lang_and_project.split('.')[0]       ; end
+  def wp_project() lang_and_project.split('.')[1] || 'a' ; end
+
+  def to_wikipedia_pageview
+    Wikipedia::WikipediaPageview.receive(
+      id: id, request_count: request_count, transferred_bytesize: transferred_bytesize,
+      in_language: in_language, wp_project: wp_project)
+  end
+end
+
+mapper do
+  input > from_tsv >
+    ->(vals   ){ Wikipedia::RawPageview.from_tuple(vals) } >
+    ->(raw_rec){ raw_rec.to_wikipedia_pageview }           >
+    to_json > output
+end
+--------------------

@@ -26,8 +26,7 @@ include::code/munging/airline_flights/flight.rb[depth=1]
 
 === Data Extraction
 
-Most of the extraction is straightforward. For reasons explained below, we have two sources of airline and airplane data, and another 
-
+Most of the extraction is straightforward. For reasons explained below, we have two sources of airline and airplane data, plus a gazette recon
 
 
 === Recovering Time Zone
