@@ -107,7 +107,9 @@ The core datasets from DBpedia include an ontology to model the extracted inform
 
 If you use DBpedia core data sets in your research, please cite:
 
-> Christian Bizer, Jens Lehmann, Georgi Kobilarov, Sören Auer, Christian Becker, Richard Cyganiak, Sebastian Hellmann: DBpedia - A Crystallization Point for the Web of Data. Journal of Web Semantics: Science, Services and Agents on the World Wide Web, Issue 7, Pages 154-165, 2009.
+____
+Christian Bizer, Jens Lehmann, Georgi Kobilarov, Sören Auer, Christian Becker, Richard Cyganiak, Sebastian Hellmann: DBpedia - A Crystallization Point for the Web of Data. Journal of Web Semantics: Science, Services and Agents on the World Wide Web, Issue 7, Pages 154-165, 2009.
+____
 
 ==== http://wiki.dbpedia.org/Datasets/NLP?v=xs0[DBpedia NLP Datasets]
 
@@ -115,7 +117,9 @@ Each and every dataset from DBpedia is potentially useful for several tasks rela
 
 If you use DBpedia NLP data sets in your research, please cite:
 
-> Pablo N. Mendes, Max Jakob and Christian Bizer. DBpedia for NLP: A Multilingual Cross-domain Knowledge Base. Proceedings of the International Conference on Language Resources and Evaluation, LREC 2012, 21–27 May 2012, Istanbul, Turkey. (to appear)
+____
+Pablo N. Mendes, Max Jakob and Christian Bizer. DBpedia for NLP: A Multilingual Cross-domain Knowledge Base. Proceedings of the International Conference on Language Resources and Evaluation, LREC 2012, 21–27 May 2012, Istanbul, Turkey. (to appear)
+____
 
 ==== DBpedia NLP: Lexicalizations Dataset
 
@@ -164,8 +168,8 @@ http://spotlight.dbpedia.org/datasets/[Download the DBpedia People's Grammatical
 
 Example Data:
 
-    <http://dbpedia.org/resource/Britney_Spears> :gender :Female
-    <http://dbpedia.org/resource/Brigitte_Bardot> :gender :Female
-    <http://dbpedia.org/resource/Michiel_Smit> :gender :Male
-    <http://dbpedia.org/resource/David_Duke> :gender :Male
-    <http://dbpedia.org/resource/Jack_Aubrey> :gender :Male
+    \<http://dbpedia.org/resource/Britney_Spears\> :gender :Female
+    \<http://dbpedia.org/resource/Brigitte_Bardot\> :gender :Female
+    \<http://dbpedia.org/resource/Michiel_Smit\> :gender :Male
+    \<http://dbpedia.org/resource/David_Duke\> :gender :Male
+    \<http://dbpedia.org/resource/Jack_Aubrey\> :gender :Male
