@@ -1,7 +1,68 @@
-== Big Data for Chimps ==
-=== A Seriously Fun guide to Hadoop and Terabyte-scale data processing ===
+== Big Data for Chimps: A Seriously Fun guide to Hadoop and Terabyte-scale data processing ==
+:author:        Philip (flip) Kromer
+:doctype: 	book
+:toc:
+:icons:
+:lang: 		en
+:encoding: 	utf-8
 
 ==== Outline ====
+
+File organization:
+
+----
+    aaNN-name.asciidoc  -- preface material: outline, TODO, about
+    baNN-name.asciidoc  -- basic chapters: the mechanics of working with data at scale
+    fuNN-name.asciidoc  -- advanced fu: algorithms and methods for specific data challenges
+    muNN-name.asciidoc  -- musings: how to think at scale and other omphaloskepses. (Later, these will be interleaved with the basic and algorithm sections)
+    prNN-name.asciidoc  -- programmer appendices: datasets, code, etc
+    trNN-name.asciidoc  -- follow-on material
+
+    xxNN-name.asciidoc  -- chopping block: these may not make the final draft of the book.
+
+
+	book.asciidoc
+
+	aa01-about.asciidoc
+	aa02-TODO.asciidoc
+	
+	ba01-chimps_and_elephants.asciidoc
+	ba02-simple_stream.asciidoc
+	
+	ba04-toolset.asciidoc
+	ba05-semi_structured_data-airline_flights.asciidoc
+	ba05-semi_structured_data-wikipedia_corpus.asciidoc
+	ba05-semi_structured_data-wikipedia_other.asciidoc
+	ba05-semi_structured_data.asciidoc
+	ba06-herding_cats.asciidoc
+	ba06-overview_of_datasets.asciidoc
+	
+	fu06-overview_of_problems.asciidoc
+	fu06-statistics.asciidoc
+	fu06-tuning.asciidoc
+	fu07-data_formats.asciidoc
+	fu07-time_series_data.asciidoc
+	fu08-advanced_pig.asciidoc
+	fu11-processing_text.asciidoc
+	fu12-geographic_data.asciidoc
+	fu14-processing_graphs.asciidoc
+	fu19-pig_udfs.asciidoc
+	ff01-authors.asciidoc
+	mu02-why_hadoop.asciidoc
+	mu03-how_to_think.asciidoc
+	mu04-data_modeling.asciidoc
+	mu05-rules_of_scaling.asciidoc
+	mu06-best_practices_and_pedantic_points_of_style.asciidoc
+	pr01-datasets.asciidoc
+	pr03-airline_flights.asciidoc
+	xx01-simple_machine_learning.asciidoc
+	xx02-hbase_and_databases.asciidoc
+	xx03-flume_and_stream_processing.asciidoc
+	xx16-operations.asciidoc
+    
+----
+
+==== Mechanics of Working with Data at Scale ====
 
 1. **Chimpanzee and Elephant Save Christmas**
   ** stream of disordered records
@@ -12,7 +73,7 @@
   ** Simple disordered stream (map-only) in Wukong
   ** Simple ordered-group transform (map+reduce) in Wukong
   
-3.  **Why Hadoop Works**
+3.  **Musing: Why Hadoop Works**
   ** the locality problem
   ** the Hadoop haiku
   ** robots are inexpensive, programmers are not
@@ -76,6 +137,8 @@
   ** Logs
   ** World Cup (`weblogs/worldcup_apachelogs`)
   ** Star Wars Kid (`weblogs/starwarskid_apachelogs`)
+
+[start=7]
 * Logs
   ** figure out apache log parser in pig
 * page links

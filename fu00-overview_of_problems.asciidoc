@@ -3,10 +3,6 @@
 * Go in order of topic (as below) or of how-to-thinkness? 
 
 === Munging
-
-
-
-
   
 === `cat` herding
 

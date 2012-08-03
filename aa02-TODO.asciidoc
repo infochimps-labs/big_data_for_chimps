@@ -1,0 +1,8 @@
+== TODO / Errata ==
+
+
+* The chapter on tuning requires *heavy* technical review. It is largely synthesized from recommendations by others, but needs to be buttoned up and fact-checked.
+
+* The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
+
+

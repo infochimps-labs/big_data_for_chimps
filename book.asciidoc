@@ -1,5 +1,3 @@
-include::Home.asciidoc[]
-
 include::ch00-about.asciidoc[]
 
 include::README.asciidoc[]
