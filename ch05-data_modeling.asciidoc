@@ -4,7 +4,7 @@
 
 There are six and a half shapes of record-oriented datasets:
 
-* Tables,
+* Tables: every row has the same, flat structure 
 * Structured objects, 
 * Sparse tables,
 * Adjacency List Graphs, 

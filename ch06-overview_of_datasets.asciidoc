@@ -1,25 +1,18 @@
 == Overview of Datasets ==
 
-The book largely centers around the "Chimpmark" datasets: a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. They are the same datasets as used in the upcoming Chimpmark Challenge big-data benchmark. The datasets are:
+The examples in this book use the "Chimpmark" datasets: a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. They are the same datasets as used in the upcoming Chimpmark Challenge big-data benchmark. The datasets are:
 
 * Wikipedia English-language Article Corpus (`wikipedia_corpus`; 38 GB, 619 million records, 4 billion tokens): the full text of every English-language wikipedia article, in
 
 * Wikipedia Pagelink Graph (`wikipedia_pagelinks`; ) --
 
-* Wikipedia Pageview Stats ( ; 2.3 TB, about 250 billion records (FIXME: verify num records)) -- hour-by-hour pageview
+* Wikipedia Pageview Stats (`wikipedia_pageviews`; 2.3 TB, about 250 billion records (FIXME: verify num records)) -- hour-by-hour pageview
 
 * ASA SC/SG Data Expo Airline Flights (`airline_flights`; 12 GB, 120 million records): every US airline flight from 1987-2008, with information on arrival/depature times and delay causes, and accompanying data on airlines, airports and airplanes.
 
 * NCDC Hourly Global Weather Measurements, 1929-2009 (`ncdc_weather_hourly`; 59 GB, XX billion records): hour-by-hour weather from the National Climate Data Center for the entire globe, with reasonably-dense spatial coverage back to the 1950s and in some case coverage back to 1929.
 
-=== ITA World Cup Apache Logs
-
 * 1998 World Cup access logs (`access_logs/ita_world_cup_apachelogs`; 123 GB, 1.3 billion records): every request made to the 1998 World Cup Web site between April 30, 1998 and July 26, 1998, in apache log format.
-
-===  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD) ===
-  - 20 GB
-  - geo, stats
-
 
 === Wikipedia Page Traffic Statistic V3  ===
   -
@@ -65,134 +58,80 @@ Here are a few ideas to get you started exploring the data:
 
 The airport datasets contain errors and conflicts; we've done some hand-curation and verification to reconcile them. The file `wikipedia_conflicting.tsv` shows where my patience wore out.
 
+=== ITA World Cup Apache Logs
+
+* 1998 World Cup access logs (`access_logs/ita_world_cup_apachelogs`; 123 GB, 1.3 billion records): every request made to the 1998 World Cup Web site between April 30, 1998 and July 26, 1998, in apache log format.
+
+===  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD) ===
+  - 20 GB
+  - geo, stats
+
 === Other Datasets ===
 
 
 --------------------
-
-   approx size	M recs	source Data
-
-         huge		US Patent Data from Google                          	www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
-
-         huge	      1	Mathematical constants to billion+'th-place         	www.numberworld.org/ftp
-
-    2_300_000	 250000	Wikipedia Pageview Stats                           	dumps.wikimedia.org/other/pagecounts-raw
-
-      470_000	      	Wikibench.eu Wikipedia Log traces                   	Wikibench.eu
-
-      124_000	1300000	Access Logs, 1998 World Cup (Internet Traffic Archive) 	access_logs/ita/ita_world_cup
-
-       40_000	 B	NCDC: Hourly Weather (full)                         	ftp.ncdc.noaa.gov/pub/data/noaa
-
-       34_000	     10	MLB Gameday Pitch-by-pitch data, 2007-2011          	gd2.mlb.com/components/game/mlb
-
-       16_000	    619	Wikipedia corpus and pagelinks                      	dumps.wikimedia.org/enwiki/20120601
-
-       14_000	  	NCDC: Hourly weather (simplified)                   	ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite
-
-       14_000		Memetracker                                         	snap.stanford.edu/data/bigdata/memetracker9
-
-       14_000		Amazon Co-Purchasing Data                           	snap.stanford.edu/data/bigdata/amazon0312.html
-
-       11_000		Crosswikis                                          	nlp.stanford.edu/pubs/crosswikis-data.tar.bz2
-
-        6_400		NCDC: Daily Weather                                 	ftp.ncdc.noaa.gov/pub/data/gsod
-
-        6_300		Berkeley Earth Surface Temperature                  	stats/earth_surface_temperature
-
-        2_900		Twilio TigerLINE US Street Map                      	geo/us_street_map/addresses
-
-        1_900		All US Airline Flights 1987-2009 (ASA Data Expo)    	stat-computing.org/dataexpo/2009
-
-        1_300		Geonames Points of Interest                         	geo/geonames/info
-
-        1_300		Daily Prices for all US stocks, 1962–2011           	stats/stock_prices
-
-        1_040		Patent data (see Google data too)                   	www.nber.org/~jbessen
-
-          573		TAKS Exam Scores for all Texas students, 2007-2010  	ripd/texas_taks_exam
-
-          571		Pi to 1 Billion decimal places                      	ja0hxv.calico.jp/value/pai/val01/pi
-
-          419		Enron Email Corpus                                  	lang/corpora/enron_trial_coporate_email_corpus
-
-          362		DBpedia Wikipedia Article Features                  	downloads.dbpedia.org/3.7/links
-
-          331		DBpedia                                             	spotlight.dbpedia.org/datasets
-
-          310		Grouplens: User-Movie affinity                      	graph/grouplens_movies
-
-          305		UFO Sightings (UFORC)                               	geo/ufo_sightings
-
-          223		Geonames Postal Codes                               	geo/geonames/postal_codes
-
-          121		Book Crossing: User-Book affinity                   	graph/book_crossing
-
-          111		Maxmind GeoLite (IP-Geo) data                       	ripd/geolite.maxmind.com/download
-
-           91		Access Logs: waxy.org's Star Wars Kid logs          	access_logs/star_wars_kid
-
-           62		Metafilter corpus of postings with metadata         	ripd/stuff.metafilter.com/infodump
-
-           47		Word frequencies from the British National Corpus   	ucrel.lancs.ac.uk/bncfreq/lists
-
-           36		Mobywords thesaurus                                 	lang/corpora/thesaurus_mobywords
-
-           25		Retrosheet: MLB play-by-play, high detail, 1840-2011	ripd/www.retrosheet.org-2007/boxesetc/2006
-
-           25		Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
-
-           20		US Federal Reserve Bank Loans (Bloomberg)           	misc/bank_loans_by_fed
-
-           11		Scrabble dictionaries                               	lang/corpora/scrabble
-
-           11		All Scrabble tile combinations with rack value      	misc/words_quackle
-
-            	 	Marvel Universe Social Graph
-
-             .		Materials Safety Datasheets
-
-             .		Crunchbase
-
-             .		Natural Earth detailed geographic boundaries
-
-             .		US Census 2009 ACS (Long-form census)
-
-             .		US Census Geographic boundaries
-
-             .		Zillow US Neighborhood Boundaries
-
-             .		Open Street Map
-
-     2_000_000		Google Books N-Grams                                	aws.amazon.com/datasets/8172056142375670
-
-    60_000_000		Common Crawl Web Corpus
-
-       600_000		Apache Software Foundation Public Mail Archives 	aws.amazon.com/datasets/7791434387204566
-
-       300_000		Million-Song dataset
-
-            		Reference Energy Disaggregation Dataset (REDD)   	redd.csail.mit.edu/
-
-                        US Legislation Co-Sponsorship                     	jhfowler.ucsd.edu/cosponsorship.htm
-
-                        VoteView: Political Spectrum Rank of US Legistorls/Laws	voteview.org/downloads.asp	DW-NOMINATE Rank Orderings all Houses and Senates
-
-        		World Bank                                       	data.worldbank.org
-
-                        Record of American Democracy                      	road.hmdc.harvard.edu/pages/road-documentation     	The Record Of American Democracy (ROAD) data includes election returns, socioeconomic summaries, and demographic measures of the American public at unusually low levels of geographic aggregation. The NSF-supported ROAD project covers every state in the country from 1984 through 1990 (including some off-year elections). One collection of data sets includes every election at and above State House, along with party registration and other variables, in each state for the roughly 170,000 precincts nationwide (about 60 times the number of counties). Another collection has added to these (roughly 30-40) political variables an additional 3,725 variables merged from the 1990 U.S. Census for 47,327 aggregate units (about 15 times the number of counties) about the size one or more cities or towns. These units completely tile the U.S. landmass. The collection also includes geographic boundary files so users can easily draw maps with these data.
-
-          		Human Mortality DB	                             	www.mortality.org/                                  	The Human Mortality Database (HMD) was created to provide detailed mortality and population data to researchers, students, journalists, policy analysts, and others interested in the history of human longevity. The project began as an outgrowth of earlier projects in the Department of Demography at the University of California, Berkeley, USA, and at the Max Planck Institute for Demographic Research in Rostock, Germany (see history). It is the work of two teams of researchers in the USA and Germany (see research teams), with the help of financial backers and scientific collaborators from around the world (see acknowledgements).
-
-          		FCC Antenna locations                                	transition.fcc.gov/mb/databases/cdbs
-
-          		Pew Research Datasets                                	pewinternet.org/Static-Pages/Data-Tools/Download-Data/Data-Sets.aspx
-
-          		Youtube Related Videos                                	netsg.cs.sfu.ca/youtubedata
-
-			Westbury Usenet Archive	www.psych.ualberta.ca/~westburylab/downloads/usenetcorpus.download.html	 USENET corpus (2005-2010) http://labrosa.ee.columbia.edu/millionsong/[BETA VERSION] This corpus is a collection of public USENET postings. This corpus was collected between Oct 2005 and Jan 2011, and covers 47860 English language, non-binary-file news groups. Despite our best effots, this corpus includes a very small number of non-English words, non-words, and spelling errors. The corpus is untagged, raw text. It may be neccessary to process the corpus further to put the corpus in a format that suits your needs.
-
---------------------
+    approx size	Mrecs	source Data
+           huge		US Patent Data from Google                          	www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
+           huge	      1	Mathematical constants to billion+'th-place         	www.numberworld.org/ftp
+     2_300_000	 250000	Wikipedia Pageview Stats                           	dumps.wikimedia.org/other/pagecounts-raw
+       470_000	      	Wikibench.eu Wikipedia Log traces                   	Wikibench.eu
+       124_000	1300000	Access Logs, 1998 World Cup (Internet Traffic Archive) 	access_logs/ita/ita_world_cup
+        40_000	 B	NCDC: Hourly Weather (full)                         	ftp.ncdc.noaa.gov/pub/data/noaa
+        34_000	     10	MLB Gameday Pitch-by-pitch data, 2007-2011          	gd2.mlb.com/components/game/mlb
+        16_000	    619	Wikipedia corpus and pagelinks                      	dumps.wikimedia.org/enwiki/20120601
+        14_000	  	NCDC: Hourly weather (simplified)                   	ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite
+        14_000		Memetracker                                         	snap.stanford.edu/data/bigdata/memetracker9
+        14_000		Amazon Co-Purchasing Data                           	snap.stanford.edu/data/bigdata/amazon0312.html
+        11_000		Crosswikis                                          	nlp.stanford.edu/pubs/crosswikis-data.tar.bz2
+         6_400		NCDC: Daily Weather                                 	ftp.ncdc.noaa.gov/pub/data/gsod
+         6_300		Berkeley Earth Surface Temperature                  	stats/earth_surface_temperature
+         2_900		Twilio TigerLINE US Street Map                      	geo/us_street_map/addresses
+         1_900		All US Airline Flights 1987-2009 (ASA Data Expo)    	stat-computing.org/dataexpo/2009
+         1_300		Geonames Points of Interest                         	geo/geonames/info
+         1_300		Daily Prices for all US stocks, 1962–2011           	stats/stock_prices
+         1_040		Patent data (see Google data too)                   	www.nber.org/~jbessen
+           573		TAKS Exam Scores for all Texas students, 2007-2010  	ripd/texas_taks_exam
+           571		Pi to 1 Billion decimal places                      	ja0hxv.calico.jp/value/pai/val01/pi
+           419		Enron Email Corpus                                  	lang/corpora/enron_trial_coporate_email_corpus
+           362		DBpedia Wikipedia Article Features                  	downloads.dbpedia.org/3.7/links
+           331		DBpedia                                             	spotlight.dbpedia.org/datasets
+           310		Grouplens: User-Movie affinity                      	graph/grouplens_movies
+           305		UFO Sightings (UFORC)                               	geo/ufo_sightings
+           223		Geonames Postal Codes                               	geo/geonames/postal_codes
+           121		Book Crossing: User-Book affinity                   	graph/book_crossing
+           111		Maxmind GeoLite (IP-Geo) data                       	ripd/geolite.maxmind.com/download
+            91		Access Logs: waxy.org's Star Wars Kid logs          	access_logs/star_wars_kid
+            62		Metafilter corpus of postings with metadata         	ripd/stuff.metafilter.com/infodump
+            47		Word frequencies from the British National Corpus   	ucrel.lancs.ac.uk/bncfreq/lists
+            36		Mobywords thesaurus                                 	lang/corpora/thesaurus_mobywords
+            25		Retrosheet: MLB play-by-play, high detail, 1840-2011	ripd/www.retrosheet.org-2007/boxesetc/2006
+            25		Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
+            20		US Federal Reserve Bank Loans (Bloomberg)           	misc/bank_loans_by_fed
+            11		Scrabble dictionaries                               	lang/corpora/scrabble
+            11		All Scrabble tile combinations with rack value      	misc/words_quackle
+             	 	Marvel Universe Social Graph
+              .		Materials Safety Datasheets
+              .		Crunchbase
+              .		Natural Earth detailed geographic boundaries
+              .		US Census 2009 ACS (Long-form census)
+              .		US Census Geographic boundaries
+              .		Zillow US Neighborhood Boundaries
+              .		Open Street Map
+      2_000_000		Google Books N-Grams                                	aws.amazon.com/datasets/8172056142375670
+     60_000_000		Common Crawl Web Corpus
+        600_000		Apache Software Foundation Public Mail Archives 	aws.amazon.com/datasets/7791434387204566
+        300_000		Million-Song dataset
+             		Reference Energy Disaggregation Dataset (REDD)   	redd.csail.mit.edu/
+                         US Legislation Co-Sponsorship                     	jhfowler.ucsd.edu/cosponsorship.htm
+                         VoteView: Political Spectrum Rank of US Legistorls/Laws	voteview.org/downloads.asp	DW-NOMINATE Rank Orderings all Houses and Senates
+         		World Bank                                       	data.worldbank.org
+                         Record of American Democracy                      	road.hmdc.harvard.edu/pages/road-documentation     	The Record Of American Democracy (ROAD) data includes election returns, socioeconomic summaries, and demographic measures of the American public at unusually low levels of geographic aggregation. The NSF-supported ROAD project covers every state in the country from 1984 through 1990 (including some off-year elections). One collection of data sets includes every election at and above State House, along with party registration and other variables, in each state for the roughly 170,000 precincts nationwide (about 60 times the number of counties). Another collection has added to these (roughly 30-40) political variables an additional 3,725 variables merged from the 1990 U.S. Census for 47,327 aggregate units (about 15 times the number of counties) about the size one or more cities or towns. These units completely tile the U.S. landmass. The collection also includes geographic boundary files so users can easily draw maps with these data.
+           		Human Mortality DB	                             	www.mortality.org/                                  	The Human Mortality Database (HMD) was created to provide detailed mortality and population data to researchers, students, journalists, policy analysts, and others interested in the history of human longevity. The project began as an outgrowth of earlier projects in the Department of Demography at the University of California, Berkeley, USA, and at the Max Planck Institute for Demographic Research in Rostock, Germany (see history). It is the work of two teams of researchers in the USA and Germany (see research teams), with the help of financial backers and scientific collaborators from around the world (see acknowledgements).
+           		FCC Antenna locations                                	transition.fcc.gov/mb/databases/cdbs
+           		Pew Research Datasets                                	pewinternet.org/Static-Pages/Data-Tools/Download-Data/Data-Sets.aspx
+           		Youtube Related Videos                                	netsg.cs.sfu.ca/youtubedata
+  			Westbury Usenet Archive	www.psych.ualberta.ca/~westburylab/downloads/usenetcorpus.download.html	 USENET corpus (2005-2010) http://labrosa.ee.columbia.edu/millionsong/[BETA VERSION] This corpus is a collection of public USENET postings. This corpus was collected between Oct 2005 and Jan 2011, and covers 47860 English language, non-binary-file news groups. Despite our best effots, this corpus includes a very small number of non-English words, non-words, and spelling errors. The corpus is untagged, raw text. It may be neccessary to process the corpus further to put the corpus in a format that suits your needs.
+--------------------                        
 
 === Wikibench.eu Wikipedia Log traces
 
@@ -201,7 +140,6 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
 ==== Amazon Co-Purchasing Data ====
 
 * http://snap.stanford.edu/data/amazon0312.html
-
 
 ==== Patents ====
 
@@ -216,19 +154,19 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
   - Social collaboration network of the Marvel comic book universe based on co-appearances.
 
 ===== Google Books Ngrams =====
-
+  
 * http://aws.amazon.com/datasets/8172056142375670[Google Books Ngrams]
   - 2_000 GB
   - graph, linguistics
 
 ===== Common Crawl web corpus =====
-
+  
 * Common Crawl web corpus
   - 60_000 GB
   - text
 
 ===== Apache Software Foundation Public Mail Archives =====
-
+  
 * http://aws.amazon.com/datasets/7791434387204566[Apache Software Foundation Public Mail Archives]
   - 200 GB
   - corpus
@@ -245,7 +183,7 @@ This is the home page for the REDD data set. Below you can download an initial v
 \J. Zico Kolter and Matthew J. Johnson. REDD: A public data set for energy disaggregation research. In proceedings of the SustKDD workshop on Data Mining Applications in Sustainability, 2011. [pdf]
 
 Those wishing to use the dataset in academic work should cite this paper as the reference. Although the data set is freely available, for the time being we still ask those interested in the downloading the data to email us (kolter@csail.mit.edu) to receive the username/password to download the data. See the readme.txt file for a full description of the different downloads and their formats
-
+  
 ===== The Book-Crossing dataset ===
 
 * http://www.informatik.uni-freiburg.de/~cziegler/BX/[Book Crossing] Collected by Cai-Nicolas Ziegler in a 4-week crawl (August / September 2004) from the Book-Crossing community with kind permission from Ron Hornbaker, CTO of Humankind Systems. Contains 278,858 users (anonymized but with demographic information) providing 1,149,780 ratings (explicit / implicit) about 271,379 books. Freely available for research use when acknowledged with the following reference (further details on the dataset are given in this publication): Improving Recommendation Lists Through Topic Diversification, Cai-Nicolas Ziegler, Sean M. McNee, Joseph A. Konstan, Georg Lausen; Proceedings of the 14th International World Wide Web Conference (WWW '05), May 10-14, 2005, Chiba, Japan. To appear. As a courtesy, if you use the data, I would appreciate knowing your name, what research group you are in, and the publications that may result.
@@ -312,3 +250,4 @@ We made a best effort at reconciling the information, but likely
 also introduced some bugs of our own, so be prepared to write
 fault-tolerant code...  keep in mind that even tiny error rates
 translate into millions of exceptions, over billions of datums.
+
