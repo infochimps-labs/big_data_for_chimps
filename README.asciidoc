@@ -64,7 +64,7 @@ File organization:
 
 ==== Mechanics of Working with Data at Scale ====
 
-1. **Chimpanzee and Elephant Save Christmas**
+1. **Chimpanzee and Elephant Save Christmas** link:<chimpanzee_and_elephant>
   ** stream of disordered records
   ** group/sort records by their label
   ** process each group of records

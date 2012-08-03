@@ -11,6 +11,70 @@
   
 * Never solve hard problems. Turn them in to easy problem and solve those instead.
   - simple algorithm and lots of data beats clever algorithm and less data
-  - great artists steal  
+  - great artists steal
+
+
+The Tao Te Chimp is the set of engineering and management principles we follow at Infochimps. They've been enormously beneficial, and though somewhat out of scope for this book we think you might enjoy them.
+
+They are *decision criteria* -- points of practice whose common sense and precise statement are agreed to in a period of calm, so they may be deployed in a period of action. The granddaddy of them all at Infochimps is "Don't solve problems you'd like to have". Someone at your startup proposes building an automated billing system? Until you have the deliriously desirable problem of so many customers that your hands get worn out sending them invoices, concentrate on _creating_ that problem instead. That principle, and the others below, have struck a swift and happy end to countless meetings, foofaraws, imbroglios and debates.
+
+Decision criteria should be
+
+* **Pithy and Precise**. They're meant to resolve discussions, not to spur recursion into a second-level debate about their own merits. State them briefly and the same way every time.
+* **Audacious**. Planting your stake at the farthest reach makes it hardest to budge, and forces simplicity. [Stopping the entire assembly line on every flaw](http://www.toyota-global.com/company/toyota_traditions/quality/jul_aug_2004.html) seems enormously disruptive. *Good*. That disruption exposes the brutal truth about your defect rate, leaves the entire team highly motivated to cure it, and gives you scope to examine the defect within the context of the whole system.  Apparent exceptions to an extreme rule typically stem from deeper process flaws. 
+* **Assertive**. Decision criteria stand universally and without reservations or exceptions. To be clear: multiple criteria may conflict, and criteria may lose to a host of well-reasoned countervailing factors. But the simple standard is "a plan that has this feature is better than a plan that does not"
+
+**Squirrel sí, Pony no**
+
+* Don't solve problems you'd like to have
+* Weigh any important techical decision against a plan that is more conservative and a plan that is more aggressive
+* When considering technical debt, briskly settle (in order) the questions "What do we want it to be like?", "What is it like right now?", and "What should we do about it?" footnote:[Or use the Dread Pirate Roberts formulation: Where is the Princess? What are our assets and liabilities? And do we have a Wheelbarrow?]
+  ** In "What should it be like?", clarify the patterns and names that reflect your new understanding of the system, the missing functionality, and how the lines of its interface should be drawn. Don't _do_ the redesign, and don't worry about how you'll accomplish it -- just clarify its essential goals. 
+  ** You're then equipped to consider "What is it like now?" -- rather than trying to solve every nitpick and foible of the current system, you can instead isolate only its essential failings.
+  ** Only then consider "What do we do about it?" Can you adapt the system to your new understanding, rather than rework it? How bad are all those flaws, anyway? Or has this piece of debt come due?
+* Look for the point where one acceptable plan is better than two great plans
+* If you are in doubt of a plan, _start_ the consensus process by soliciting the opinion of its most likely nemesis. If you can convince, say, an Ops Engineer that the plan isn't too risky, or your Project Manager that the plan isn't too complicated, it's likely to be a good plan. The more likely outcome is that they quickly isolate the source of your doubt (that is, they show you why your plan sucked), and all drama is avoided.
+
+**Powerful black boxes, Beautiful Glue**
+
+* Write your code for humans to read, not for computers to execute
+* The most direct and accurate way to optimize for engineering process is to optimize for engineering joy
+* The more you decouple the better you scale
+* Airplane Laptop rule: repos must run in nearly complete isolation
+* Automate out of boredom or terror never efficiency
+* Good tests make good neighbors and confident deploys, but be sure you're not trying to outhink the real world
+* If nobody has built it for you to steal, why do you think you need it?
+* Debug loop time is our most precious currency
+* Critical path lines of code are our most costly debt
+* Refactor if you man, Overlay if you must, NEVER rewrite.
+  ** Overlay functionality rather than rewrite it. That is: harden the interface you'd like to have and codify the interface you're stuck with. Then bring the new functionality on line decoupled piece-by-decoupled piece, and either adapt the old interface to the new, or refactor existing dependents in discrete transitions. The most straighforward example is to have your load balancer start directing more and more URL paths to the modernized decoupled apps until the legacy system is irrelevant.
+  ** Never rewrite anything that can't fit into one person's head (Also: never write any isolable system so that its interations can't fit in one person's head). Rewriting a project that is larger than a 12-person team can destroy your organization (Digg, Netscape, Perl).
+* There is no "easy": weigh COSMIQ (Cost of Operations, Support, Marketing, Infrastructure, QA)
+* Just Ship: Beautiful code is code that is in production
+
+**Obligation to Consensus, Obligation to Dissent**
+
+* Mistakes born of bold initiative in service of the plan are always forgiven.
+  Mistakes born of timidity or indecision are never acceptable.
+* Where multiple consensus is required, use a star topology - synthesize opinions, identify dissent and only then call a meeting
+* Favor aptitude over experience, and passion above all
+* We have a collective commitment to, and expectation of, extraordinary career growth
+* We have a collective commitment to making the world better by making the world smarter
+* Ops drink for free
+* Pooflinger rule: When a problem happens, look at process, team, and people in that order of importance
+* Hold the org chart upside-down: your manager works for you
+* Life, sometimes, is Russian novel - but novel, it has ending, then we are reading of Sweet Valley High again (in other words: A week should never pass without doing some work you look forward to doing)
+
+**A startup is a device for turning time and money into validated assumptions about what the world wants**
+
+* Generate more value than you consume
+* Engineering's job is to say yes, sales/product's job is to say no
+* Hiring is always a top priority for the whole team
+* Make decisions for the company of now, not the different one it will be in three months
+* Process must **always** be for the benefit of, and embraced by, those who have to follow it. (This is why Ops drink for free: sysadmins, project managers, admins and so forth take on all that process so everyone else can Just Hack.)
+* Beware the Ides of team size 12, 50, and 144 - watch for the inflection points in human scaling factors (at 12 and 144) or strength of culture (at 50) that can destroy your organization
+* Build your team according to a scalable architecture
+
+
   
  
