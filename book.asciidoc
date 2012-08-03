@@ -1,59 +1,69 @@
-include::ch00-about.asciidoc[]
-
 include::README.asciidoc[]
 
-include::ch01-chimps_and_elephants.asciidoc[]
+include::aa01-about.asciidoc[]
 
-include::ch02-simple_stream.asciidoc[]
+include::aa02-TODO.asciidoc[]
 
-include::ch03-how_to_think.asciidoc[]
+include::ba01-chimpanzee_and_elephant.asciidoc[]
 
-include::ch03-why_hadoop.asciidoc[]
+include::ba02-simple_stream.asciidoc[]
 
-include::ch04-toolset.asciidoc[]
+include::ba03-herding_cats.asciidoc[]
 
-include::ch05-data_modeling.asciidoc[]
+include::ba04-toolset.asciidoc[]
 
-include::ch05-data_formats.asciidoc[]
+include::ba05-overview_of_datasets.asciidoc[]
 
-include::ch05-semi_structured_data.asciidoc[]
+include::ba06-semi_structured_data-a.asciidoc[]
 
-include::ch06-overview_of_datasets.asciidoc[]
+include::ba06-semi_structured_data-b-wikipedia_other.asciidoc[]
 
-include::ch06-tuning.asciidoc[]
+include::ba06-semi_structured_data-c-wikipedia_corpus.asciidoc[]
 
-include::ch05-rules_of_scaling.asciidoc[]
+include::ba06-semi_structured_data-d-airline_flights.asciidoc[]
 
-include::ch06-herding_cats.asciidoc[]
+include::ba07-data_formats.asciidoc[]
 
-include::ch06-statistics.asciidoc[]
+include::fu00-overview_of_problems.asciidoc[]
 
-include::ch07-time_series_data.asciidoc[]
+include::fu01-sampling.asciidoc[]
 
-include::ch08-advanced_pig.asciidoc[]
+include::fu02-statistics.asciidoc[]
 
-include::ch11-processing_text.asciidoc[]
+include::fu03-advanced_pig.asciidoc[]
 
-include::ch12-geographic_data.asciidoc[]
+include::fu04-processing_text.asciidoc[]
 
-include::ch14-processing_graphs.asciidoc[]
+include::fu05-geographic_data.asciidoc[]
 
-include::ch15-simple_machine_learning.asciidoc[]
+include::fu06-processing_graphs.asciidoc[]
 
-include::ch16-operations.asciidoc[]
+include::fu07-time_series_data.asciidoc[]
 
-include::ch18-hbase_and_databases.asciidoc[]
+include::fu10-tuning.asciidoc[]
 
-include::ch19-pig_udfs.asciidoc[]
+include::fu08-pig_udfs.asciidoc[]
 
-include::ch20-flume_and_stream_processing.asciidoc[]
+include::mu02-why_hadoop.asciidoc[]
 
-include::ch06-best_practices_and_pedantic_points_of_style.asciidoc[]
+include::mu03-how_to_think.asciidoc[]
 
-include::zd0-datasets.asciidoc[]
+include::mu04-data_modeling.asciidoc[]
 
-include::zd3-airline_flights.asciidoc[]
+include::mu05-rules_of_scaling.asciidoc[]
 
-include::ch22-authors.asciidoc[]
+include::mu06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
-include::TODO.asciidoc[]
+include::mu07-tao_te_chimp.asciidoc[]
+
+include::pr01-datasets.asciidoc[]
+
+include::pr04-wikipedia_dbpedia.asciidoc[]
+
+include::pr05-airline_flights.asciidoc[]
+
+include::pr06-access_logs.asciidoc[]
+
+include::pr08-data_formats-arc.asciidoc[]
+
+include::tr01-authors.asciidoc[]
