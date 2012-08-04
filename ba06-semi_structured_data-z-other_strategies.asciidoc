@@ -1,0 +1,11 @@
+=== Other Parsing Strategies ===
+
+
+==== Stateful Parsing ====
+
+
+
+==== s-Expression parsing ====
+
+
+Ruby stdlib's StringScanner provides for lexical scanning operations on a String.

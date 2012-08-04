@@ -1,13 +1,38 @@
+== Sampling ==
 
-=== Reservoir Sampling ===
+* Random sample:
+  ** fixed size of final sample
+  ** fixed probability (binomial) for each element
+  ** spatial sampling
+  ** with/without replacement
+  ** weighted
+  ** by interestingness
+  ** stratified: partition important features into bins, and sample tastefully to achieve a smooth selection across bins. Think of density of phase space
+  ** consistent sample: the same sampling parameters on the same population will always return the same sample.
+* Algorithms:
+  ** iterative
+  ** batch
+  ** scan
+  ** reservoir
 
-__TOC__
+* graph:
+  ** sample to preserve connectivity
+  ** sample to preserve local structure
+  ** sample to preserve global representation
 
-== Random Sampling ==
 
-To take a random sample, fraction ''p'' of the full dataset:
-* write a mapper that emits lines with probability ''p''
+We're not going to worry about extracting samples larger than fit on one reducer.
+
+
+=== Random Sampling ===
+
+"Binomial" sampling -- emit each line with fraction
+
+To take a random sample, fraction `p` of the full dataset:
+* write a mapper that emits lines with probability `p`
 * use a null reducer or no reducer ("-D mapred.reduce.tasks=0")
+
+**(don't do this -- random numbers in hadoop jobs == bad)**
 
 A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby example] is available in the wukong examples:
 
@@ -42,30 +67,45 @@ end
 Script.new( Mapper, nil ).run
 </pre>
 
-== Consistent Sampling ==
+=== Random Sampling using strides ===
+
+Another, often faster, way of doing random sampling is to
+generate a geometrically-distributed (rather than uniformly-distributed) sampling series
+For each value `R`, Your mapper skips `R` lines and 
+
+=== Consistent Sampling ===
 
 See this [http://blog.rapleaf.com/dev/?p=187 rapleaf blog post]
 
 
-== Constant-Memory "Reservoir" Sampling ==
+=== Constant-Memory "Reservoir" Sampling ===
 
-Reservoir sampling doesn't straightforwardly generalize to multiprocessor shared-nothing environment. In the case where the data is so large you don't want to run a pass to count your dataset, and where each block of data is large enough with respect to the reservoir size as to tolerate a small sampling error, you can try the following.  (The error is due to integer roundoff, which is neglected in the following sketch).
+Want to generate a sample of fixed size N_s -- say, 1000 arbitrary records -- no matter how large or small the dataset. (Clearly if it is smaller than N_s, you will emit the full dataset).
 
-For a dataset of size N, where you wish to extract a uniform sample of size M (N >> M) distributed across p shared-nothing processors,
+Suppose you assigned every record an arbitrary sample key, and sorted on that key. Choosing the first N_s records would be a fair way to get our sample.
+In fact, this is how most card games work: shuffle the records (cards) into an arbitrary order, and draw a fixed-size batch of cards from the collection.
 
-* From each processor, apply the reservoir algorithm to extract a full sample of size M (or its full size n_i, whichever is reached first).  
-* Dispatch to each processor the total size n_1 ... n_p of each data block, and the sampled size m_1 ... m_p.
-* Now each block knows the desired sampling fraction T = M / N, and its own buffer's sampling fraction s_i = m_i / n_i.
-* Have each node reservoir resample its buffer, with size o_i = m_i ( T / s_i ) = n_i ( M / N) (In practice, you need to jiggle the numbers o_i around so that they total to M with minimal error.  Each node will applies same algorithm locally).
+But! of course, a total sort is very expensive. As you may guess, it's unnecessary.
 
-The original sample gave each row on its given node the same fighting chance
-  s_i = m_i / n_i
-of being in its resampling buffer.  The resampling was also uniform (neglecting roundoff) with fraction
-  o_i / m_i  = (n_i M) / (m_i N)
-The final probability is then
-  t_i = (probability chosen in 1st sampling) * (prob chosen in 2nd sampling)
-  t_i = (m_i / n_i) * ((n_i M) / (m_i N))
-      = (m_i n_i M) / (n_i m_i N)
-      = M / N
+Each mapper creates a "reservoir", of size N_s, for the rows it will select. Add each record to the reservoir, and if there are more than N_s occupants, reject the record with highest sample index. (in practice, you won't even add the record if it would be that highest record).
+A Fibonacci heap (implementing a priority queue) makes this very efficient
 
-Note that both passes are map-only filter passes -- the whole point is to *not* send the data around!
+Ruby's stdlib has a `SortedSet` class -- a Set that guarantees that it's element are yielded in sorted order (according to the return values of their `#<=>` methods) when iterating over them.
+
+
+Each mapper outputs the sampling index of each preserved row as the key, and the rest of the row as the value; 
+
+It's essential that you keep the sampling index given by the first pass.
+
+
+
+=== References ===
+
+
+* http://db.cs.berkeley.edu/papers/UCB-PhD-olken.pdf[Random Sampling from Databases], Frank Olken, 1993
+
+* containers:
+  ** https://github.com/skade/rbtree[RBTree] for ruby
+  ** https://github.com/rubyworks/pqueue[Priority Queue]
+
+* http://stackoverflow.com/a/2584770/41857[Stack Overflow: How to pick random (small) data samples using Map/Reduce?, answer by Bkkbrad]

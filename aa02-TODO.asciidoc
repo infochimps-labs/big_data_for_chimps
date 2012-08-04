@@ -6,3 +6,8 @@
 * The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
 
 
+=== Tasks for later ===
+
+* Link-shorten links
+* For large export images: http://zoom.it/pages/about/
+

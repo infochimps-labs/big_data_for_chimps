@@ -1,5 +1,9 @@
 == Semi-Structured Data ==
 
+
+=== Parse, Translate, Canonicalize  === 
+
+
 image::images/semistructured_data_workflow.png[Semistructured Data Workflow]
 
 * Raw data, as it comes from the source. This could be unstructured (lines of text,
@@ -12,6 +16,20 @@ Resist the urge. At the beginning of the project you're thinking about the detai
 Make the source domain models match the raw data as closely as reasonable, doing only the minimum effective work to make the data active.
 
 Separate the model's _properties_ (fundamental intrinsic data), its _metadata_ (details of processing), and its _derived variables_ (derived values).
+
+
+
+=== Foundational Data ===
+
+* **sort** the data along its most-likely join field (sometimes but not always its primary key). This often enables a <<merge_join,merge join>>, with tremendous speedup.
+
+* **choose exemplars or add mountweazels**. Choose a few familiar records, and put their full contents close at hand to use for testing and provenance. You may also wish to add a ((mountweazel)), a purposefully-bogus record. Why? First, so you have something that fully exercises the data pipeline -- all the fields are present, text holds non-keyboard and escape characters, and so forth. Second, for production smoke testing: it's a record you can send through the full data pipeline, including writing into the database, without concern that you will clobber an actual value. Lastly, since exemplars are real records, they may change over time; you can hold your mountweazel's fields constant. Make sure it's unmissably bogus and unlikely to collide: "John Doe" is a _terrible_ name for a mountweazel, if there's any way user-contributed data could find its way into your database. The best-chosen bogus names appeal to the worst parts of a 5th-grader's sense of humor.
+
+* **sample** a coherent subuniverse. Ensure this includes, or go back and add, your exemplar records.
+
+
+=== Examples ===
+
 
 include::ch05-semi_structured_data-wikipedia_other.asciidoc[]
 

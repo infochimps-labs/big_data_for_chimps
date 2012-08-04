@@ -41,6 +41,27 @@ Why not Hive? The appealing thing about Hive is that it feels a lot like SQL. Th
 
 xx
 
+* **parsing**:
+  ** HomeRun rubygem -- large increase in date/time handling
+  ** Crack rubygem -- parse XML simply
+  ** Oj rubygem -- parse JSON quickly
+
+* **algorithms**:
+  ** http://algorithms.rubyforge.org/[Algorithms rubygem]
+  ** https://github.com/rubyworks/pqueue[Priority Queue]
+  ** TSort (in the ruby stdlib) for Topological Sort.
+
+* **hashing** and encoding:
+  ** murmur hash by
+  ** stdlib's `Digest::`
+  ** stdlib's `Base64`
+  
+  
+
+* **matrices**:
+  ** stdlib's `Matrix` class
+  
+
 === Pig ===
 
 xx

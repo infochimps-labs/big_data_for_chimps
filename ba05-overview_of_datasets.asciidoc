@@ -138,6 +138,7 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
        10_000      	Daily Global Weather, 1929-2009                   	aws.amazon.com/datasets/2759             	snap-ac47f4c5
       220_000		Twilio/Wigle.net Street Vector Data Set         	aws.amazon.com/datasets/2408             	snap-5eaf5537	MySQL	geo	A complete database of US street names and address ranges mapped to zip codes and latitude/longitude ranges, with DTMF key mappings for all street names.
              .		US Economic Data 2003-2006                      	aws.amazon.com/datasets/2341             	snap-0bdf3f62		stats	US Economic Data for 2003-2006 from the The US Census Bureau -- raw census data (ACS2002-2006)
+	     .
 -------------------
 
 ==== Wikibench.eu Wikipedia Log traces ====
@@ -393,3 +394,18 @@ We made a best effort at reconciling the information, but likely
 also introduced some bugs of our own, so be prepared to write
 fault-tolerant code...  keep in mind that even tiny error rates
 translate into millions of exceptions, over billions of datums.
+
+
+==== English Gigaword Dataset (LDC) ====
+
+The http://www.ldc.upenn.edu/Catalog/CatalogEntry.jsp?catalogId=LDC2009T13[English Gigaword] corpus, now being released in its fourth edition, is a comprehensive archive of newswire text data that has been acquired over several years by the LDC at the University of Pennsylvania. The fourth edition includes all of the contents in English Gigawaord Third Edition (LDC2007T07) plus new data covering the 24-month period of January 2007 through December 2008. Portions of the dataset are © 1994-2008 Agence France Presse, © 1994-2008 The Associated Press, © 1997-2008 Central News Agency (Taiwan), © 1994-1998, 2003-2008 Los Angeles Times-Washington Post News Service, Inc., © 1994-2008 New York Times, © 1995-2008 Xinhua News Agency, © 2009 Trustees of the University of Pennsylvania. The six distinct international sources of English newswire included in this edition are the following:
+
+Agence France-Presse, English Service (afp_eng)
+Associated Press Worldstream, English Service (apw_eng)
+Central News Agency of Taiwan, English Service (cna_eng)
+Los Angeles Times/Washington Post Newswire Service (ltw_eng)
+New York Times Newswire Service (nyt_eng)
+Xinhua News Agency, English Service (xin_eng)
+New in the Fourth Edition
+
+For an example of the data in this corpus, please review http://www.ldc.upenn.edu/Catalog/desc/addenda/LDC2009T13.html[this sample file].

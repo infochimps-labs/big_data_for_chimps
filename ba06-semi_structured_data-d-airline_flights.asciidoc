@@ -42,3 +42,36 @@ But it's important to share that there is no royal road to clean data. It's easy
 <li>The FAA id often, but not always, matches the IATA id; this is the primary source of errors in the airport metadata, as people blithely assign the FAA id to an IATA-id-less airport.</li>
 <li>There is yet another identifier, the METAR id, used to identify the weather station at an airport; it was once the same as the ICAO id but they are now maintained independently.</li></ul>
 Yet, somehow, all those planes typically land at the right place.].
+
+=== Foundational Data ===
+
+
+==== Mountweazels and Exemplars ====
+
+For exemplar airports, I'll chose AUS (Austin), SFO (San Francisco), and BWI (Baltimore-Washington) because I'm most familiar with them; YYZ (Toronto), HNL (Honolulu), ANC (Anchorage) and SJU (San Juan, Puerto Rico) for geographic spread, and PHX (Phoenix) because Arizona (like the preceding three) has an odd time zones. That set is reasonably diverse, so there's no need for a mountweazel.
+
+
+==== Helpful Sort ====
+
+==== Standard Sample ====
+
+I also selected a core set of 50 airports that cover most of the top US metropolitan areas (and includes the exemplars above)
+
+sample, so we could construct the following reduced datasets:
+
+* `airports-sampled.tsv`
+* `flights-sampled.tsv` -- flights between core airports 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
