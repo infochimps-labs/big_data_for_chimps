@@ -14,6 +14,8 @@ include::ba04-toolset.asciidoc[]
 
 include::ba05-overview_of_datasets.asciidoc[]
 
+include::mu06-principles_of_data_cleansing.asciidoc[]
+
 include::ba06-semi_structured_data-a.asciidoc[]
 
 include::ba06-semi_structured_data-b-wikipedia_other.asciidoc[]
@@ -21,6 +23,8 @@ include::ba06-semi_structured_data-b-wikipedia_other.asciidoc[]
 include::ba06-semi_structured_data-c-wikipedia_corpus.asciidoc[]
 
 include::ba06-semi_structured_data-d-airline_flights.asciidoc[]
+
+include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 
 include::ba07-data_formats.asciidoc[]
 
