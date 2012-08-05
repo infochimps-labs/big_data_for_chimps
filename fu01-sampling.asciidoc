@@ -20,6 +20,8 @@
   ** sample to preserve local structure
   ** sample to preserve global representation
 
+* random variates
+  ** http://en.wikipedia.org/wiki/Ziggurat_algorithm[Ziggurat Algorithm] to use a simple lookup table to accelerate generation of complex distributions
 
 We're not going to worry about extracting samples larger than fit on one reducer.
 
@@ -71,7 +73,9 @@ Script.new( Mapper, nil ).run
 
 Another, often faster, way of doing random sampling is to
 generate a geometrically-distributed (rather than uniformly-distributed) sampling series
-For each value `R`, Your mapper skips `R` lines and 
+For each value `R`, Your mapper skips `R` lines and
+
+see section on statistics for how to get a geometrically-distributed number.
 
 === Consistent Sampling ===
 
@@ -93,7 +97,7 @@ A Fibonacci heap (implementing a priority queue) makes this very efficient
 Ruby's stdlib has a `SortedSet` class -- a Set that guarantees that it's element are yielded in sorted order (according to the return values of their `#<=>` methods) when iterating over them.
 
 
-Each mapper outputs the sampling index of each preserved row as the key, and the rest of the row as the value; 
+Each mapper outputs the sampling index of each preserved row as the key, and the rest of the row as the value;
 
 It's essential that you keep the sampling index given by the first pass.
 

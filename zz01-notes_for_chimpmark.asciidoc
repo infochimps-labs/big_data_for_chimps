@@ -1,0 +1,11 @@
+
+
+Generate 1 billion random numbers
+
+* `1e12 + x`
+* `1e9  + x`
+* `1e6  + x`
+
+find exact answer in mathematica
+
+REFERENCE: http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/[Comparing three methods of computing standard deviation]
