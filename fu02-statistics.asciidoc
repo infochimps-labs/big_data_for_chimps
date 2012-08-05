@@ -7,6 +7,14 @@ Build intuition about long-tail
 
 Log counts and combinators (see blekko posts)
 
+
+Libraries:
+
+* https://github.com/SciRuby/sciruby.git[SciRuby]
+  ** https://github.com/clbustos/distribution.git[Distribution] -- probability distributions; uses fast GSL or Statistics2 if available
+
+* https://github.com/v01d/ruby-gsl-ng[ruby-gsl-ng] -- interface to the GSL, JRuby-compatible. Incomplete tho. 
+  
 === Some Useful Statistical Functions ===
 
 ==== avoiding ((underflow)) and ((loss of precision)) ====
@@ -341,6 +349,8 @@ To make a naive algorithm fail,
     x_offset         = 0
     x_spread         = 1e6
     generate_samples(...)
+----
+
 
 * John Cook, http://www.johndcook.com/blog/2008/10/20/comparing-two-ways-to-fit-a-line-to-data/[Comparing two ways to fit a line to data]
 
@@ -370,6 +380,21 @@ Naïve:
 Compare :
 Count bins (histogram)
 For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possible values?
+
+
+observations:
+
+* it's hadoop, we don't have to be total pussies
+* the reducer already does a sort, so worrying about order N beyond that is silly
+* 
+
+set of numbers with exact ranks below and above -- might not be members though
+cap on output from any mapper -- target of data sent to each reducer
+if binning is easy then data sent to reducer will be small, if not it will be large
+can also adjust the partition vs local sort
+
+basically we'll do an adaptively sampled total sort 
+
 
 ==== Approximate methods ====
 
