@@ -25,6 +25,8 @@ Libraries:
 * stop and think any time you make a number huge, then regular (`log(fact(x))`)
 * stop and think any time you make a number tiny, then regular (`1 - exp(-exp(x))`)
 
+Float times are sneaky examples of this
+
 use special functions for the following:
 
 * `log(1 + x)`   	   	when x might be small	log_one_plus(x)
@@ -43,17 +45,25 @@ Always add a comment explaining *why* you used these crazy functions, or some he
 
 * `def approx_eq(xx,yy) (xx - yy).abs < TOL ; end`
 
+* If you want to find weirdness, 0.1 cannot be exactly represented in a float.
+* to uniquely represent in decimal,
+  ** `%12.9e3f` for a float,   9 decimal digits of mantissa, exponent, and sign 
+  ** for a double, 16 decimal digits of mantissa (plus sign and exponent)
+  ** note `%a` -- a direct hex representation of the floating-point number. `"%a" % 1e-100` is `"0x1.bff2ee48e053p-333"`; `"%a" % 0.1` is `"0x1.999999999999ap-4"`
+
 
 TODO: ensure some calculations would cause underflow, overflow, etc with float/int; and maybe even double/long.
 
 reference: http://www.codeproject.com/Articles/25294/Avoiding-Overflow-Underflow-and-Loss-of-Precision[Avoiding Overflow, Underflow, and Loss of Precision]
-
+reference: http://www.altdevblogaday.com/2012/02/05/dont-store-that-in-a-float/[Don’t Store That in a Float]
 
 Generate exponential variate:
 
     expdist  = Math.log( rand ) / log_one_plus( -geomparam )
     geomdist = floor( expdist )
 
+
+----    
 Error function            	| `Math.erf`   		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erf
   Complementary Error func	| `Math.erfc`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erfc
 Inverse Error function   	| 
@@ -104,7 +114,9 @@ Binomial probability
 	  log_bin += (mm * log(pp)) + (nn*log(qq))
 	  return exp(log_bin)
 	end
-)
+----
+
+
 references:
 
 * John D Cook's http://www.johndcook.com/stand_alone_code.html[Stand Alone Code]
@@ -287,6 +299,46 @@ references:
 
 * http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics[Algorithms for calculating variance]
 
+=== Total ===
+
+
+----
+
+   class CompensatedSummer
+     field :tot, Float, doc: "Total of all values seen so far"
+     field :adj,  Float, doc: "Accumulated adjustment to total"
+
+     def first_record(val)
+       self.tot = val
+       self.adj  = 0
+      end
+     
+     def process(val)
+       old_tot  = @tot
+       adj_val  = val - @adj
+       @tot     =         old_tot  + adj_val
+       @adj     = (@tot - old_tot) - adj_val
+     end
+   end
+----
+
+Consider this diagram, adapted from http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html[What Every Computer Scientist Should Know About Floating-Point Arithmetic]
+
+----
+a      ____total____
+a    +        _valH_ _valL_
+a    = ___tmptot____
+a
+a      ___tmptot____
+a    - ____total____
+a    =        _valH_
+a    
+a             _valH_
+a    -        _valH_ _valL_
+a    =               _valL_    (-corr)
+----
+
+
 
 ===  Covariance ===
 
@@ -384,7 +436,7 @@ For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possibl
 
 observations:
 
-* it's hadoop, we don't have to be total pussies
+* it's hadoop, we don't have to be total wusses
 * the reducer already does a sort, so worrying about order N beyond that is silly
 * 
 
@@ -393,7 +445,8 @@ cap on output from any mapper -- target of data sent to each reducer
 if binning is easy then data sent to reducer will be small, if not it will be large
 can also adjust the partition vs local sort
 
-basically we'll do an adaptively sampled total sort 
+* single precision: 24 bits, exp - 126 to + 127 (8 bits)
+* double precision: 53 bits, exp -1022 to +1023 (11 bits)
 
 
 ==== Approximate methods ====
@@ -411,7 +464,12 @@ I know that cities of the world lie between 1 and 8 billion. If I want to know m
 
 
 
-==== random numbers + Hadoop considered harmful. ====
+==== Random numbers + Hadoop considered harmful ====
 
 Don't generate a random number as a sampling or sort key in a map job. The problem is that map tasks  can be restarted - because of speculative execution, a failed machine, etc. -- and with random records, each of those runs will dispatch differently. It also makes life hard in general when your jobs aren't predictable run-to-run. You want to make friends with a couple records early in the so urge, and keep track of its passage though the full data flow. Similarly to the best practice of using intrinsic vs synthetic keys, it's always better to use intrinsic metadata --  truth should flow from the edge inward. 
 
+
+
+=== References ===
+
+* http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html[What Every Computer Scientist Should Know About Floating-Point Arithmetic]

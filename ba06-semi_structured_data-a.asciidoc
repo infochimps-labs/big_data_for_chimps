@@ -1,8 +1,12 @@
 == Semi-Structured Data ==
 
+To explore data, you need data, in a form you can use, and that means engaging in the necassary evils of data munging: code to turn the data you have into the data you'd like to use. Whether it's public or commercial data ((data_commons)), data from a legacy database, or managing unruly human-entered data, you will need to effectively
 
-=== Parse, Translate, Canonicalize  === 
+Your goal is to take data from the _source domain_ (the shape, structure and cognitive model of the raw data) to the _target domain_ (the shape, structure and cognitive model you will work with) in a process that is 
 
+* Extract: the _syntactic_ transformation k
+
+=== Extract, Translate, Canonicalize  === 
 
 image::images/semistructured_data_workflow.png[Semistructured Data Workflow]
 
@@ -17,6 +21,20 @@ Make the source domain models match the raw data as closely as reasonable, doing
 
 Separate the model's _properties_ (fundamental intrinsic data), its _metadata_ (details of processing), and its _derived variables_ (derived values).
 
+In an enterprise context, this process is "ETL" -- extraction, transformation and loading. The last stage diesn't directly apply:
+in data at scale, rather than centralizing access in a single data store, you'll more often syndicate data along a documented provenance chain.
+
+=== Solitary, poor, nasty, brutish, and short
+
+Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brutish, and short", and so should your data munging scripts be:
+* Solitary: write discrete, single concern scripts. It's much easier to validate the data when your transformations are simple to reason about. 
+* Poor: spend wisely. It's especially important to optimize for programmer time, not cluster efficency: you will probably spend more in opportunity cost to write the code than you ever will running it. Even if it will be a production ETL footnote:[ETL = Extraction, Transformation and Loading -- what you call data munging when it runs often and well enough to deserve an enterprise-y name] job, get it running well and then make it run quickly. The hard parts are not where you expect them to be.
+* Nasty: as you'll see, the real work in data munging are the special cases and domain incompatibilities. Ugly transformations will lead to necessarily ugly code, but even still there are ways to handle it. There's also a certain type of brittleness that is *good* -- a script that quietly introduces corrupt data 
+* Brutish: be effective, not elegant. Fight the ever-strong temptation to automate the in-automatable. Here are some street-fighting techniques we'll use below:
+  ** Hand-curating a 200-row join table is the kind of thing you learn computer programing to avoid, but it's often the smart move.
+  ** Faced with a few bad records that don't fit any particular pattern, you can write a script to recognize and repair them; or, if it's of modern size, just hand-fix them and save a diff. You've documented the change concisely and given future-you a chance to just re-apply the patch.
+  ** To be fully-compliant, most XML libraries introduce a necessary complexity that averages up the work to deal with simple XML structures. It's often more sensible to handle simple as plain text.
+* Short: use a high-level language. You'll invest much more in using the data than in writing the munging code. Two weeks later, when you discover that 2% of the documents used an alternate text encoding (or whatever card Loki had dealt) you'll be glad for brief readable scripts and a rich utility ecosystem.
 
 
 === Foundational Data ===
@@ -36,3 +54,27 @@ include::ch05-semi_structured_data-wikipedia_other.asciidoc[]
 include::ch05-semi_structured_data-wikipedia_corpus.asciidoc[]
 
 include::ch05-semi_structured_data-airline_flights.asciidoc[]
+
+
+=== Pitfalls
+
+It's easy to 
+
+* Mangled unicode
+* Timezones
+* Incomplete joins
+* 
+
+When you have billions of something, one-in-a-million events stop being uncommon.
+
+==== Drifting Identifiers ====
+
+Another case where too much truth can be incredibly distruptive.
+
+My favorite example: user records in the Twitter API have *four* effective primary keys, none strictly reconcilable:
+
+* the numeric `id`, a straightforward serial integer footnote:[as opposed to the Tweet ID, which had to undergo a managed transition from 32-bit to 64-bit before the 2 billion'th tweet could occur. At some point they presumably look forward to doing the same for user ids].
+* a legible `screen_name`, used in `@replies`, in primary user interaction in the URL. Early on, screen names were allowed to contain any text: non-ascii characters (`婷`), spaces, and special characters (`&`,`*` and more). The mapping from `screen_name` key to the numeric `user_id` key is *almost* always stable, but occasinally names and ids have been reassigned.
+
+* the URL; twitter's API allowed either the numeric id *or* screen name to be used as the slug, so if there were a user with screen name `1234` then the URL `http://twitter.com/users/show/1234.xml` would be ambiguous.
+Even worse, the early twitter API allowed purely numeric screen names; 

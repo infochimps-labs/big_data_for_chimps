@@ -409,3 +409,15 @@ Xinhua News Agency, English Service (xin_eng)
 New in the Fourth Edition
 
 For an example of the data in this corpus, please review http://www.ldc.upenn.edu/Catalog/desc/addenda/LDC2009T13.html[this sample file].
+
+
+
+=== Sources of public and Commercial data
+
+((data_commons))
+
+* Infochimps
+* Factual
+* CKAN
+* Get.theinfo
+* Microsoft Azure Data Marketplace

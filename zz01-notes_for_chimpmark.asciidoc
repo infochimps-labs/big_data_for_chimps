@@ -1,11 +1,53 @@
 
+One dataset will be el diablo, can be used in several ways to send statistical algs. into insanity
 
-Generate 1 billion random numbers
+* lure a median algorithm into over/under split its results
+* total, average and stddev will suffer LOP if not compensating sum.
 
-* `1e12 + x`
-* `1e9  + x`
-* `1e6  + x`
 
-find exact answer in mathematica
 
-REFERENCE: http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/[Comparing three methods of computing standard deviation]
+Generate 1 zillion random numbers
+
+* `1e12 + x`, x in a small range
+* `1e9  + x`, x in a small range
+* `1e6  + x`, x in a small range
+
+To make a naive correlation or regression algorithm fail,
+
+----
+    num_samples      = 1e6
+
+    def generate_samples
+      xvals = num_samples.times.map{|i| x_offset   + i * x_spread }
+      yvals = xvals.map{|xval| (actual_slope * xval) + actual_intercept + (actual_variance * normaldist()) }
+    end
+
+    large constant offset causes loss of precision:
+   
+    actual_slope     = 3
+    actual_intercept = 1e10
+    actual_variance  = 100
+    x_offset         = 1e10
+    x_spread         = 1
+    generate_samples(...)
+
+    very large slope causes inaccurate intercept:
+
+    actual_slope     = 1e6
+    actual_intercept = 50
+    actual_variance  = 1
+    x_offset         = 0
+    x_spread         = 1e6
+    generate_samples(...)
+----
+
+Should also include:
+* NaN, Infinity
+* missing values
+* signed zero
+
+Some chunks should be sorted ascended, others descending; some should have focused chunk some should cover the range.
+We can ask algs. to perform on total, or on particular chunks with a prescribed split.
+
+* REFERENCE: John Cook, http://www.johndcook.com/blog/2008/10/20/comparing-two-ways-to-fit-a-line-to-data/[Comparing two ways to fit a line to data]
+* REFERENCE: John Cook, http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/[Comparing three methods of computing standard deviation]
