@@ -4,7 +4,18 @@ To explore data, you need data, in a form you can use, and that means engaging i
 
 Your goal is to take data from the _source domain_ (the shape, structure and cognitive model of the raw data) to the _target domain_ (the shape, structure and cognitive model you will work with) in a process that is 
 
-* Extract: the _syntactic_ transformation k
+* Extract: the _syntactic_ transformation from raw blobs to passive structured records
+* Transform: the _semantic_ transformation of structured data in the source domain to active models in the target domain
+* Normalize
+  ** clean up errors and missing fields
+  ** augment with data drom other tables
+* Canonicalization:
+  ** choose exemplars
+  ** extract a subuniverse and summary statistics
+  ** sort by the most likely join key
+* Save/Load/Syndicate:
+  ** to its long-term home(s)
+
 
 === Extract, Translate, Canonicalize  === 
 
