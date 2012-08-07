@@ -37,6 +37,7 @@ In an enterprise context, this process is "ETL" -- extraction, transformation an
 === Solitary, poor, nasty, brutish, and short
 
 Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brutish, and short", and so should your data munging scripts be:
+
 * Solitary: write discrete, single concern scripts. It's much easier to validate the data when your transformations are simple to reason about. 
 * Poor: spend wisely. It's especially important to optimize for programmer time, not cluster efficency: you will probably spend more in opportunity cost to write the code than you ever will running it. Even if it will be a production ETL footnote:[ETL = Extraction, Transformation and Loading -- what you call data munging when it runs often and well enough to deserve an enterprise-y name] job, get it running well and then make it run quickly. The hard parts are not where you expect them to be.
 * Nasty: as you'll see, the real work in data munging are the special cases and domain incompatibilities. Ugly transformations will lead to necessarily ugly code, but even still there are ways to handle it. There's also a certain type of brittleness that is *good* -- a script that quietly introduces corrupt data 
