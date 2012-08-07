@@ -48,7 +48,8 @@ In an enterprise context, this process is "ETL" -- extraction, transformation an
 
 === Solitary, poor, nasty, brutish, and short
 
-Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brutish, and short", and so should your data munging scripts be:
+Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brutish, and short".
+and so should your data munging scripts be:
 
 * Solitary: write discrete, single concern scripts. It's much easier to validate the data when your transformations are simple to reason about. 
 * Poor: spend wisely. It's especially important to optimize for programmer time, not cluster efficency: you will probably spend more in opportunity cost to write the code than you ever will running it. Even if it will be a production ETL footnote:[ETL = Extraction, Transformation and Loading -- what you call data munging when it runs often and well enough to deserve an enterprise-y name] job, get it running well and then make it run quickly. The hard parts are not where you expect them to be.
@@ -59,6 +60,8 @@ Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brut
   ** To be fully-compliant, most XML libraries introduce a necessary complexity that complexifies *up* the work to deal with simple XML structures. It's often more sensible to handle simple as plain text.
 * Short: use a high-level language. You'll invest much more in using the data than in writing the munging code. Two weeks later, when you discover that 2% of the documents used an alternate text encoding (or whatever card Loki had dealt) you'll be glad for brief readable scripts and a rich utility ecosystem.
 
+FIXME: the analogy will line up better with the source if I can make the point that 'your data munging scripts are to civilize data from the state of nature'.
+FIXME: the stuff above I like; need to chop out some of the over-purplish stuff from the rest of the chapter so the technical parts don't feel too ranty.
 
 === Canonical Data ===
 

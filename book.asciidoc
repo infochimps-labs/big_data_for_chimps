@@ -6,15 +6,7 @@ include::aa02-TODO.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
-include::ba02-simple_stream.asciidoc[]
-
-include::ba03-herding_cats.asciidoc[]
-
-include::ba04-toolset.asciidoc[]
-
 include::ba05-overview_of_datasets.asciidoc[]
-
-include::mu06-principles_of_data_cleansing.asciidoc[]
 
 include::ba06-semi_structured_data-a.asciidoc[]
 
@@ -30,9 +22,7 @@ include::ba06-semi_structured_data-daily_weather.asciidoc[]
 
 include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 
-include::ba07-data_formats.asciidoc[]
-
-include::fu00-overview_of_problems.asciidoc[]
+include::ba04-toolset.asciidoc[]
 
 include::fu01-sampling.asciidoc[]
 
@@ -40,21 +30,29 @@ include::fu02-statistics.asciidoc[]
 
 include::fu02-statistics-distribution_of_weather_measurements.asciidoc[]
 
+include::ba07-data_formats.asciidoc[]
+
+include::fu08-pig_udfs.asciidoc[]
+
+include::fu10-tuning.asciidoc[]
+
+include::fu06-processing_graphs.asciidoc[]
+
+include::fu00-overview_of_problems.asciidoc[]
+
+include::ba02-simple_stream.asciidoc[]
+
+include::ba03-herding_cats.asciidoc[]
+
 include::fu03-advanced_pig.asciidoc[]
 
 include::fu04-processing_text.asciidoc[]
 
 include::fu05-geographic_data.asciidoc[]
 
-include::fu06-processing_graphs.asciidoc[]
-
 include::fu07-time_series_data.asciidoc[]
 
-include::fu08-pig_udfs.asciidoc[]
-
 include::fu08-hadoop_api.asciidoc[]
-
-include::fu10-tuning.asciidoc[]
 
 include::mu02-why_hadoop.asciidoc[]
 
@@ -63,6 +61,8 @@ include::mu03-how_to_think.asciidoc[]
 include::mu04-data_modeling.asciidoc[]
 
 include::mu05-rules_of_scaling.asciidoc[]
+
+include::mu06-principles_of_data_cleansing.asciidoc[]
 
 include::mu06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
