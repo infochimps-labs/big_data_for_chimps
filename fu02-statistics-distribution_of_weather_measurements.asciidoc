@@ -1,0 +1,7 @@
+
+
+In the section on ((Inconsistent Truth and Error)),
+we made the point that
+
+the tools and patterns of though for dealing with numerical error and uncertainty are
+

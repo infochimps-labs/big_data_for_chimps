@@ -1,0 +1,118 @@
+
+=== Pitfalls
+
+It's easy to 
+
+* Mangled unicode
+* Timezones
+* Incomplete joins
+* 
+
+When you have billions of something, one-in-a-million events stop being uncommon.
+
+==== Drifting Identifiers ====
+
+Another case where too much truth can be incredibly distruptive.
+
+In mechanical engineering, you learn there are cases where _adding_ a beam can weaken the part:
+
+____
+\[the beam\] becomes a redundant support that limits angular deflection. But it may well add stiffness far out of proportion to its strength. Cracks may appear in or near the welded joint, thereby elimitating the added stiffness. Furthermor, the cracks so formed may propogate through the main angle iron. If so, the addition of the triangular "reinforcement" would actually _weaken_ the part. Sometimes failures in a complicated structural member (as a casting) can be corrected by _removing_ stiff but weak portions.
+____
+REFERENCE: Fundamentals of machine component design, Juvinall & Marshek -- p 58
+
+Too many identifiers provide just such a _redundant support_. When they line up with everything, they're useless. When they don't agree, the system becomes overconstrained.
+
+My favorite example: user records in the Twitter API have *four* effective primary keys, none strictly reconcilable:
+
+* a serial integer primary-key  `id` -- fairly straightforward footnote:[as opposed to the Tweet ID, which had to undergo a managed transition from 32-bit to 64-bit before the 2 billion'th tweet could occur. They presumably look forward to doing the same for user ids at some point].
+* a legible `screen_name` (eg `@mrflip`); used in `@replies`, in primary user interaction, and in the primary URL.
+  ** The mapping from `screen_name` key to the numeric `user_id` key is *almost* always stable, but at some few parts per million names and ids have been reassigned. 
+  ** Early on, the twitter API allowed screen names with arbitrary text; even now there are active users with non-ascii characters (`婷`), spaces, and special characters (like `&`,`*`) in their screen_name.
+  ** Even worse, it also allowed purely numeric screen names. For much of its history, the twitter API allowed the numeric id *or* screen name in the URL slug. If there were a user with screen name `1234` then the URL `http://twitter.com/users/show/1234.xml` would be ambiguous.
+* The web-facing URL, a string like  `http://twitter.com/mrflip` in the early days, now annoyingly redirected to `http://twitter.com/!#/mrflip`
+* Since its technology came through a corporate acquisition, Twitter's search API uses a completely incompatible numeric ID. For years, the search API never referenced the primary numeric ID (only its ID and screen name), while rest of the API never referenced the search ID.
+
+When identifiers conflict, several bad things happen. Once you catch it, you have to do something to reconcile the incompatible assertions -- too often, that something is hand-inspection of the bad records. (Your author spent a boring Sunday with the raw airport table, correcting cases where multiple airports were listed for the same identifier).
+
+If the error is infrequent enough, you might not notice. A join which retains only one record can give different results for different joins, depending on which conflicting record is dropped. If the join isn't explicitly unique, you'll have a creeping introduction of extra records. Suppose some of the 38 towns named Springfield in the US listed the same airport code. Join the flight graph with the airport metadata, and each flight will be emitted that multiplicity of times. There are now extra records and subtly-inconsistent assertions (the wrong time zone could produce a flight that travelled back in time). Even worse, you've now coupled two different parts of the graph.  This is yet another reason to sanity-check your record counts.
+
+Most dangerously, inconsistent assertions can spread. Wikipedia is incredibly valuable for disambiguating truth; but it can also be a vector for circular false authority: suppose Last.fm, Wikipedia and AllMusicGuide make the same claim about
+
+image::images/BoxScoreWith60mphWindSpeed-ESPN-circled.png[What do you do when all the authorities agree on the same mistruth?]
+
+
+The Baseball Reference website reports that http://www.baseball-reference.com/boxes/SLN/SLN200610010.shtml[on October 1, 2006], 44,133 fans watched the Milwaukee Brewers beat the St Louis Cardinals, 5-3, on a day that was "83° F (28 C), Wind 60mph (97 km/h) out to left field, Sunny." How bucolic! A warm sunny day, 100% attendance, two hours of good sport -- and storm-force winds. Winds of that speed cause 30 foot (10 m) waves at sea; http://www.srh.noaa.gov/images/bmx/outreach/EMA_wx_school/2009/DamageReporting.pdf[trees are broken off or uprooted, saplings bent and deformed], and structural damage to buildings becomes likely.
+Visit http://espn.go.com/mlb/boxscore?gameId=261001124&teams=milwaukee-brewers-vs-st.-louis-cardinals[ESPN.com] and http://mlb.mlb.com/news/boxscore.jsp?gid=2006_10_01_milmlb_slnmlb_1[MLB's official website] and you'll see the same thing . They all use data from http://www.retrosheet.org/[retrosheet.org], who have meticulously compiled the box score of every documented baseball game back to 1871. You won't win many bar bets by contesting the joint authority of baseball's notably meticulous encyclopedists, ESPN, and Major-League Baseball itself on the subject of a baseball game, but in this case it's worth probing further. 
+
+What do you do? One option is to eliminate such outliers: a 60mph wind is clearly erroneous. Do you discard the full record, or just that cell? In some of the outlier cases, the air temperature and wind speed are identical, suggesting a data entry error; in such cases it's probably safe to discard that cell and not the record. Where do you stop, though? If a game in Boston in October lists wind speeds of 24mph and a temperature of 24F, may you assume that end-of-season scheduling hassles caused them to play through bitter cold _and_ bitter wind? 
+
+Your best bet is to bring independent authority to bear. In this case, though MLB and its encyclopedists are entrusted with the truth about baseball games, the NOAA is entrusted with the truth about the weater; we can consult the weather data to find the actual wind conditions on that day. (TODO: consult the weather data to find the actual wind conditions on that day) footnote:[reconciling this inconsistency spurred an extended yak-shaving expedition to combine the weather data with the baseball data. Discovering there was nowhere to share the cleaned-up data led me to start Infochimps.]
+
+What's nice about this is that it's not the brittle kind of redundant support introduced by conflicting identifiers.
+
+
+==== The abnormality of Normal in Humanity-scale data
+
+Almost all of our tools for dealing with numerical error and uncertainty are oriented around normally-distributed data. Humanity-scale data drives
+artifacts such as sampling error to the edge (in fact we are not even sampling).
+Artifacts like a 60 mph wind do _not_ follow a normal 
+(see also the section in statistics).
+
+In the section on statistics, we'll take advantage of it: Correlations tighten up -- a 40F game temperature is an outlier in Atalanta in July, but not in Boston in September.
+There's a natural distribution for wind speeds in general, and the subset found to accompany baseball games. Since we know these in their effective entirety, those distributions become very crisp. This helps you set reasonable heuristics for the "Where do you stop?" question -- 
+
+
+REFERENCE: http://www.srh.noaa.gov/images/bmx/outreach/EMA_wx_school/2009/DamageReporting.pdf
+REFERENCE: http://en.wikipedia.org/wiki/Beaufort_scale
+http://vizsage.com/blog/2007/10/retrosheet-eventfile-inconsistencies-ii.html
+
+==== The Abnormal
+
+Given a billion of anything, one-in-a-million errors become commonplace. Given a billion records and a normal distribution of values, you can expect multiple 6-sigma outliers and hundreds of 5-sigma outliers.
+
+A nice rule of thumb -- and an insidious fallacy, the kind that makes airplanes crash and economies crumble.  You may have a billion records *modelable* by a normal distribution, but you don't have a normal distribution of values.
+
+First of all, even as a statistical process, a successful model for the bulk is suspect at the extreme tails. Furthermore, it neglects the "Black Swan"
+
+===== Unusual records are unusual
+
+The central limit theorem lets you reason in the bulk about data of sufficient scale.
+It doesn't mean that your data *follows* the normal distribution, especially not at the tails.
+
+
+ddd
+
+Baseball scores from 1973-current are _modelable_ by a normal distribution. You can use a normal distriubtion to reason forward, from a sample of baseball scores, to the properties of every baseball score. And you can use the normal distribution in combination with a statistical model to make predictions about future scores. But the scores do not follow the normal distribution: they follow the baseball-score distribution. We have an exact measurement of every score of every official game since 1973. There is no uncertainty and there are no outliers. (NOTE: I think this paragraph's point is interesting, but maybe it is not. Advice from readers welcome.)
+
+
+===== Correlated risk, Model risk, and other Black Swans
+
+	"If you store 10,000 objects with us, on average we may lose one of them every 10 million years or so. This storage is designed in such a way that we can sustain the concurrent loss of data in two separate storage facilities." -- Jeff http://aws.typepad.com/aws/2010/05/new-amazon-s3-reduced-redundancy-storage-rrs.html
+
+Amazon's engineering prowess is phenomenal, and this quote is meant to clarify, engineer-to-engineer, how much they have mitigated the risk from certain types of statistically-modelable error:
+
+* disk failures
+* cosmic rays causing bit flips
+* an earthquake or power outage disabling two data separate centers
+
+However, read broadly it's dangerous. 10 million years is long enough to let me joke about the Zombie Apocalypse or phase transitions in the fundamental physical constants. But even a 100-year timeline exposes plausible risks to your data from
+
+* sabotage by disgruntled employees 
+* an act of war causing simultaneous destruction of their datacenters
+* firmware failure simultaneously destroying every harddrive from one vendor
+* a software update with an errant exclamation point causing the system to invalidate good blocks and preserve bad blocks
+* http://en.wikipedia.org/wiki/Geomagnetic_reversal[Geomagnetic reversal] of the earth's magnetic field causing unmitigated spike in cosmic-ray error rate
+
+The above are examples of Black Swans.
+*Correlated risk*: Statistical models assume independent events (correlated samples)
+  a model based on the observed default rate of consumer mortgages will fail if it neglects 
+  
+*Model risk*: your predictions are plausible for the system you modeled -- but the system you are modeling fundamentally changes.
+
+For some time, it was easy for "black-hat" (adversarial) companies to create bogus links that would increase the standing of their website in Google search results. Google found a model that could successfully expose such cheaters, and in a major algorithm update began punishing linkbait-assisted sites. What happened? Black-hat companies began creating bogus links to their _competitors_, so they would be downranked instead. The model still successfully identified linkspam-assisted sites, but the system was no longer one in which a site that was linkspam-assisted meant a site that was cheating. The introduction of a successful model destabilized the system.
+
+Even more interestingly, algorithms can *stably* modify their system. For some time, when the actress Anne Hathaway received positive reviews for her films, the stock price of the firm Berkshire Hathaway trended up -- news-reading "algorithmic trading" robots correctly graded the sentiment but not its target. It's fair to call this a flaw in the model, because Anne Hathaway's pretty smile doesn't correspond to the financial health of a diversified insurance company. An "algorithmic trading robot" algorithmic trading robot can thus bet that Berkshire Hathaway results will regress to their former value if they spike following an Anne Hathaway film. Those adversarial trades *change the system*, from one in which Berkshire Hathaway's stock price followed its financial health, to a system where Berkshire Hathaway's stock price followed its financial health, Anne Hathaway's acting career, and a coupling constant governed by the current state of the art in predictive analytics.
+
+*Coupling risk*:
+  you hedge your financial model with an insurance contract, but the insurance counterparty goes bankrupt,

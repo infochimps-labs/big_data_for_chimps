@@ -55,26 +55,3 @@ include::ch05-semi_structured_data-wikipedia_corpus.asciidoc[]
 
 include::ch05-semi_structured_data-airline_flights.asciidoc[]
 
-
-=== Pitfalls
-
-It's easy to 
-
-* Mangled unicode
-* Timezones
-* Incomplete joins
-* 
-
-When you have billions of something, one-in-a-million events stop being uncommon.
-
-==== Drifting Identifiers ====
-
-Another case where too much truth can be incredibly distruptive.
-
-My favorite example: user records in the Twitter API have *four* effective primary keys, none strictly reconcilable:
-
-* the numeric `id`, a straightforward serial integer footnote:[as opposed to the Tweet ID, which had to undergo a managed transition from 32-bit to 64-bit before the 2 billion'th tweet could occur. At some point they presumably look forward to doing the same for user ids].
-* a legible `screen_name`, used in `@replies`, in primary user interaction in the URL. Early on, screen names were allowed to contain any text: non-ascii characters (`婷`), spaces, and special characters (`&`,`*` and more). The mapping from `screen_name` key to the numeric `user_id` key is *almost* always stable, but occasinally names and ids have been reassigned.
-
-* the URL; twitter's API allowed either the numeric id *or* screen name to be used as the slug, so if there were a user with screen name `1234` then the URL `http://twitter.com/users/show/1234.xml` would be ambiguous.
-Even worse, the early twitter API allowed purely numeric screen names; 

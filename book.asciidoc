@@ -24,6 +24,8 @@ include::ba06-semi_structured_data-c-wikipedia_corpus.asciidoc[]
 
 include::ba06-semi_structured_data-d-airline_flights.asciidoc[]
 
+include::ba06-semi_structured_data-f-truth_and_error.asciidoc[]
+
 include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 
 include::ba07-data_formats.asciidoc[]
