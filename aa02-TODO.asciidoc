@@ -11,3 +11,88 @@
 * Link-shorten links
 * For large export images: http://zoom.it/pages/about/
 
+==== Questions ====
+
+* Does a bulleted list have a dot at the end of the line?
+* How do I slide a chapter title to be before `1` (eg the about this book)?
+
+
+[[style_references]]
+==== Style notes:
+
+[[style_markup]]
+===== Markup
+
+Conventions:
+
+* monospaced:      `+plus signs+`  for +monospaced text+
+* `<literal>`:     `\`backticks\`` for generic `literal text`
+* `<userinput>`:   `*+star plus+*`  for *+literal commands typed by user+* or `pass:[<userinput>foo</userinput>]`
+* 
+* `<replaceable>`:  `_++bar plus plus++_` for _+replaceable+_ or `pass:[<replaceable>foo</replaceable>]`
+* u inp+replbl:    `_**++bar star star plus plus++**_` _+user input replaceable+_ or `pass:[<userinput><replaceable>foo</replaceable></userinput>]`
+
+Text; the first word on line is the docbook tag:
+
+* `<emphasis>`:     `_underscores_` for _emphasized text_
+  ** indicates _new terms_, _URLs_, _email addresses_, _filenames_, and _file extensions_
+  ** for consistency don't use `'single quotes'` for _emphasis_ except to indicate a filename or path: 
+* `<filename>`:     [role="filename"]'/path/to/file.ext'
+* `<book title>`:   [role="citetitle"]'Hadoop: The Definitive Guide'
+* bold text:     `*asterisks*` for *bold text* should _not_ be used for emphasis -- use underscores.
+* `<Math>`
+  ** Subscripts and superscripts work like so: H~2~O and 2^5^ = 32 (but if you're doing math, you'd probably want to italicize the variables, like so: _x_^2^ + _y_^2^ = _z_^2^). For more on math see !!ORMTODO!!.
+* `<References>`
+  ** Reference chapters with angle brackets `<<style_notes>>`: <<style_notes>>
+
+* Use a title (`.I am a Title!`) for figures, tables, examples, and sidebars, but not otherwise.
+
+* footnotes
+  ** `footnote:[This is a standard footnote.]` Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]`
+  ** (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
+
+
+
+[[style_code]]
+===== Code
+
+Inline code block. You can use the `include::code/HelloWorld.rb[]` to pull it in from a separate file.
+
+....
+[source,java]
+----
+CODE_BLOCK_NOTE = Standard line length for code is 85 in an "Animal" book:"
+
+STANDARD LINE_FORMAT = <<-EOF
+0        10        20        30        40        50        60        70        80
+1234567890123456789012345678901234567890123456789012345678901234567890123456789012345
+EOF
+----
+....
+
+Contrast the code block above with <<style_code_example>>, which is a _formal_ code example (titled and cross-referenced).
+
+[[style_code_example]]
+.An Example
+====
+....
+[source,ruby]
+----
+
+CODE_BLOCK_NOTE = "Note that the line length is a bit longer here (90 in an Animal):"
+
+LINE_FORMAT = <<-EOF
+0        10        20        30        40        50        60        70        80        9
+123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+EOF
+----
+....
+====
+
+
+
+
+.A Sidebar
+****
+This is a sidebar!!
+****

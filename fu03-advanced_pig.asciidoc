@@ -13,6 +13,7 @@ They're also a great illustration of three key scalability patterns.
 Once you have a clear picture of how these joins work,
 you can be confident you understand the map/reduce paradigm deeply.
 
+[[map_side_join]]
 === Map-side Join ===
 
 A map-side (aka 'fragment replicate') join

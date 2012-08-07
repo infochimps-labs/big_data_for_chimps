@@ -1,8 +1,4 @@
-include::README.asciidoc[]
-
 include::aa01-about.asciidoc[]
-
-include::aa02-TODO.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
@@ -75,5 +71,9 @@ include::pr05-airline_flights.asciidoc[]
 include::pr06-access_logs.asciidoc[]
 
 include::pr08-data_formats-arc.asciidoc[]
+
+include::aa02-TODO.asciidoc[]
+
+include::README.asciidoc[]
 
 include::tr01-authors.asciidoc[]
