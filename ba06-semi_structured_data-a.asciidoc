@@ -13,8 +13,8 @@ Your goal is to take data from the _source domain_ (the shape, structure and cog
   ** choose exemplars
   ** extract a subuniverse and summary statistics
   ** sort by the most likely join key
-* Save/Load/Syndicate:
-  ** to its long-term home(s)
+* Land
+  ** the data in its long-term home(s)
 
 
 === Extract, Translate, Canonicalize  === 
@@ -32,8 +32,7 @@ Make the source domain models match the raw data as closely as reasonable, doing
 
 Separate the model's _properties_ (fundamental intrinsic data), its _metadata_ (details of processing), and its _derived variables_ (derived values).
 
-In an enterprise context, this process is "ETL" -- extraction, transformation and loading. The last stage diesn't directly apply:
-in data at scale, rather than centralizing access in a single data store, you'll more often syndicate data along a documented provenance chain.
+In an enterprise context, this process is "ETL" -- extraction, transformation and loading. In data at scale, rather than centralizing access in a single data store, you'll more often syndicate data along a documented provenance chain. So we'll change this to "Extract, Transform and Land".
 
 === Solitary, poor, nasty, brutish, and short
 
@@ -48,7 +47,7 @@ Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brut
 * Short: use a high-level language. You'll invest much more in using the data than in writing the munging code. Two weeks later, when you discover that 2% of the documents used an alternate text encoding (or whatever card Loki had dealt) you'll be glad for brief readable scripts and a rich utility ecosystem.
 
 
-=== Foundational Data ===
+=== Canonical Data ===
 
 * **sort** the data along its most-likely join field (sometimes but not always its primary key). This often enables a <<merge_join,merge join>>, with tremendous speedup.
 
