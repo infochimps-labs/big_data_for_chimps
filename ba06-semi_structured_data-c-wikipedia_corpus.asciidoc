@@ -31,6 +31,8 @@ From this, we'd like to extract the title, numeric page id, timestamp, and text,
 
 Now we meet our first two XML-induced complexities: _splitting_ the file among mappers, so that you don't send the first half of an article to one task and the rest to a different one; and _recordizing_ the file from a stream of lines into discrete XML fragments, each describing one article.
 
+FIXME: we used `crack` not plain text the whole way
+
 ===== Custom Splitter / InputFormat =====
 
 At 40GB uncompressed, the articles file will occupy about 320 HDFS blocks (assuming 128MB blocks), each destined for its own mapper. However, the division points among blocks is arbitrary: it might occur in the middle of a word in the middle of a record with no regard for your feelings about the matter. However, if you do it the courtesy of pointing to the first point within a block that a split _should_ have occurred, Hadoop will handle the details of patching it onto the trailing end of the preceding block. Pretty cool.
@@ -59,18 +61,3 @@ class Wikipedia::RawArticleRevision
   field :text,      String
 end
 --------------------
-
-=== Wikipedia Page Graph ===
-
-The wikipedia raw dumps have a pagelinks
-
---------------------
-INSERT INTO `pagelinks` VALUES (11049,0,'Rugby_union'),(11049,0,'Russia'),(11049,0,'Scottish_Football_Association'),(11049,0,'Sepp_Blatter'),(11049,0,'Simon_Hill'),...
---------------------
-
-The Wikipedia datasets a bug that is unfortunately common and appallingly difficult to remediate: the 
-
-Perhaps, people from the future, Wikipedia will have  a `cut: stdin: Illegal byte sequence`
- `-e:1:in <main>: invalid byte sequence in UTF-8 (ArgumentError)`
-
-// include::blogpost_media_processing.txt[depth=1]

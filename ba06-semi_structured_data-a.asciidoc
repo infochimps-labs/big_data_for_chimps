@@ -4,19 +4,31 @@ To explore data, you need data, in a form you can use, and that means engaging i
 
 Your goal is to take data from the _source domain_ (the shape, structure and cognitive model of the raw data) to the _target domain_ (the shape, structure and cognitive model you will work with) in a process that is 
 
+// prepare? munge?
+
+* Describe target model schema
+  // ie assemble Gorillib model
+
 * Extract: the _syntactic_ transformation from raw blobs to passive structured records
 * Transform: the _semantic_ transformation of structured data in the source domain to active models in the target domain
 * Normalize
   ** clean up errors and missing fields
   ** augment with data drom other tables
 * Canonicalization:
-  ** choose exemplars
-  ** extract a subuniverse and summary statistics
+  ** choose exemplars and mountweazels
+  ** pull summary statistics
   ** sort by the most likely join key
+  ** pull out your best guess as to a subuniverse (later)
 * Land
   ** the data in its long-term home(s)
 
+(later):
 
+* fix your idea of subuniverse
+  
+DL TODO: (fix style (document pig style); align terminology with above `wikipedia/pageviews_extract_a.rb` 
+
+  
 === Extract, Translate, Canonicalize  === 
 
 image::images/semistructured_data_workflow.png[Semistructured Data Workflow]
@@ -44,7 +56,7 @@ Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brut
 * Brutish: be effective, not elegant. Fight the ever-strong temptation to automate the in-automatable. Here are some street-fighting techniques we'll use below:
   ** Hand-curating a 200-row join table is the kind of thing you learn computer programing to avoid, but it's often the smart move.
   ** Faced with a few bad records that don't fit any particular pattern, you can write a script to recognize and repair them; or, if it's of modern size, just hand-fix them and save a diff. You've documented the change concisely and given future-you a chance to just re-apply the patch.
-  ** To be fully-compliant, most XML libraries introduce a necessary complexity that averages up the work to deal with simple XML structures. It's often more sensible to handle simple as plain text.
+  ** To be fully-compliant, most XML libraries introduce a necessary complexity that complexifies *up* the work to deal with simple XML structures. It's often more sensible to handle simple as plain text.
 * Short: use a high-level language. You'll invest much more in using the data than in writing the munging code. Two weeks later, when you discover that 2% of the documents used an alternate text encoding (or whatever card Loki had dealt) you'll be glad for brief readable scripts and a rich utility ecosystem.
 
 

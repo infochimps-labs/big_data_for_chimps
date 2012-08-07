@@ -27,6 +27,20 @@ We're going to make the following changes:
 * add the numeric id of the article
 * add the numeric id of the redirect-resolved article: this will make it easy to group page views under their topic
 
+==== Assembling the namespace join table
+
+* Take the pages metadata table,
+  ** get just the distinct pairs
+  ** verify
+* 101 is "Book" -- at least in English it is; in XX wikipedia it's XX, and in XX it's XX
+  ** pull in header from top of XML file
+  ** FIXME: is there a simpler script
+
+
+==== Getting file metadata in a Wukong (or any Hadoop streaming) Script
+
+TODO: 
+
 ===== Translation =====
 
 The translation is light, and the original model is of little interest, so we can just put the translation code into the raw model.
@@ -55,6 +69,37 @@ end
 --------------------
 
 ==== Wikipedia Article Metadata (importing a SQL Dump) ====
+
+
+
+==== Wikipedia Page Graph ====
+
+The wikipedia raw dumps have a pagelinks
+
+--------------------
+INSERT INTO `pagelinks` VALUES (11049,0,'Rugby_union'),(11049,0,'Russia'),(11049,0,'Scottish_Football_Association'),(11049,0,'Sepp_Blatter'),(11049,0,'Simon_Hill'),...
+--------------------
+
+The Wikipedia datasets a bug that is unfortunately common and appallingly difficult to remediate: the 
+
+Perhaps, people from the future, Wikipedia will have  a `cut: stdin: Illegal byte sequence`
+ `-e:1:in <main>: invalid byte sequence in UTF-8 (ArgumentError)`
+
+// include::blogpost_media_processing.txt[depth=1]
+
+----
+class Wikipedia::Pagelink < Wikipedia::Base
+  field     :
+
+
+
+* SQL parser to tsv
+  ** no need to assemble source domain model (yet) so don't
+  ** emits `from_page_id into_namespace into_title`
+* pig script to tack on page name for the from, page id for the into
+  ** emits `from_page_id into_page_id from_namespace from_title into_namespace into_title`
+  
+
 
 ==== Target Domain Models ==== 
 
