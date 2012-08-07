@@ -37,10 +37,11 @@ When identifiers conflict, several bad things happen. Once you catch it, you hav
 
 If the error is infrequent enough, you might not notice. A join which retains only one record can give different results for different joins, depending on which conflicting record is dropped. If the join isn't explicitly unique, you'll have a creeping introduction of extra records. Suppose some of the 38 towns named Springfield in the US listed the same airport code. Join the flight graph with the airport metadata, and each flight will be emitted that multiplicity of times. There are now extra records and subtly-inconsistent assertions (the wrong time zone could produce a flight that travelled back in time). Even worse, you've now coupled two different parts of the graph.  This is yet another reason to sanity-check your record counts.
 
+==== Authority and Consensus
+
 Most dangerously, inconsistent assertions can spread. Wikipedia is incredibly valuable for disambiguating truth; but it can also be a vector for circular false authority: suppose Last.fm, Wikipedia and AllMusicGuide make the same claim about
 
 image::images/BoxScoreWith60mphWindSpeed-ESPN-circled.png[What do you do when all the authorities agree on the same mistruth?]
-
 
 The Baseball Reference website reports that http://www.baseball-reference.com/boxes/SLN/SLN200610010.shtml[on October 1, 2006], 44,133 fans watched the Milwaukee Brewers beat the St Louis Cardinals, 5-3, on a day that was "83° F (28 C), Wind 60mph (97 km/h) out to left field, Sunny." How bucolic! A warm sunny day, 100% attendance, two hours of good sport -- and storm-force winds. Winds of that speed cause 30 foot (10 m) waves at sea; http://www.srh.noaa.gov/images/bmx/outreach/EMA_wx_school/2009/DamageReporting.pdf[trees are broken off or uprooted, saplings bent and deformed], and structural damage to buildings becomes likely.
 Visit http://espn.go.com/mlb/boxscore?gameId=261001124&teams=milwaukee-brewers-vs-st.-louis-cardinals[ESPN.com] and http://mlb.mlb.com/news/boxscore.jsp?gid=2006_10_01_milmlb_slnmlb_1[MLB's official website] and you'll see the same thing . They all use data from http://www.retrosheet.org/[retrosheet.org], who have meticulously compiled the box score of every documented baseball game back to 1871. You won't win many bar bets by contesting the joint authority of baseball's notably meticulous encyclopedists, ESPN, and Major-League Baseball itself on the subject of a baseball game, but in this case it's worth probing further. 

@@ -1,7 +1,122 @@
-
+=== Histograms and Distributions ===
 
 In the section on ((Inconsistent Truth and Error)),
 we made the point that
-
 the tools and patterns of though for dealing with numerical error and uncertainty are
+
+
+==== Distribution of temperatures ====
+
+
+Approach:
+
+
+===== Filter weather of interest
+
+The chapter on geodata will show general techniques for doing spatial aggregates. For now, we'll just choose the best-match weather station for each stadium and use that. (I did use my ability to skip ahead in the book to pull out those weather stations of interest.)
+
+Also, I'm going to ignore for a moment that weather stations go in and out of service, as do baseball stadiums.
+
+...
+
+You could jump straight in and join games on weather observations. (Can you tell that I don't think you should?) Here's what that would look like.
+
+----
+    -- pair games with weather stations
+    game_wstns_j    = JOIN stadium_wstns ON stadium_id, baseball_games on stadium_id;
+    game_wstns      = FOREACH game_wstns GENERATE ...;
+
+    -- Pair games with weather. Only the relevant observations survive the join.
+    game_wobs_j     = JOIN game_wstns ON (wstn_id, date), weather_observations ON (wstn_id, date);
+    game_wobs       = FOREACH game_wobs GENERATE ...;
+----
+
+* target weather stations:
+* input observations:
+* input games:
+* map out
+* expected final output records:
+
+That's a lot of data crossed with a lot of data. (FIXME: show math).
+
+===== Smallest plausible universe I
+
+Let's get out the chainsaw first, and create the *smallest plausible universe*. It's easy to imagine that other dates besides game dates will be interesting; that means 365 days rather than 60. Maybe keeping nearby stations would be useful, but we don't know how to do spatial queries yet. So our smallest plausible universe is every observation for the weather stations of interest. We'll denormalize the stadium ID onto each observation too.
+
+Here's our first guess; it needs improvement.
+
+----
+    stadium_wstns        = LOAD "stadium_wstns"        AS stadium_id, wstn_id, ...;
+    weather_observations = LOAD "weather_observations" AS wstn_id, date, ...;
+
+    -- Pair stadiums with weather. Only the relevant observations survive the join
+    stadium_wobs_j  = JOIN stadium_wstns ON wstn_id, weather_observations ON wstn_id;
+    stadium_wobs    = FOREACH stadium_wobs_j GENERATE ...;
+    STORE stadium_wobs INTO "...";
+----
+
+The `JOIN` does two things: bolts the appropriate `stadium_id` onto each observation; and because it's an inner join, selects only the weather stations of interest. (Note that the `JOIN` statement has its largest dataset on the right, as it should).
+
+That is clever but foolish: it brings the full weather dataset down to the reducer, even though we only want a few of them.
+
+TODO: show counts
+
+===== FILTER before JOIN
+
+If a join will cause a large reduction in data, see if there's a way to filter it first. Here's the straightforward way:
+
+----
+    stadium_wstns        = LOAD "stadium_wstns"        AS stadium_id, wstn_id, ...;
+    weather_observations = LOAD "weather_observations" AS wstn_id, date, ...;
+
+    -- Filter relevant observations on the map side
+    wobs_ok         = FILTER weather_observations BY wstn_id IN (...); -- ??use IN or use MATCH ??
+    
+    -- Pair stadiums with weather. Only the relevant observations survive the join
+    stadium_wobs_j  = JOIN stadium_wstns ON wstn_id, wobs_ok ON wstn_id;
+    stadium_wobs    = FOREACH stadium_wobs_j GENERATE ...;
+    STORE stadium_wobs INTO "...";
+----
+
+TODO: should we do the filter with an `IN` or with a regex `MATCH`?
+TODO: show math
+
+===== Map-side JOIN
+
+We can do even better, though. The `stadium_wstns` table is tiny; we can do a ((map-side join)) footnote:[aka fragment replicate or hash-map join]. 
+TODO: reference forward to pig chapter
+http://pig.apache.org/docs/r0.10.0/perf.html#replicated-joins:[map-side join]
+
+NOTE: if the observations were stored sorted by weather station ID, you could even do a merge join. When we get to the geographic data chapter you'll see why we made a different choice.
+
+In a normal `JOIN`, the largest dataset goes on the right. In a fragement-replicate join, the largest dataset goes on the *left*, and everything to the right must be small enough to fit in memory. Our tiny little stadium-weather station map is tiny enough.
+
+----
+    stadium_wstns        = LOAD "stadium_wstns"        AS stadium_id, wstn_id, ...;
+    weather_observations = LOAD "weather_observations" AS wstn_id, date, ...;
+
+    -- Pair stadiums with weather. Only the relevant observations survive the join
+    stadium_wobs_j  = JOIN weather_observations ON wstn_id, stadium_wstns ON wstn_id USING 'replicated';
+    stadium_wobs    = FOREACH stadium_wobs_j GENERATE ...;
+    STORE stadium_wobs INTO "...";
+----
+
+* input observations:      XXX records, , XX GB
+* input stadiums:          32 stadiums * 60 years, XX GB
+* final output obs:        32 * 60 * 365 * 24,  XX GB
+* map output obs:          32 * 60 * 365 * 24,  XX GB
+* reduce output obs:       none!
+
+=== Join weather on games
+
+straightforward:
+
+----
+    stadium_obs    = LOAD "stadium_wobs"   AS ...;
+    baseball_games = LOAD "baseball_games" AS ...;
+
+    game_weather_j = JOIN baseball_games ON (stn_id, game_date), stadium_obs on (stn_id, observed_at);
+    game_weather   = FOREACH game_weather_j GENERATE ...;
+    STORE game_weather INTO "game_weather";
+----
 

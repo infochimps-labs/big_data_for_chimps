@@ -13,17 +13,56 @@ They're also a great illustration of three key scalability patterns.
 Once you have a clear picture of how these joins work,
 you can be confident you understand the map/reduce paradigm deeply.
 
-==== Map-side Join ====
+=== Map-side Join ===
 
 A map-side (aka 'fragment replicate') join
 
-===== How a map-side join works =====
+In a normal `JOIN`, the largest dataset goes on the right. In a fragement-replicate join, the largest dataset goes on the *left*, and everything to the right must be tiny.
 
-(explanation) 
+The Pig manual calls this a "fragment replicate" join, because that is how Pig thinks about it: the tiny datasets are duplicated to each machine.
+Throughout the book, I'll refer to it as a map-side join, because that's how you should think about it when you're using it.
+The other common name for it is a Hash join -- and if you want to think about what's going on inside it, that's the name you should use.
+
+===== How a Map-side (Hash) join works =====
+
+If you've been to enough large conferences you've seen at least one registration-day debacle. Everyone leaves their hotel to wait in a long line at the convention center, where they have set up different queues for some fine-grained partition of attendees by last name and conference track. Registration is a direct join of the set of attendees on the set of badges; those check-in debacles are basically the stuck reducer problem come to life.
+
+If it's a really large conference, the organizers will instead set up registration desks at each hotel. Now you don't have to move very far, and you can wait with your friends. As attendees stream past the registration desk, the 'A-E' volunteer decorates the Arazolos and Eliotts with badges, the 'F-K' volunteer decorates the Gaspers and Kellys, and so forth. Note these important differences: a) the registration center was duplicated in full to each site b) you didn't have to partition the attendees; Arazolos and Kellys and Zarebas can all use the same registration line. 
+
+To do a map-side join, Pig holds the tiny table in a Hash (aka Hashmap or dictionary), indexed by the full join key.
+
+----
+
+    .-------------.      | 
+    | tiny table  |      |    ... huge table ... 
+    +--+----------+      | 
+    |A | ...a...  |      | Q | ...
+    |  | ...a...  |      | B | ...
+    |Q | ...q...  |      | B | ...
+    |F | ...f...  |      | B | ...
+      ...                | A |  ...
+    |Z | ...z...  |      | B | ...
+    |  | ...z...  |      | B | ...
+    |P | ...p...  |      | C | ...
+    |_____________|      | Z | ...
+                         | A | ...
+
+----			 
+
+As each row in the huge table flys by, it is decorated with the matching rows from the tiny table and emitted.
+Holding the data fully in-memory in a hash table gives you constant-time lookup speed for each key, and lets you access rows at the speed of RAM.
+
+One map-side only pass through the data is enough to do the join.
+
+See ((distribution of weather measurements)) for an example.
+
 
 ===== Example: map-side join of wikipedia page metadata with wikipedia pageview stats =====
 
-==== Merge Join ====
+
+
+
+=== Merge Join ===
 
 ===== How a merge join works =====
 

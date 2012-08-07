@@ -66,6 +66,14 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
   - 20 GB
   - geo, stats
 
+=== Retrosheet
+
+
+            25	 	Retrosheet: MLB play-by-play, high detail, 1840-2011	ripd/www.retrosheet.org-2007/boxesetc/2006
+            25	 	Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
+
+  
+
 === Other Datasets ===
 
 

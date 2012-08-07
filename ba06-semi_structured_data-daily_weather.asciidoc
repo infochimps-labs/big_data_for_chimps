@@ -1,0 +1,9 @@
+=== Daily Weather
+
+
+==== Foundation data
+
+*exemplars and mountweazels*:
+
+*final sort*: There are two plausible choices. The first guess would be weather station ID, and our first encounters with the 
+
