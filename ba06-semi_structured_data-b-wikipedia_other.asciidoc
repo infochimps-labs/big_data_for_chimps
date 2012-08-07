@@ -88,9 +88,11 @@ Perhaps, people from the future, Wikipedia will have  a `cut: stdin: Illegal byt
 // include::blogpost_media_processing.txt[depth=1]
 
 ----
+[source, ruby]
 class Wikipedia::Pagelink < Wikipedia::Base
-  field     :
-
+  field     :name, String
+end
+----
 
 
 * SQL parser to tsv
@@ -105,7 +107,7 @@ class Wikipedia::Pagelink < Wikipedia::Base
 
 First step is to give some thought to the target domain model. There's a clear match to the Schema.org `Article` type, itself a subclass of `CreativeWork`, so we'll use the property names and descriptions:
 
---------------------
+----
 class Wikipedia::WpArticle
   field      :id,                     String,    doc: "Unique identifier for the article; it forms the tail-end of the traditional URL"
   field      :wp_page_id,             Integer,   doc: "Numeric serial ID for the page (as opposed to the article's topic)"
@@ -122,4 +124,4 @@ class Wikipedia::WpArticle
   field      :wp_project,             String,    doc: "Wikipedia project identifier; main wikipedia a, wikibooks b, wiktionary d, wikimedia m, wikipedia mobile mw, wikinews n, wikiquote q, wikisource s, wikiversity v, mediawiki w"
   field      :extended_properties,    Hash,      doc: "Interesting properties for this topic, extracted by DBpedia. For example, the topic 'Abraham Lincoln' has properties vice_president:         \"Andrew_Johnson\", spouse: \"Mary_Todd_Lincoln\" and so forth."
 end
---------------------
+----

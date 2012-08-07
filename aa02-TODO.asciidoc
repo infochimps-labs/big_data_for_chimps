@@ -15,6 +15,9 @@
 
 * Does a bulleted list have a dot at the end of the line?
 * How do I slide a chapter title to be before `1` (eg the about this book)?
+* What does "replaceable" mean?
+* When introducing a _new term_ do I decorate it at all besides the emphasis?
+* Indexing hints yes or no?
 
 
 [[style_references]]
@@ -58,9 +61,8 @@ Text; the first word on line is the docbook tag:
 
 Inline code block. You can use the `include::code/HelloWorld.rb[]` to pull it in from a separate file.
 
-....
-[source,java]
 ----
+[source,java]
 CODE_BLOCK_NOTE = Standard line length for code is 85 in an "Animal" book:"
 
 STANDARD LINE_FORMAT = <<-EOF
@@ -68,16 +70,14 @@ STANDARD LINE_FORMAT = <<-EOF
 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345
 EOF
 ----
-....
 
 Contrast the code block above with <<style_code_example>>, which is a _formal_ code example (titled and cross-referenced).
 
 [[style_code_example]]
 .An Example
 ====
-....
-[source,ruby]
 ----
+[source,ruby]
 
 CODE_BLOCK_NOTE = "Note that the line length is a bit longer here (90 in an Animal):"
 
@@ -86,7 +86,6 @@ LINE_FORMAT = <<-EOF
 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
 EOF
 ----
-....
 ====
 
 
