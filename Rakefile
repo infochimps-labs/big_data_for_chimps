@@ -49,7 +49,7 @@ class BookTask
   def book_file          ; local(settings.book_file)                ;  end
   def product_name()     ; File.basename(book_file).gsub(/\..*$/, '') ; end
   def output_file        ; output_path("#{product_name}.#{file_ext}") ; end
-  def stylesheet_path(*args) File.join('output', 'stylesheets', *args) ; end
+  def stylesheet_path(*args) File.expand_path(File.join('output', 'stylesheets', *args)) ; end
 
   def file_ext ; product_type.to_s ; end
 
@@ -57,128 +57,134 @@ class BookTask
     File.expand_path(File.join(Settings.assets_dir, *args))
   end
 
-  def output_dir_task
-    directory_task(output_path)
+  def directories(*dirs)
+    p dirs
+    dirs.flatten.each{|dir| directory(dir) }
   end
 
-  def directory_task(dir_name)
-    directory(dir_name)
-    dir_name
-  end
-
-  def setup_task(ns, task, description)
-    task_name = "#{ns}:#{product_type}"
-    desc description
+  def setup_task(ns, name, description)
+    task_name = "#{ns}:#{name}"
+    desc(description)
     task(task_name)
     task(ns => task_name)
     task_name
   end
 
-  def gen_task(deps=[])
+  def gen_task(deps=[], name=nil)
+    directory(output_path)
     task_name = setup_task(:gen, product_type, "Generate #{product_type} document")
     task(task_name => [output_file].flatten)
-    file(output_file => [output_dir_task, book_file, deps].flatten) do
+    file(output_file => [output_path, book_file, deps].flatten) do
       step :generating, product_type, "output #{output_file}"
       yield
     end
   end
 
-  def clean_task
+  def clean_task(deps=[])
     task_name = setup_task(:clean, product_type, "Remove generated artifacts for #{product_type} output")
-    task(task_name) do
-      step :removing, product_type, "output #{output_file}"
-      FileUtils.rm output_file
+    task(task_name => deps) do
+      step :removing, product_type, "output directory #{output_path}"
+      FileUtils.rm_r output_path
       yield
     end
   end
 
-  def stylesheets_to_generate
-    Dir[asset_path('stylesheets', '*.css')].map do |from_file|
-      [stylesheet_path(File.basename(from_file)), from_file]
-    end
-  end
-
-  def copy_stylesheets
-    directory_task(stylesheet_path)
-    stylesheets_to_generate.map{|into, from| file(into => stylesheet_path){ cp from, into } }
-  end
-
 end
-
 
 class DocbookTask < BookTask
   self.product_type = :docbook
   def file_ext ; 'xml' ; end
-
+  #
   def tasks
-    gen_task do
-      sh(* asciidoc_cmd('-b', 'docbook', output_file: output_file) )
-    end
+    gen_task{ sh(* gen_dockbook_cmd) }
+    clean_task
+  end
+  #
+  def gen_dockbook_cmd
+    asciidoc_cmd('-b', 'docbook', output_file: output_file)
   end
 end
 
 class EpubTask < BookTask
   self.product_type = :epub
-
+  #
   def tasks
-    gen_task [copy_stylesheets] do
-      cd output_path do
-        sh(* [a2x_wss, '-v', book_file].flatten )
-      end
-    end
+    gen_task(['gen:html:assets']){ cd(output_path){ sh(* gen_epub_cmd) } }
+    clean_task(['clean:html:assets'])
+  end
+  #
+  def gen_epub_cmd
+    a2x_wss << '-v' << book_file
   end
 end
 
 class MobiTask < BookTask
   self.product_type = :mobi
+  #
   def tasks
-    gen_task ['gen:html'] do
-      sh(* kindlegen_cmd )
-    end
+    gen_task(['gen:html']){ sh(* kindlegen_cmd ) }
+    clean_task(['clean:html'])
+  end
+  #
+  def kindlegen_cmd
+    cmd = ['kindlegen']
+    cmd << '-verbose'
+    cmd << "#{product_name}.opf" << '-o' << "#{product_name}.mobi"
+    cmd
   end
 end
 
 class PdfTask < BookTask
   self.product_type = :pdf
-  def java_options
-    {
-      'callout.graphics' => 0,
-      'navig.graphics'   => 0,
-      'admon.textlabel'  => 1,
-      'admon.graphics'   => 0,
-    }
-  end
-
-  def fop_file
-    output_path("#{product_name}.fo")
-  end
-
-  def docbook_file
-    DocbookTask.new.output_file
-  end
-
   def tasks
-    file fop_file => [output_dir_task, book_file].flatten do
+    file fop_file => [output_path, book_file].flatten do
       step :generating, product_type, "intermediate #{fop_file}"
-      sh(* xslt_cmd(['-o', fop_file, docbook_file, asset_path('docbook-xsl', 'fo.xsl')], java_options))
+      sh(* gen_fop_cmd)
     end
-    gen_task ['gen:docbook', fop_file] do
-      # cd asset_path do
-        sh('fop', '-fo', fop_file, '-pdf', output_file)
-      # end
-    end
+    gen_task(['gen:docbook', fop_file]){ sh(* gen_pdf_cmd) }
+    clean_task
+  end
+  #
+  def fop_file      ; output_path("#{product_name}.fo") ; end
+  def docbook_file  ; DocbookTask.new.output_file       ; end
+  #
+  def gen_pdf_cmd
+    ['fop', '-fo', fop_file, '-pdf', output_file]
+  end
+  def gen_fop_cmd
+    xslt_cmd(['-o', fop_file, docbook_file, asset_path('docbook-xsl', 'fo.xsl')], java_options)
+  end
+  def java_options
+    { 'callout.graphics' => 0, 'navig.graphics' => 0, 'admon.textlabel' => 1, 'admon.graphics' => 0, }
   end
 end
 
 class HtmlTask < BookTask
   self.product_type = :html
-
   def tasks
-    gen_task [copy_stylesheets] do
-      sh(* asciidoc_cmd(output_file: output_file, attrs: { stylesheet: stylesheet_path('scribe.css') }) )
-    end
-    clean_task do
-      stylesheets_to_generate.map(&:first).each{|file| puts "FileUtils.rm(#{file})" }
+    copy_stylesheets_task
+    gen_task(['gen:html:assets']){ sh(* gen_html_cmd) }
+    clean_task(['clean:html:assets'])
+  end
+  #
+  def gen_html_cmd
+    asciidoc_cmd(output_file: output_file, attrs: { stylesheet: stylesheet_path('scribe.css') })
+  end
+
+  def assets_to_copy
+    assets  = []
+    assets += Dir[asset_path('assets', 'config.ru')].map{|from_file|  [local('output', File.basename(from_file)), from_file] }
+    assets += Dir[asset_path('stylesheets', '*.css')].map{|from_file| [stylesheet_path(File.basename(from_file)), from_file] }
+    assets
+  end
+  def copy_stylesheets_task
+    directory(stylesheet_path)
+    task('clean:html:stylesheets'){ FileUtils.rm_r(stylesheet_path) }
+    task('gen:html:assets' => directories(assets_to_copy.map{|into, from| File.dirname(into) }.uniq))
+    assets_to_copy.map do |into, from|
+      file(into => [from, File.dirname(into)]){ cp from, into }
+      task('gen:html:assets' => into)
+      into
     end
   end
 end
@@ -193,6 +199,6 @@ HtmlTask.new.tasks
 PdfTask.new.tasks
 DocbookTask.new.tasks
 EpubTask.new.tasks
-MobiTask.new.tasks
+# MobiTask.new.tasks
 
 task :default => 'gen:html'

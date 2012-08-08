@@ -53,3 +53,11 @@ I plan to push chapters to the publicly-viewable http://github.com/infochimps-la
 We really mean it about the github thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. 
 
 However! We might not use your feedback, no matter how dazzlingly cogent it is. Also, we are soliciting comments from readers -- but we are not seeking out content from collaborators. Do not run off and craft a dazzlingly lucid explanation of some topic, far excelling whatever hackish tripe I would have coughed out, and then expect us to include it footnote:[Do craft dazzlingly lucid explanations, though! Always!. I have strong opinions about what the book should cover and a fixed budget of pages; and while I am trying my hand at author, I have no interest in being an editor. Don't prepare original content unless you get in touch first.
+
+
+=== Organization ===
+
+* Practice   -- A real question, on real data, as we'd really do it. I'll especially try to highlight where you should be disciplined, where you should be clever, and where you should keep it simple
+* Patterns   -- Reasoning forward from the practical case to show the general patterns that guide its execution
+* Principles -- Lastly, the larger philosophy that should guide your thinking
+

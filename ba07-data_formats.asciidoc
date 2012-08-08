@@ -1,16 +1,9 @@
 == Data Formats and Schemata ==
 
-All of the following examples could be ambiguously referred to as "encoding":
 
-* Compression: gz, LZO, Snappy, etc
-* Serialization: the actual record container
-* Stringifying: conversion to JSON, TSV, etc.
-* Glyphing: binary stream (for example UTF8-encoded Unicode) to characters (TODO: make this correct)
-* Structured to model
+there's only three data serialization formats you should use: TSV, JSON, or Avro.
 
-[^fn] the worst example iis "node": a LAN node configured by a chef node running a Flume logical node handling graph nodes in a Node.js decorator.
-
-there's only three data serialization formats you should use: TSV, JSON, or Avro. 
+TESTING
 
 === Good Format 1: TSV (It's simple) ===
 
@@ -116,6 +109,9 @@ that there is no essential difference among
         
 Avro says these are imperfect reflections for the same thing: a method to send data in space and time, to yourself or others. This is a very big idea [^1].
 
+
+footnote:[To the people of the future: this might seem totally obvious. Trust that it is not. There are virtually no shared patterns or idioms across the systems listed here.]
+
 === Other reasonable choices: tagged net strings and null-delimited documents  ===
 
 Not restartable.
@@ -181,7 +177,7 @@ This template generates XML with a consistent structure. The `<%= %>` blocks int
 
 ===== Airing of Grievances =====
 
-XML is like the English Measurement System -- just ubiquitous enough, and just barely useful enough, that it's near-impossible to weed out. Neither, however, is anymore justifiable for use by a professional practitioner. XML is both too extensible and too limited to map smoothly to and from the data structures languages use in practive. In the case that you need to make the case against XML to a colleague, I arm you with the following List of Grievances:
+XML is like the English Measurement System -- just ubiquitous enough, and just barely useful enough, that it's near-impossible to weed out. Neither, however, is anymore justifiable for use by the professional practitioner. XML is both too extensible and too limited to map smoothly to and from the data structures languages use in practive. In the case that you need to make the case against XML to a colleague, I arm you with the following List of Grievances:
 
 * **Does not preserve simple types**: the only primitive data type is a string; there's no standard way to distinguish an integer, a floating-point number, or a date without external hints.
 
@@ -258,6 +254,18 @@ Just capture substructure
 
 === Glyphing (string encoding), Unicode,UTF-8 ===
 
+
+All of the following examples could be ambiguously referred to as "encoding":
+
+* Compression: gz, LZO, Snappy, etc
+* Serialization: the actual record container
+* Stringifying: conversion to JSON, TSV, etc.
+* Glyphing: binary stream (for example UTF8-encoded Unicode) to characters (TODO: make this correct)
+* Structured to model
+
+footnote:[the worst example iis "node": a LAN node configured by a chef node running a Flume logical node handling graph nodes in a Node.js decorator.]
+
+
 My best advice is 
 
 * Never let *anything* into your system unless it is UTF8, UTF-16, or ASCII.
@@ -272,6 +280,7 @@ My best advice is
 === ICSS ===
 
 ICSS uses 
+footnote:[Every Avro schema file is a valid ICSS schema file, but Avro will not understand all the fields. In particular, Avro has no notion of `is_a` inheritance; ICSS does]
 
 
 ==== Schema.org Types ====
@@ -305,8 +314,3 @@ ICSS uses
 
 
 ''''
-
-[^1] To the people of the future: this might seem totally obvious. Trust that it is not. There are virtually no shared patterns or idioms across the systems listed here.
-
-[^1] Every Avro schema file is a valid ICSS schema file, but Avro will not understand all the fields. In particular, Avro has no notion of 
-and ICSS allows 

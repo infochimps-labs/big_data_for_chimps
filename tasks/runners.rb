@@ -10,19 +10,13 @@ module Runners
     cmd
   end
 
-  def kindlegen_cmd
-    cmd = ['kindlegen']
-    cmd << '-verbose'
-    cmd << "#{product_name}.opf" << '-o' << "#{product_name}.mobi"
-    cmd
-  end
-
   def a2x
-    ["a2x", "--destination-dir=#{output_path}", "--keep-artifacts", "-f", product_type.to_s, "-d", "book", '--no-xmllint', ]
+    # , "--keep-artifacts"
+    ["a2x", "--destination-dir=#{output_path(product_type)}", "-f", product_type.to_s, "-d", "book", '--no-xmllint', ]
   end
 
   def a2x_wss
-    a2x + ["--stylesheet=#{stylesheet_path('scribe.css')}"]
+    a2x + ["--stylesheet=#{File.join('output', 'stylesheets', 'scribe.css')}"]
   end
 
   def xslt_cmd(jar_arguments, java_options)

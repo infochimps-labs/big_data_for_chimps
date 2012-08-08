@@ -6,8 +6,9 @@ gem 'wukong',     :github => 'infochimps-labs/wukong',   :branch => 'vanilla_2'
 
 gem 'git-scribe', :path => '../git-scribe'
 
-gem 'guard',       ">= 1.0"
-gem 'guard-git-scribe'
+gem 'yajl-ruby',  :platform => :mri
+
+gem 'coolline'
 
 # SciRuby/sciruby
 
@@ -15,6 +16,11 @@ gem 'guard-git-scribe'
 group :support do
   gem 'pry'
   gem 'rake'
+  #
+  gem 'guard',       ">= 1.0"
+  gem 'guard-shell'
+  gem 'guard-livereload'
+  gem 'rack'
   #
   gem 'guard-yard'
   gem 'yard',        ">= 0.7"
