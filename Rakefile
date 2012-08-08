@@ -49,6 +49,7 @@ class BookTask
   def book_file          ; local(settings.book_file)                ;  end
   def product_name()     ; File.basename(book_file).gsub(/\..*$/, '') ; end
   def output_file        ; output_path("#{product_name}.#{file_ext}") ; end
+  def stylesheet_path(*args) File.join('output', 'stylesheets', *args) ; end
 
   def file_ext ; product_type.to_s ; end
 
@@ -90,6 +91,18 @@ class BookTask
       yield
     end
   end
+
+  def stylesheets_to_generate
+    Dir[asset_path('stylesheets', '*.css')].map do |from_file|
+      [stylesheet_path(File.basename(from_file)), from_file]
+    end
+  end
+
+  def copy_stylesheets
+    directory_task(stylesheet_path)
+    stylesheets_to_generate.map{|into, from| file(into => stylesheet_path){ cp from, into } }
+  end
+
 end
 
 
@@ -99,9 +112,22 @@ class DocbookTask < BookTask
 
   def tasks
     gen_task do
-      sh(* asciidoc_cmd(output_file: output_file) )
+      sh(* asciidoc_cmd('-b', 'docbook', output_file: output_file) )
     end
   end
+end
+
+class EpubTask < BookTask
+  self.product_type = :epub
+
+  def tasks
+    gen_task [copy_stylesheets] do
+      cd output_path do
+        sh(* [a2x_wss, '-v', book_file].flatten )
+      end
+    end
+  end
+
 end
 
 class PdfTask < BookTask
@@ -126,27 +152,18 @@ class PdfTask < BookTask
   def tasks
     file fop_file => [output_dir_task, book_file].flatten do
       step :generating, product_type, "intermediate #{fop_file}"
-      sh(* xslt_cmd(['-o', fop_file, docbook_file, asset_path('docbook-xsl/fo.xsl')], java_options))
+      sh(* xslt_cmd(['-o', fop_file, docbook_file, asset_path('docbook-xsl', 'fo.xsl')], java_options))
     end
     gen_task ['gen:docbook', fop_file] do
-      sh('fop', '-fo', fop_file, '-pdf', output_file)
+      # cd asset_path do
+        sh('fop', '-fo', fop_file, '-pdf', output_file)
+      # end
     end
   end
 end
 
 class HtmlTask < BookTask
   self.product_type = :html
-  def stylesheet_path(*args) output_path('stylesheets', *args) ; end
-
-  def stylesheets_to_generate
-    Dir[asset_path('stylesheets', '*.css')].map do |from_file|
-      [stylesheet_path(File.basename(from_file)), from_file]
-    end
-  end
-
-  def copy_stylesheets
-    stylesheets_to_generate.map{|into, from| file(into){ cp from, into } }
-  end
 
   def tasks
     gen_task [copy_stylesheets] do
@@ -167,5 +184,6 @@ task :clean
 HtmlTask.new.tasks
 PdfTask.new.tasks
 DocbookTask.new.tasks
+EpubTask.new.tasks
 
 task :default => 'gen:html'

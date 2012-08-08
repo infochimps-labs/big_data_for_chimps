@@ -14,6 +14,7 @@ gem 'guard-git-scribe'
 # Gems you would use if hacking on this gem (rather than with it)
 group :support do
   gem 'pry'
+  gem 'rake'
   #
   gem 'guard-yard'
   gem 'yard',        ">= 0.7"
