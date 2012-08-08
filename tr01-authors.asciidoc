@@ -1,8 +1,8 @@
-== Authors ==
+== Book Metadata ==
 
-=== Philip (flip) Kromer === 
+=== Author ===
 
-I am founder and CTO at Infochimps.com, a big data platform that makes acquiring, storing and analyzing massive data streams transformatively easier. I enjoy Bowling, Scrabble, working on old cars or new wood, and rooting for the Red Sox.
+Philip (flip) Kromer is the founder and CTO at Infochimps.com, a big data platform that makes acquiring, storing and analyzing massive data streams transformatively easier. I enjoy Bowling, Scrabble, working on old cars or new wood, and rooting for the Red Sox.
 
 Graduate School, Dept. of Physics - University of Texas at Austin, 2001-2007
 Bachelor of Arts, Computer Science - Cornell University, Ithaca NY, 1992-1996

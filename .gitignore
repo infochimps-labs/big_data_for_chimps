@@ -39,5 +39,4 @@ pkg
 
 ## PROJECT::SPECIFIC
 
-*.rdb
-book.html
+output

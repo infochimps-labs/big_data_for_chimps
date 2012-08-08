@@ -1,0 +1,11 @@
+--- # -*- YAML -*-
+publish:        false
+edition:        0.1
+language:       en
+version:        1.0
+author:         Philip (flip) Kromer
+cover:          image/cover.jpg
+
+book_file:      book.asciidoc
+verbose:        true
+output_types:   ['pdf']

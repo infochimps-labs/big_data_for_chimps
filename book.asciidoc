@@ -2,9 +2,9 @@ include::aa01-about.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
-include::ba05-overview_of_datasets.asciidoc[]
-
 include::ba06-semi_structured_data-a.asciidoc[]
+
+include::ba06-semi_structured_data-c-patterns.asciidoc[]
 
 include::ba06-semi_structured_data-b-wikipedia_other.asciidoc[]
 
@@ -20,6 +20,8 @@ include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 
 include::ba04-toolset.asciidoc[]
 
+include::ba02-simple_stream.asciidoc[]
+
 include::fu01-sampling.asciidoc[]
 
 include::fu02-statistics.asciidoc[]
@@ -34,9 +36,9 @@ include::fu10-tuning.asciidoc[]
 
 include::fu06-processing_graphs.asciidoc[]
 
-include::fu00-overview_of_problems.asciidoc[]
+include::ba05-overview_of_datasets.asciidoc[]
 
-include::ba02-simple_stream.asciidoc[]
+include::fu00-overview_of_problems.asciidoc[]
 
 include::ba03-herding_cats.asciidoc[]
 
