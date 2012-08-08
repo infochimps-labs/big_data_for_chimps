@@ -1,5 +1,6 @@
 source 'http://rubygems.org'
 
+gem 'configliere'
 gem 'gorillib',   :github => 'infochimps-labs/gorillib', :branch => 'version_1'
 gem 'wukong',     :github => 'infochimps-labs/wukong',   :branch => 'vanilla_2'
 
