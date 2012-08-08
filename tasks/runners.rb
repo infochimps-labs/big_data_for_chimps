@@ -10,6 +10,13 @@ module Runners
     cmd
   end
 
+  def kindlegen_cmd
+    cmd = ['kindlegen']
+    cmd << '-verbose'
+    cmd << "#{product_name}.opf" << '-o' << "#{product_name}.mobi"
+    cmd
+  end
+
   def a2x
     ["a2x", "--destination-dir=#{output_path}", "--keep-artifacts", "-f", product_type.to_s, "-d", "book", '--no-xmllint', ]
   end

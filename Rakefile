@@ -127,7 +127,15 @@ class EpubTask < BookTask
       end
     end
   end
+end
 
+class MobiTask < BookTask
+  self.product_type = :mobi
+  def tasks
+    gen_task ['gen:html'] do
+      sh(* kindlegen_cmd )
+    end
+  end
 end
 
 class PdfTask < BookTask
@@ -185,5 +193,6 @@ HtmlTask.new.tasks
 PdfTask.new.tasks
 DocbookTask.new.tasks
 EpubTask.new.tasks
+MobiTask.new.tasks
 
 task :default => 'gen:html'
