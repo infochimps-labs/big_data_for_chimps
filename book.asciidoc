@@ -1,5 +1,7 @@
 include::aa01-about.asciidoc[]
 
+include::ba00-first_exploration.asciidoc[]
+
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
 include::ba06-semi_structured_data-a.asciidoc[]

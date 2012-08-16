@@ -1,0 +1,61 @@
+== First Exploration ==
+
+Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this sentence.
+
+What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing; and in doing so, exposes a core simplicity that makes programming it exceptionally fun.
+
+Hadoop's bargain is thus: you must agree to write all your programs according to single certain form, which we'll call the "Map / Reduce Haiku":
+
+    Data flutters by
+    Elephants make sturdy piles
+    Number becomes thought
+
+For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
+
+Here's an example.
+(we'll skip for now many of the details, so that you can get a high-level sense of how simple and powerful Hadoop can be.)
+
+=== Where is Barbeque?
+
+The Wikipedia community has geolocated a great number of its articles: here in Austin, TX the pages for ...
+
+Can you use this data to find words with geographic affinity? Yes!
+footnote:[Not only that: you can use a fancier version of the model we'll build here to geolocate text _based purely on their content_. An article mentioning barbeque and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. (see Baldridge et al TODO: reference)]
+
+==== Summarize every page on Wikipedia
+
+First, we'll summarize the content of every page in wikipedia
+
+TODO: simple word bag
+
+We'll also prepare a summary of the text across all the articles:
+
+TODO: script
+
+
+==== Join on geography
+
+Next, let's join each article's word bag with its article metadata -- and in particular with its location. 
+
+TODO: script
+
+
+==== Bin Locations
+
+Now we're ready to summarize words by region. Assign each article to a grid cell, and carefully combine the word bags of all the articles in each grid cell:
+
+TODO: script
+
+The last data preparation step is to remove the background (how often words are used globally) to expose the signal (the words most strongly associated with a place).
+
+TODO: script
+
+Finally, crossload it into a database, add a bit of zazz:
+
+screenshot A (Barbeque)
+screenshot B (Red Sox vs Cardinals vs Dodgers)
+screenshot C (Wine vs Corn vs Tobacco)
+
+image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach Mountain BBQ and Wine]
+
+image::images/baldridge-map_of_slang_cool-480.jpg[Map of variants on the slang term "Cool"]
