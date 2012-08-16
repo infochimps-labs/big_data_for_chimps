@@ -36,7 +36,6 @@ We're going to make the following changes:
   ** pull in header from top of XML file
   ** FIXME: is there a simpler script
 
-
 ==== Getting file metadata in a Wukong (or any Hadoop streaming) Script
 
 TODO: 
@@ -70,6 +69,25 @@ end
 
 ==== Wikipedia Article Metadata (importing a SQL Dump) ====
 
+
+----
+include::code/munging/wikipedia/wp_pagelinks_extract.rb[]
+----
+
+----
+include::code/munging/wikipedia/wp_pages_extract.rb[]
+----
+
+
+==== Necessary Bullcrap #76: Bad encoding ====
+
+Encoding errors (TODO: `LC_ALL`).
+
+Scrub illegal urf-8 contenf from contents.
+
+----
+include::code/munging/wikipedia/char_filter.rb[]
+----
 
 
 ==== Wikipedia Page Graph ====
