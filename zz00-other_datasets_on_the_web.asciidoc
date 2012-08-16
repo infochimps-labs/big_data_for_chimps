@@ -1,6 +1,5 @@
 == Other Datasets on the Web ==
 
-
 --------------------
     approx size	 Mrecs	source Data
            huge		US Patent Data from Google                          	www.google.com/googlebooks/uspto-patents.html[Google Patent Collection]
@@ -70,8 +69,20 @@
        10_000      	Daily Global Weather, 1929-2009                   	aws.amazon.com/datasets/2759             	snap-ac47f4c5
       220_000		Twilio/Wigle.net Street Vector Data Set         	aws.amazon.com/datasets/2408             	snap-5eaf5537	MySQL	geo	A complete database of US street names and address ranges mapped to zip codes and latitude/longitude ranges, with DTMF key mappings for all street names.
              .		US Economic Data 2003-2006                      	aws.amazon.com/datasets/2341             	snap-0bdf3f62		stats	US Economic Data for 2003-2006 from the The US Census Bureau -- raw census data (ACS2002-2006)
-	     .
+	     .		Github Archive                                  	githubarchive.org
+
+
+	     
 -------------------
+
+==== Github Archive ====
+
+https://github.com/igrigorik/githubarchive.org
+
+http://www.githubarchive.org
+
+Open-source developers all over the world are working on millions of projects: writing code & documentation, fixing & submitting bugs, and so forth. GitHub Archive is a project to record the public GitHub timeline, archive it, and make it easily accessible for further analysis.
+
 
 ==== Wikibench.eu Wikipedia Log traces ====
 
