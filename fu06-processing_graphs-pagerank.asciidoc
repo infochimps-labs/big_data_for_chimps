@@ -1,14 +1,26 @@
 
+=== Basic pagerank
 
-
-
-
-
-
-
+----
+include::page_counts.pig[]
+----
 
 
 
 
 === Exercises ===
 
+If you run the `server_logs/page_page_edges` script on the `server_logs/star_wars_kid` dataset, you'll get a graph connecting pages to pages, weighted by the number of times a user who visited one also visited the other.
+
+Before you dive in, browse through the data a bit and think about what you expect:
+
+* How should the graph characteristics of an HTML page differ from those of a `.wmv` (video) file?
+* What pages should be the most prominent?
+* What types of pages should have the highest clustering coefficient?
+* By looking through the data, or by reasoning from what you know, which pages should have high similarity?
+
+Now, answer those questions:
+* Calculate the degree distribution, etc of the graph, broken down by file type.
+* Find the pagerank. How well does it agree with the degree distribution? 
+* Make a table listing each file on the site along with its intrinsic and graph features: file type, size, visit count, clustering coefficient, degree and pagerank.
+* Run a clustering algorithm on the page co-visit graph. 

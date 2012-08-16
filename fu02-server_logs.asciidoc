@@ -1,33 +1,151 @@
 == Log Processing ==
 
 
+
+
 === Data Model ===
 
+First let's assemble our data model:
+
 ----
-include::logline.rb[]
+include::code/server_logs/server_logs-00-model-base.rb[]
+----
+
+We should also add a method to the model to parse each line. It just breaks up each line into fields and passes them in order to the `Logline` model:
+
+----
+include::code/server_logs/server_logs-01-parse-script.rb[]
 ----
 
 === Simple Log Parsing ===
 
+Now the parse script is simple as can be: take each line, hand it to `Logline` to parse, and emit the model object that returns. We don't need to do anything more, so there's no reducer:
+
 ----
-include::apache_log_parser.rb[]
+include::code/server_logs/server_logs-01-parse-script.rb[]
 ----
+
+There's a couple more gory details of parsing each log line, but trust me on them for a moment, and let's run this script. First, in local map mode; here's lines 5000-5010 of the logs:
+
+----
+include::code/server_logs/server_logs-00-parse-00-mapper.log[]
+----
+
+=== Parser script === 
+
+I've used the `//x` form of regular expression -- this ignores the whitespace and treats `#` as introducing a comment. So at the cost of having to explicitly use `\s` for "space", we get a very readable program:
+
+----
+include::code/server_logs/server_logs-00-model-regexp.rb[]
+----
+
+The second important detail concerns parsing the time. 
+
+----
+include::code/server_logs/server_logs-00-model-detail.rb[]
+----
+
+* Don't try to be a hero and get everything done in one regexp. You've gone from gallant to goofus for sure if you start using backreferences. Here, we use the first regexp to just separate the date-time string from the herd, then finish it in a clean, quiet place.
+* See ((wire receiver pattern)) for why we use `receive_visit_time` rather than override the setter (`visit_time=`) method
+  ** A receive method must either call `super(val)` to save the value, or call `write_attribute` directly.
+* Generic parsing of times can be shockingly slow. The version you see above came after profiling the script verified it was better to
+* The main regexp and the one in `receive_visit_time` are ((good brittle)).
+  ** spells out HTTP, specifies digits `\d`  etc
+  ** anchored at the beginning and end, using multi-line anchors (`^` and `$` match on a newline; `\A` and `\z` match strictly at the beginning and end of a string).
 
 === Histograms === 
 
+When do people visit the site?
+
 ----
-include::histograms.rb[]
+include::code/server_logs/server_logs-02-histograms-mapper.rb[]
+----
+
+We want to group on `day_hr`, so just add a method implementing (and documenting!) that domain knowledge. 
+
+----
+include::code/server_logs/server_logs-00-model-day_hr.rb[]
+----
+
+This is the advantage of having a model and not just a passive sack of data.
+
+Run it in map mode:
+
+----
+include::code/server_logs/server_logs-02-histograms-02-mapper-wu-lign-sort.log[]
+----
+
+TODO: digression about `wu-lign`.
+
+Sort and save the map output; then write and debug your reducer.
+
+----
+include::code/server_logs/server_logs-02-histograms-full.rb[]
+----
+
+When things are working, this is what you'll see. Notice that the `.../Star_Wars_Kid.wmv` file already have five times the pageviews as the site root (`/`).
+
+----
+include::code/server_logs/server_logs-02-histograms-03-reduce.log[]
+----
+
+You're ready to run the script in the cloud! Fire it off and you'll see dozens of workers start processing the data.
+
+----
+include::code/server_logs/server_logs-02-histograms-04-freals.log[]
 ----
 
 === User Paths through the site ("Sessionizing")
 
+Now let's do some stuff more challenging that you'd try in a normal relational DB.
+
+NOTE:[What are the important locality feature(s) to group on?]
+
+spit out `[ip, day_hr, visit_time, path]`.
+
 ----
-include::breadcrumbs.rb[]
+include::code/server_logs/server_logs-03-breadcrumbs-full.rb[]
 ----
+
+run it in map mode:
+
+----
+include::code/server_logs/server_logs-02-histograms-01-mapper.log[]
+----
+
+----
+include::code/server_logs/server_logs-03-breadcrumbs-02-mapper.log[]
+----
+
+group on user
+
+----
+include::code/server_logs/server_logs-03-breadcrumbs-03-reducer.log[]
+----
+
+We use the secondary sort so that each visit is in strict order of time within a session.
+
+You might ask why that is necessary -- surely each mapper reads the lines in order? Yes, but you have no control over what order the mappers run, or where their input begins and ends.
+
+This script _will_ accumulate multiple visits of a page.
+
+
+TODO: say more about the secondary sort.
+
 
 === Page-Page similarity
 
+What can you do with the sessionized logs? Well, each row lists a user on the left and a bunch of pages on the right.
+
+We've been thinking about that as a table, but it's also a graph! 
+
 ----
-include::breadcrumb_edges.rb[]
+include::code/server_logs/server_logs-04-page_page_edges-full.rb[]
 ----
 
+
+----
+include::code/server_logs/server_logs-04-page_page_edges-03-reducer.log[]
+----
+
+You'll learn more about this in the chapter on ((Processing Graphs)), but 

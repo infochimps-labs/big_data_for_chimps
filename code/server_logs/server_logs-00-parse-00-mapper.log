@@ -1,0 +1,14 @@
+head -n 5000 star_wars_kid-parsed.tsv  | tail -n 100 | wu-lign | cutc 
+193.120.205.131	-	-	2003-04-11 10:33:41 UTC	GET	/archive/2003/03/26/hiding_s.shtml                             	HTTP/1.0	200	  16971	http://www.oblomovka.com/entries/2003/04                           
+193.120.205.131	-	-	2003-04-11 10:33:52 UTC	GET	/                                                              	HTTP/1.0	200	  70455	http://www.waxy.org/archive/2003/03/26/hiding_s.shtml              
+64.68.82.25    	-	-	2003-04-11 10:34:52 UTC	GET	/mefi/users/?month=06&year=2000                                	HTTP/1.0	200	   4108	-                                                                  
+69.10.137.199  	-	-	2003-04-11 10:35:00 UTC	GET	/watch-info                                                    	HTTP/1.0	200	     75	-                                                                  
+193.120.205.131	-	-	2003-04-11 10:35:35 UTC	GET	/archive/2003/04/03/typo_pop.shtml                             	HTTP/1.0	200	  27310	http://www.waxy.org/                                               
+66.230.140.66  	-	-	2003-04-11 10:36:23 UTC	GET	/archive/2002/07/08/gene_kan.shtml                             	HTTP/1.0	200	  21141	-                                                                  
+80.58.4.237    	-	-	2003-04-11 10:36:28 UTC	GET	/archive/2002/09/03/magazine.shtml                             	HTTP/1.1	200	  14233	-                                                                  
+80.58.4.237    	-	-	2003-04-11 10:36:51 UTC	GET	/archive/cat/music/index.shtml                                 	HTTP/1.1	200	  35655	http://www.waxy.org/archive/2002/09/03/magazine.shtml              
+128.54.147.10  	-	-	2003-04-11 10:37:09 UTC	GET	/archive/2002/06/29/waxy_bac.shtml                             	HTTP/1.1	200	  21007	http://www.google.com/search?hl=en&lr=&ie=UTF-8&oe=UTF-8&q=backlink
+207.166.200.201	-	-	2003-04-11 10:37:21 UTC	GET	/random/html/uptime.txt                                        	HTTP/1.0	200	      8	-                                                                  
+131.107.137.47 	-	-	2003-04-11 10:38:06 UTC	GET	/archive/2002/11/17/doomsday.shtml                             	HTTP/1.1	200	  19340	-                                                                  
+151.100.59.2   	-	-	2003-04-11 10:38:14 UTC	GET	/archive/2002/06/12/the_onio.shtml                             	HTTP/1.1	200	  13899	http://www.google.it/search?q=mozilla%20meta%20tags%20authors%20cop
+213.122.211.121	-	-	2003-04-11 10:38:36 UTC	GET	/archive/2003/04/03/typo_pop.shtml                             	HTTP/1.1	200	  27381	http://www.paranoidfish.org/links/                                 
