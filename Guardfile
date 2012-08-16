@@ -1,7 +1,7 @@
 # -*- ruby -*-
 
 notification :off
-interactor :off
+# interactor :off
 
 require 'guard/notifiers/emacs'
 ::Guard::Notifier::DEFAULTS.merge!(

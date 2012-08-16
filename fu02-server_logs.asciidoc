@@ -1,8 +1,6 @@
 == Log Processing ==
 
 
-
-
 === Data Model ===
 
 First let's assemble our data model:

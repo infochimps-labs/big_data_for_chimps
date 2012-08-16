@@ -1,23 +1,4 @@
-== Standard Datasets ==
-
-We will use these datasets repeatedly:
-
-* Every article in Wikipedia
-* Two years of hourly pageview counts for every page in Wikipedia
-* Page-to-page link graph for Wikipedia
-* 50 years of Daily weather for (the globe? the US?) (NCDC GSOD weather)
-  - 20,000 weather station locations
-* 60,000 UFO Sightings
-* (may need to add another dataset that is more clearly OLAP'y)
-* (Possibly also the  Airport-Airport flight graph)
-
-=== download instructions ===
-
-bigdata.chimpy.us
-
-=== Amazon public data sets ===
-
-aws instructions
+== Toolset ==
 
 === Your cluster ===
 

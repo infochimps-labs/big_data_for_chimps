@@ -44,7 +44,7 @@ class BookTask
     info( "%-20s" % name, args )
   end
 
-  def local(*args)       ; File.expand_path(File.join(settings.repo_dir, *args)) ; end
+  def local(*args)       ; File.expand_path(File.join(settings.repo_dir, *args.map(&:to_s))) ; end
   def output_path(*args) ; local('output', product_type.to_s, *args) ; end
 
   def book_file          ; local(settings.book_file)                ;  end
@@ -210,7 +210,7 @@ module Runners
 
   def a2x
     # , "--keep-artifacts"
-    ["a2x", "--destination-dir=#{output_path(product_type)}", "-f", product_type.to_s, "-d", "book", '--no-xmllint', ]
+    ["a2x", "--destination-dir=#{output_path}", "-f", product_type.to_s, "-d", "book", '--no-xmllint', ]
   end
 
   def a2x_wss

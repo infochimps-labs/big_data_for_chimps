@@ -18,11 +18,11 @@ include::ba06-semi_structured_data-daily_weather.asciidoc[]
 
 include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 
-include::ba04-toolset.asciidoc[]
-
 include::ba02-simple_stream.asciidoc[]
 
 include::fu01-sampling.asciidoc[]
+
+include::fu02-server_logs.asciidoc[]
 
 include::fu02-statistics.asciidoc[]
 
@@ -30,19 +30,23 @@ include::fu02-statistics-distribution_of_weather_measurements.asciidoc[]
 
 include::ba07-data_formats.asciidoc[]
 
+include::ba04-toolset.asciidoc[]
+
+include::fu03-advanced_pig.asciidoc[]
+
 include::fu08-pig_udfs.asciidoc[]
 
 include::fu10-tuning.asciidoc[]
 
 include::fu06-processing_graphs.asciidoc[]
 
+include::fu06-processing_graphs-pagerank.asciidoc[]
+
 include::ba05-overview_of_datasets.asciidoc[]
 
 include::fu00-overview_of_problems.asciidoc[]
 
 include::ba03-herding_cats.asciidoc[]
-
-include::fu03-advanced_pig.asciidoc[]
 
 include::fu04-processing_text.asciidoc[]
 
@@ -63,6 +67,8 @@ include::mu05-rules_of_scaling.asciidoc[]
 include::mu06-principles_of_data_cleansing.asciidoc[]
 
 include::mu06-best_practices_and_pedantic_points_of_style.asciidoc[]
+
+include::zz00-other_datasets_on_the_web.asciidoc[]
 
 include::pr01-datasets.asciidoc[]
 
