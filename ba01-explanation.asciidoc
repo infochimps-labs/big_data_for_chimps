@@ -1,0 +1,14 @@
+=== Notes on Chimpanzee and Elephant ===
+
+the Elves' system is meant to evoke the liabilities of database and worker-queue based systems:
+
+* setup and teardown of workstation == using latency code for a throughput process
+  - running the same code in a tight loop makes life easy for the CPU cache in low level languages...
+  - and makes it easy for the interpreter in high-level languages, especially JIT 
+* swinging the mail claw out to retrieve next work order == latency of seek on disk
+
+* chimpanzees are dextrous == processing sorted data in RAM is very fast
+
+* elves pull work orders in sequence: The chimpanzees call this a "merge sort", and the elves' memory a "sort buffer"
+
+

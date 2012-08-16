@@ -172,7 +172,7 @@ File organization:
   ** Scripts:
   ** `calculate_voronoi_cells` -- use weather station locations to calculate voronoi polygons
   ** `voronoi_grid_assignment` -- cells that have a piece of border, or the largest grid cell that has no border on it
-  ** `asdfk`
+  ** `a`
   ** Using polymaps to see results
 10.  Processing Graphs
   ** subuniverse extraction

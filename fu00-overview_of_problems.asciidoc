@@ -17,12 +17,10 @@
 * Approximate Percentiles (Median) of a huge spreadsheet
 * Histogram
 
-
 === Text Processing
 
 * Inverted Index (word count)
 * Minhash 
-
 
 === Time Series
 
@@ -57,7 +55,6 @@
   - Statistics on grid cells
 * Clustering
 * (Pointwise mutual information)
-
 
 === ???
 

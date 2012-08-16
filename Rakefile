@@ -9,7 +9,8 @@ require 'configliere'
 require 'gorillib/model'
 
 Settings.use :commandline
-Settings.define   :verbose,      default: true, flag: 'v', type: :boolean
+Settings.define   :verbose,      default: true,  flag: 'v', type: :boolean
+Settings.define   :force,        default: false, description: "If true, force output generation (ie pretend all dependencies were updated)", type: :boolean
 Settings.define   :book_file,    default: 'book.asciidoc'
 Settings.define   :publish,      default: false,           type: :boolean
 Settings.define   :edition,      default: '0.1'
@@ -23,13 +24,13 @@ Settings.resolve!
 Log.level   = Logger::DEBUG if Settings.verbose
 Log.debug{ "configuration: #{Settings.inspect}" }
 
-require_relative 'tasks/runners'
-
+#
+# Generic tasks+methods for building book products
+#
 class BookTask
   include ::Rake::Cloneable
   include ::Rake::DSL
   include ::Gorillib::Model
-  include Runners
   class_attribute :product_type
 
   def settings
@@ -58,7 +59,6 @@ class BookTask
   end
 
   def directories(*dirs)
-    p dirs
     dirs.flatten.each{|dir| directory(dir) }
   end
 
@@ -74,6 +74,7 @@ class BookTask
     directory(output_path)
     task_name = setup_task(:gen, product_type, "Generate #{product_type} document")
     task(task_name => [output_file].flatten)
+    file(output_file => :force) if settings.force
     file(output_file => [output_path, book_file, deps].flatten) do
       step :generating, product_type, "output #{output_file}"
       yield
@@ -90,6 +91,8 @@ class BookTask
   end
 
 end
+
+
 
 class DocbookTask < BookTask
   self.product_type = :docbook
@@ -141,6 +144,7 @@ class PdfTask < BookTask
       step :generating, product_type, "intermediate #{fop_file}"
       sh(* gen_fop_cmd)
     end
+    file(fop_file => :force) if settings.force
     gen_task(['gen:docbook', fop_file]){ sh(* gen_pdf_cmd) }
     clean_task
   end
@@ -188,6 +192,53 @@ class HtmlTask < BookTask
     end
   end
 end
+
+#
+# Dumping ground for command invocation
+#
+module Runners
+
+  def asciidoc_cmd(*args)
+    options = { attrs: {} }.merge(args.extract_options!)
+    cmd = ['asciidoc']
+    options.delete(:attrs).each{|attr, val| cmd << '-a' << "#{attr}=#{val}" }
+    cmd << "--out-file=#{options[:output_file]}" if options[:output_file]
+    cmd += args
+    cmd << book_file
+    cmd
+  end
+
+  def a2x
+    # , "--keep-artifacts"
+    ["a2x", "--destination-dir=#{output_path(product_type)}", "-f", product_type.to_s, "-d", "book", '--no-xmllint', ]
+  end
+
+  def a2x_wss
+    a2x + ["--stylesheet=#{File.join('output', 'stylesheets', 'scribe.css')}"]
+  end
+
+  def xslt_cmd(jar_arguments, java_options)
+    cmd = ['java']
+    cmd << '-cp' << [asset_path('vendor', 'saxon.jar'), asset_path('vendor', 'xslthl-2.0.2.jar')].join(classpath_delimiter)
+    cmd << "-Dxslthl.config=file://#{asset_path('docbook-xsl', 'highlighting', 'xslthl-config.xml')}"
+    cmd += java_options.map{|attr,val| "-D#{attr}=#{val}" }
+    cmd << 'com.icl.saxon.StyleSheet'
+    cmd += Array(jar_arguments)
+    cmd
+  end
+  def windows?() RbConfig::CONFIG['host_os'] =~ /mswin|windows|mingw|cygwin/i ; end
+  def classpath_delimiter() windows? ? ';' : ':' ; end
+
+end
+class BookTask ; include Runners ; end
+
+# --------------------------------------------------------------------------
+#
+# Rake Task definitions
+#
+
+# dummy task to force generation
+task :force
 
 desc "Generate all documents"
 task :gen

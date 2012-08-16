@@ -14,12 +14,12 @@ require 'guard/notifiers/emacs'
 #   watch(%r{file/path}) { `command(s)` }
 #
 guard 'shell' do
-  watch(/(.*).asciidoc/) do |m|
-    # `say -v cello #{m[0]}`
-    system 'rake', '--trace', 'gen:html', '--', "--book_file=#{m[0]}"
+  watch(/(.*).asciidoc/) do |match|
+    system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=#{match[0]}"
+    system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=working.asciidoc", '--force'
   end
 end
 
 guard 'livereload' do
-  watch(/(.*).asciidoc/){|file| "html/#{file[1]}.html" }
+  watch(/(.*).asciidoc/){|match| [ "#{match[1]}.html", "working.html"] }
 end

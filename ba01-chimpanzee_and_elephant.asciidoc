@@ -1,17 +1,26 @@
 == Chimpanzee and Elephant Save Christmas ==
 
-It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just couldn't keep up with the scale of requests.
+It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just couldn't keep up with the scale of requests. Luckily, their friends at the Chimpanzee & Elephant Computing Company could help.
 
-The elves' system was meticulous and neat, and well-suited to their personality.
 
-But they knew their friends at the Chimpanzee & Elephant Computing Company could help.
+Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
 
-The chimps came in, and singing a rather bawdy version of the Map-Reduce Haiku, built the following system:
+This places a strong demand on *locality*: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth. Each elf therefore is capable of making any kind of toy, from Autobot to Pony to X-box:
+
+!images/elves_at_workstation.jpeg[Elf Workstations, pre-Hadoop]
+
+The elves' workbenches are meticulous and neat. Little boys and girls' mail is less so. 
+
+!images/fetching_a_letter.jpeg[Fetching the next letter to Santa]
+
+Every time an elf was ready to answer a letter, they would have to swing a big claw arm out into the incoming mail and pull back the letter for their locality. The elf covering Novosibirsk might ask for a new letter right after the elf covering Cucamonga, and that crane can only swing around so fast, so you'd end up with a lot of anxious elves just waiting for letters to be retrieved from the mail store.
 
 === Letters => Toy Requests ===
 
+The chimps and elephants came in, singing a rather bawdy version of the Map-Reduce Haiku, and built the following system.
 
-In stage one, a chimpanzee reads each letter and fills out a work form for each requested toy. Some examples:
+In stage one,
+a finite number of chimpanzees seated at typewriters read each letter and fill out a work form for each requested toy. Some examples:
 
         --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister.
 
@@ -42,16 +51,18 @@ In stage one, a chimpanzee reads each letter and fills out a work form for each 
 
         ---------------------------------------
 
+!images/elephant_and_chimpanzee.009.jpeg[Chimps read each letter]
+!images/elephant_and_chimpanzee.010.jpeg[Letters become work orders]
 
 === Order Delivery ===
 
-Each type of toy request -- robot, hat, coal, etc -- is handled by a different set of elves.
+In the new system, type of toy request -- robot, hat, coal, etc -- is handled by a different set of elves.
 
-A line of pygmy elephants stands near each letter-reading station, one for each of the toymaking elves' workstations, and on the back of each elephant is a vertical file like you see on a very organized person's desk, with a slot for each type of toy:
+!images/elephant_and_chimpanzee.012.jpeg[Each toy at a unique station]
 
-!images/paper_sorter.jpeg[paper sorter]
+A line of pygmy elephants stands near each letter-reading station, one for each type of toy. As the chimp is done with each mailbag, the elephants all trundle off to bring the elves a fresh batch of wishes, and a new line of elephants take their place.
 
-Each toy wish is placed in the slot for that kind of toy. As the chimp is done with each mailbag, the elephants all trundle off to bring the elves a fresh batch of wishes, and a new line of elephants take their place.
+!images/elephant_and_chimpanzee.048.jpeg[Work orders go off in batches]
 
 === Toy Assembly ===
 
@@ -61,6 +72,8 @@ Lastly, the toy wishes come to dedicated workstations:
          ROOMBAS              PONIES                  COAL
          RAZOR SCOOTERS       QUIDDITCH BROOMS        SCHOOL SUPPLIES
 
+!images/elephant_and_chimpanzee.011.jpeg[Each toy at a unique station]
+	 
 All wishes for a kind of toy go to the same workstation -- the station that sees wishes for Ponies sees every Pony wish. A station might handle several types of toys in a factory run, but it always sees them in a continuous batch. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for gift-wrapping Quidditch Brooms.
 
 === Why it's efficient ===
@@ -72,3 +85,22 @@ Now it is still true that each elf workstation has incoming mail from every lett
 
 * consistent hashing smooths the workload
   - but if it's a great year for Real American Dolls, that workstation can be overloaded. This is the problem of "skew", and we'll talk about this in some detail later.
+
+=== Sorted Batches ===
+
+You may have noticed that something important has been left out: Santa's need for all the gifts to come out in order. The elephants, of course, did not forget; I've just skipped over that part of the story.
+
+Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find on a very organized person's desk:
+
+!images/paper_sorter.jpeg[paper sorter]
+
+The chimpanzees file each toy request in order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
+
+!images/elephant_and_chimpanzee.048.jpeg[Secondary sort]
+
+This makes life very efficient for the elves. They just start pulling work orders from their elephants, always choosing the request that's next in Santa Visit Order:
+
+!images/elephant_and_chimpanzee.049.jpeg[Secondary sort]
+
+Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy. 
+
