@@ -59,3 +59,17 @@ screenshot C (Wine vs Corn vs Tobacco)
 image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach Mountain BBQ and Wine]
 
 image::images/baldridge-map_of_slang_cool-480.jpg[Map of variants on the slang term "Cool"]
+
+
+==== Takeaways
+
+We started with text data, analyzed it as if it were a certain graph,
+combined the results with tabular data,
+and pivoted it to become geographic.
+
+At no point did any specific transformation exceed one hundred lines of code.
+
+all of these scripts will run easily across sample data on your desktop, and at full-force across the whole of wikipedia in your cluster.
+
+That's the approach we'll follow through this book: focus on simple, readable, maintainable data transformations
+
