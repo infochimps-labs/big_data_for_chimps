@@ -1,0 +1,33 @@
+== Log Processing ==
+
+
+=== Data Model ===
+
+----
+include::logline.rb[]
+----
+
+=== Simple Log Parsing ===
+
+----
+include::apache_log_parser.rb[]
+----
+
+=== Histograms === 
+
+----
+include::histograms.rb[]
+----
+
+=== User Paths through the site ("Sessionizing")
+
+----
+include::breadcrumbs.rb[]
+----
+
+=== Page-Page similarity
+
+----
+include::breadcrumb_edges.rb[]
+----
+
