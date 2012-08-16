@@ -1,0 +1,10 @@
+$ cat data/swk-100.tsv      | ./breadcrumbs.rb --map | sort
+12.165.53.5     200343020       1051734009      /random/video/Star_Wars_Kid_Remix.wmv
+12.165.53.5     200343020       1051734013      /random/video/Star_Wars_Kid_Remix.wmv
+12.34.246.7     200343020       1051734043      /archive/2003/04/29/star_war.shtml
+12.42.55.174    200343020       1051733934      /random/video/Star_Wars_Kid_Remix.wmv
+12.42.55.174    200343020       1051733981      /random/video/Star_Wars_Kid_Remix.wmv
+129.8.100.123   200343020       1051734019      /archive/2003/04/29/star_war.shtml
+131.212.155.170 200343020       1051734004      /random/video/Star_Wars_Kid.wmv
+131.229.113.229 200343020       1051733829      /random/video/Star_Wars_Kid.wmv
+133.11.36.26    200343020       1051733907      /archive/2003/03/14/dixie_ch.shtml

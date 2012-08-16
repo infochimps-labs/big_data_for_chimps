@@ -1,0 +1,16 @@
+$ cat data/swk-100.tsv      | ./histograms.rb --map | wu-lign  | sort
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/                                                       200343020
+/archive/2003/02/06/the_1250.shtml                      200343020
+/archive/2003/02/19/coachell.shtml                      200343020
+/archive/2003/02/21/gift_upg.shtml                      200343020
+/archive/2003/03/14/dixie_ch.shtml                      200343020
+/archive/2003/03/27/open_cdr.shtml                      200343020

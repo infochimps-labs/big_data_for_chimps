@@ -1,0 +1,17 @@
+$ cat data/swk-100.tsv      | ./breadcrumbs.rb --map | sort | ./breadcrumb_edges.rb --reduce | wu-lign
+137.244.215.2   /archive/2003/04/29/star_war.shtml      /random/video/Star_Wars_Kid.wmv
+141.158.70.90   /                                       /random/video/Star_Wars_Kid.wmv
+150.134.71.99   /                                       /random/video/Star_Wars_Kid.wmv
+154.11.61.211   /random/video/Star_Wars_Kid.wmv         /random/video
+154.5.248.92    /random/video/Star_Wars_Kid.wmv         /
+160.81.221.42   /archive/2003/04/29/star_war.shtml      /random/video/Star_Wars_Kid.wmv
+170.20.11.59    /archive/2003/04/29/star_war.shtml      /random/video/Star_Wars_Kid.wmv
+65.166.26.146   /archive/2003/03/27/open_cdr.shtml      /
+66.151.218.42   /archive/2003/04/29/star_war.shtml      /random/video/Star_Wars_Kid_Remix.wmv
+67.119.139.98   /archive/2003/04/21/classmat.shtml      /random/video/Star_Wars_Kid_Remix.wmv
+67.119.139.98   /archive/2003/04/21/classmat.shtml      /
+67.119.139.98   /random/video/Star_Wars_Kid_Remix.wmv   /
+68.10.181.55    /archive/2003/04/29/star_war.shtml      /favicon.ico
+68.10.181.55    /archive/2003/04/29/star_war.shtml      /
+68.10.181.55    /favicon.ico                            /
+68.34.219.93    /archive/2003/04/29/star_war.shtml      /random/video/Star_Wars_Kid.wmv

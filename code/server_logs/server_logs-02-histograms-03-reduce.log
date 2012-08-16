@@ -1,0 +1,20 @@
+$ cat data/swk-100.tsv      | ./histograms.rb --map | sort > data/swk-hist-map.tsv
+
+$ cat data/swk-hist-map.tsv | ./histograms.rb --reduce
+/                                                       200343020       10
+/archive/2003/02/06/the_1250.shtml                      200343020       1
+/archive/2003/02/19/coachell.shtml                      200343020       1
+/archive/2003/02/21/gift_upg.shtml                      200343020       1
+/archive/2003/03/14/dixie_ch.shtml                      200343020       1
+/archive/2003/03/27/open_cdr.shtml                      200343020       1
+/archive/2003/04/21/classmat.shtml                      200343020       1
+/archive/2003/04/29/star_war.shtml                      200343020       9
+/favicon.ico                                            200343020       1
+/index.rdf                                              200343020       3
+/projects/domains/domains.net.txt                       200343020       1
+/random/archive/pooyan.zip                              200343020       1
+/random/text/MAD.Magazine.418.june.2002-een.nfo.txt     200343020       1
+/random/video                                           200343020       1
+/random/video/Star_Wars_Kid.wmv                         200343020       50
+/random/video/Star_Wars_Kid_Remix.wmv                   200343020       16
+/watch-info                                             200343020       1

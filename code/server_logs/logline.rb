@@ -1,4 +1,3 @@
-
 # # Parse logs to TSV
 #
 # bzcat  data/star_wars_kid.log.bz2 | head -n 100200 | tail -n 100 > data/swk-100.log
@@ -18,7 +17,6 @@
 # cat data/swk-100.tsv | ./histograms.rb --map | wu-lign
 # cat data/swk-hist-map.tsv | ./histograms.rb --reduce
 # ./histograms.rb --run data/star_wars_kid.tsv data/star_wars_kid-pages_by_hour.tsv
-
 
 class Logline
   include Gorillib::Model

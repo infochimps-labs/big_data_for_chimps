@@ -1,0 +1,20 @@
+$ cat data/swk-100.tsv      | ./histograms.rb --map | wu-lign
+/archive/2003/04/29/star_war.shtml                      200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/archive/2003/02/19/coachell.shtml                      200343020
+/archive/2003/04/29/star_war.shtml                      200343020
+/                                                       200343020
+/random/video/Star_Wars_Kid_Remix.wmv                   200343020
+/random/video/Star_Wars_Kid_Remix.wmv                   200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/                                                       200343020
+/archive/2003/03/27/open_cdr.shtml                      200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/random/video/Star_Wars_Kid.wmv                         200343020
+/random/video/Star_Wars_Kid_Remix.wmv                   200343020
+/random/video/Star_Wars_Kid_Remix.wmv                   200343020
+/random/video/Star_Wars_Kid_Remix.wmv                   200343020

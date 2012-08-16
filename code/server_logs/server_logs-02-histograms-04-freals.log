@@ -1,0 +1,14 @@
+$ ./histograms.rb --run data/star_wars_kid.tsv data/star_wars_kid-pages_by_hour.tsv
+I, [2012-08-15T22:39:43.675553 #61524]  INFO -- :   Launching hadoop!
+I, [2012-08-15T22:39:43.676396 #61524]  INFO -- : Running
+
+/usr/local/share/hadoop/bin/hadoop      \
+  jar /usr/local/share/hadoop/contrib/streaming/hadoop-*streaming*.jar  \
+  -D stream.num.map.output.key.fields=3         \
+  -D mapred.job.name='histograms.rb---data/star_wars_kid.tsv---data/star_wars_kid-pages_by_hour.tsv'    \
+  -mapper  '/Users/flip/.rbenv/versions/1.9.3-p125/bin/ruby histograms.rb --map --log_interval=10000 --log_seconds=30 --sort_command=sort --sort_args=[]'       \
+  -reducer '/Users/flip/.rbenv/versions/1.9.3-p125/bin/ruby histograms.rb --reduce --log_interval=10000 --log_seconds=30 --sort_command=sort --sort_args=[]'    \
+  -input   'data/star_wars_kid.tsv'     \
+  -output  'data/star_wars_kid-pages_by_hour.tsv'       \
+  -file    '/Users/flip/ics/core/wukong_og/examples/server_logs/histograms.rb'  \
+  -cmdenv 'RUBYLIB=/Users/flip/.rubylib'
