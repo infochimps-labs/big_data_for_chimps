@@ -86,7 +86,7 @@ class BookTask
     task(task_name => deps) do
       step :removing, product_type, "output directory #{output_path}"
       FileUtils.rm_r output_path
-      yield
+      yield if block_given?
     end
   end
 
