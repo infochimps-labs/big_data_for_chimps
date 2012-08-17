@@ -52,6 +52,8 @@ include::ba03-herding_cats.asciidoc[]
 
 include::fu04-processing_text.asciidoc[]
 
+include::fu05-an_elephants_eye_view_of_the_world.asciidoc[]
+
 include::fu05-geographic_data.asciidoc[]
 
 include::fu07-time_series_data.asciidoc[]
@@ -82,8 +84,12 @@ include::pr06-access_logs.asciidoc[]
 
 include::pr08-data_formats-arc.asciidoc[]
 
+include::zz01-notes_for_chimpmark.asciidoc[]
+
 include::aa02-TODO.asciidoc[]
 
 include::README.asciidoc[]
 
 include::tr01-authors.asciidoc[]
+
+include::tr03-colophon.asciidoc[]
