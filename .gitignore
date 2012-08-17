@@ -41,3 +41,7 @@ pkg
 
 output
 images/orig
+logs
+artifacts
+output-long
+output-scribe

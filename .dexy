@@ -1,0 +1,10 @@
+{
+  "airport.rb": {},
+  "ba06-semi_structured_data-d*.asciidoc|jinja|asciidoc" : {
+    "allinputs" : true
+  },
+  "airport.rb|rb"  : {},
+
+  "foo.rb": {}
+  
+}

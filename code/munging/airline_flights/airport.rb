@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+require File.expand_path('~/ics/book/big_data_for_chimps/code/munging/airline_flights/airline_flights')
+
 class Airport
   include Gorillib::Model
 
@@ -7,7 +9,7 @@ class Airport
   attr_reader :_extra_attributes
 
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
-  OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\'ÁÂÄÅÇÉÍÎÑÖØÜÞàáâãäåæçèéêëìíîïðñóôõöøúüýāăčėęěğİıŁłńōőřŞşŠšţťūźŽžơț]/
+  OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\']/
 
   field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
   field :faa,          String, doc: "3-letter FAA code, or blank if not assigned."

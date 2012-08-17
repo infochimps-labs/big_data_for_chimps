@@ -48,6 +48,25 @@ TODO: script
 
 The last data preparation step is to remove the background (how often words are used globally) to expose the signal (the words most strongly associated with a place).
 
+
+(this won't actually appear til later, but putting notes here:)
+
+I think pointwise mutual information
+
+* odds that I am an article in the Austin vicinity
+* odds that I mention barbeque
+* => odds that I am an article in the Austin vicinity that mentions barbeque
+
+	pmi(x; y) := log[ p(x, y) / (p(x)*p(y))
+
+	<math>
+	\operatorname{pmi}(x;y) \equiv \log\frac{p(x,y)}{p(x)p(y)} = \log\frac{p(x|y)}{p(x)} = \log\frac{p(y|x)}{p(y)}.
+	</math>
+
+So we're looking for 
+
+	
+
 TODO: script
 
 Finally, crossload it into a database, add a bit of zazz:

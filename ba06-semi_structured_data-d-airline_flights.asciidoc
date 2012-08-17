@@ -1,12 +1,10 @@
-
-
 === Domain Models
 
 Here are the models for Airport, Airline and Flight:
 
 .Airport Models
 ----
-include::code/munging/airline_flights/airport.rb[depth=1]
+{{ d['code/munging/airline_flights/airport.rb'] }}
 ----
 
 .Airplane Models
@@ -46,7 +44,7 @@ Yet, somehow, all those planes typically land at the right place.].
 === Foundational Data ===
 
 
-==== Mountweazels and Exemplars ====
+==== Exemplars & Mountweazels ====
 
 For exemplar airports, I'll chose AUS (Austin), SFO (San Francisco), and BWI (Baltimore-Washington) because I'm most familiar with them; YYZ (Toronto), HNL (Honolulu), ANC (Anchorage) and SJU (San Juan, Puerto Rico) for geographic spread, and PHX (Phoenix) because Arizona (like the preceding three) has an odd time zones. That set is reasonably diverse, so there's no need for a mountweazel.
 

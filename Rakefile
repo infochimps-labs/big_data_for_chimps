@@ -16,6 +16,7 @@ Settings.define   :publish,      default: false,           type: :boolean
 Settings.define   :edition,      default: '0.1'
 Settings.define   :language,     default: 'en'
 Settings.define   :version,      default: '1.0'
+Settings.define   :output_dir,   default: 'output-scribe', description: "Path to the output directory"
 Settings.define   :output_types, default: ['docbook', 'html', 'pdf', 'epub', 'mobi', 'site'], type: Array
 Settings.define   :repo_dir,     finally: ->(c){ c[:repo_dir] = Dir.pwd },  type: :filename
 Settings.define   :assets_dir,   default: '../git-scribe', type: :filename
@@ -45,12 +46,12 @@ class BookTask
   end
 
   def local(*args)       ; File.expand_path(File.join(settings.repo_dir, *args.map(&:to_s))) ; end
-  def output_path(*args) ; local('output', product_type.to_s, *args) ; end
+  def output_path(*args) ; local(Settings.output_dir, product_type.to_s, *args) ; end
 
   def book_file          ; local(settings.book_file)                ;  end
   def product_name()     ; File.basename(book_file).gsub(/\..*$/, '') ; end
   def output_file        ; output_path("#{product_name}.#{file_ext}") ; end
-  def stylesheet_path(*args) File.expand_path(File.join('output', 'stylesheets', *args)) ; end
+  def stylesheet_path(*args) File.expand_path(File.join(Settings.output_dir, 'stylesheets', *args)) ; end
 
   def file_ext ; product_type.to_s ; end
 
