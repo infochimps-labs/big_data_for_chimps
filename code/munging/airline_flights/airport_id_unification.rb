@@ -1,5 +1,8 @@
 class Airport
 
+  # [Hash] all options passed to the field not recognized by one of its own current fields
+  attr_reader :_extra_attributes
+
   # Airports whose IATA and FAA codes differ; all are in the US, so their ICAO is "K"+the FAA id
   FAA_ICAO_FIXUP = {
     "GRM" => "CKC", "CLD" => "CRQ", "SDX" => "SEZ", "AZA" => "IWA", "SCE" => "UNV", "BLD" => "BVU",

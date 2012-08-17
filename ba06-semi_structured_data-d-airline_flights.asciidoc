@@ -3,9 +3,13 @@
 Here are the models for Airport, Airline and Flight:
 
 .Airport Models
-++++++++++++++++++++++++++++++++++++++
+++++
 {{ d['code/munging/airline_flights/airport.rb|idio']['airport_model'] }}
-++++++++++++++++++++++++++++++++++++++
+++++
+
+----
+{{ d['code/munging/airline_flights/airport.rb|rb'] }}
+----
 
 .Airplane Models
 ----

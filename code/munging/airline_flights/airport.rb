@@ -5,9 +5,6 @@ require File.expand_path('~/ics/book/big_data_for_chimps/code/munging/airline_fl
 class Airport
   include Gorillib::Model
 
-  # [Hash] all options passed to the field not recognized by one of its own current fields
-  attr_reader :_extra_attributes
-
   field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
   field :faa,          String, doc: "3-letter FAA code, or blank if not assigned."
   field :iata,         String, doc: "For all other airports, 3-letter IATA code, or blank if not assigned."
@@ -21,6 +18,10 @@ class Airport
   field :state,        String, doc: "State in which the airport is located"
   field :city,         String, doc: "Main city served by airport. May be spelled differently from Name."
   field :name,         String, doc: "Name of airport. May or may not contain the City name."
+
+end
+### @export "nil"
+class Airport
 
   EXEMPLARS = %w[
     ANC ATL AUS BDL BNA BOI BOS BWI CLE CLT
@@ -39,7 +40,7 @@ class Airport
     utc_time
   end
 end
-### @export "end_airport_model"
+### @export "nil"
 
 #
 # As of January 2012, the OpenFlights Airports Database contains 6977 airports
@@ -165,4 +166,11 @@ class RawDataexpoAirport
   def to_airport
     Airport.receive(airport_attrs)
   end
+end
+### @export "nil"
+
+
+RawDataexpoAirport.load_csv(Pathname.path_to(:data, 'airline_flights', 'dataexpo_airports-raw-sample.csv')) do |raw_airport|
+  airport = Airport.receive(raw_airport.airport_attrs)
+  puts airport.to_tsv
 end
