@@ -1,6 +1,6 @@
 {
-  "airport.rb": {},
-  "ba06-semi_structured_data-d*.asciidoc|jinja|asciidoc" : {
+  "airport.rb|idio": {},
+  "ba06-semi_structured_data-d*.asciidoc|jinja" : {
     "allinputs" : true
   },
   "airport.rb|rb"  : {},

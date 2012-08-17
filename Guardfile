@@ -1,5 +1,7 @@
 # -*- ruby -*-
 
+ignore /^(?:output|output-long|output-scribe|artifacts|logs)/
+
 notification :off
 # interactor :off
 
@@ -14,9 +16,10 @@ require 'guard/notifiers/emacs'
 #   watch(%r{file/path}) { `command(s)` }
 #
 guard 'shell' do
-  watch(/(.*).asciidoc/) do |match|
-    system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=#{match[0]}"
-    system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=working.asciidoc", '--force'
+  watch(/([^\/]+).asciidoc/) do |match|
+    p [match]
+    system 'dexy', '--loglevel', 'DEBUG', '--run', "#{match[0]}"
+    system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=output/#{match[0]}"
   end
 end
 

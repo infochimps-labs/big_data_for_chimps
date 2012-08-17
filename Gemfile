@@ -4,7 +4,7 @@ gem 'configliere'
 gem 'gorillib',   :github => 'infochimps-labs/gorillib', :branch => 'version_1'
 gem 'wukong',     :github => 'infochimps-labs/wukong',   :branch => 'vanilla_2'
 
-gem 'git-scribe', :path => '../git-scribe'
+gem 'git-scribe', :path => './git-scribe'
 
 gem 'yajl-ruby',  :platform => :mri
 

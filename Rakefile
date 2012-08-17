@@ -19,7 +19,7 @@ Settings.define   :version,      default: '1.0'
 Settings.define   :output_dir,   default: 'output-scribe', description: "Path to the output directory"
 Settings.define   :output_types, default: ['docbook', 'html', 'pdf', 'epub', 'mobi', 'site'], type: Array
 Settings.define   :repo_dir,     finally: ->(c){ c[:repo_dir] = Dir.pwd },  type: :filename
-Settings.define   :assets_dir,   default: '../git-scribe', type: :filename
+Settings.define   :assets_dir,   default: 'git-scribe', type: :filename
 Settings.read('./.gitscribe')
 Settings.resolve!
 Log.level   = Logger::DEBUG if Settings.verbose
@@ -178,7 +178,7 @@ class HtmlTask < BookTask
 
   def assets_to_copy
     assets  = []
-    assets += Dir[asset_path('assets', 'config.ru')].map{|from_file|  [local('output', File.basename(from_file)), from_file] }
+    assets += Dir[asset_path('assets', 'config.ru')].map{|from_file|  [local(Settings.output_dir, File.basename(from_file)), from_file] }
     assets += Dir[asset_path('stylesheets', '*.css')].map{|from_file| [stylesheet_path(File.basename(from_file)), from_file] }
     assets
   end
