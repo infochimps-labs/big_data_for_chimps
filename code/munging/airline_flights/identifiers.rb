@@ -1,49 +1,56 @@
 require_relative './models'
 
 class Airport
-  class IdMapping
+  class WpAirportId
+    field :icao,         String
+    field :iata,         String
+    field :faa,          String
+    field :name,         String
+    field :location,     String
+    field :notes,        String
+  end
+
+  class IdReconciler
     include Gorillib::Model
     include Gorillib::Model::LoadFromCsv
+
     self.csv_options = { col_sep: "\t", num_fields: 4..6 }
 
-    field :icao,         String, doc: "ICAO code (4-letter). For airports in the continental US that have an ICAO number, the ICAO number is their FAA identifier preceded by 'K'. Airports in Hawaii, Alaska and US posessions are prefixed with 'P', 'N', or 'T' and do not follow that pattern."
-    field :iata,         String, doc: "IATA code (3-letter)"
-    field :faa,          String, doc: "FAA code. This is often, but not always, the same as the IATA code."
-    field :name,         String, doc: "Airport name"
-    field :location,     String, doc: "Location of the airport"
-    field :notes,        String, doc: "Advisory notes"
+    field :openflights, Airport
+    field :dataexpo,    Airport
+    field :wp_icao,     Airport
+    field :wp_iata,     Airport
 
-    ID_MAPPINGS  = { icao: {}, iata: {}, faa: {} }
-
-    # def adopt_field(that, attr)
-    #   this_val = self.read_attribute(attr)
-    #   that_val = that.read_attribute(attr)
-    #   if name =~ /Bogus|Austin/i
-    #     puts [attr, this_val, that_val, attribute_set?(attr), that.attribute_set?(attr), to_tsv, that.to_tsv].join("\t")
-    #   end
-    #   if    this_val && that_val
-    #     if (this_val != that_val) then warn [attr, this_val, that_val, name].join("\t") ; end
-    #   elsif that_val
-    #     write_attribute(that_val)
-    #   end
-    # end
-
-    def to_s
-      attributes.values[0..2].join("\t")
-    end
-
-    def disagreements(that)
-      errors = {}
-      [:icao, :iata, :faa ].each do |attr|
-        this_val = self.read_attribute(attr) or next
-        that_val = that.read_attribute(attr) or next
-        next if that_val == '.' || that_val == '_'
-        errors[attr] = [this_val, that_val] if this_val != that_val
+    def accept_attribute(attr, val)
+      if attribute_set?(attr)
+        warn "Duplicate values for #{attr}: have #{self.read_attribute(attr)}, skipping #{val}"
+        return(val)
       end
-      errors
+      write_attribute(attr, val)
     end
 
-    # . icao _ iata
+    ID_MAP = { icao: {}, iata: {}, faa: {} }
+    # given a set of id keys:
+    # * find any reconcilers existing for those keys
+    # *
+    #
+    # Suppose our dataset has 3 identifiers, which look like
+    #
+    #     a
+    #          Q
+    #     b    S
+    #          S    88
+    #     a    Q    77
+    #
+    def self.register(obj)
+      [:icao, :iata, :faa].each do |id_attr|
+        id = obj.read_attribute(id_attr) or next
+        # ID_MAP[attr][id] ||= self.new
+      end
+    end
+  end
+
+  module Reconcile
 
     def self.load(dirname)
       load_csv(File.join(dirname, 'wikipedia_icao.tsv')) do |id_mapping|
@@ -78,6 +85,32 @@ class Airport
         end
       end
 
+    # def adopt_field(that, attr)
+    #   this_val = self.read_attribute(attr)
+    #   that_val = that.read_attribute(attr)
+    #   if name =~ /Bogus|Austin/i
+    #     puts [attr, this_val, that_val, attribute_set?(attr), that.attribute_set?(attr), to_tsv, that.to_tsv].join("\t")
+    #   end
+    #   if    this_val && that_val
+    #     if (this_val != that_val) then warn [attr, this_val, that_val, name].join("\t") ; end
+    #   elsif that_val
+    #     write_attribute(that_val)
+    #   end
+    # end
+
+    def to_s
+      attributes.values[0..2].join("\t")
+    end
+
+    def disagreements(that)
+      errors = {}
+      [:icao, :iata, :faa ].each do |attr|
+        this_val = self.read_attribute(attr) or next
+        that_val = that.read_attribute(attr) or next
+        next if that_val == '.' || that_val == '_'
+        errors[attr] = [this_val, that_val] if this_val != that_val
+      end
+      errors
     end
 
   end

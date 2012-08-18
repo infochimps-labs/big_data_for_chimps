@@ -12,10 +12,10 @@ class Airport
   field :latitude,     Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North.", validates: {  inclusion: (-90.0...90.0) }
   field :longitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East.",  validates: {  inclusion: (-180...180) }
   field :altitude,     Float,  doc: "Elevation in meters."
+  field :name,         String, doc: "Name of airport."
   field :country,      String, doc: "Country or territory where airport is located.", length: 2
   field :state,        String, doc: "State in which the airport is located",          length: 2
   field :city,         String, doc: "Main city served by airport. This is the logical city it serves; so, for example SFO gets 'San Francisco', not 'San Bruno'"
-  field :name,         String, doc: "Name of airport. May or may not contain the City name."
   field :airport_ofid, String, doc: "OpenFlights identifier for this airport.", identifier: true
 end
 ### @export "nil"

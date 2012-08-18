@@ -3,7 +3,8 @@
   "airline_flights.rb": {},
   "airline_flights.rake|rake": { "rake": { "args": "airports:parse:openflights" } },
   "airline_flights.rake|rake": { "rake": { "args": "airports:parse:dataexpo"    } },
-  "airline_flights.rake|rake|snippet|wulign": { "airline_flights.rb": true },
+  "openflights_airports-parsed-sample.tsv|snippet|wulign": { "airline_flights.rake|rake" : {} },
+  "*-parsed-sample.tsv|snippet|wulign": { "airline_flights.rake|rake" : {} },
   "ba06-semi_structured_data-d*.asciidoc|jinja" : {
     "allinputs" : true
   },

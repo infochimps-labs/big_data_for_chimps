@@ -2,11 +2,11 @@ source 'http://rubygems.org'
 
 gem 'configliere'
 
-# gem 'gorillib', :github => 'infochimps-labs/gorillib', :branch => 'version_1'
-# gem 'wukong',   :github => 'infochimps-labs/wukong',   :branch => 'vanilla_2'
+gem 'gorillib', :github => 'infochimps-labs/gorillib', :branch => 'version_1'
+gem 'wukong',   :github => 'infochimps-labs/wukong',   :branch => 'vanilla_2'
 
-gem 'gorillib', :path => '../../core/gorillib'
-gem 'wukong',   :path => '../../core/wukong_og'
+# gem 'gorillib', :path => '../../core/gorillib'
+# gem 'wukong',   :path => '../../core/wukong_og'
 
 gem 'git-scribe', :path => './git-scribe'
 

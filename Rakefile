@@ -26,6 +26,33 @@ Log.level   = Logger::DEBUG if Settings.verbose
 Log.debug{ "configuration: #{Settings.inspect}" }
 
 #
+# Top-level rake tasks
+#
+
+# dummy task to force generation
+task :force
+
+desc "Generate all documents"
+task :gen
+
+desc "Remove generated artifacts for all file types"
+task :clean
+
+task :default => 'gen:html'
+
+
+task :initial do
+  # sh('git submodule update --init')
+  # sh('git submodule foreach git checkout master')
+  # sh('git submodule foreach git pull')
+  # sh('bundle update')
+  # cd 'dexy' do
+  #   sh('pip install -e .')
+  # end
+  sh('dexy setup')
+end
+
+#
 # Generic tasks+methods for building book products
 #
 class BookTask
@@ -235,22 +262,11 @@ class BookTask ; include Runners ; end
 
 # --------------------------------------------------------------------------
 #
-# Rake Task definitions
+# Rake Task definitions for book
 #
-
-# dummy task to force generation
-task :force
-
-desc "Generate all documents"
-task :gen
-
-desc "Remove generated artifacts for all file types"
-task :clean
 
 HtmlTask.new.tasks
 PdfTask.new.tasks
 DocbookTask.new.tasks
 EpubTask.new.tasks
 # MobiTask.new.tasks
-
-task :default => 'gen:html'

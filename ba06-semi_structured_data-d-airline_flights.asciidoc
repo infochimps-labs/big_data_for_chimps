@@ -16,11 +16,11 @@ Here's a snippet of the raw data:
 And here's what it looks like, transformed from raw to target model:
 
 ----
-{{ d['code/munging/airline_flights/airline_flights.rake-airports:parse:dataexpo|rake2|snippet|wulign'] }}
+{{ d['tmp/airline_flights/dataexpo_airports-parsed-sample.tsv|snippet|wulign'] }}
 ----
 
 ----
-{{ d['code/munging/airline_flights/airline_flights.rake|rake|snippet|wulign'] }}
+{{ d['tmp/airline_flights/openflights_airports-parsed-sample.tsv|snippet|wulign'] }}
 ----
 
 .Airplane Models
