@@ -11,8 +11,10 @@ Settings.define :mini, type: :boolean, default: true, description: "use sample d
 Settings.resolve!
 mini_slug = Settings.mini ? "-sample" : ""
 
+p ENV['BOOK_CONTENTS']
+
 Pathname.register_paths(
-  book_root: '~/ics/book/big_data_for_chimps/',
+  book_root: ENV['BOOK_CONTENTS'],
   code: [:book_root, 'code'],
   data: [:book_root, 'data'],
   work: [:book_root, 'tmp'],

@@ -1,15 +1,15 @@
 {
   "airport.rb|idio": {},
   "airline_flights.rb": {},
-  "airline_flights.rake|rake": { "rake": { "args": "airports:parse:openflights" } },
-  "airline_flights.rake|rake": { "rake": { "args": "airports:parse:dataexpo"    } },
-  "openflights_airports-parsed-sample.tsv|snippet|wulign": { "airline_flights.rake|rake" : {} },
-  "*-parsed-sample.tsv|snippet|wulign": { "airline_flights.rake|rake" : {} },
-  "ba06-semi_structured_data-d*.asciidoc|jinja" : {
-    "allinputs" : true
-  },
+  "airline_flights.rake|rake" : { "rake": { "args": "airports:parse:openflights" } },
+  "airline_flights.rake|rake" : { "rake": { "args": "airports:parse:dataexpo" } },
+  "dataexpo_airports-parsed-sample.tsv|snippet|wulign":    { "airline_flights.rake|rake": {} },
+  "openflights_airports-parsed-sample.tsv|snippet|wulign": { "airline_flights.rake|rake": {} },
   "dataex*sample.csv|snippet" : {},
   "dataex*.tsv" : {},
   "lines*.csv|snippet" : {},
+  "ba06-semi_structured_data-d*.asciidoc|jinja" : {
+    "allinputs" : true
+  },
   
 "end":{}}

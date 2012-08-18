@@ -19,10 +19,6 @@ And here's what it looks like, transformed from raw to target model:
 {{ d['tmp/airline_flights/dataexpo_airports-parsed-sample.tsv|snippet|wulign'] }}
 ----
 
-----
-{{ d['tmp/airline_flights/openflights_airports-parsed-sample.tsv|snippet|wulign'] }}
-----
-
 .Airplane Models
 ----
 include::code/munging/airline_flights/airplane.rb[depth=1]
