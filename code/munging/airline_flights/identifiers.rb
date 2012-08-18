@@ -14,7 +14,6 @@ class Airport
     field :notes,        String, doc: "Advisory notes"
 
     ID_MAPPINGS  = { icao: {}, iata: {}, faa: {} }
-      # Hash.new{|hsh,key| hsh[key] = Hash.new } # unless defined?(ID_MAPPINGS)
 
     # def adopt_field(that, attr)
     #   this_val = self.read_attribute(attr)

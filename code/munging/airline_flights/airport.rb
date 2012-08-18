@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
-require File.expand_path('~/ics/book/big_data_for_chimps/code/munging/airline_flights/airline_flights')
 
 ### @export "airport_model"
 class Airport
   include Gorillib::Model
 
-  field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
-  field :faa,          String, doc: "3-letter FAA code, or blank if not assigned."
-  field :iata,         String, doc: "For all other airports, 3-letter IATA code, or blank if not assigned."
-  field :icao,         String, doc: "4-letter ICAO code; Blank if not assigned."
-  field :utc_offset,   Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
-  field :dst_rule,     String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
-  field :latitude,     Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
-  field :longitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
-  field :altitude,     String, doc: "In feet."
-  field :country,      String, doc: "Country or territory where airport is located."
-  field :state,        String, doc: "State in which the airport is located"
-  field :city,         String, doc: "Main city served by airport. May be spelled differently from Name."
+  field :iata,         String, doc: "3-letter IATA code, or blank if not assigned.", length: 3, identifier: true
+  field :icao,         String, doc: "4-letter ICAO code, or blank if not assigned.", length: 4, identifier: true
+  field :faa,          String, doc: "3-letter FAA code, or blank if not assigned.",  length: 3, identifier: true
+  field :utc_offset,   Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5.",      validates: {  inclusion: (-12...12) }
+  field :dst_rule,     String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more.", validates: {  inclusion: %w[E A S O Z N U] }
+  field :latitude,     Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North.", validates: {  inclusion: (-90.0...90.0) }
+  field :longitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East.",  validates: {  inclusion: (-180...180) }
+  field :altitude,     Float,  doc: "Elevation in meters."
+  field :country,      String, doc: "Country or territory where airport is located.", length: 2
+  field :state,        String, doc: "State in which the airport is located",          length: 2
+  field :city,         String, doc: "Main city served by airport. This is the logical city it serves; so, for example SFO gets 'San Francisco', not 'San Bruno'"
   field :name,         String, doc: "Name of airport. May or may not contain the City name."
-
+  field :airport_ofid, String, doc: "OpenFlights identifier for this airport.", identifier: true
 end
 ### @export "nil"
 class Airport
@@ -71,20 +69,26 @@ class RawOpenflightAirport
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
   OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\']/
 
+  COUNTRIES        = { 'Puerto Rico' => 'pr', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us' }
+
   field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
-  field :name,       String, doc: "Name of airport. May or may not contain the City name."
-  field :city,       String, blankish: BLANKISH_STRINGS, doc: "Main city served by airport. May be spelled differently from Name."
-  field :country,    String, doc: "Country or territory where airport is located."
-  field :iata,       String, blankish: BLANKISH_STRINGS, doc: "3-letter FAA code, for airports located in the USA. For all other airports, 3-letter IATA code, or blank if not assigned."
-  field :icao,       String, blankish: BLANKISH_STRINGS, doc: "4-letter ICAO code; Blank if not assigned."
-  field :latitude,   Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
-  field :longitude,  Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
-  field :altitude,   String, doc: "In feet."
-  field :utc_offset, Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
-  field :dst_rule,   String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
+  field :name,        String, doc: "Name of airport. May or may not contain the City name."
+  field :city,        String, blankish: BLANKISH_STRINGS, doc: "Main city served by airport. May be spelled differently from Name."
+  field :country,     String, doc: "Country or territory where airport is located."
+  field :iata,        String, blankish: BLANKISH_STRINGS, doc: "3-letter FAA code, for airports located in the USA. For all other airports, 3-letter IATA code, or blank if not assigned."
+  field :icao,        String, blankish: BLANKISH_STRINGS, doc: "4-letter ICAO code; Blank if not assigned."
+  field :latitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
+  field :longitude,   Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
+  field :altitude_ft, Float,  doc: "In feet."
+  field :utc_offset,  Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
+  field :dst_rule,    String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
 
   def iata_icao
     [iata, icao].join('-')
+  end
+
+  def altitude
+    altitude_ft && (0.3048 * altitude_ft).round(1)
   end
 
   def receive_city(val)
@@ -92,7 +96,7 @@ class RawOpenflightAirport
   end
 
   def receive_country(val)
-    super.tap{|val| val.gsub!(/United States/, 'USA') if val }
+    super(COUNTRIES[val] || val)
   end
 
   def receive_name(val)
@@ -110,7 +114,8 @@ class RawOpenflightAirport
   end
 
   def to_airport
-    attrs = self.compact_attributes
+    attrs = self.compact_attributes.except(:altitude_ft)
+    attrs[:altitude] = altitude
     # add in an identifiable copy of our values, for comparison
     attrs.keys.each{|attr| attrs[:"of_#{attr}"] = attrs[attr] }
     Airport.receive(attrs)
@@ -143,6 +148,10 @@ class RawDataexpoAirport
     super.tap{|val| val.strip! if val }
   end
 
+  def receive_country(val)
+    super.tap{|val| val.gsub!(/USA/, 'us') if val }
+  end
+
   def receive_name(val)
     super.tap do |val|
       if val
@@ -168,9 +177,3 @@ class RawDataexpoAirport
   end
 end
 ### @export "nil"
-
-
-RawDataexpoAirport.load_csv(Pathname.path_to(:data, 'airline_flights', 'dataexpo_airports-raw-sample.csv')) do |raw_airport|
-  airport = Airport.receive(raw_airport.airport_attrs)
-  puts airport.to_tsv
-end

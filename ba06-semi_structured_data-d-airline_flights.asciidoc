@@ -7,8 +7,20 @@ Here are the models for Airport, Airline and Flight:
 {{ d['code/munging/airline_flights/airport.rb|idio']['airport_model'] }}
 ++++
 
+Here's a snippet of the raw data:
+
 ----
-{{ d['code/munging/airline_flights/airport.rb|rb'] }}
+{{ d['data/airline_flights/dataexpo_airports-raw-sample.csv|snippet'] }}
+----
+
+And here's what it looks like, transformed from raw to target model:
+
+----
+{{ d['code/munging/airline_flights/airline_flights.rake-airports:parse:dataexpo|rake2|snippet|wulign'] }}
+----
+
+----
+{{ d['code/munging/airline_flights/airline_flights.rake|rake|snippet|wulign'] }}
 ----
 
 .Airplane Models
@@ -45,6 +57,8 @@ But it's important to share that there is no royal road to clean data. It's easy
 <li>There is yet another identifier, the METAR id, used to identify the weather station at an airport; it was once the same as the ICAO id but they are now maintained independently.</li></ul>
 Yet, somehow, all those planes typically land at the right place.].
 
+sidebar: Note that I both converted the altitude figure to meters and rounded it to one decimal place.
+
 === Foundational Data ===
 
 
@@ -62,18 +76,4 @@ I also selected a core set of 50 airports that cover most of the top US metropol
 sample, so we could construct the following reduced datasets:
 
 * `airports-sampled.tsv`
-* `flights-sampled.tsv` -- flights between core airports 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+* `flights-sampled.tsv` -- flights between core airports

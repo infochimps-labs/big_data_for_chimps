@@ -18,8 +18,8 @@ require 'guard/notifiers/emacs'
 guard 'shell' do
   watch(/([^\/]+).asciidoc/) do |match|
     p [match]
-    system 'dexy', '--loglevel', 'DEBUG', '--run', "#{match[0]}"
-    system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=output/#{match[0]}"
+    system 'dexy', '--loglevel', 'DEBUG', '--run', "#{match[0]}" and
+      system 'rake', '--trace', 'gen:html', '--rules', '--', "--book_file=output/#{match[0]}"
   end
 end
 
