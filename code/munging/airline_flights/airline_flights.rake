@@ -6,15 +6,15 @@ require 'gorillib/model/serialization/csv'
 require 'gorillib/type/extended'
 require 'gorillib/hash/slice'
 require 'gorillib/pathname'
+BOOK_ROOT = (ENV['BOOK_CONTENTS'] || File.expand_path('../../..', File.dirname(__FILE__)))
+require File.expand_path('code/munging/airline_flights/airport', BOOK_ROOT)
 
 Settings.define :mini, type: :boolean, default: true, description: "use sample data or full data?"
 Settings.resolve!
 mini_slug = Settings.mini ? "-sample" : ""
 
-p ENV['BOOK_CONTENTS']
-
 Pathname.register_paths(
-  book_root: ENV['BOOK_CONTENTS'],
+  book_root: BOOK_ROOT,
   code: [:book_root, 'code'],
   data: [:book_root, 'data'],
   work: [:book_root, 'tmp'],
@@ -39,8 +39,6 @@ def create_file(token, options={})
   task(options[:part_of] => token) if options[:part_of]
   task(token => target)
 end
-
-require File.expand_path('~/ics/book/big_data_for_chimps/code/munging/airline_flights/airport')
 
 namespace :airports do
   namespace :parse do

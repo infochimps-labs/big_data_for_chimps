@@ -1,6 +1,3 @@
-[submodule "git-scribe"]
-	path = git-scribe
-	url = https://github.com/mrflip/git-scribe.git
 [submodule "data"]
 	path = data
 	url = git://github.com/infochimps-labs/wukong-example-data.git
