@@ -6,6 +6,11 @@
 :lang: 		en
 :encoding: 	utf-8
 
+=== Building the book ===
+
+To build the book, use `https://github.com/mrflip/dexy_scribe`
+
+
 ==== Outline ====
 
 File organization:
