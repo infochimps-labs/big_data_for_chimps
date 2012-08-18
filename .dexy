@@ -8,7 +8,8 @@
   "dataex*sample.csv|snippet" : {},
   "dataex*.tsv" : {},
   "lines*.csv|snippet" : {},
-  "ba06-semi_structured_data-d*.asciidoc|jinja" : {
+  
+  "*.asciidoc|jinja" : {
     "allinputs" : true
   },
   

@@ -16,7 +16,7 @@ The raw data is a single XML file, 8 GB compressed and about 40 GB uncompressed.
         <id>7611264</id>
       </contributor>
       <minor />
-      <comment>Dating maintenance tags: {{Page needed}}</comment>
+      <comment>Dating maintenance tags: Page needed</comment>
       <text xml:space="preserve">...(contents omitted; they
 are XML-encoded (that&apos;s helpful)
   with spacing      preserved 
