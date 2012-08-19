@@ -1,6 +1,6 @@
 {
   "airport.rb|idio": {},
-  "airline_flights.rb": {},
+  "airline_flights.rake": { "airports.rb": {} },
   "airline_flights.rake|rake" : { "rake": { "args": "airports:parse:openflights" } },
   "airline_flights.rake|rake" : { "rake": { "args": "airports:parse:dataexpo" } },
   "dataexpo_airports-parsed-sample.tsv|snippet|wulign":    { "airline_flights.rake|rake": {} },

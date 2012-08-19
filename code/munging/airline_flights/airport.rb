@@ -4,9 +4,9 @@
 class Airport
   include Gorillib::Model
 
-  field :iata,         String, doc: "3-letter IATA code, or blank if not assigned.", length: 3, identifier: true
-  field :icao,         String, doc: "4-letter ICAO code, or blank if not assigned.", length: 4, identifier: true
-  field :faa,          String, doc: "3-letter FAA code, or blank if not assigned.",  length: 3, identifier: true
+  field :icao,         String, doc: "4-letter ICAO code, or blank if not assigned.", length: 4, identifier: true, :blankish => ["", nil]
+  field :iata,         String, doc: "3-letter IATA code, or blank if not assigned.", length: 3, identifier: true, :blankish => ["", nil]
+  field :faa,          String, doc: "3-letter FAA code, or blank if not assigned.",  length: 3, identifier: true, :blankish => ["", nil]
   field :utc_offset,   Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5.",      validates: {  inclusion: (-12...12) }
   field :dst_rule,     String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more.", validates: {  inclusion: %w[E A S O Z N U] }
   field :latitude,     Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North.", validates: {  inclusion: (-90.0...90.0) }
@@ -21,12 +21,14 @@ end
 ### @export "nil"
 class Airport
 
-  EXEMPLARS = %w[
+  # BGS ] # FIXME: remove bogus
+  EXEMPLARS = %w[ BGS
     ANC ATL AUS BDL BNA BOI BOS BWI CLE CLT
     CMH DCA DEN DFW DTW EWR FLL HNL IAD IAH
     IND JAX JFK LAS LAX LGA MCI MCO MDW MIA
     MSP MSY OAK ORD PDX PHL PHX PIT PVD RDU
-    SAN SEA SFO SJC SJU SLC SMF STL TPA YYZ ]
+    SAN SEA SFO SJC SJU SLC SMF STL TPA YYZ
+  ]
 
   def iata_icao
     [iata, icao].join('-')
@@ -37,6 +39,27 @@ class Airport
     utc_time += (60*60) if TimezoneFixup.dst?(tm)
     utc_time
   end
+
+  BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
+  def lint
+    errors = {}
+    errors.merge(lint_differences)
+    if (icao && iata && (icao =~ /^K.../))
+      errors["ICAO != K+FAA yet ICAO is a K..."] = [icao, iata] if (icao != "K#{iata}") && (not IATA_ICAO_FIXUP.include?(iata))
+    end
+    errors[:spaces] ||= []
+    errors[:funny]  ||= []
+    attributes.each do |attr, val|
+      next if val.blank?
+      errors["#{attr} looks blankish"] = val if BLANKISH_STRINGS.include?(val)
+      if (val.is_a?(String))
+        errors[:spaces] << [attr, val] if  (val.strip != val)
+        errors[:funny]  << [attr, val]  if val =~ OK_CHARS_RE
+      end
+    end
+    errors.compact_blank!
+  end
+
 end
 ### @export "nil"
 
