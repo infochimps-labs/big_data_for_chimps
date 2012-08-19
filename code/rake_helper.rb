@@ -9,7 +9,7 @@ require 'gorillib/pathname'
 
 BOOK_ROOT = (ENV['BOOK_CONTENTS'] || File.expand_path('..', File.dirname(__FILE__)))
 
-Settings.define :mini, type: :boolean, default: true, description: "use sample data or full data?"
+Settings.define :mini, type: :boolean, default: false, description: "use sample data or full data?"
 Settings.resolve!
 Settings[:mini_slug] = Settings.mini ? "-sample" : ""
 

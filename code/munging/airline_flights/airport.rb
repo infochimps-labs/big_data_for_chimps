@@ -21,8 +21,11 @@ end
 ### @export "nil"
 class Airport
 
-  # BGS ] # FIXME: remove bogus
-  EXEMPLARS = %w[ BGS
+  # FIXME: remove bogus
+  EXEMPLARS = %w[
+
+BGS BGX BGS
+
     ANC ATL AUS BDL BNA BOI BOS BWI CLE CLT
     CMH DCA DEN DFW DTW EWR FLL HNL IAD IAH
     IND JAX JFK LAS LAX LGA MCI MCO MDW MIA
@@ -41,12 +44,14 @@ class Airport
   end
 
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
+  OK_CHARS_RE      = /[^a-zA-Z0-9\:\ \/\.\,\-\(\)\'ÁÂÄÅÇÉÍÎÑÓÖØÚÜÞàáâãäåæçèéêëìíîïðñóôõöøúüýĀāăĆćČčēėęěğīİıŁłńņňŌōőřŞşŠšţťūůųźŽžơț]/
   def lint
     errors = {}
-    errors.merge(lint_differences)
-    if (icao && iata && (icao =~ /^K.../))
-      errors["ICAO != K+FAA yet ICAO is a K..."] = [icao, iata] if (icao != "K#{iata}") && (not IATA_ICAO_FIXUP.include?(iata))
+    errors["ICAO is wrong length"] = icao if icao.present? && icao.length != 4
+    if (icao && faa && (icao =~ /^K.../))
+      errors["ICAO != K+FAA yet ICAO is a K..."] = [icao, faa] if (icao != "K#{faa}")
     end
+    # errors["ICAO present for piddlyshit airport"] = icao if icao.present? && ((faa.to_s.length == 4) || (faa.to_s =~ /\d/))
     errors[:spaces] ||= []
     errors[:funny]  ||= []
     attributes.each do |attr, val|
@@ -57,7 +62,7 @@ class Airport
         errors[:funny]  << [attr, val]  if val =~ OK_CHARS_RE
       end
     end
-    errors.compact_blank!
+    errors.compact_blank
   end
 
 end
@@ -84,35 +89,10 @@ end
 
 ### @export "raw_openflight_airport"
 
-#
-class RawOpenflightAirport
-  include Gorillib::Model
-  include Gorillib::Model::LoadFromCsv
-
+module RawAirport
+  COUNTRIES        = { 'Puerto Rico' => 'pr', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us' }
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
   OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\']/
-
-  COUNTRIES        = { 'Puerto Rico' => 'pr', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us' }
-
-  field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
-  field :name,        String, doc: "Name of airport. May or may not contain the City name."
-  field :city,        String, blankish: BLANKISH_STRINGS, doc: "Main city served by airport. May be spelled differently from Name."
-  field :country,     String, doc: "Country or territory where airport is located."
-  field :iata,        String, blankish: BLANKISH_STRINGS, doc: "3-letter FAA code, for airports located in the USA. For all other airports, 3-letter IATA code, or blank if not assigned."
-  field :icao,        String, blankish: BLANKISH_STRINGS, doc: "4-letter ICAO code; Blank if not assigned."
-  field :latitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
-  field :longitude,   Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
-  field :altitude_ft, Float,  doc: "In feet."
-  field :utc_offset,  Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
-  field :dst_rule,    String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
-
-  def iata_icao
-    [iata, icao].join('-')
-  end
-
-  def altitude
-    altitude_ft && (0.3048 * altitude_ft).round(1)
-  end
 
   def receive_city(val)
     super.tap{|val| if val then val.strip! ; val.gsub!(/\\+/, '') ; end }
@@ -129,16 +109,57 @@ class RawOpenflightAirport
         val.gsub!(/\\+/, '')
         val.gsub!(/ Airport$/, '')
         val.gsub!(/\b(Int\'l|International)\b/, 'Intl')
-        val.gsub!(/\b(Intercontinental)\b/, 'Intcntl')
-        val.gsub!(/\b(Airpt)\b/, 'Airport')
+        val.gsub!(/\b(Intercontinental)\b/,     'Intcntl')
+        val.gsub!(/\b(Airpt)\b/,                'Airport')
         val.gsub!(/ Airport$/, '')
       end
     end
   end
 
+end
+
+#
+class RawOpenflightAirport
+  include Gorillib::Model
+  include Gorillib::Model::LoadFromCsv
+  include RawAirport
+
+  field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
+  field :name,        String, doc: "Name of airport. May or may not contain the City name."
+  field :city,        String, blankish: BLANKISH_STRINGS, doc: "Main city served by airport. May be spelled differently from Name."
+  field :country,     String, doc: "Country or territory where airport is located."
+  field :iata_faa,    String, blankish: BLANKISH_STRINGS, doc: "3-letter FAA code, for airports located in the USA. For all other airports, 3-letter IATA code, or blank if not assigned."
+  field :icao,        String, blankish: BLANKISH_STRINGS, doc: "4-letter ICAO code; Blank if not assigned."
+  field :latitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
+  field :longitude,   Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
+  field :altitude_ft, Float,  doc: "In feet."
+  field :utc_offset,  Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
+  field :dst_rule,    String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
+
+  def iata
+    icao =~ /^K/ ? nil      : iata_faa
+  end
+  def faa
+    icao =~ /^K/ ? iata_faa : nil
+  end
+
+  def iata_icao
+    [iata, icao].join('-')
+  end
+
+  def altitude
+    altitude_ft && (0.3048 * altitude_ft).round(1)
+  end
+
+  def self.load_airports(filename)
+    load_csv(filename){|raw_airport| yield(raw_airport.to_airport) }
+  end
+
   def to_airport
     attrs = self.compact_attributes.except(:altitude_ft)
     attrs[:altitude] = altitude
+    attrs[:iata] = iata
+    attrs[:faa]  = faa
     # add in an identifiable copy of our values, for comparison
     attrs.keys.each{|attr| attrs[:"of_#{attr}"] = attrs[attr] }
     Airport.receive(attrs)
@@ -149,9 +170,10 @@ end
 class RawDataexpoAirport
   include Gorillib::Model
   include Gorillib::Model::LoadFromCsv
+  include RawAirport
   self.csv_options = self.csv_options.merge(pop_headers: true)
 
-  field :iata,         String, doc: "the international airport abbreviation code"
+  field :faa,          String, doc: "the international airport abbreviation code"
   field :name,         String, doc: "Airport name"
   field :city,         String, blankish: ["NA"], doc: "city in which the airport is located"
   field :state,        String, blankish: ["NA"], doc: "state in which the airport is located"
@@ -159,39 +181,13 @@ class RawDataexpoAirport
   field :latitude,     Float,  doc: "latitude of the airport"
   field :longitude,    Float,  doc: "longitude of the airport"
 
-  def icao
-    @icao ||= Airport.fixup(iata)
-  end
-
-  def iata_icao
-    [iata, icao].join('-')
-  end
-
-  def receive_city(val)
-    super.tap{|val| val.strip! if val }
-  end
-
-  def receive_country(val)
-    super.tap{|val| val.gsub!(/USA/, 'us') if val }
-  end
-
-  def receive_name(val)
-    super.tap do |val|
-      if val
-        val.gsub!(/\b(Int\'l|International)\b/, 'Intl')
-        val.gsub!(/\b(Intercontinental)\b/, 'Intcntl')
-        val.gsub!(/\b(Airpt)\b/, 'Airport')
-        val.gsub!(/ Airport$/, '')
-        val.strip!
-      end
-    end
+  def self.load_airports(filename)
+    load_csv(filename){|raw_airport| yield(raw_airport.to_airport) }
   end
 
   def airport_attrs
     attrs = self.compact_attributes
-    # attrs[:icao] = "K#{iata}"
-    # add in an identifiable copy of our values, for comparison
-    attrs.keys.each{|attr| attrs[:"de_#{attr}"] = attrs[attr] }
+    attrs[:icao] = "K#{faa}" if faa =~ /[A-Z]{3}/ && (not ['PR', 'AK'].include?(state))
     attrs
   end
 

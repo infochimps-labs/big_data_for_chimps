@@ -34,32 +34,39 @@ class Airport
 
   attr_accessor :_origin # source of the record
 
-  # def conflicting_attribute!(attr, *args)
-  #   return if []
-  #   super
-  # end
+  def conflicting_attribute!(attr, this_val, that_val)
+    case attr
+    when :name, :city          then return :pass
+    when :latitude, :longitude then return true ############## if (this_val - that_val).abs < 0.03
+    end
+    super
+  end
 
   def ids
     [:icao, :iata, :faa].hashify{|attr| public_send(attr) }.compact
   end
 
-  def self.load_identifier_file(origin, filename)
-    Tsv.new(filename).map do |vals|
-      next unless EXEMPLARS.include?(vals[1]) || (vals[0][0] == 'K' && EXEMPLARS.include?(vals[0][1..3]))
-      self.new({icao: vals[0], iata: vals[1], faa: vals[2], name: vals[3], city: vals[4]}.compact_blank)
-    end.compact
-  end
-
-  def self.load_dataexpo(filename)
-    RawDataexpoAirport.load_csv(filename) do |raw_airport|
-      yield raw_airport.to_airport
-    end
+  def adopt_opinions(that)
+    self.opinions = that.opinions + self.opinions
+    self.opinions.uniq!
   end
   
-  def self.load_openflights(filename)
-    RawOpenflightAirport.load_csv(filename) do |raw_airport|
-      yield raw_airport.to_airport
-    end
+end
+
+class RawAirportIdentifier < Airport
+  include RawAirport
+  def to_airport
+    self
+  end
+  def receive_name(val)
+    super.tap{|val| val.gsub!(/\s*\[(military|private)\]/, '')}
+  end
+
+  def self.load_airports(filename)
+    Tsv.new(filename).map do |vals|
+      # next unless EXEMPLARS.include?(vals[1]) || (vals[0][0] == 'K' && EXEMPLARS.include?(vals[0][1..3]))
+      self.new({icao: vals[0], iata: vals[1], faa: vals[2], name: vals[3], city: vals[4]}.compact_blank)
+    end.compact
   end
 end
 
@@ -71,57 +78,73 @@ class Airport
     include Gorillib::Model::Reconcilable
     self.csv_options = { col_sep: "\t", num_fields: 4..6 }
 
-    def initialize(*opinions)
-      @opinions = Set.new(opinions)
-    end
+    field :opinions, Array, default: Array.new
 
     def ids
-      opinions.inject({}){|acc,el| acc.merge!(el.ids) }
+      val = opinions.flat_map{|op| op.ids.to_a }
+      # p val
+      # p val.uniq.compact
+      val.uniq.compact
     end
-    def icao() ids[:icao] ;  end
-    def iata() ids[:iata] ;  end
-    def faa()  ids[:faa] ;  end
+    def icao() ids.assoc(:icao) ;  end
+    def iata() ids.assoc(:iata) ;  end
+    def faa()  ids.assoc(:faa) ;  end
 
     def self.load
-      Airport.load_dataexpo(:dataexpo_raw_airports) do |airport|
+      RawDataexpoAirport.load_airports(:dataexpo_raw_airports) do |airport|
         register(:dataexpo, airport)
       end
-      Airport.load_openflights(:openflights_raw_airports) do |airport|
+      RawOpenflightAirport.load_airports(:openflights_raw_airports) do |airport|
         register(:openflights, airport)
       end
-      
-      airports_icao = Airport.load_identifier_file(:wikipedia_icao)
-      airports_iata = Airport.load_identifier_file(:wikipedia_iata)
-
-      airports_icao.each do |airport|
+      RawAirportIdentifier.load_airports(:wikipedia_icao).each do |airport|
         register(:wp_icao, airport)
       end
-      airports_iata.each do |airport|
+      RawAirportIdentifier.load_airports(:wikipedia_iata).each do |airport|
         register(:wp_iata, airport)
       end
 
-      EXEMPLARS.each do |ex|
-        rec = ID_MAP[:iata][ex]
-        p rec
-        rec.opinions.each{|op| puts "%s\t%s" % [op._origin, op] }
+      # # recs = EXEMPLARS.map{|ex| ID_MAP[:iata][ex] }.uniq
+      recs = ID_MAP.map{|attr, hsh| hsh.sort.map(&:last) }.flatten.uniq
+      # recs = ID_MAP[:icao].select{|id,obj| id =~ /^K/ }.sort.map(&:last)
+      cons = recs.map{|rec| rec.reconcile }
+      chars = []
+      cons.each do |consensus|
+        lint = consensus.lint
+        next unless lint.present?
+        if lint[:funny]
+          chars << lint[:funny].map(&:last).to_s.chars.to_a
+        end
+        puts "%-79s\t%s" % [lint, consensus.to_s[0..100]]
       end
+      puts chars.flatten.uniq.sort.join
     end
 
-
-    def reconcile_opinions(that_val)
-      self.opinions += that_val
+    def reconcile
+      res = Airport.new
+      clean = opinions.all?{|op| res.adopt(op) }
+      if clean
+        # puts "ok   \t#{res.inspect}"
+      else
+        puts "confl\t#{res.inspect}"
+        puts "     \t#{self.inspect}"
+      end
+      res
     end
-    
-    def to_inspectable
-      { ids: ids }.merge(super)
+
+    def adopt_opinions(vals, _)
+      self.opinions = vals + self.opinions
+      self.opinions.uniq!
     end
 
-    # def adopt_attribute(attr, val)
-    #   p ['adopt', self, attr, val]
-    # end
+    def inspect
+      str = "#<#{self.class.name} #{ids}"
+      opinions.each{|op| str << "\n\t  #{op._origin}\t#{op.inspect}" }
+      str << ">"
+    end
 
     def self.dump_ids(ids)
-      "%s\t%s\t%s" % [ids[:icao], ids[:iata], ids[:faa]]
+      "%s\t%s\t%s" % [icao, iata, faa]
     end
     def self.dump_mapping
       [:icao, :iata, :faa].map do |attr|
@@ -151,14 +174,14 @@ class Airport
     def self.register(origin, obj)
       obj._origin = origin
       ids = obj.ids
-      reconciler = self.new(obj)
+      reconciler = self.new(opinions: [obj])
       # get the existing objects
       existing   = ids.map{|attr, id| ID_MAP[attr][id] }.compact.uniq
       # reconcile them
       existing.each{|that| reconciler.adopt(that) }
 
       # save the reconciler under each of the ids.
-      ids.each{|attr, id| ID_MAP[attr][id] = reconciler }
+      reconciler.ids.each{|attr, id| ID_MAP[attr][id] = reconciler }
       # dump_info("1 #{origin}", ids, reconciler, existing)
     end
   end
