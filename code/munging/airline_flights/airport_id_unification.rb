@@ -112,4 +112,18 @@ class Airport
         end
         errors
       end
+
+    def self.dump_ids(ids)
+      "%s\t%s\t%s" % [icao, iata, faa]
+    end
+    def self.dump_mapping
+      [:icao, :iata, :faa].map do |attr|
+        "%-50s" % ID_MAP[attr].to_a.sort.map{|id, val| "#{id}:#{val.icao||'    '}|#{val.iata||'   '}|#{val.faa||'   '}"}.join(";")
+      end
+    end
+
+    def self.dump_info(kind, ids, reconciler, existing, *args)
+      ex_str = [existing.map{|el| dump_ids(el.ids) }, "\t\t","\t\t","\t\t"].flatten[0..2]
+      puts [kind, dump_ids(ids), dump_ids(reconciler.ids), ex_str, *args, dump_mapping.join("//") ].flatten.join("\t| ")
+    end
 end

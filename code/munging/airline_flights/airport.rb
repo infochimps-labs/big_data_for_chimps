@@ -20,22 +20,13 @@ class Airport
 end
 ### @export "nil"
 class Airport
-
-  # FIXME: remove bogus
   EXEMPLARS = %w[
-
-BGS BGX BGS
-
     ANC ATL AUS BDL BNA BOI BOS BWI CLE CLT
     CMH DCA DEN DFW DTW EWR FLL HNL IAD IAH
     IND JAX JFK LAS LAX LGA MCI MCO MDW MIA
     MSP MSY OAK ORD PDX PHL PHX PIT PVD RDU
     SAN SEA SFO SJC SJU SLC SMF STL TPA YYZ
   ]
-
-  def iata_icao
-    [iata, icao].join('-')
-  end
 
   def utc_time_for(tm)
     utc_time  = tm.get_utc + utc_offset
@@ -90,7 +81,7 @@ end
 ### @export "raw_openflight_airport"
 
 module RawAirport
-  COUNTRIES        = { 'Puerto Rico' => 'pr', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us' }
+  COUNTRIES        = { 'Puerto Rico' => 'us', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us', 'Northern Mariana Islands' => 'us',  }
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
   OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\']/
 
@@ -107,7 +98,7 @@ module RawAirport
       if val
         val.strip!
         val.gsub!(/\\+/, '')
-        val.gsub!(/ Airport$/, '')
+        val.gsub!(/\s*\[(military|private)\]/, '')
         val.gsub!(/\b(Int\'l|International)\b/, 'Intl')
         val.gsub!(/\b(Intercontinental)\b/,     'Intcntl')
         val.gsub!(/\b(Airpt)\b/,                'Airport')
@@ -115,7 +106,6 @@ module RawAirport
       end
     end
   end
-
 end
 
 #
@@ -123,7 +113,7 @@ class RawOpenflightAirport
   include Gorillib::Model
   include Gorillib::Model::LoadFromCsv
   include RawAirport
-
+  #
   field :airport_ofid, String, doc: "Unique OpenFlights identifier for this airport."
   field :name,        String, doc: "Name of airport. May or may not contain the City name."
   field :city,        String, blankish: BLANKISH_STRINGS, doc: "Main city served by airport. May be spelled differently from Name."
@@ -132,37 +122,28 @@ class RawOpenflightAirport
   field :icao,        String, blankish: BLANKISH_STRINGS, doc: "4-letter ICAO code; Blank if not assigned."
   field :latitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
   field :longitude,   Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
-  field :altitude_ft, Float,  doc: "In feet."
+  field :altitude_ft, Float,  doc: "In feet.", blankish: ['', nil, 0, '0']
   field :utc_offset,  Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
   field :dst_rule,    String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
 
-  def iata
-    icao =~ /^K/ ? nil      : iata_faa
-  end
-  def faa
-    icao =~ /^K/ ? iata_faa : nil
-  end
+  UNRELIABLE_OPENFLIGHTS_IATA_VALUES = /^(7AK|AFE|AGA|AUQ|BDJ|BGW|BME|BPM|BXH|BZY|CAT|CEE|CEJ|CFS|CGU|CIO|CLV|CNN|DEE|DIB|DNM|DUH|DUR|FKI|GES|GSM|HKV|HOJ|HYD|IEO|IFN|IKA|IZA|JCU|JGS|KAE|KMW|KNC|LGQ|LUM|MCU|MCY|MDO|MOH|MON|MON|MPH|MVF|NAY|NMA|NOE|NQY|OTU|OUI|PBV|PCA|PCB|PGK|PHO|PIF|PKN|PKY|PMK|PTG|PZO|QAS|QKT|QVY|RCM|RJL|RTG|SBG|SDZ|SFG|SIC|SIQ|SJI|SRI|STG|STP|STU|SWQ|TJQ|TJS|TMC|TYA|UKC|VIY|VQS|VTS|WDH|WKM|WPR|WPU|ZQF)$/
 
-  def iata_icao
-    [iata, icao].join('-')
-  end
-
+  def iata ;  (icao =~ /^K/ ? nil      : iata_faa) unless iata_faa =~ UNRELIABLE_OPENFLIGHTS_IATA_VALUES end
+  def faa  ;  (icao =~ /^K/ ? iata_faa : nil     ) end
   def altitude
     altitude_ft && (0.3048 * altitude_ft).round(1)
-  end
-
-  def self.load_airports(filename)
-    load_csv(filename){|raw_airport| yield(raw_airport.to_airport) }
   end
 
   def to_airport
     attrs = self.compact_attributes.except(:altitude_ft)
     attrs[:altitude] = altitude
-    attrs[:iata] = iata
-    attrs[:faa]  = faa
-    # add in an identifiable copy of our values, for comparison
-    attrs.keys.each{|attr| attrs[:"of_#{attr}"] = attrs[attr] }
+    attrs[:iata]     = iata unless iata.to_s =~ UNRELIABLE_OPENFLIGHTS_IATA_VALUES
+    attrs[:faa]      = faa
     Airport.receive(attrs)
+  end
+
+  def self.load_airports(filename)
+    load_csv(filename){|raw_airport| yield(raw_airport.to_airport) }
   end
 end
 
@@ -181,18 +162,14 @@ class RawDataexpoAirport
   field :latitude,     Float,  doc: "latitude of the airport"
   field :longitude,    Float,  doc: "longitude of the airport"
 
+  def to_airport
+    attrs = self.compact_attributes
+    attrs[:icao] = "K#{faa}" if faa =~ /[A-Z]{3}/ && (not ['PR', 'AK', 'CQ', 'HI', 'AS'].include?(state))
+    Airport.receive(attrs)
+  end
+
   def self.load_airports(filename)
     load_csv(filename){|raw_airport| yield(raw_airport.to_airport) }
-  end
-
-  def airport_attrs
-    attrs = self.compact_attributes
-    attrs[:icao] = "K#{faa}" if faa =~ /[A-Z]{3}/ && (not ['PR', 'AK'].include?(state))
-    attrs
-  end
-
-  def to_airport
-    Airport.receive(airport_attrs)
   end
 end
 ### @export "nil"
