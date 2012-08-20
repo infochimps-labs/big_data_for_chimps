@@ -1,7 +1,5 @@
 require_relative './models'
 require 'gorillib/model/reconcilable'
-require 'gorillib/array/hashify'
-require 'gorillib/model/serialization/tsv'
 
 class Airport
   include Gorillib::Model::Reconcilable
@@ -59,21 +57,32 @@ class Airport
     def ids
       opinions.flat_map{|op| op.ids.to_a }.uniq.compact
     end
-    def icao() ids.assoc(:icao) ;  end
-    def iata() ids.assoc(:iata) ;  end
-    def faa()  ids.assoc(:faa) ;  end
 
-    def self.load
+    def self.load_all
+      Log.info "Loading all Airports and reconciling"
+      @airports = Array.new
       RawDataexpoAirport  .load_airports(:dataexpo_raw_airports   ){|airport| register(:dataexpo, airport) }
       RawOpenflightAirport.load_airports(:openflights_raw_airports){|airport| register(:openflights, airport) }
       RawAirportIdentifier.load_airports(:wikipedia_icao          ){|airport| register(:wp_icao, airport) }
       RawAirportIdentifier.load_airports(:wikipedia_iata          ){|airport| register(:wp_iata, airport) }
+      RawAirportIdentifier.load_airports(:wikipedia_us_abroad     ){|airport| register(:wp_us_abroad, airport) }
 
       recs = ID_MAP.map{|attr, hsh| hsh.sort.map(&:last) }.flatten.uniq
-      cons = recs.map{|rec| rec.reconcile }
-      cons.each do |consensus|
-        lint = consensus.lint
-        puts "%-79s\t%s" % [lint, consensus.to_s[0..100]] if lint.present?
+      recs.each do |rec|
+        consensus = rec.reconcile
+        # lint = consensus.lint
+        # puts "%-79s\t%s" % [lint, consensus.to_s[0..100]] if lint.present?
+        @airports << consensus
+      end
+    end
+
+    def self.airports
+      @airports
+    end
+
+    def self.exemplars
+      Airport::EXEMPLARS.map do |iata|
+        ID_MAP[:iata][iata].reconcile
       end
     end
 
@@ -110,23 +119,21 @@ class Airport
     #
     def self.register(origin, obj)
       obj._origin = origin
-      ids = obj.ids
-      reconciler = self.new(opinions: [obj])
-      # get the existing objects
-      existing   = ids.map{|attr, id| ID_MAP[attr][id] }.compact.uniq
-      # reconcile them
+      # get the existing reconcilers
+      existing   = obj.ids.map{|attr, id| ID_MAP[attr][id] }.compact.uniq
+      # push the new object in, and pull the most senior one out
+      existing.unshift(self.new(opinions: [obj]))
+      reconciler = existing.shift
+      # unite them into the reconciler
       existing.each{|that| reconciler.adopt(that) }
-
       # save the reconciler under each of the ids.
       reconciler.ids.each{|attr, id| ID_MAP[attr][id] = reconciler }
-      # dump_info("1 #{origin}", ids, reconciler, existing)
     end
 
     def inspect
       str = "#<#{self.class.name} #{ids}"
       opinions.each do |op|
-        str << "\n\t  #{op._origin}\t"
-        str << [op.icao, op.iata, op.faa, op.name, op.city].join("\t")
+        str << "\n\t  #{op._origin}\t#{op}"
       end
       str << ">"
     end

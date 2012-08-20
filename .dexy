@@ -1,16 +1,8 @@
 {
   "airport.rb|idio": {},
-  "airline_flights.rake": { "airports.rb": {} },
-  "airline_flights.rake|rake" : { "rake": { "args": "airports:parse:openflights" } },
-  "airline_flights.rake|rake" : { "rake": { "args": "airports:parse:dataexpo" } },
-  "dataexpo_airports-parsed-sample.tsv|snippet|wulign":    { "airline_flights.rake|rake": {} },
-  "openflights_airports-parsed-sample.tsv|snippet|wulign": { "airline_flights.rake|rake": {} },
   "dataex*sample.csv|snippet" : {},
-  "dataex*.tsv" : {},
-  "lines*.csv|snippet" : {},
   
-  "*.asciidoc|jinja" : {
-    "allinputs" : true
-  },
+  "*.asciidoc|jinja" : { "allinputs": true },
+  "*.tsv|snippet|wulign":    { },
   
 "end":{}}

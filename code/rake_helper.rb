@@ -1,11 +1,16 @@
 require 'configliere' ; Settings.use :commandline
+require 'gorillib'
+require 'gorillib/array/wrap'
 require 'gorillib/model'
 require 'gorillib/factories'
 require 'gorillib/model/serialization'
 require 'gorillib/model/serialization/csv'
+require 'gorillib/model/serialization/tsv'
 require 'gorillib/type/extended'
 require 'gorillib/hash/slice'
 require 'gorillib/pathname'
+require 'gorillib/logger/log'
+require 'pry'
 
 BOOK_ROOT = (ENV['BOOK_CONTENTS'] || File.expand_path('..', File.dirname(__FILE__)))
 
@@ -13,14 +18,12 @@ Settings.define :mini, type: :boolean, default: false, description: "use sample 
 Settings.resolve!
 Settings[:mini_slug] = Settings.mini ? "-sample" : ""
 
-
 Pathname.register_paths(
   book_root: BOOK_ROOT,
   code: [:book_root, 'code'],
   data: [:book_root, 'data'],
   work: [:book_root, 'tmp'],
   )
-
 
 require 'rake/name_space'
 module ::Rake
@@ -43,6 +46,8 @@ def file_task(name, options={})
   directory(target_dir)
   deps       = [options[:after], target_dir].flatten.compact
   file target => deps do
+    Array.wrap(options[:invoke]).each{|task_name| Rake::Task[task_name].invoke }
+    Log.info "Creating #{name} => #{target}"
     yield target if block_given?
   end
   task(options[:part_of] => name) if options[:part_of]

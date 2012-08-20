@@ -1,3 +1,15 @@
+class Airline
+  include Gorillib::Model
+  field :iata_id,      String,   doc: "2-letter IATA code, if available"
+  field :icao_id,      String,   doc: "3-letter ICAO code, if available"
+  field :airline_ofid, Integer,  doc: "Unique OpenFlights identifier for this airline."
+  field :alias,        String,   doc: "Alias of the airline. For example, 'All Nippon Airways' is commonly known as 'ANA'"
+  field :callsign,     String,   doc: "Airline callsign"
+  field :country,      String,   doc: "Country or territory where airline is incorporated"
+  field :active,       :boolean, doc: 'true if the airline is or has until recently been operational, false if it is defunct. (This is only a rough indication and should not be taken as 100% accurate)'
+  field :name,         String,   doc: "Airline name."
+end
+
 #
 # As of January 2012, the OpenFlights Airlines Database contains 5888
 # airlines. If you enjoy this data, please consider [visiting their page and
@@ -28,22 +40,10 @@ class RawOpenflightAirline
   field :active,       :boolean, doc: 'true if the airline is or has until recently been operational, false if it is defunct. (This is only a rough indication and should not be taken as 100% accurate)'
 
   def receive_active(val)
-    super(case val when "Y" then true when "N" then false else val ; end)
+    super(case val.to_s when "Y" then true when "N" then false else val ; end)
   end
 
   def to_airline
     Airline.receive(self.compact_attributes)
   end
-end
-
-class Airline
-  include Gorillib::Model
-  field :iata_id,      String,   doc: "2-letter IATA code, if available"
-  field :icao_id,      String,   doc: "3-letter ICAO code, if available"
-  field :airline_ofid, Integer,  doc: "Unique OpenFlights identifier for this airline."
-  field :alias,        String,   doc: "Alias of the airline. For example, 'All Nippon Airways' is commonly known as 'ANA'"
-  field :callsign,     String,   doc: "Airline callsign"
-  field :country,      String,   doc: "Country or territory where airline is incorporated"
-  field :active,       :boolean, doc: 'true if the airline is or has until recently been operational, false if it is defunct. (This is only a rough indication and should not be taken as 100% accurate)'
-  field :name,         String,   doc: "Airline name."
 end

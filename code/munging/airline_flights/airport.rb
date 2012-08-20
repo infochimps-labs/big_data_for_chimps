@@ -56,6 +56,18 @@ class Airport
     errors.compact_blank
   end
 
+  def to_s
+    str = "#<Airport "
+    str << [icao, iata, faa,
+      (latitude && "%4.1f" % latitude), (longitude && "%5.1f" % longitude), state, country,
+      "%-30s" % name, country, city].join("\t")
+    str << ">"
+  end
+
+  def faa_controlled?
+    icao =~ /^(?:K|P[ABFGHJKMOPW]|T[IJ]|NS(AS|FQ|TU))/
+  end
+
 end
 ### @export "nil"
 
@@ -81,7 +93,12 @@ end
 ### @export "raw_openflight_airport"
 
 module RawAirport
-  COUNTRIES        = { 'Puerto Rico' => 'us', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us', 'Northern Mariana Islands' => 'us',  }
+  COUNTRIES        = { 'Puerto Rico' => 'us', 'Canada' => 'ca', 'USA' => 'us', 'United States' => 'us',
+    'Northern Mariana Islands' => 'us', 'N Mariana Islands' => 'us',
+    'Federated States of Micronesia' => 'fm',
+    'Thailand' => 'th', 'Palau' => 'pw',
+    'American Samoa' => 'as', 'Wake Island' => 'us', 'Virgin Islands' => 'vi', 'Guam' => 'gu'
+  }
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
   OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\']/
 
@@ -122,14 +139,18 @@ class RawOpenflightAirport
   field :icao,        String, blankish: BLANKISH_STRINGS, doc: "4-letter ICAO code; Blank if not assigned."
   field :latitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North."
   field :longitude,   Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East."
-  field :altitude_ft, Float,  doc: "In feet.", blankish: ['', nil, 0, '0']
+  field :altitude_ft, Float,  blankish: ['', nil, 0, '0'], doc: "In feet."
   field :utc_offset,  Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5."
   field :dst_rule,    String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more."
 
-  UNRELIABLE_OPENFLIGHTS_IATA_VALUES = /^(7AK|AFE|AGA|AUQ|BDJ|BGW|BME|BPM|BXH|BZY|CAT|CEE|CEJ|CFS|CGU|CIO|CLV|CNN|DEE|DIB|DNM|DUH|DUR|FKI|GES|GSM|HKV|HOJ|HYD|IEO|IFN|IKA|IZA|JCU|JGS|KAE|KMW|KNC|LGQ|LUM|MCU|MCY|MDO|MOH|MON|MON|MPH|MVF|NAY|NMA|NOE|NQY|OTU|OUI|PBV|PCA|PCB|PGK|PHO|PIF|PKN|PKY|PMK|PTG|PZO|QAS|QKT|QVY|RCM|RJL|RTG|SBG|SDZ|SFG|SIC|SIQ|SJI|SRI|STG|STP|STU|SWQ|TJQ|TJS|TMC|TYA|UKC|VIY|VQS|VTS|WDH|WKM|WPR|WPU|ZQF)$/
+  UNRELIABLE_OPENFLIGHTS_IATA_VALUES = /^(7AK|AGA|AUQ|BDJ|BGW|BME|BPM|BXH|BZY|CAT|CEE|CEJ|CFS|CGU|CIO|CLV|CNN|DEE|DIB|DNM|DUH|DUR|FKI|GES|GSM|HKV|HOJ|HYD|IEO|IFN|IKA|IZA|JCU|JGS|KMW|KNC|LGQ|LUM|MCU|MCY|MDO|MOH|MON|MPH|MVF|NAY|NMA|NOE|NQY|OTU|OUI|PBV|PCA|PCB|PGK|PHO|PIF|PKN|PKY|PMK|PTG|PZO|QAS|QKT|QVY|RCM|RJL|RTG|SBG|SDZ|SFG|SIC|SIQ|SJI|SRI|STP|STU|SWQ|TJQ|TJS|TMC|TYA|UKC|VIY|VQS|VTS|WDH|WKM|WPR|WPU|ZQF)$/
 
-  def iata ;  (icao =~ /^K/ ? nil      : iata_faa) unless iata_faa =~ UNRELIABLE_OPENFLIGHTS_IATA_VALUES end
-  def faa  ;  (icao =~ /^K/ ? iata_faa : nil     ) end
+  def id_is_faa?
+    (icao =~ /^(?:K)/) || (icao.blank? && country == 'us')
+  end
+
+  def iata ;  (id_is_faa? ? nil      : iata_faa) unless iata_faa =~ UNRELIABLE_OPENFLIGHTS_IATA_VALUES end
+  def faa  ;  (id_is_faa? ? iata_faa : nil     ) end
   def altitude
     altitude_ft && (0.3048 * altitude_ft).round(1)
   end
@@ -164,7 +185,7 @@ class RawDataexpoAirport
 
   def to_airport
     attrs = self.compact_attributes
-    attrs[:icao] = "K#{faa}" if faa =~ /[A-Z]{3}/ && (not ['PR', 'AK', 'CQ', 'HI', 'AS'].include?(state))
+    attrs[:icao] = "K#{faa}" if faa =~ /[A-Z]{3}/ && (not ['PR', 'AK', 'CQ', 'HI', 'AS', 'GU', 'VI'].include?(state)) && (country == 'us')
     Airport.receive(attrs)
   end
 
