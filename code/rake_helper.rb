@@ -1,15 +1,6 @@
 require 'configliere' ; Settings.use :commandline
 require 'gorillib'
-require 'gorillib/array/wrap'
-require 'gorillib/model'
-require 'gorillib/factories'
-require 'gorillib/model/serialization'
-require 'gorillib/model/serialization/csv'
-require 'gorillib/model/serialization/tsv'
-require 'gorillib/type/extended'
-require 'gorillib/hash/slice'
-require 'gorillib/pathname'
-require 'gorillib/logger/log'
+require 'gorillib/data_munging'
 require 'pry'
 
 BOOK_ROOT = (ENV['BOOK_CONTENTS'] || File.expand_path('..', File.dirname(__FILE__)))
@@ -17,6 +8,9 @@ BOOK_ROOT = (ENV['BOOK_CONTENTS'] || File.expand_path('..', File.dirname(__FILE_
 Settings.define :mini, type: :boolean, default: false, description: "use sample data or full data?"
 Settings.resolve!
 Settings[:mini_slug] = Settings.mini ? "-sample" : ""
+
+# dummy dependency to force a task. TASK FORCE DELTA GO
+task :force
 
 Pathname.register_paths(
   book_root: BOOK_ROOT,
