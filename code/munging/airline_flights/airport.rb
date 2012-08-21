@@ -36,6 +36,7 @@ class Airport
 
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
   OK_CHARS_RE      = /[^a-zA-Z0-9\:\ \/\.\,\-\(\)\'ÁÂÄÅÇÉÍÎÑÓÖØÚÜÞàáâãäåæçèéêëìíîïðñóôõöøúüýĀāăĆćČčēėęěğīİıŁłńņňŌōőřŞşŠšţťūůųźŽžơț]/
+
   def lint
     errors = {}
     errors["ICAO is wrong length"] = icao if icao.present? && icao.length != 4
@@ -100,7 +101,7 @@ module RawAirport
     'American Samoa' => 'as', 'Wake Island' => 'us', 'Virgin Islands' => 'vi', 'Guam' => 'gu'
   }
   BLANKISH_STRINGS = ["", nil, "NULL", '\\N', "NONE", "NA", "Null", "..."]
-  OK_CHARS_RE      = /[^a-zA-Z0-9\ \/\.\,\-\(\)\']/
+  OK_CHARS_RE      = /[^a-zA-Z0-9\:\ \/\.\,\-\(\)\'ÁÂÄÅÇÉÍÎÑÓÖØÚÜÞàáâãäåæçèéêëìíîïðñóôõöøúüýĀāăĆćČčēėęěğīİıŁłńņňŌōőřŞşŠšţťūůųźŽžơț]/
 
   def receive_city(val)
     super.tap{|val| if val then val.strip! ; val.gsub!(/\\+/, '') ; end }
