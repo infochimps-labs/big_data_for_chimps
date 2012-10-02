@@ -63,6 +63,7 @@ See ((distribution of weather measurements)) for an example.
 
 
 
+[[merge_join]]
 === Merge Join ===
 
 ===== How a merge join works =====

@@ -64,7 +64,7 @@ These frequencies reflect a mixture of several forces:
 * _signal_: Words that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
 * _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
 
-We will expose the signal using (<<Pointwise Mutual Information>>), a simple approach that will remove the background and let us control for the noise. It combines
+We will expose the signal using (<<pmi,Pointwise Mutual Information>>), a simple approach that will remove the background and let us control for the noise. It combines
 
 * rate the word 'barbecue' is used
 * rate that words are used on grid cell 023130130
