@@ -28,7 +28,7 @@ My favorite example: user records in the Twitter API have *four* effective prima
 * a serial integer primary-key  `id` -- fairly straightforward footnote:[as opposed to the Tweet ID, which had to undergo a managed transition from 32-bit to 64-bit before the 2 billion'th tweet could occur. They presumably look forward to doing the same for user ids at some point].
 * a legible `screen_name` (eg `@mrflip`); used in `@replies`, in primary user interaction, and in the primary URL.
   ** The mapping from `screen_name` key to the numeric `user_id` key is *almost* always stable, but at some few parts per million names and ids have been reassigned. 
-  ** Early on, the twitter API allowed screen names with arbitrary text; even now there are active users with non-ascii characters (`婷`), spaces, and special characters (like `&`,`*`) in their screen_name.
+  ** Early on, the twitter API allowed screen names with arbitrary text; even now there are active users with non-ascii characters (`☃`), spaces, and special characters (like `&`,`*`) in their screen_name.
   ** Even worse, it also allowed purely numeric screen names. For much of its history, the twitter API allowed the numeric id *or* screen name in the URL slug. If there were a user with screen name `1234` then the URL `http://twitter.com/users/show/1234.xml` would be ambiguous.
 * The web-facing URL, a string like  `http://twitter.com/mrflip` in the early days, now annoyingly redirected to `http://twitter.com/!#/mrflip`
 * Since its technology came through a corporate acquisition, Twitter's search API uses a completely incompatible numeric ID. For years, the search API never referenced the primary numeric ID (only its ID and screen name), while rest of the API never referenced the search ID.
