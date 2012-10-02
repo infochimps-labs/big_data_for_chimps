@@ -15,7 +15,7 @@ image::images/fetching_a_letter-480.jpg[Fetching the next letter to Santa]
 
 Every time an elf was ready to answer a letter, they would have to swing a big claw arm out into the incoming mail and pull back the letter for their locality. The elf covering Novosibirsk might ask for a new letter right after the elf covering Cucamonga, and that crane can only swing around so fast, so you'd end up with a lot of anxious elves just waiting for letters to be retrieved from the mail store.
 
-=== Letters -> Toy Requests ===
+=== Letters to Toy Requests ===
 
 The chimps and elephants came in, singing a rather bawdy version of the Map-Reduce Haiku, and built the following system.
 
