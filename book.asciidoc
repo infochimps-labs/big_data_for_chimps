@@ -1,3 +1,5 @@
+= Big Data for Chimps
+
 include::aa01-about.asciidoc[]
 
 include::ba00-first_exploration.asciidoc[]
@@ -22,6 +24,14 @@ include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 
 include::ba02-simple_stream.asciidoc[]
 
+include::ba01-explanation.asciidoc[]
+
+include::mu05-cloud-vs-static.asciidoc[]
+
+include::ba05-data_classes.asciidoc[]
+
+include::ba00-intro_to_wukong.asciidoc[]
+
 include::fu01-sampling.asciidoc[]
 
 include::fu02-server_logs.asciidoc[]
@@ -39,6 +49,8 @@ include::fu03-advanced_pig.asciidoc[]
 include::fu08-pig_udfs.asciidoc[]
 
 include::fu10-tuning.asciidoc[]
+
+include::fu10-tuning-other_benchmarks.asciidoc[]
 
 include::fu06-processing_graphs.asciidoc[]
 
@@ -93,3 +105,5 @@ include::README.asciidoc[]
 include::tr01-authors.asciidoc[]
 
 include::tr03-colophon.asciidoc[]
+
+include::tr00-back_cover.asciidoc[]
