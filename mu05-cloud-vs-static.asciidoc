@@ -67,3 +67,16 @@ March 30, 2010
 2 quad core CPUs, running at least 2-2.5GHz
 16-24GBs of RAM (24-32GBs if you’re considering HBase)
 Gigabit Ethernet
+
+For the below: the *must* haves, not the "gee that would be swell"
+
+How much data under management do customers have, month on month, bringing in?
+* cold load?
+* hot load?
+How many disparate data sources?
+
+How large is analytic team?
+
+* "I use Amazon cloud infrastructure; it's important you run on AWS"
+* "I don't care where
+* Exploratory data analysis

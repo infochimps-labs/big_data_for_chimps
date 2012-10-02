@@ -1,12 +1,8 @@
-
 === Basic pagerank
 
 ----
 include::page_counts.pig[]
 ----
-
-
-
 
 === Exercises ===
 

@@ -5,7 +5,6 @@ Assumptions:
 * V fits in ram 
 * E does not fit in ram
 * Graph is sparse -- E/V^2 << 1 (the typical degree is smear less than V)
-* 
 
 === Notation ===
  

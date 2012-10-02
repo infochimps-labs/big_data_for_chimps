@@ -1,71 +1,43 @@
 
-For the below: the *must* haves, not the "gee that would be swell"
-
-How much data under management do customers have, month on month, bringing in?
-* cold load?
-* hot load?
-How many disparate data sources?
-
-How large is analytic team?
-
-__________________________________________________________________________
-
-
-* "I use Amazon cloud infrastructure; it's important you run on AWS"
-* "I don't care where
-
-
-
-__________________________________________________________________________
-
-* Exploratory data analysis
-*
-
-
-
-__________________________________________________________________________
-
 http://www.cs.duke.edu/starfish/mr-apps.html
 
 https://issues.apache.org/jira/secure/attachment/12524797/pig-0.8.1-vs-0.9.0.png
 
-100GB, 4 EC2 m1.large nodes -- most in ~ 300 seconds == 25 GB/node for 5 min == 5 GB/min
+	100GB, 4 EC2 m1.large nodes -- most in ~ 300 seconds == 25 GB/node for 5 min == 5 GB/min
 
 https://issues.apache.org/jira/browse/PIG-2397
 
 
-
-
 From Starfish:
 
-"MapReduce programs.
-The default experimental setup used in this paper is a single-rack Hadoop cluster running on 16 Amazon EC2 nodes of the c1.medium type. Each node runs at most 3 map tasks and 2 reduce tasks concurrently. WordCount processes 30GB of data generated using the RandomTextWriter program in Hadoop. TeraSort processes 50GB of data generated using Hadoop’s TeraGen program"
+	"MapReduce programs.
+	The default experimental setup used in this paper is a single-rack Hadoop cluster running on 16 Amazon EC2 nodes of the c1.medium type. Each node runs at most 3 map tasks and 2 reduce tasks concurrently. WordCount processes 30GB of data generated using the RandomTextWriter program in Hadoop. TeraSort processes 50GB of data generated using Hadoop’s TeraGen program"
 
-io.sort.spill.percent 	   0.80	   0.80	   0.80	   0.80
-io.sort.record.percent	   0.50	   0.05	   0.15	   0.15
-io.sort.mb            	 200.00	  50.00	 200.00	 200.00
-io.sort.factor        	  10.00	  10.00	  10.00	 100.00
-mapred.reduce.tasks   	  27.00	   2.00	  27.00	 400.00
-Running Time (sec)    	 785.00	 407.00	 891.00	  60.00
+	io.sort.spill.percent 	   0.80	   0.80	   0.80	   0.80
+	io.sort.record.percent	   0.50	   0.05	   0.15	   0.15
+	io.sort.mb            	 200.00	  50.00	 200.00	 200.00
+	io.sort.factor        	  10.00	  10.00	  10.00	 100.00
+	mapred.reduce.tasks   	  27.00	   2.00	  27.00	 400.00
+	Running Time (sec)    	 785.00	 407.00	 891.00	  60.00
 
 
 From http://www.cs.duke.edu/starfish/files/socc10-mr-opt.pdf
 
 
-Parameter Name                  	Brief Description and Use                                        	Default Value 	Values Considered
-mapred.reduce.tasks                    	Number of reducer tasks                                             	1       	[5,300]
-io.sort.mb                             	Size in MegaBytes of map-side buffer for sorting key/value pairs    	100     	[100,200]
-io.sort.record.percent                 	Fraction of io.sort.mb dedicated to metadata storage                	0.05    	[0.05,0.15]
-io.sort.factor                         	Number of sorted streams to merge at once during sorting            	10      	[10,500]
-io.file.buffer.size                    	Buffer size used to read/write (intermediate) sequence files        	4K      	32K
-mapred.child.java.opts                 	Java control options for all mapper and reducer tasks               	-Xmx200m	-Xmx[200m,300m]
-mapred.job.shuffle.input.buffer.percent	% of reducer task's heap used to buffer map outputs during shuffle  	0.7     	0.7,0.8
-mapred.job.shuffle.merge.percent       	Usage threshold of mapred.job.shuffle.input.buffer.percent to trigger	0.66    	0.66,0.8
-                                       	reduce-side merge in parallel with the copying of map outputs
-mapred.inmem.merge.threshold           	Another reduce-side trigger for in-memory merging; off when 0       	1000    	0
-mapred.job.reduce.input.buffer.percent 	% of reducer task's heap to buffer map outputs while applying reduce	0       	0,0.8
-dfs.replication                        	Block replication factor in Hadoop's HDFS filesystem                	3       	2
-dfs.block.size                         	HDFS block size (data size processed per mapper task in our setting)	64MB    	128MB
+	Parameter Name                  	Brief Description and Use                                        	Default Value 	Values Considered
+	mapred.reduce.tasks                    	Number of reducer tasks                                             	1       	[5,300]
+	io.sort.mb                             	Size in MegaBytes of map-side buffer for sorting key/value pairs    	100     	[100,200]
+	io.sort.record.percent                 	Fraction of io.sort.mb dedicated to metadata storage                	0.05    	[0.05,0.15]
+	io.sort.factor                         	Number of sorted streams to merge at once during sorting            	10      	[10,500]
+	io.file.buffer.size                    	Buffer size used to read/write (intermediate) sequence files        	4K      	32K
+	mapred.child.java.opts                 	Java control options for all mapper and reducer tasks               	-Xmx200m	-Xmx[200m,300m]
+	mapred.job.shuffle.input.buffer.percent	% of reducer task's heap used to buffer map outputs during shuffle  	0.7     	0.7,0.8
+	mapred.job.shuffle.merge.percent       	Usage threshold of mapred.job.shuffle.input.buffer.percent to trigger	0.66    	0.66,0.8
+						reduce-side merge in parallel with the copying of map outputs
+	mapred.inmem.merge.threshold           	Another reduce-side trigger for in-memory merging; off when 0       	1000    	0
+	mapred.job.reduce.input.buffer.percent 	% of reducer task's heap to buffer map outputs while applying reduce	0       	0,0.8
+	dfs.replication                        	Block replication factor in Hadoop's HDFS filesystem                	3       	2
+	dfs.block.size                         	HDFS block size (data size processed per mapper task in our setting)	64MB    	128MB
 
 quoted from PigMix docs:
 
