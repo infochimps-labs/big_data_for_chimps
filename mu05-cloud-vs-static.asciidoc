@@ -18,7 +18,7 @@ an m1.large:
 
 an m2.2xlarge:
   - 5 map tasks, each 460 MB raw input, 566 MB raw output (260 MB compressed) 1.5 min
-    - 2.3 GB in, 2.8 GB out (1.3 GB compressed) => 2 GB / m2.2xl*min
+    - 2.3 GB in, 2.8 GB out (1.3 GB compressed) -> 2 GB / m2.2xl*min
 
   - overall 50 GB in, 53 GB out, 12.5 min * 6 m2.2xl = $1.12
   - for 1 TB, ~ 30 m2.2xl 50 min
