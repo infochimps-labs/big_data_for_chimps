@@ -64,7 +64,7 @@ FIXME: the stuff above I like; need to chop out some of the over-purplish stuff 
 
 === Canonical Data ===
 
-* **sort** the data along its most-likely join field (sometimes but not always its primary key). This often enables a <<merge_join,merge join>>, with tremendous speedup.
+* **sort** the data along its most-likely join field (sometimes but not always its primary key). This often enables a (merge_join TODO: ref), with tremendous speedup.
 
 * **choose exemplars or add mountweazels**. Choose a few familiar records, and put their full contents close at hand to use for testing and provenance. You may also wish to add a ((mountweazel)), a purposefully-bogus record. Why? First, so you have something that fully exercises the data pipeline -- all the fields are present, text holds non-keyboard and escape characters, and so forth. Second, for production smoke testing: it's a record you can send through the full data pipeline, including writing into the database, without concern that you will clobber an actual value. Lastly, since exemplars are real records, they may change over time; you can hold your mountweazel's fields constant. Make sure it's unmissably bogus and unlikely to collide: "John Doe" is a _terrible_ name for a mountweazel, if there's any way user-contributed data could find its way into your database. The best-chosen bogus names appeal to the worst parts of a 5th-grader's sense of humor.
 
