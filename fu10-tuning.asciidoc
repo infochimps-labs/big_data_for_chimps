@@ -73,6 +73,12 @@ That is, however, from intra-cluster traffic. By contrast, flume connections are
 
 
 
+
+=== Pig settings ===
+
+see `-Dpig.exec.nocombiner=true` if using combiners badly. (You'll want to use this for a rollup job).
+
+
 == Hadoop System configurations ==
 
 Here first are some general themes to keep in mind:
@@ -87,6 +93,28 @@ The default settings are those that satisfy in some mixture the constituencies o
   - The more memory on your reducers the better. If at all possible, size your cluster to at least half as much RAM as your reduce input data size. 
 
 * If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer) -- the 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
+
+
+Map-side:
+
+All of the below use our data-science friendly configuration parameters.
+It also only concerns jobs worth thinking about -- more than a few dozen gigabytes.
+
+
+* **What's my map input size?**
+  - the `min.split.size`, file size and block size set the size of the map input.
+  - a 128MB block size is a nice compromise between wasted space and map efficiency, and is the typical map input size.
+  - you'd like your map tasks to take at least one minute, but not be the dominant time of the job. If all your map slots are full it's OK if they take longer.
+
+* It's usually straightforward to estimate the pessimistic-case output size. For cluster defaults, let's use a 25% overhead -- 160 MB output size.
+* 15% (`io.sort.record.percent`) of the buffer is taken by record-keeping, so the 160MB should fit in 190 MB (at 15%), 170 MB (at 5%).
+
+The maximum number of records collected before the collection thread will spill is r * x * q * 2^16
+
+if your reduce task itself doesn't need ram (eg for wukong jobs), set this to more like 0.7.
+
+You'd like the "File bytes read" / "File bytes written" to be nil, and the spilled records close to zero. You *don't* want to see spilled records >> reduce input records -- this means the reducers had to do multiple layers of merge sort.
+
 
 **Memory**
 

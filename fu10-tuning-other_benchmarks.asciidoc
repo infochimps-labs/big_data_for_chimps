@@ -1,0 +1,462 @@
+
+For the below: the *must* haves, not the "gee that would be swell"
+
+How much data under management do customers have, month on month, bringing in?
+* cold load?
+* hot load?
+How many disparate data sources?
+
+How large is analytic team?
+
+__________________________________________________________________________
+
+
+* "I use Amazon cloud infrastructure; it's important you run on AWS"
+* "I don't care where
+
+
+
+__________________________________________________________________________
+
+* Exploratory data analysis
+*
+
+
+
+__________________________________________________________________________
+
+http://www.cs.duke.edu/starfish/mr-apps.html
+
+https://issues.apache.org/jira/secure/attachment/12524797/pig-0.8.1-vs-0.9.0.png
+
+100GB, 4 EC2 m1.large nodes -- most in ~ 300 seconds == 25 GB/node for 5 min == 5 GB/min
+
+https://issues.apache.org/jira/browse/PIG-2397
+
+
+
+
+From Starfish:
+
+"MapReduce programs.
+The default experimental setup used in this paper is a single-rack Hadoop cluster running on 16 Amazon EC2 nodes of the c1.medium type. Each node runs at most 3 map tasks and 2 reduce tasks concurrently. WordCount processes 30GB of data generated using the RandomTextWriter program in Hadoop. TeraSort processes 50GB of data generated using Hadoop’s TeraGen program"
+
+io.sort.spill.percent 	   0.80	   0.80	   0.80	   0.80
+io.sort.record.percent	   0.50	   0.05	   0.15	   0.15
+io.sort.mb            	 200.00	  50.00	 200.00	 200.00
+io.sort.factor        	  10.00	  10.00	  10.00	 100.00
+mapred.reduce.tasks   	  27.00	   2.00	  27.00	 400.00
+Running Time (sec)    	 785.00	 407.00	 891.00	  60.00
+
+
+From http://www.cs.duke.edu/starfish/files/socc10-mr-opt.pdf
+
+
+Parameter Name                  	Brief Description and Use                                        	Default Value 	Values Considered
+mapred.reduce.tasks                    	Number of reducer tasks                                             	1       	[5,300]
+io.sort.mb                             	Size in MegaBytes of map-side buffer for sorting key/value pairs    	100     	[100,200]
+io.sort.record.percent                 	Fraction of io.sort.mb dedicated to metadata storage                	0.05    	[0.05,0.15]
+io.sort.factor                         	Number of sorted streams to merge at once during sorting            	10      	[10,500]
+io.file.buffer.size                    	Buffer size used to read/write (intermediate) sequence files        	4K      	32K
+mapred.child.java.opts                 	Java control options for all mapper and reducer tasks               	-Xmx200m	-Xmx[200m,300m]
+mapred.job.shuffle.input.buffer.percent	% of reducer task's heap used to buffer map outputs during shuffle  	0.7     	0.7,0.8
+mapred.job.shuffle.merge.percent       	Usage threshold of mapred.job.shuffle.input.buffer.percent to trigger	0.66    	0.66,0.8
+                                       	reduce-side merge in parallel with the copying of map outputs
+mapred.inmem.merge.threshold           	Another reduce-side trigger for in-memory merging; off when 0       	1000    	0
+mapred.job.reduce.input.buffer.percent 	% of reducer task's heap to buffer map outputs while applying reduce	0       	0,0.8
+dfs.replication                        	Block replication factor in Hadoop's HDFS filesystem                	3       	2
+dfs.block.size                         	HDFS block size (data size processed per mapper task in our setting)	64MB    	128MB
+
+quoted from PigMix docs:
+
+
+....
+
+Run date: Jun 11, 2011, run against top of trunk as of that day.
+All of these runs have been done on a cluster with 26 slaves plus one machine acting as the name node and job tracker
+
+Test        	Pig run time	Java run time	Multiplier
+PigMix_1    	130         	139          	0.94
+PigMix_2    	66          	48.67        	1.36
+PigMix_3    	138         	107.33       	1.29
+PigMix_4    	106         	78.33        	1.35
+PigMix_5    	135.67      	114          	1.19
+PigMix_6    	103.67      	74.33        	1.39
+PigMix_7    	77.67       	77.33        	1.00
+PigMix_8    	56.33       	57           	0.99
+PigMix_9    	384.67      	280.33       	1.37
+PigMix_10   	380         	354.67       	1.07
+PigMix_11   	164         	141          	1.16
+PigMix_12   	109.67      	187.33       	0.59
+PigMix_13   	78          	44.33        	1.76
+PigMix_14   	105.33      	111.67       	0.94
+PigMix_15   	89.67       	87           	1.03
+PigMix_16   	87.67       	75.33        	1.16
+PigMix_17   	171.33      	152.33       	1.12
+Total       	2383.67     	2130         	1.12
+Weighted Avg	            	             	1.16
+
+
+Features Tested
+Based on a sample of user queries, PigMix includes tests for the following features.
+
+Data with many fields, but only a few are used.
+Reading data from maps.
+Use of bincond and arithmetic operators.
+Exploding nested data.
+Load bzip2 data
+Load uncompressed data
+join with one table small enough to fit into a fragment and replicate algorithm.
+join where tables are sorted and partitioned on the same key
+Do a cogroup that is not immediately followed by a flatten (that is, use cogroup for something other than a straight forward join).
+group by with only algebraic udfs that has nested plan (distinct aggs basically).
+foreachs with nested plans including filter and implicit splits.
+group by where the key accounts for a large portion of the record.
+group all
+union plus distinct
+order by
+multi-store query (that is, a query where data is scanned once, then split and grouped different ways).
+outer join
+merge join
+multiple distinct aggregates
+accumulative mode
+The data is generated so that it has a zipf type distribution for the group by and join keys, as this models most human generated
+data.
+Some other fields are generated using a uniform data distribution.
+
+Scalability tests test the following:
+
+Join of very large data sets.
+Grouping of very large data set.
+Query with a very wide (500+ fields) row.
+Loading many data sets together in one load
+
+
+Proposed Data
+Initially, four data sets have been created. The first, "page_views", is 10 million rows in size, with a schema of:
+
+Name             	Type       	Average Length	Cardinality	Distribution	Percent Null
+user             	string     	20            	1.6M       	zipf        	           7
+action           	int        	X             	2          	uniform     	           0
+timespent        	int        	X             	20         	zipf        	           0
+query_term       	string     	10            	1.8M       	zipf        	          20
+ip_addr          	long       	X             	1M         	zipf        	           0
+timestamp        	long       	X             	86400      	uniform     	           0
+estimated_revenue	double     	X             	100k       	zipf        	           5
+page_info        	map        	15            	X          	zipf        	           0
+page_links       	bag of maps	50            	X          	zipf        	          20
+
+The second, "users", was created by taking the unique user keys from "page_views" and adding additional columns.
+
+Name   	Type  	Average Length	Cardinality	Distribution	Percent Null
+name   	string	20            	1.6M       	unique      	           7
+phone  	string	10            	1.6M       	zipf        	          20
+address	string	20            	1.6M       	zipf        	          20
+city   	string	10            	1.6M       	zipf        	          20
+state  	string	2             	1.6M       	zipf        	          20
+zip    	int   	X             	1.6M       	zipf        	          20
+
+The third, "power_users", has 500 rows, and has the same schema as users. It was generated by skimming 500 unique names from
+users. This will produce a table that can be used to test fragment replicate type joins.
+
+The fourth, "widerow", has a very wide row (500 fields), consisting of one string and 499 integers.
+
+"users", "power_users", and "widerow" are written in ASCII format, using Ctrl-A as the field delimiter. They can be read using
+PigStorage.
+
+"page_views" is written in as text data, with Ctrl-A as the field delimiter. Maps in the file are delimited by Ctrl-C
+between key value pairs and Ctrl-D between keys and values. Bags in the file are delimited by Ctrl-B between tuples in the bag.
+A special loader, PigPerformance loader has been written to read this format.
+
+PigMix2 include 4 more data set, which can be derived from the original dataset:
+
+A = load 'page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp, estimated_revenue, page_info, page_links);
+B = order A by user $parallelfactor;
+store B into 'page_views_sorted' using PigStorage('\u0001');
+
+alpha = load 'users' using PigStorage('\u0001') as (name, phone, address, city, state, zip);
+a1 = order alpha by name $parallelfactor;
+store a1 into 'users_sorted' using PigStorage('\u0001');
+
+a = load 'power_users' using PigStorage('\u0001') as (name, phone, address, city, state, zip);
+b = sample a 0.5;
+store b into 'power_users_samples' using PigStorage('\u0001');
+
+A = load 'page_views' as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, action, timespent, query_term, ip_addr, timestamp, estimated_revenue, page_info, page_links,
+user as user1, action as action1, timespent as timespent1, query_term as query_term1, ip_addr as ip_addr1, timestamp as timestamp1, estimated_revenue as estimated_revenue1, page_info as page_info1, page_links as page_links1,
+user as user2, action as action2, timespent as timespent2, query_term as query_term2, ip_addr as ip_addr2, timestamp as timestamp2, estimated_revenue as estimated_revenue2, page_info as page_info2, page_links as page_links2;
+store B into 'widegroupbydata';
+
+
+Proposed Scripts
+Scalability
+Script S1
+
+This script tests grouping, projecting, udf envocation, and filtering with a very wide row. Covers scalability feature 3.
+
+A = load '$widerow' using PigStorage('\u0001') as (name: chararray, c0: int, c1: int, ..., c500: int);
+B = group A by name parallel $parrallelfactor;
+C = foreach B generate group, SUM(A.c0) as c0, SUM(A.c1) as c1, ... SUM(A.c500) as c500;
+D = filter C by c0 > 100 and c1 > 100 and c2 > 100 ... and c500 > 100;
+store D into '$out';
+Script S2
+This script tests joining two inputs where a given value of the join key appears many times in both inputs. This will test pig's
+ability to handle large joins. It covers scalability features 1 and 2.
+
+TBD
+
+Features not yet tested: 4.
+
+Latency
+Script L1
+
+This script tests reading from a map, flattening a bag of maps, and use of bincond (features 2, 3, and 4).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, (int)action as action, (map[])page_info as page_info,
+    flatten((bag{tuple(map[])})page_links) as page_links;
+C = foreach B generate user,
+    (action == 1 ? page_info#'a' : page_links#'b') as header;
+D = group C by user parallel 40;
+E = foreach D generate group, COUNT(C) as cnt;
+store E into 'L1out';
+Script L2
+
+This script tests using a join small enough to do in fragment and replicate (feature 7).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, estimated_revenue;
+alpha = load '/user/pig/tests/data/pigmix/power_users' using PigStorage('\u0001') as (name, phone,
+        address, city, state, zip);
+beta = foreach alpha generate name;
+C = join B by user, beta by name using 'replicated' parallel 40;
+store C into 'L2out';
+Script L3
+
+This script tests a join too large for fragment and replicate. It also contains a join followed by a group by on the same key,
+something that pig could potentially optimize by not regrouping.
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, (double)estimated_revenue;
+alpha = load '/user/pig/tests/data/pigmix/users' using PigStorage('\u0001') as (name, phone, address,
+        city, state, zip);
+beta = foreach alpha generate name;
+C = join beta by name, B by user parallel 40;
+D = group C by $0 parallel 40;
+E = foreach D generate group, SUM(C.estimated_revenue);
+store E into 'L3out';
+Script L4
+
+This script covers foreach generate with a nested distinct (feature 10).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, action;
+C = group B by user parallel 40;
+D = foreach C {
+    aleph = B.action;
+    beth = distinct aleph;
+    generate group, COUNT(beth);
+}
+store D into 'L4out';
+Script L5
+
+This script does an anti-join. This is useful because it is a use of cogroup that is not a regular join (feature 9).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user;
+alpha = load '/user/pig/tests/data/pigmix/users' using PigStorage('\u0001') as (name, phone, address,
+        city, state, zip);
+beta = foreach alpha generate name;
+C = cogroup beta by name, B by user parallel 40;
+D = filter C by COUNT(beta) == 0;
+E = foreach D generate group;
+store E into 'L5out';
+Script L6
+
+This script covers the case where the group by key is a significant percentage of the row (feature 12).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, action, (int)timespent as timespent, query_term, ip_addr, timestamp;
+C = group B by (user, query_term, ip_addr, timestamp) parallel 40;
+D = foreach C generate flatten(group), SUM(B.timespent);
+store D into 'L6out';
+Script L7
+
+This script covers having a nested plan with splits (feature 11).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader() as (user, action, timespent, query_term,
+            ip_addr, timestamp, estimated_revenue, page_info, page_links);
+B = foreach A generate user, timestamp;
+C = group B by user parallel 40;
+D = foreach C {
+    morning = filter B by timestamp < 43200;
+    afternoon = filter B by timestamp >= 43200;
+    generate group, COUNT(morning), COUNT(afternoon);
+}
+store D into 'L7out';
+Script L8
+
+This script covers group all (feature 13).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, (int)timespent as timespent, (double)estimated_revenue as estimated_revenue;
+C = group B all;
+D = foreach C generate SUM(B.timespent), AVG(B.estimated_revenue);
+store D into 'L8out';
+Script L9
+
+This script covers order by of a single value (feature 15).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = order A by query_term parallel 40;
+store B into 'L9out';
+Script L10
+
+This script covers order by of multiple values (feature 15).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent:int, query_term, ip_addr, timestamp,
+        estimated_revenue:double, page_info, page_links);
+B = order A by query_term, estimated_revenue desc, timespent parallel 40;
+store B into 'L10out';
+Script L11
+
+This script covers distinct and union and reading from a wide row but using only one field (features: 1, 14).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user;
+C = distinct B parallel 40;
+alpha = load '/user/pig/tests/data/pigmix/widerow' using PigStorage('\u0001');
+beta = foreach alpha generate $0 as name;
+gamma = distinct beta parallel 40;
+D = union C, gamma;
+E = distinct D parallel 40;
+store E into 'L11out';
+Script L12
+
+This script covers multi-store queries (feature 16).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links);
+B = foreach A generate user, action, (int)timespent as timespent, query_term,
+    (double)estimated_revenue as estimated_revenue;
+split B into C if user is not null, alpha if user is null;
+split C into D if query_term is not null, aleph if query_term is null;
+E = group D by user parallel 40;
+F = foreach E generate group, MAX(D.estimated_revenue);
+store F into 'highest_value_page_per_user';
+beta = group alpha by query_term parallel 40;
+gamma = foreach beta generate group, SUM(alpha.timespent);
+store gamma into 'total_timespent_per_term';
+beth = group aleph by action parallel 40;
+gimel = foreach beth generate group, COUNT(aleph);
+store gimel into 'queries_per_action';
+Script L13 (PigMix2 only)
+
+This script covers outer join (feature 17).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+	as (user, action, timespent, query_term, ip_addr, timestamp, estimated_revenue, page_info, page_links);
+B = foreach A generate user, estimated_revenue;
+alpha = load '/user/pig/tests/data/pigmix/power_users_samples' using PigStorage('\u0001') as (name, phone, address, city, state, zip);
+beta = foreach alpha generate name, phone;
+C = join B by user left outer, beta by name parallel 40;
+store C into 'L13out';
+Script L14 (PigMix2 only)
+
+This script covers merge join (feature 18).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views_sorted' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp, estimated_revenue, page_info, page_links);
+B = foreach A generate user, estimated_revenue;
+alpha = load '/user/pig/tests/data/pigmix/users_sorted' using PigStorage('\u0001') as (name, phone, address, city, state, zip);
+beta = foreach alpha generate name;
+C = join B by user, beta by name using 'merge';
+store C into 'L14out';
+Script L15 (PigMix2 only)
+
+This script covers multiple distinct aggregates (feature 19).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp, estimated_revenue, page_info, page_links);
+B = foreach A generate user, action, estimated_revenue, timespent;
+C = group B by user parallel 40;
+D = foreach C {
+    beth = distinct B.action;
+    rev = distinct B.estimated_revenue;
+    ts = distinct B.timespent;
+    generate group, COUNT(beth), SUM(rev), (int)AVG(ts);
+}
+store D into 'L15out';
+Script L16 (PigMix2 only)
+
+This script covers accumulative mode (feature 20).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/page_views' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp, estimated_revenue, page_info, page_links);
+B = foreach A generate user, estimated_revenue;
+C = group B by user parallel 40;
+D = foreach C {
+    E = order B by estimated_revenue;
+    F = E.estimated_revenue;
+    generate group, SUM(F);
+}
+
+store D into 'L16out';
+Script L17 (PigMix2 only)
+
+This script covers wide key group (feature 12).
+
+register pigperf.jar;
+A = load '/user/pig/tests/data/pigmix/widegroupbydata' using org.apache.pig.test.udf.storefunc.PigPerformanceLoader()
+    as (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, page_info, page_links, user_1, action_1, timespent_1, query_term_1, ip_addr_1, timestamp_1,
+        estimated_revenue_1, page_info_1, page_links_1, user_2, action_2, timespent_2, query_term_2, ip_addr_2, timestamp_2,
+        estimated_revenue_2, page_info_2, page_links_2);
+B = group A by (user, action, timespent, query_term, ip_addr, timestamp,
+        estimated_revenue, user_1, action_1, timespent_1, query_term_1, ip_addr_1, timestamp_1,
+        estimated_revenue_1, user_2, action_2, timespent_2, query_term_2, ip_addr_2, timestamp_2,
+        estimated_revenue_2) parallel 40;
+C = foreach B generate SUM(A.timespent), SUM(A.timespent_1), SUM(A.timespent_2), AVG(A.estimated_revenue), AVG(A.estimated_revenue_1), AVG(A.estimated_revenue_2);
+store C into 'L17out';
+Features not yet covered: 5 (bzip data)
+
+....
