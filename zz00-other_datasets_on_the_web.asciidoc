@@ -275,10 +275,10 @@ This example data is shown for the track whose track_id is TRAXLZU12903D05F94 - 
     bars_start:                     shape = (99,)                                   start time of each bar according to The Echo Nest, this song has 99 bars
     beats_confidence:               shape = (397,)                                  confidence value (between 0 and 1) associated with each beat by The Echo Nest
     beats_start:                    shape = (397,)                                  start time of each beat according to The Echo Nest, this song has 397 beats
-    danceability:                   0.0                                             danceability measure of this song according to The Echo Nest (between 0 and 1, 0 => not analyzed)
+    danceability:                   0.0                                             danceability measure of this song according to The Echo Nest (between 0 and 1, 0 := not analyzed)
     duration:                       211.69587                                       duration of the track in seconds
     end_of_fade_in:                 0.139                                           time of the end of the fade in, at the beginning of the song, according to The Echo Nest
-    energy:                         0.0                                             energy measure (not in the signal processing sense) according to The Echo Nest (between 0 and 1, 0 => not analyzed)
+    energy:                         0.0                                             energy measure (not in the signal processing sense) according to The Echo Nest (between 0 and 1, 0 := not analyzed)
     key:                            1                                               estimation of the key the song is in by The Echo Nest
     key_confidence:                 0.324                                           confidence of the key estimation
     loudness:                       -7.75                                           general loudness of the track
