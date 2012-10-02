@@ -1,5 +1,37 @@
 = Big Data for Chimps
 
+include::aa01-about.asciidoc[]
+
+include::ba01-chimpanzee_and_elephant.asciidoc[]
+
+include::ba06-semi_structured_data-a.asciidoc[]
+
+include::ba06-semi_structured_data-c-patterns.asciidoc[]
+
+include::ba06-semi_structured_data-b-wikipedia_other.asciidoc[]
+
+include::ba06-semi_structured_data-c-wikipedia_corpus.asciidoc[]
+
+include::ba06-semi_structured_data-d-airline_flights.asciidoc[]
+
+include::ba06-semi_structured_data-f-truth_and_error.asciidoc[]
+
+include::ba06-semi_structured_data-daily_weather.asciidoc[]
+
+include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
+
+include::ba02-simple_stream.asciidoc[]
+
+include::fu06-processing_graphs.asciidoc[]
+
+include::fu06-processing_graphs-pagerank.asciidoc[]
+
+include::ba05-overview_of_datasets.asciidoc[]
+
+include::fu00-overview_of_problems.asciidoc[]
+
+include::ba03-herding_cats.asciidoc[]
+
 include::fu04-processing_text.asciidoc[]
 
 include::fu05-an_elephants_eye_view_of_the_world.asciidoc[]
