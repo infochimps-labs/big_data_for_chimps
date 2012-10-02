@@ -32,6 +32,16 @@ module ::Rake
   end
 end
 
+def step(target, options)
+  deps       = [options[:after]].flatten.compact
+  Array.wrap(options[:invoke]).each{|task_name| Rake::Task[task_name].invoke }
+  desc(options[:doc]) if options[:doc]
+  task target => deps do
+    yield target if block_given?
+  end
+  target
+end
+
 def file_task(name, options={})
   target     = Pathname.of(name)
   target_dir = File.dirname(target.to_s)
@@ -44,7 +54,6 @@ def file_task(name, options={})
     Log.info "Creating #{name} => #{target}"
     yield target if block_given?
   end
-  task(options[:part_of] => name) if options[:part_of]
   target
 end
 

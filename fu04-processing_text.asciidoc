@@ -4,3 +4,27 @@
 
 === word bag ===
 
+
+
+
+=== Pointwise Mutual Information
+
+[[pmi]]
+
+Pointwise Mutual Information sounds like an Insurance holding company, but is in fact a simple way to expose signal from background.
+
+Let's pick up the example from <<first_exploration>>
+
+* rate the word 'barbecue' is used
+* rate that words are used on grid cell 023130130
+* rate the word 'barbecue' is used on grid cell 023130130
+
+	pmi(x; y) := log[ p(x, y) / (p(x)*p(y))
+
+	<math>
+	\operatorname{pmi}(x;y) \equiv \log\frac{p(x,y)}{p(x)p(y)} = \log\frac{p(x|y)}{p(x)} = \log\frac{p(y|x)}{p(y)}.
+	</math>
+
+
+	
+

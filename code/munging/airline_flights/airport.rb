@@ -156,6 +156,12 @@ class RawOpenflightAirport
     altitude_ft && (0.3048 * altitude_ft).round(1)
   end
 
+  def receive_country(val)
+    country = Geo::CountryNameLookup.for_alt_name(val, nil)
+    p val unless country
+    super(country ? country.country_id : val)
+  end
+
   def to_airport
     attrs = self.compact_attributes.except(:altitude_ft)
     attrs[:altitude] = altitude

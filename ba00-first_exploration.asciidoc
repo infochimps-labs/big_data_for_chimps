@@ -1,4 +1,5 @@
 == First Exploration ==
+[[first_exploration]]
 
 Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this sentence.
 
@@ -12,83 +13,82 @@ Hadoop's bargain is thus: you must agree to write all your programs according to
 
 For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
 
-Here's an example.
-(we'll skip for now many of the details, so that you can get a high-level sense of how simple and powerful Hadoop can be.)
+Let's walk through an example. I'm going to leave out the code samples for the moment (you'll see them later in the book) so we can concentrate on the step-by-step transformation of the data
 
-=== Where is Barbeque?
+=== Where is Barbecue?
 
-The Wikipedia community has geolocated a great number of its articles: here in Austin, TX the pages for ...
+The Wikipedia community has geolocated a great number of its articles. Not just defined places like Austin, TX, but one million deep: landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World") have computer-readable locations. What's more, since the connections among pages are robot-legible, links within topics can be read to imply a geolocation -- the movie "Dazed and Confused" (which took place in austin) and the artist Janis Joplin (who got her start in Austin) can be identifiably paired with the loose geolocation of Austin, TX.
 
-Can you use this data to find words with geographic affinity? Yes!
-footnote:[Not only that: you can use a fancier version of the model we'll build here to geolocate text _based purely on their content_. An article mentioning barbeque and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. (see Baldridge et al TODO: reference)]
+Among all these first-and-second level connections, there's so much structure that it should be possible to identify the words that define the cultural "flavor" of a region -- and conversely, to identify the regional flavor of a topic. Here's how hadoop makes answering a deep question like that simple.
 
 ==== Summarize every page on Wikipedia
 
-First, we'll summarize the content of every page in wikipedia
+.Snippet from the Wikipedia article on "Lexington, Texas"
+[quote, wikipedia, http://en.wikipedia.org/wiki/Lexington,_Texas]
+______
+Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker called "the best Texas BBQ in the world" is located in Lexington.
+______
 
-TODO: simple word bag
+First, we need to summarize the words associated with each topic, by preparing the "word bag" from its wikipedia page:
 
-We'll also prepare a summary of the text across all the articles:
+.Wordbag of Wikipedia article on "Lexington, Texas"
+------
+Lexington,_Texas {("texas",4)("lexington",2),("called",2),("best",2),("bbq",2),("barbecue",1), ...}
+------
 
-TODO: script
+Next, we will join with the page metadata to annotate each wordbag with its geo coordinates:
 
-
-==== Join on geography
-
-Next, let's join each article's word bag with its article metadata -- and in particular with its location. 
-
-TODO: script
-
+------
+Lexington,_Texas -97.01 30.41 {("texas",4)("lexington",2),("called",2),("best",2),("bbq",2),("barbecue",1), ...}
+------
 
 ==== Bin Locations
 
-Now we're ready to summarize words by region. Assign each article to a grid cell, and carefully combine the word bags of all the articles in each grid cell:
+Now we're ready to summarize words by region: divide the world into grid cells and map each wordbag onto its article's grid cell. We'll use the "quad key", a geographic grid well-suited to big data (see <<quadkey,"Geographic Data">> later in the book):
 
-TODO: script
+image::images/Quadtree-google_maps_screenshot.png[Grid tiles for Central Texas]
 
-The last data preparation step is to remove the background (how often words are used globally) to expose the signal (the words most strongly associated with a place).
+------
+Lexington,_Texas 023130130 {("texas",4)("lexington",2),("called",2),("best",2),("bbq",2),("barbecue",1), ...}
+------
+
+Next, combine the individual word bags to find each grid cell's word bag:
+
+------
+023130130 {(("many", X),...,("texas",X),...,("town",X)...("longhorns",X),...("bbq",X),...}
+------
+
+These frequencies reflect a mixture of several forces:
+
+* _background_: The natural frequency of each word: ("second" is used more often than "syzygy"), adjusted by the frequency each word is used in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
+* _signal_: Words that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
+* _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
+
+We will expose the signal using (<<Pointwise Mutual Information>>), a simple approach that will remove the background and let us control for the noise. It combines
+
+* rate the word 'barbecue' is used
+* rate that words are used on grid cell 023130130
+* rate the word 'barbecue' is used on grid cell 023130130
+
+We'll use a Pig script to group and find each rate, and lastly to calculate the PMI scores:
+
+------
+023130130 {(("texas",X),...,("longhorns",X),...("bbq",X),...,...}
+------
+
+Finally, use a data visualization tool to see the result:
 
 
-(this won't actually appear til later, but putting notes here:)
+footnote:[You can use a fancier version of the approach used here to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. (see Baldridge et al TODO: reference)]
 
-I think pointwise mutual information
-
-* odds that I am an article in the Austin vicinity
-* odds that I mention barbeque
-* => odds that I am an article in the Austin vicinity that mentions barbeque
-
-	pmi(x; y) := log[ p(x, y) / (p(x)*p(y))
-
-	<math>
-	\operatorname{pmi}(x;y) \equiv \log\frac{p(x,y)}{p(x)p(y)} = \log\frac{p(x|y)}{p(x)} = \log\frac{p(y|x)}{p(y)}.
-	</math>
-
-So we're looking for 
-
-	
-
-TODO: script
-
-Finally, crossload it into a database, add a bit of zazz:
-
-screenshot A (Barbeque)
-screenshot B (Red Sox vs Cardinals vs Dodgers)
-screenshot C (Wine vs Corn vs Tobacco)
-
-image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach Mountain BBQ and Wine]
-
-image::images/baldridge-map_of_slang_cool-480.jpg[Map of variants on the slang term "Cool"]
-
+image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
 
 ==== Takeaways
 
-We started with text data, analyzed it as if it were a certain graph,
-combined the results with tabular data,
-and pivoted it to become geographic.
+We accomplished a fairly sophisticated data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
 
-At no point did any specific transformation exceed one hundred lines of code.
+As you'll see, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no hadoop cluster in sight; and they will then run, unchanged, against the whole of wikipedia on dozens or hundreds of machines in a hadoop cluster.
 
-all of these scripts will run easily across sample data on your desktop, and at full-force across the whole of wikipedia in your cluster.
+That's the approach we'll follow through this book: develop simple, maintainable transform/reshape scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 
-That's the approach we'll follow through this book: focus on simple, readable, maintainable data transformations
-
+The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to think at scale, to choose a workable series of chess moves connecting the data you have to the insight you need. In the first part of the book, after briefly becoming familiar with the basic framework, we'll proceed through a series of examples to help you identify the key locality and thus the transformation each step calls for. In the second part of that book, we'll apply this to a range of interesting problems and so build up a set of reusable tools for asking deep questions in actual practice. 

@@ -1,0 +1,64 @@
+
+This book is a guide to data science in practice
+
+
+* practical
+* simple
+* how to make hard problems simple
+* real data, real problems
+* developer friendly
+
+
+terabytes not petabytes
+cloud not fixed
+exploratory no production
+
+
+
+
+
+
+Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this sentence.
+
+What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing; and in doing so, exposes a core simplicity that makes programming it exceptionally fun.
+
+Hadoop's bargain is thus: you must agree to write all your programs according to single certain form, which we'll call the "Map / Reduce Haiku":
+
+    Data flutters by
+    Elephants make sturdy piles
+    Number becomes thought
+
+For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
+
+Here's an example.
+(we'll skip for now many of the details, so that you can get a high-level sense of how simple and powerful Hadoop can be.)
+
+
+Oct 23-25
+
+PRE-RELEASE DESCRIPTION:
+Big Data for Chimps
+
+
+Short description:
+
+Working with big data for the first time? This unique guide shows you how to use simple, fun, and elegant tools working with Apache Hadoop. You’ll learn how to break problems into efficient data transformations to meet most of your analysis needs. It’s an approach that not only works well for programmers just beginning to tackle big data, but for anyone using Hadoop.
+
+Long description:
+
+This unique guide shows you how to use simple, fun, and elegant tools leveraging Apache Hadoop to answer big data questions. You’ll learn how to break problems into efficient data transformations to meet most of your analysis needs. Its developer-friendly approach works well for anyone using Hadoop, and flattens the learning curve for those working with big data for the first time.
+
+Written by Philip Kromer, founder and CTO at Infochimps, this book uses real data and real problems to illustrate patterns found across knowledge domains. It equips you with a fundamental toolkit for performing statistical summaries, text mining, spatial and time-series analysis, and light machine learning. For those working in an elastic cloud environment, you'll learn superpowers that make exploratory analytics especially efficient.
+
+* Learn from detailed example programs that apply Hadoop to interesting problems in context
+* Gain advice and best practices for efficient software development
+* Discover how to think at scale by understanding how data must flow through the cluster to effect transformations
+* Identify the tuning knobs that matter, and rules-of-thumb to know when they're needed.
+Learn how and when to tune your cluster to the job and 
+/// 
+
+/// e
+
+* Humans are important, robots are cheap: you'll learn how to recognize which tuning knobs, and 
+* 
+

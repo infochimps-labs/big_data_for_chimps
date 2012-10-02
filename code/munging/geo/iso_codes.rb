@@ -1,7 +1,11 @@
+require 'active_support/lazy_load_hooks'
+require 'active_support/i18n'
+require 'active_support/inflector/transliterate'
+
 module Wukong
 
   module Data
-
+    
     # These classes use data from the
     # [isocodes](http://pkg-isocodes.alioth.debian.org/) debian project. That
     # package provides lists of various ISO standards (e.g. country, language,
@@ -28,20 +32,34 @@ module Wukong
     # "iso_3166". [origin](http://www.iso.org/iso/country_codes)
     #
     class CountryCode < IsoCode
+      include ActiveSupport::Inflector
+      
       self.handle = :iso_3166
       index_on :alpha_2_code, :alpha_3_code, :country_numid, :name, :common_name, :official_name
       field :alpha_2_code,    String, identifier: true
       field :alpha_3_code,    String, identifier: true
       field :country_numid,   Integer, identifier: true
       field :name,            String
-      field :official_name,   String
-      field :common_name,     String
+      field :official_name,   String, blankish: ["", nil]
+      field :common_name,     String, blankish: ["", nil]
 
       def names
-        [name, common_name, official_name].compact
+        [common_name, name, official_name].compact_blank
       end
       def self.for_any_name(val)
         for_name(val){ for_common_name(val){ for_official_name(val) } }
+      end
+
+      def to_place
+        attrs = {
+          name:            transliterate(names.first),
+          official_name:   names.last,
+          country_id:      alpha_2_code.downcase,
+          alternate_names: names.join('|'),
+          country_al3id:   alpha_3_code.downcase,
+          country_numid:   country_numid,
+        }
+        Geo::Country.receive(attrs.compact_blank)
       end
     end
 
@@ -72,7 +90,6 @@ module Wukong
       field :region_kind,     String
       field :name,            String
       alias_method :state_code, :region_code
-
     end
 
     #

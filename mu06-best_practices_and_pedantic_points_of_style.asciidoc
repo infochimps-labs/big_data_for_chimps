@@ -55,3 +55,7 @@ Unless any of the following is your full-time job and area of specific expertise
 
 Proposed rule: "Never adopt a new lang until it has libs for OAuth+SSL, matrix solving, & LOGO" // Which 3 would you choose?
 
+
+=== Dammit Encoding ===
+
+Using `cut -c` ("chop off line at this many characters") can fail when there are extended characters in the line.
