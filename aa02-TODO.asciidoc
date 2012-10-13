@@ -59,6 +59,11 @@ Conventions:
 Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]`
 (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
 
+===== JOEMAN:Notation
+| :HS			| Half Sentence
+| :Comment		| General editorial comment
+| :FIN			| Chapter / section needs finishing, conclusion, summary
+
 ===== Blocks
 
 Inline code block. You can use the `include::code/HelloWorld.rb[]` to pull it in from a separate file.

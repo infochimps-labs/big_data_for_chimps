@@ -2,10 +2,15 @@
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just couldn't keep up with the scale of requests. Luckily, their friends at the Chimpanzee & Elephant Computing Company could help.
 
+JOEMAN:Comment Consider adding something like the paragraph below - you can help set the stage even further by giving me a preview of what the C&ECC is going to do for Santa and friends.
+
+Through their prior work at [Google? Large scale e-commerce company?], the Chimpanzee & Elephant Computing Company have developed a breakthrough business process for the chunking and distribution of large tasks.
+
+=== The Need for Locality ===
 
 Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
 
-This places a strong demand on *locality*: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth. Each elf therefore is capable of making any kind of toy, from Autobot to Pony to X-box:
+This places a strong demand on *locality*: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth. To meet the range of asks from children of every corner, each elf is capable of making any kind of toy, from Autobot to Pony to X-box:
 
 image::images/elves_at_workstation-480.jpg[Elf Workstations, pre-Hadoop]
 
@@ -19,13 +24,12 @@ Every time an elf was ready to answer a letter, they would have to swing a big c
 
 The chimps and elephants came in, singing a rather bawdy version of the Map-Reduce Haiku, and built the following system.
 
-In stage one,
-a finite number of chimpanzees seated at typewriters read each letter and fill out a work form for each requested toy. Some examples:
+In stage one, a finite number of chimpanzees seated at typewriters read each letter and fill out a work form for each requested toy. Some examples:
 
         --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister.
 
         Deer SANTA                                     robot | type="optimus prime" recipient="Joe"
-                                                       hat   | type="girl's small"  recipient="Joe's sister Julia"
+                                                       hat   | type="girls small"  recipient="Joe's sister Julia"
         I wood like an optimus prime robot
         and a hat for my sister julia
 
@@ -88,13 +92,13 @@ Now it is still true that each elf workstation has incoming mail from every lett
 
 === Sorted Batches ===
 
-You may have noticed that something important has been left out: Santa's need for all the gifts to come out in order. The elephants, of course, did not forget; I've just skipped over that part of the story.
+You may have noticed that something important has been left out: Santa's need for all the gifts to come out in order (locality). The elephants, of course, did not forget; I've just skipped over that part of the story.
 
-Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find on a very organized person's desk:
+Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find at a very organized person's desk:
 
 image::images/paper_sorter.jpg[paper sorter]
 
-The chimpanzees file each toy request in order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
+As the process and pass on the toy request, the chimpanzees file them in the order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
 
 image::images/elephant_and_chimpanzee.048-480.jpg[Secondary sort]
 
@@ -104,3 +108,4 @@ image::images/elephant_and_chimpanzee.049-480.jpg[Secondary sort]
 
 Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy. 
 
+JOEMAN:FIN
