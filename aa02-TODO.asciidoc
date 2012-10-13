@@ -37,28 +37,25 @@
 
 Conventions:
 
-| monospaced	|      `+plus signs+` | +monospaced text+
-| `<literal>`	|     `\`backticks\`` | generic `literal text`
-| `<userinput>`	|   `*+star plus+*`  | *+literal commands typed by user+* or `pass:[<userinput>foo</userinput>]`
+| monospaced     	|   `+plus signs+` | +monospaced text+
+| `<literal>`    	|   `\`backticks\`` | generic `literal text`
+| `<userinput>`       	|   `*+star plus+*`  | *+literal commands typed by user+* or `pass:[<userinput>foo</userinput>]`
 | 
-| `<replaceable>`	|  `_++bar plus plus++_` | _+replaceable+_ or `pass:[<replaceable>foo</replaceable>]`
-| user inp+replbl |    `_**++bar star star plus plus++**_` _+user input replaceable+_ or `pass:[<userinput><replaceable>foo</replaceable></userinput>]`
+| `<replaceable>`	|   `_++bar plus plus++_` | _+replaceable+_ or `pass:[<replaceable>foo</replaceable>]`
+| user inp+replbl       |   `_**++bar star star plus plus++**_` _+user input replaceable+_ or `pass:[<userinput><replaceable>foo</replaceable></userinput>]`
 
-Text; the first word on line is the docbook tag:
-
-| `<emphasis>`	|     `_underscores_` for _emphasized text_
-  ** indicates _new terms_, _URLs_, _email addresses_, _filenames_, and _file extensions_
-  ** for consistency don't use `'single quotes'` for _emphasis_ except to indicate a filename or path
-| `<filename>`	|     [role="filename"]'/path/to/file.ext'
+| `<emphasis>`  	|   `_underscores_` for _emphasized text_
+                              ** indicates _new terms_, _URLs_, _email addresses_, _filenames_, and _file extensions_
+                              ** for consistency don't use `'single quotes'` for _emphasis_ except to indicate a filename or path
+| `<filename>`   	|   [role="filename"]'/path/to/file.ext'
 | `<book title>`	|   [role="citetitle"]'Hadoop	| The Definitive Guide'
-| bold text	|     `*asterisks*` for *bold text* should _not_ be used for emphasis -- use underscores.
-| `<Math>`
-  ** Subscripts and superscripts work like so: H~2~O and 2^5^ = 32 (but if you're doing math, you'd probably want to italicize the variables, like so: _x_^2^ + _y_^2^ = _z_^2^). For more on math see !!ORMTODO!!.
-| `<xref>` |  `<<double angles>>` | <<style_notes>>
+| bold text     	|   `*asterisks*` for *bold text* should _not_ be used for emphasis -- use underscores.
+| `<Math>`              |    ** Subscripts and superscripts work like so: H~2~O and 2^5^ = 32 (but if you're doing math, you'd probably want to italicize the variables, like so: _x_^2^ + _y_^2^ = _z_^2^). For more on math see !!ORMTODO!!.
+| `<xref>`              |  `<<double angles>>` | <<style_notes>>
+| footnotes       	| `footnote:[This is a standard footnote.]`
 
 | Use a title (`.I am a Title!`) for figures, tables, examples, and sidebars, but not otherwise.
 
-| footnotes  	| `footnote:[This is a standard footnote.]`
 Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]`
 (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
 
