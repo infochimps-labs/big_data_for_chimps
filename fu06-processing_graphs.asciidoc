@@ -240,6 +240,3 @@ Mahout contains implementations that allow one to compare one or more vectors wi
 
 ==== Other ====
 * Collocations
-
-
-

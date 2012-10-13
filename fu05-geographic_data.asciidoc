@@ -6,6 +6,320 @@
 
 http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 
+
+=== K-means clustering to summarize ===
+Large-scale geodata processing in hadoop starts with the grid system, a simple butv very powerful idea.
+put the map on a simple, flat Mercator projection- the one that geographers cringe, where you just directly map longitude and latitude to (X,Y) (footnote: somehow in naetiral speech people want to say "lat, long". You should instead say "lng, lat" -- it's consistent with the (X, Y) convention and also avoids using ´long´, a keyword in pig and other languages).
+Now divide the world into four and make a Z pattern across them:
+
+   1 -- 2
+      /
+     /
+   3 -- 4
+
+Within each of those, make a Z again:
+
+what you end up with has the following properties:
+
+* you have a 1-d index into a 2-d space
+* nearby points in space are typically nearby in index value. this means that geographic locality falls out of sorting -- Hadoop's fundamental locality operation
+*
+* a limited number of range scans suffice to cover any given area
+* each grid cell's parents are a 2-place bit shift of the grid index itself.
+
+
+quoting Bing maps docco:
+
+______
+	Given latitude and longitude in degrees, and the level of detail, the pixel XY coordinates can be calculated as follows:
+
+	sin_lat = sin(latitude * pi/180)
+	tile_x  = floor( (2 ** level) * ((longitude + 180) / 360) )
+	tile_y  = floor( (2 ** level) * (0.5 – log((1 + sin_lat)/(1 – sin_lat)) / (4 * pi)) )
+
+	if lat >  85.05112878 then tile_y = 'A'
+	if lat < -85.05112878 then tile_y = 'B'
+
+longitude and latitude are on the WGS 84 datum. So that the map can be square without tearing at the poles, the latitude is constrained to -85.05112878 to 85.05112878; longitude ranges naturally from -180 to +180 degrees
+
+Let's na
+
+Quadtree key, or quadkey:
+
+    tile_y  = 3 = 0   1   1
+    tile_x  = 6 =   1   1   0
+    quadkey =   = 0 1 1 1 1 0
+                =  1   3   2
+
+	To optimize the indexing and storage of tiles, the two-dimensional tile XY coordinates are combined into one-dimensional strings called quadtree keys, or “quadkeys” for short. Each quadkey uniquely identifies a single tile at a particular level of detail, and it can be used as an key in common database B-tree indexes. To convert tile coordinates into a quadkey, the bits of the Y and X coordinates are interleaved, and the result is interpreted as a base-4 number (with leading zeros maintained) and converted into a string. For instance, given tile XY coordinates of (3, 5) at level 3, the quadkey is determined as follows:
+
+	tileX = 3 = 011 2
+
+	tileY = 5 = 101 2
+
+	quadkey = 100111 2 = 213 4 = “213”
+
+	Quadkeys have several interesting properties. First, the length of a quadkey (the number of digits) equals the level of detail of the corresponding tile. Second, the quadkey of any tile starts with the quadkey of its parent tile (the containing tile at the previous level). As shown in the example below, tile 2 is the parent of tiles 20 through 23, and tile 13 is the parent of tiles 130 through 133:
+
+	Finally, quadkeys provide a one-dimensional index key that usually preserves the proximity of tiles in XY space. In other words, two tiles that have nearby XY coordinates usually have quadkeys that are relatively close together. This is important for optimizing database performance, because neighboring tiles are usually requested in groups, and it’s desirable to keep those tiles on the same disk blocks, in order to minimize the number of disk reads.
+
+
+
+
+	Map resolution = 156543.04 meters/pixel * cos(latitude) / (2 ^ zoomlevel)
+
+	Remember that the zoom level goes from 1 to 19, and that latitude goes from -90 to 90 (assuming your cosine function works with degrees; if you need radians, multiply the latitude by Pi/180). The equation naturally fails if you get too close to either pole, as the Mercator projection also fails when you get too close to the poles.
+
+	From this equation, we can calculate an estimated scale for each zoom level by assuming that we are at the equator
+_______
+
+	http://bcdcspatial.blogspot.com/2012/02/onlineoffline-mapping-finding-tile-urls.html
+
+	'''
+	Mostly direct port of awesome article by Joe Schwartz - http://msdn.microsoft.com/en-us/library/bb259689.aspx
+	'''
+	from __future__ import division
+	import math
+
+	class TileUtils(object):
+
+	    earth_radius = 6378137
+	    min_lat = -85.05112878
+	    max_lat = 85.05112878
+	    min_lng = -180
+	    max_lng = 180
+
+	    def clipValue(self, value, minValue, maxValue):
+		'''
+		Makes sure that value is within a specific range.
+		If not, then the lower or upper bounds is returned
+		'''
+		return min(max(value, minValue), maxValue)
+
+	    def getMapDimensionsByZoomLevel(self, zoomLevel):
+		'''
+		Returns the width/height in pixels of the entire map
+		based on the zoom level.
+		'''
+		return 256 << zoomLevel
+
+	    def getGroundResolution(self, latitude, level):
+		'''
+		returns the ground resolution for based on latitude and zoom level.
+		'''
+		latitude = self.clipValue(latitude, self.min_lat, self.max_lat);
+		mapSize = self.getMapDimensionsByZoomLevel(level)
+		return math.cos(latitude * math.pi / 180) * 2 * math.pi * self.earth_radius / mapSize
+
+	    def getMapScale(self, latitude, level, dpi=96):
+		'''
+		returns the map scale on the dpi of the screen
+		'''
+		dpm = dpi / 0.0254 #convert to dots per meter
+		return self.getGroundResolution(latitude, level) * dpm
+
+	    def convertLatLngToPixelXY(self, lat, lng, level):
+		'''
+		returns the x and y values of the pixel corresponding to a latitude and longitude.
+		'''
+		mapSize = self.getMapDimensionsByZoomLevel(level)
+
+		lat = self.clipValue(lat, self.min_lat, self.max_lat)
+		lng = self.clipValue(lng, self.min_lng, self.max_lng)
+
+		x = (lng + 180) / 360
+		sinlat = math.sin(lat * math.pi / 180)
+		y = 0.5 - math.log((1 + sinlat) / (1 - sinlat)) / (4 * math.pi)
+
+		pixelX = int(self.clipValue(x * mapSize + 0.5, 0, mapSize - 1))
+		pixelY = int(self.clipValue(y * mapSize + 0.5, 0, mapSize - 1))
+		return (pixelX, pixelY)
+
+	    def convertPixelXYToLngLat(self, pixelX, pixelY, level):
+		'''
+		converts a pixel x, y to a latitude and longitude.
+		'''
+		mapSize = self.getMapDimensionsByZoomLevel(level)
+		x = (self.clipValue(pixelX, 0, mapSize - 1) / mapSize) - 0.5
+		y = 0.5 - (self.clipValue(pixelY, 0, mapSize - 1) / mapSize)
+
+		lat = 90 - 360 * math.atan(math.exp(-y * 2 * math.pi)) / math.pi
+		lng = 360 * x
+
+		return (lng, lat)
+
+	    def convertPixelXYToTileXY(self, pixelX, pixelY):
+		'''
+		Converts pixel XY coordinates into tile XY coordinates of the tile containing
+		'''
+		return(int(pixelX / 256), int(pixelY / 256))
+
+	    def convertTileXYToPixelXY(self, tileX, tileY):
+		'''
+		Converts tile XY coordinates into pixel XY coordinates of the upper-left pixel
+		'''
+		return(tileX * 256, tileY * 256)
+
+	    def tileXYZToQuadKey(self, x, y, z):
+		'''
+		Computes quadKey value based on tile x, y and z values.
+		'''
+		quadKey = ''
+		for i in range(z, 0, -1):
+		    digit = 0
+		    mask = 1 << (i - 1)
+		    if(x & mask) != 0:
+			digit += 1
+		    if(y & mask) != 0:
+			digit += 2
+		    quadKey += str(digit)
+		return quadKey
+
+	    def quadKeyToTileXYZ(self, quadKey):
+		'''
+		Computes tile x, y and z values based on quadKey.
+		'''
+		tileX = 0
+		tileY = 0
+		tileZ = len(quadKey)
+
+		for i in range(tileZ, 0, -1):
+		    mask = 1 << (i - 1)
+		    value = quadKey[tileZ - i]
+
+		    if value == '0':
+			continue
+
+		    elif value == '1':
+			tileX |= mask
+
+		    elif value == '2':
+			tileY |= mask
+
+		    elif value == '3':
+			tileX |= mask
+			tileY |= mask
+
+		    else:
+			raise Exception('Invalid QuadKey')
+
+		return (tileX, tileY, tileZ)
+
+	    def convertLngLatToTileXY(self, lng, lat, level):
+		pixelX, pixelY = self.convertLatLngToPixelXY(lat, lng, level)
+		return self.convertPixelXYToTileXY(pixelX, pixelY)
+
+	    def getTileOrigin(self, tileX, tileY, level):
+		'''
+		Returns the upper-left hand corner lat/lng for a tile
+		'''
+		pixelX, pixelY = self.convertTileXYToPixelXY(tileX, tileY)
+		lng, lat = self.convertPixelXYToLngLat(pixelX, pixelY, level)
+		return (lat, lng)
+
+
+
+
+==== Reference for sizes and zooms ====
+
+http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+
+
+
+
+
+
+
+1 tile at Zoom 11 is about { ben white, research, 183, 360 } -
+
+    ZL               11
+    G         468,  843
+    TMS       468, 1204
+    QT      02313012122
+    #tiles    4,194,304
+    MB@10k       40,960 MB
+
+1 tile at Zoom 12 is about {lake austin, rsrc, 183, mopac }
+
+    ZL               12
+    G         936, 1686
+    TMS       936, 2409
+    QT      023130121220
+    #tiles   16,777,216
+    MB@10k      163,840 MB
+
+1 tile at Zoom 13 is { lake austin, 38th, I35, mopac }
+
+    ZL               13
+    G        1872, 3372
+    TMS      1872, 4819
+    QT      0231301212200
+    #tiles   67,108,864
+    MB@10k      655,360 MB              2**26 * 10 * 1024 / (1024 ** 2)
+
+1 tile at Zoom 14 is { lake austin, 15th, I35, Lamar }
+
+    ZL               14
+    G        3743, 6745
+    TMS      3743, 9638
+    QT      02313012033113
+    #tiles  268,435,456
+    MB@10k    2,621,440
+
+=== Map Points to Grid Cells ===
+
+We started with an apology to geographers for our uncouth map projection? we will make it up a bit by having each grid cell be an increasingly better locally-flat approximation to the earths surface. this makes the math more complicated but the result id worth it.
+
+
+=== Map Boundaries to Grid Cells ===
+
+
+
+=== Map Regions to Grid Cells ===
+
+==== Adaptive Grid Size ====
+
+The world is a big place, but we don't use all of it. Most of the world is water. Lots of it is Kansas.
+
+We can use the grid system to very naturally describe multiscale data.
+
+key things with an out-of-band
+Quadkey 0112XX means "I carry the information for grids 011200, 011201, ... 011233".
+
+Choose an upper bound for range, and decompose thing to that level -- so even if something applied to grid 0123XXX, but your upper raneg is 5 quads, you would duplicate that row as 01230XX, 01231XX, etc. (fn: this is a small penalty, since the grid scales exponentially.)
+With the upper range as your partition key, and the whole quadkey is the sort key, you can now do joins
+
+* read keys on each side until one key is equal to or a prefix of the other.
+* emit combined record using the more specific of the two keys
+* read the next record from the more-specific column,  until there's no overlap
+
+Take each grid cell; if it needs subfeatures, divide it else emit directly.
+
+You must emit high-level grid cells with the lsb filled with XX or something that sorts after a normal cell; this means that to find the value for a point,
+
+* Find the corresponding tile ID,
+* Index into the table to find the first tile whose ID is larger than the given one.
+ This is why you must split in four parts
+
+     00.00.00
+     00.00.01
+     00.00.10
+     00.00.11
+     00.01.--
+     00.10.--
+     00.11.00
+     00.11.01
+     00.11.10
+     00.11.11
+     01.--.--
+     10.00.--
+     10.01.--
+     10.10.01
+     10.10.10
+     10.10.11
+     10.10.00
+     10.11.--
+
 === Weather Near You ===
 
 ==== Find the Voronoi Polygon for each Weather Station ====
@@ -35,21 +349,21 @@ http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
             | |           |             |  |
             | |           |         C   |  |
       000x  | |   C  ~~+--+------\      |  |      0100
-            | |     / A|B |  B    \     | / 
+            | |     / A|B |  B    \     | /
             |_|____/___|__|________\____|/|_______
             | | C /    |  |         \ C / |
-            |  \ /     |B |  B       \ /| | 
+            |  \ /     |B |  B       \ /| |
       001x  |   |      |  |           | |D|       0110
             |   |  A   +--+-----------' | |
             |   |      |D |  D          | |
             +---+------+--+-------------+-/-------
-            |   |  A   |D |            _|/ 
-            |    \____/ \ |    D      | |  
+            |   |  A   |D |            _|/
+            |    \____/ \ |    D      | |
       100x  |            \|___________, |         1100
             |             |             |
             |             |             |
             +-------------+-------------+---------
-                ^ 1000        ^ 1001      
+                ^ 1000        ^ 1001
 
 * Tile 0000: `[A, B, C   ]`
 * Tile 0001: `[   B, C   ]`
@@ -77,43 +391,41 @@ Pivot:
 
 Now join observations to grid cells and reduce each grid cell.
 
-
-==== Adaptive Grid Size ====
-
-Most of the world is water. Lots of it is Kansas.
-
-Take each grid cell; if it needs subfeatures, divide it else emit directly.
-
-You must emit high-level grid cells with the lsb filled with XX or something that sorts after a normal cell; this means that to find the value for a point,
-
-* Find the corresponding tile ID, 
-* Index into the table to find the first tile whose ID is larger than the given one.
- This is why you must split in four parts
-
-     00.00.00
-     00.00.01
-     00.00.10
-     00.00.11
-     00.01.--
-     00.10.--
-     00.11.00
-     00.11.01
-     00.11.10
-     00.11.11
-     01.--.--
-     10.00.--
-     10.01.--
-     10.10.01
-     10.10.10
-     10.10.11
-     10.10.00
-     10.11.--
-     
-
 === GeoJSON ===
-    
 
 Using polymaps to view results
 
+=== Exercises ===
 
-=== K-means clustering to summarize ===
+**Exercise 1**: Write a generic utility to do multiscale smoothing
+
+Its input is a uniform sampling of values: a value for every grid cell at some zoom level.
+However, lots of those values are similar.
+Combine all grid cells whose values lie within a certain tolerance into
+
+Example: merge all cells whose contents lie within 10% of each other
+
+    00	10
+    01	11
+    02   9
+    03   8
+    10  14
+    11  15
+    12  12
+    13  14
+    20  19
+    21  20
+    22  20
+    23  21
+    30  12
+    31  14
+    32   8
+    33   3
+
+    10  11  14  18     .9.5. 14  18
+     9   8  12  14     .   . 12  14
+    19  20  12  14     . 20. 12  14
+    20  21   8   3     .   .  8   3
+
+**Exercise 2**:
+

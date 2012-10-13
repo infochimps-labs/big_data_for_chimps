@@ -30,22 +30,19 @@ Write a program that converts english text to pig latin
       ([\w\']+)           # remaining word characters
       }xi                 # allow comments, case-insensitive
 
-    mapper do |input|
-
-      def latinize(line)
-        latinized = line.gsub(PIG_LATIN_WORD_RE) do
-          init, rest = [$1, $2]
-          init = 'w'       if init.blank?
-          rest.capitalize! if init =~ UPPERCASE
-          "#{rest}-#{init.downcase}ay"
-        end
-        return latinized
+    stream do |line|
+      latinized = line.gsub(PIG_LATIN_WORD_RE) do
+        init, rest = [$1, $2]
+        init = 'w'       if init.blank?
+        rest.capitalize! if init =~ UPPERCASE
+        "#{rest}-#{init.downcase}ay"
       end
-
-      input | map{|line| latinize(line) }
+      return latinized
     end
 
-Run it:
+==== Test on the commandline ====
+
+
 
     wukong examples/text/pig_latin.rb data/magi.txt -
 
@@ -55,11 +52,9 @@ The last line should look like
 
 **sidebar**: As a politeness to people coming here from other languages, code snippets in these early chapters are much wordier than what a ruby native would construct. We'll ease into a more vernacular style as the programs become more complex.
 
-
 === About Streamers ===
 
 
-TBD
 
 === Exercises ===
 

@@ -45,3 +45,5 @@ logs
 artifacts
 output-long
 output-scribe
+images/*-noversion
+Backup\ *
