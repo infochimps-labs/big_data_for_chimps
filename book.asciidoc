@@ -6,6 +6,8 @@ include::ba00-first_exploration.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
+include::ba02-simple_stream.asciidoc[]
+
 include::ba06-semi_structured_data-a.asciidoc[]
 
 include::ba06-semi_structured_data-c-patterns.asciidoc[]
@@ -21,14 +23,6 @@ include::ba06-semi_structured_data-f-truth_and_error.asciidoc[]
 include::ba06-semi_structured_data-daily_weather.asciidoc[]
 
 include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
-
-include::ba02-simple_stream.asciidoc[]
-
-include::ba01-explanation.asciidoc[]
-
-include::mu05-cloud-vs-static.asciidoc[]
-
-include::ba05-data_classes.asciidoc[]
 
 include::ba00-intro_to_wukong.asciidoc[]
 
@@ -67,6 +61,10 @@ include::fu04-processing_text.asciidoc[]
 include::fu05-an_elephants_eye_view_of_the_world.asciidoc[]
 
 include::fu05-geographic_data.asciidoc[]
+
+include::ba01-explanation.asciidoc[]
+
+include::mu05-cloud-vs-static.asciidoc[]
 
 include::fu07-time_series_data.asciidoc[]
 
