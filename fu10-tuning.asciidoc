@@ -1,12 +1,10 @@
-== Tuning
+== Hadoop Tuning for the wise and lazy
 
-There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747, and some of them interact surprisingly. Here's our approach to configuring and optimizing Hadoop.
-
-Fundamentally, what you want to know is
+There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747. Many of them interact surprisingly, and many settings improve some types of jobs while impeding others. This chapter will help you determin
 
 * What are the maximum practical capabilities of my system, and are they reasonable?
-* How do I tell what constraints a job is hitting, and whether it's reasonable to optimize it?
-* If I need to optimize a job, what settings are relevant and what are their tradeoffs?
+* How do I determine a job's primary constraint, and whether it's worthwhile to optimize it?
+* If I must to optimize a job, what setting adjustments are relevant, and what are the tradeoffs those adjustments?
 
 Coarsely speaking, jobs are constrained by one of these four capabilities:
 
@@ -15,11 +13,6 @@ Coarsely speaking, jobs are constrained by one of these four capabilities:
 * Network IO: Network throughput, and
 * CPU: Computational throughput.
 
-In practice,
-
-* You either have enough RAM, or you do not -- make sure you do.
-* If throughput isn't near the IO-bound limit, there is probably a discoverable reason.
-
 Your job is to
 
 * **Recognize when your job significantly underperforms** the practical expected throughput, and if so, whether you should worry about it. If your job's throughput on a small cluster is within a factor of two of a job that does nothing, it's not worth tuning. If that job runs nightly and costs $1000 per run, it is.
@@ -27,6 +20,95 @@ Your job is to
 * **Ensure there's enough RAM**. If there isn't, you can adjust your the memory per machine, the number of machines, or your algorithm design.
 * **Not get in Hadoop's way**. There are a few easily-remedied things to watch for that will significantly hamper throughput by causing unneccesary disk writes or network traffic.
 * **When reasonable, adjust the RAM/IO/CPU tradeoffs**. For example, with plenty of RAM and not too much data, increasing the size of certain buffers can greatly reduce the number of disk writes: you've traded RAM for Disk IO.
+
+=== Tune Your Cluster to your Job ===
+
+If you are running Hadoop in an elastic environment, life gets easy: you can tune your cluster to the job, not the other way around.
+
+* Choose the number of mappers and reducers
+  - To make best use of your CPUs, you want the number of running tasks to be at least `cores-1`; as long as there's enough ram, go as high as mappers = `cores * 3/4` and reducers = `cores * 1/2`.  For a cluster purpose-built to run jobs with minimal reduce tasks, run as many mappers as cores.
+  - The total heap allocated to the datanode, tasktracker, mappers and reducers should be less than but close to the size of RAM on the machine.
+  - The mappers should get at least twice as much total ram as your typical mapper output size (which is to say, at least twice as much ram as your HDFS block size).
+  - The more memory on your reducers the better. If at all possible, size your cluster to at least half as much RAM as your reduce input data size.
+
+* Get the job working locally on a reduced dataset
+  - for a wukong job, you don't even need hadoop; use `cat` and pipes.
+* Profile its run time on a small cluster
+
+For data that will be read much more often than it's written, 
+
+* Produce output files of 1-4 GB with a block size of 128MB
+  - if there's an obvious join key, do a total sort. This lets you do a merge join later.
+
+=== Happy Mappers ===
+
+==== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**. =====
+
+==== A Happy Mapper is Well-fed
+
+* Map tasks should take longer to run than to start. If mappers finish in less than a minute or two, and you have control over how the input data is allocated, try to feed each more data. In general, 128MB is sufficient; we set our HDFS block size to that value.
+
+==== A Happy Mapper finishes with its friends ====
+
+Assuming well-fed mappers, you would like every mapper to finish at roughly the same time. The reduce cannot start until all mappers have finished. Why would different mappers take different amounts of time?
+
+* large variation in file size
+* large variation in load -- for example, if the distribution of reducers is uneven, the machines with multiple reducers will run more slowly in general
+* on a large cluster, long-running map tasks will expose which machines are slowest.
+
+==== A Happy Mapper is Busy ====
+
+Assuming mappers are well fed and prompt, you would like to have nearly every mapper running a job.
+
+
+* Assuming every mapper is well fed and every mapper is running a job, 
+
+
+Pig can use the combine splits setting to make this intelligently faster. Watch out for weirdness with newer versions of pig and older versions of HBase.
+
+If you're reading from S3, dial up the min split size as large as 1-2 GB (but not 
+
+==== A Happy Mapper has no Reducer =====
+
+
+==== Match the reducer heap size to the data it processes ====
+  
+===== A Happy Reducer is **well-balanced**, has **few merge passes**, has **good RAM/data ratio**, and a **justifiable data rate** =====
+
+* **well-balanced**: 
+
+
+All of the below use our data-science friendly configuration parameters.
+It also only concerns jobs worth thinking about -- more than a few dozen gigabytes.
+
+* **What's my map input size?**
+  - the `min.split.size`, file size and block size set the size of the map input.
+  - a 128MB block size is a nice compromise between wasted space and map efficiency, and is the typical map input size.
+  - you'd like your map tasks to take at least one minute, but not be the dominant time of the job. If all your map slots are full it's OK if they take longer.
+
+* It's usually straightforward to estimate the pessimistic-case output size. For cluster defaults, let's use a 25% overhead -- 160 MB output size.
+* 15% (`io.sort.record.percent`) of the buffer is taken by record-keeping, so the 160MB should fit in 190 MB (at 15%), 170 MB (at 5%).
+
+The maximum number of records collected before the collection thread will spill is r * x * q * 2^16
+
+if your reduce task itself doesn't need ram (eg for wukong jobs), set this to more like 0.7.
+
+You'd like the "File bytes read" / "File bytes written" to be nil, and the spilled records close to zero. You *don't* want to see spilled records >> reduce input records -- this means the reducers had to do multiple layers of merge sort.
+
+an m1.large:
+  - 3 map tasks 300 MB raw input, 340 MB raw output (150 MB compressed), in 2 min
+    - 1 GB in, 1 GB out (450 MB compressed)
+  - 2 reduce tasks 700 MB in, 1.7 GB out, 50% spill
+    - 1.5GB in, 3.5 GB out, 4 mins.
+
+an m2.2xlarge:
+  - 5 map tasks, each 460 MB raw input, 566 MB raw output (260 MB compressed) 1.5 min
+    - 2.3 GB in, 2.8 GB out (1.3 GB compressed) -> 2 GB / m2.2xl*min
+
+  - overall 50 GB in, 53 GB out, 12.5 min * 6 m2.2xl = $1.12
+  - for 1 TB, ~ 30 m2.2xl 50 min
+
+== Hadoop Tuning for the foolish and brave
 
 === Measuring your system: theoretical limits ===
 
@@ -71,154 +153,10 @@ Let's think about the datanode handler count. Suppose you double the size of you
 
 That is, however, from intra-cluster traffic. By contrast, flume connections are long-lived, and so you should account for them as some portion of the datanode handler count -- each agent will be connected to one datanode at a time (as directed by the namenode for that particular block at th). Doubling the number of flume writers should double that portion; doubling the number of datanodes should halve that portion.
 
-
-
-
 === Pig settings ===
 
 see `-Dpig.exec.nocombiner=true` if using combiners badly. (You'll want to use this for a rollup job).
 
-
-== Hadoop System configurations ==
-
-Here first are some general themes to keep in mind:
-The default settings are those that satisfy in some mixture the constituencies of a) Yahoo, Facebook, Twitter, etc; and b) Hadoop developers, ie. peopl who *write* Hadoop but rarely *use* Hadoop. This means that many low-stakes settings (like keeping jobs stats around for more than a few hours) are at the values that make sense when you have a petabyte-scale cluster and a hundred data engineers; 
-
-**Cluster Layout**
-
-* Choose the number of mappers and reducers
-  - To make best use of your CPUs, you want the number of running tasks to be at least `cores-1`; as long as there's enough ram, go as high as mappers = `cores * 3/4` and reducers = `cores * 1/2`.  For a cluster purpose-built to run jobs with minimal reduce tasks, run as many mappers as cores.
-  - The total heap allocated to the datanode, tasktracker, mappers and reducers should be less than but close to the size of RAM on the machine.
-  - The mappers should get at least twice as much total ram as your typical mapper output size (which is to say, at least twice as much ram as your HDFS block size).
-  - The more memory on your reducers the better. If at all possible, size your cluster to at least half as much RAM as your reduce input data size. 
-
-* If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer) -- the 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
-
-
-Map-side:
-
-All of the below use our data-science friendly configuration parameters.
-It also only concerns jobs worth thinking about -- more than a few dozen gigabytes.
-
-
-* **What's my map input size?**
-  - the `min.split.size`, file size and block size set the size of the map input.
-  - a 128MB block size is a nice compromise between wasted space and map efficiency, and is the typical map input size.
-  - you'd like your map tasks to take at least one minute, but not be the dominant time of the job. If all your map slots are full it's OK if they take longer.
-
-* It's usually straightforward to estimate the pessimistic-case output size. For cluster defaults, let's use a 25% overhead -- 160 MB output size.
-* 15% (`io.sort.record.percent`) of the buffer is taken by record-keeping, so the 160MB should fit in 190 MB (at 15%), 170 MB (at 5%).
-
-The maximum number of records collected before the collection thread will spill is r * x * q * 2^16
-
-if your reduce task itself doesn't need ram (eg for wukong jobs), set this to more like 0.7.
-
-You'd like the "File bytes read" / "File bytes written" to be nil, and the spilled records close to zero. You *don't* want to see spilled records >> reduce input records -- this means the reducers had to do multiple layers of merge sort.
-
-
-**Memory**
-
-Here's a plausible configuration for a 16-GB physical machine with 8 cores:
-
---------------------  
-  `mapred.tasktracker.reduce.tasks.maximum`   = 2
-  `mapred.tasktracker.map.tasks.maximum`      = 5
-  `mapred.child.java.opts`                    = 2 GB
-  `mapred.map.child.java.opts`                = blank (inherits mapred.child.java.opts)
-  `mapred.reduce.child.java.opts`             = blank (inherits mapred.child.java.opts)
-  
-  total mappers' heap size                    = 10   GB (5 * 2GB)
-  total reducers' heap size                   =  4   GB (2 * 2GB)
-  datanode heap size                          =  0.5 GB
-  tasktracker heap size                       =  0.5 GB
-  .....                                         ...
-  total                                       = 15   GB on a 16 GB machine
---------------------
-
-  - It's rare that you need to increase the tasktracker heap at all. With both the TT and DN daemons, just monitor them under load; as long as the heap healthily exceeds their observed usage you're fine.
-
-  - If you find that most of your time is spent in reduce, you can grant the reducers more RAM with `mapred.reduce.child.java.opts` (in which case lower the child heap size setting for the mappers to compensate).
-
-* It's standard practice to disable swap -- you're better off OOM'ing footnote[OOM = Out of Memory error, causing the kernel to start killing processes outright] than swapping. If you do not disable swap, make sure to reduce the `swappiness` sysctl (5 is reasonable). Also consider setting `overcommit_memory` (1) and `overcommit_ratio` (100). Your sysadmin might get angry when you suggest these changes -- on a typical server, OOM errors cause pagers to go off. A misanthropically funny T-shirt, or whiskey, will help establish your bona fides.
-
-* `io.sort.mb` default `X`, recommended at least `1.25 * typical output size` (so for a 128MB block size, 160). It's reasonable to devote up to 70% of the child heap size to this value.
-
-* `io.sort.factor`: default `X`, recommended `io.sort.mb * 0.x5 * (seeks/s) / (thruput MB/s)`
-  - you want transfer time to dominate seek time; too many input streams and the disk will spend more time switching among them than reading them.
-  - you want the CPU well-fed: too few input streams and the merge sort will run the sort buffers dry.
-  - My laptop does 76 seeks/s and has 56 MB/s throughput, so with `io.sort.mb = 320` I'd set `io.sort.factor` to 27.
-  - A server that does 100 seeks/s with 100 MB/s throughput and a 160MB sort buffer should set `io.sort.factor` to 80.
-
-* `io.sort.record.percent` default `X`, recommended `X` (but adjust for certain jobs)
-
-* `mapred.reduce.parallel.copies`: default `X`, recommended  to be in the range of `sqrt(Nw*Nm)` to `Nw*Nm/2`  You should see the shuffle/copy phase of your reduce tasks speed up.
-
-* `mapred.job.reuse.jvm.num.tasks` default `1`, recommended `-1`. If a job requires a fresh JVM for each process, you can override that in its jobconf.
-
-* You never want Java to be doing stop-the-world garbage collection, but for large JVM heap sizes (above 4GB) they can become especially dangerous. If a full garbage collect takes too long, sockets can time out, causing loads to increase, causing garbage collects to happen, causing... trouble, as you can guess.
-
-* Given the number of files and amount of data you're storing, I would set the NN heap size agressively - at least 4GB to start, and keep an eye on it. Having the NN run out of memory is Not Good. Always make sure the secondary name node has the same heap setting as the name node.
-
-**Handlers and threads**
-
-* `dfs.namenode.handler.count`: default `X`, recommended: `(0.1 to 1) * size of cluster`, depending on how many blocks your HDFS holds.
-* `tasktracker.http.threads` default `X`, recommended `X`
-
-* Set `mapred.reduce.tasks` so that all your reduce slots are utilized -- If you typically only run one job at a time on the cluster, that means set it to the number of reduce slots. (You can adjust this per-job too). Roughly speaking: keep `number of reducers * reducer memory` within a factor of two of your reduce data size.
-
-* `dfs.datanode.handler.count`:  controls how many connections the datanodes can maintain. It's set to 3 -- you need to account for the constant presence of the flume connections. I think this may be causing the datanode problems. Something like 8-10 is appropriate.
-* You've increased `dfs.datanode.max.xcievers` to 8k, which is good.
-
-* `io.file.buffer.size`: default `X` recommended `65536`; always use a multiple of `4096`.
-
-**Storage**
-  
-* `mapred.system.dir`: default `X` recommende `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
-
-* Ensure the HDFS data dirs (`dfs.name.dir`, `dfs.data.dir` and `fs.checkpoint.dir`), and the mapreduce local scratch dirs (`mapred.system.dir`) include all your data volumes (and are off the root partition). The more volumes to write to the better. Include all the volumes in all of the preceding. If you have a lot of volumes, you'll need to ensure they're all attended to; have 0.5-2x the number of cores as physical volumes.
-  - HDFS-3652 -- don't name your dirs `/data1/hadoop/nn`, name them `/data1/hadoop/nn1`  ( final element differs).
-
-* Solid-state drives are unjustifiable from a cost perspective. Though they're radically better on seek they don't improve performance on bulk transfer, which is what limits Hadoop. Use regular disks.
-
-* Do not construct a RAID partition for Hadoop -- it is happiest with a large JBOD. (There's no danger to having hadoop sit on top of a RAID volume; you're just hurting performance).
-
-* We use `xfs`; I'd avoid `ext3`.
-
-* Set the `noatime` option (turns off tracking of last-access-time) -- otherwise the OS updates the disk on every read.
-
-* Increase the ulimits for open file handles (`nofile`) and number of processes (`nproc`) to a large number for the `hdfs` and `mapred` users: we use `32768` and `50000`.
-  - be aware: you need to fix the ulimit for root (?instead ? as well?)
-
-* `dfs.blockreport.intervalMsec`: default 3_600_000 (1 hour); recommended 21_600_000 (6 hours)  for a large cluster.
-  - 100_000 blocks per data node for a good ratio of CPU to disk
-
-**Other**
-
-* `mapred.map.output.compression.codec`: default XX, recommended ``. Enable Snappy codec for intermediate task output.
-  - `mapred.compress.map.output`
-  - `mapred.output.compress`
-  - `mapred.output.compression.type`
-  - `mapred.output.compression.codec`
-
-* `mapred.reduce.slowstart.completed.maps`: default `X`, recommended `0.2` for a single-purpose cluster, `0.8` for a multi-user cluster. Controls how long, as a fraction of the full map run, the reducers should wait to start. Set this too high, and you use the network poorly -- reducers will be waiting to copy all their data. Set this too low, and you will hog all the reduce slots.
-
-* `mapred.map.tasks.speculative.execution`: default: `true`, recommended: `true`. Speculative execution (FIXME: explain). So this setting makes jobs finish faster, but makes cluster utilization higher; the tradeoff is typically worth it, especially in a development environment. Disable this for any map-only job that writes to a database or has side effects besides its output. Also disable this if the map tasks are expensive and your cluster utilization is high.
-* `mapred.reduce.tasks.speculative.execution`: default `false`, recommended: `false`.
-
-* (hadoop log location): default `/var/log/hadoop`, recommended `/var/log/hadoop` (usually). As long as the root partition isn't under heavy load, store the logs on the root partition. Check the Jobtracker however -- it typically has a much larger log volume than the others, and low disk utilization otherwise. In other words: use the disk with the least competition.
-
-* `fs.trash.interval` default `1440` (one day), recommended `2880` (two days). I've found that files are either a) so huge I want them gone immediately, or b) of no real concern. A setting of two days lets you to realize in the afternoon today that you made a mistake in the morning yesterday, 
-
-* Unless you have a ton of people using the cluster, increase the amount of time the jobtracker holds log and job info; it's nice to be able to look back a couple days at least. Also increase `mapred.jobtracker.completeuserjobs.maximum` to a larger value. These are just for politeness to the folks writing jobs.
-  - `mapred.userlog.retain.hours`
-  - `mapred.jobtracker.retirejob.interval`
-  - `mapred.jobtracker.retirejob.check`
-  - `mapred.jobtracker.completeuserjobs.maximum`
-  - `mapred.job.tracker.retiredjobs.cache`
-  - `mapred.jobtracker.restart.recover`
-
-
-* Bump `mapreduce.job.counters.limit` -- it's not configurable per-job.
 
 == Tuning pt 2 ==
 
@@ -231,122 +169,6 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
   - tasktracker.http.threads
   - mapred.reduce.parallel.copies
 
-
-=== Tuning the Cluster to the Job ===
-
-Our usual work pattern is
-
-* Get the job working locally on a reduced dataset
-  - for a wukong job, you don't even need hadoop; use `cat` and pipes.
-* Profile its run time on a small cluster
-
-=== Conclusions ===
-
-For data that will be read much more often than it's written, 
-
-* Produce output files of 1-4 GB with a block size of 128MB
-  - if there's an obvious join key, do a total sort. This lets you do a merge join later.
-
 === coupling constants ===
 
 Tuning and coupling constants the example GC says look at what it constraints is and look at the natural time scale of the system for instance you can turn on data into time using throughput so to think about the palm case of the reducer there's trade-off between Emery just fine bio for network
-
-=== Happy Mappers ===
-
-==== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**. =====
-
-==== A Happy Mapper is Well-fed
-
-The amount of data each mapper sees is governed by
-
-* File size
-* HDFS block size
-* `mapred.min.split.size`
-
-* Map tasks should take longer to run than to start. If mappers finish in less than a minute or two, and you have control over how the input data is allocated, try to feed each more data. In general, 128MB is sufficient; we set our HDFS block size to that value.
-
-==== A Happy Mapper finishes with its friends ====
-
-Assuming well-fed mappers, you would like every mapper to finish at roughly the same time. The reduce cannot start until all mappers have finished. Why would different mappers take different amounts of time?
-
-* large variation in file size
-* large variation in load -- for example, if the distribution of reducers is uneven, the machines with multiple reducers will run more slowly in general
-* on a large cluster, long-running map tasks will expose which machines are slowest.
-
-==== A Happy Mapper is Busy ====
-
-Assuming mappers are well fed and prompt, you would like to have nearly every mapper running a job.
-
-
-* Assuming every mapper is well fed and every mapper is running a job, 
-
-
-Pig can use the combine splits setting to make this intelligently faster. Watch out for weirdness with newer versions of pig and older versions of HBase.
-
-If you're reading from S3, dial up the min split size as large as 1-2 GB (but not 
-
-==== A Happy Mapper has no Reducer =====
-
-
-==== Match the reducer heap size to the data it processes ====
-  
-===== A Happy Reducer is **well-balanced**, has **few merge passes**, has **good RAM/data ratio**, and a **justifiable data rate** =====
-
-* **well-balanced**: 
-
-
-=== JVM Tuning ===
-
-Abandon Hope All Ye who Enter Here
- From  http://www.infoq.com/interviews/szegedi-performance-tuning[InfoQ: Attila Szegedi on JVM and GC Performance Tuning at Twitter]
-
-__________________________________________________________________________
-So when go and deal with a performance problem with some team within Twitter, are you looking at the code first or do you tend to look at the way the garbage collector’s configured or where do you start?
-Well, a garbage collector is a global service for a particular JVM and as such, its own operation is affected by the operation of all the code in the JVM which is the Java libraries, third party libraries that have been used and so on, which means that, you can’t really, or, let me put it this way: if you need to look at the application code in order to tune the garbage collector, then you are doing it wrong because from the point of view of the application, garbage collectors are a blackbox and vice-versa.
-
-From the point of view of the garbage collector, the application is a blackbox. You only just see the statistical behavior basically: allocation rates, the typical duration of life of the objects and so on. So, the correct way to tune the GC is to actually inspect the GC logs, see the overall utilization of memory, memory patterns, GC frequencies - observe it over time and tune with that in mind.
-And you would do that level of logging in production?
-Yes, we do. It’s not that heavy because GC will only log when it does something. Now, if it’s doing something too frequently, then your problem is not the logging; then your problem is that it’s doing something too frequently and when it’s sufficiently nicely tuned, then it’s infrequent than compared to the work that it has to do to clean up memory, just the cost of writing a line to the log is completely negligible. You don’t really perceive that.
-So when we are talking about tuning the collector, we are mostly talking about the length and frequency of pauses, right?
-Yes, that’s the thing that bites us, yes.
-What are the main factors that contribute to that within HotSpot. Do you use HotSpot? So within the HotSpot collector?
-Yes. So, within HotSpot, the frequency and duration of the garbage collector pauses; well, generally: if you had a JVM with infinite memory, then you will never have to GC, right? And if you have a JVM with a single byte of free memory then you are GC-ing all the time. And between the two extremes, you have an asymptotically decreasing proportion of your CPU going towards GC which basically means that the best way to minimize the frequencies of your GC is to give your JVM as much memory as you can. Specifically, the frequency of minor GCs is pretty much exactly inversely proportional to the size of the new generation. And as for the old generation GCs, but you really want to avoid those altogether. So, you want to tune your systems so that those never happen. It’s another question whether it’s actually possible to achieve in a non-trivial system with a HotSpot, it’s hard.
-__________________________________________________________________________
-
-
-Using http://www.textuality.com/bonnie/advice.html[bonnie] for disk benchmarking:
-
---------------------
-$ bonnie -d /tmp -s 2000 -m worblehat-Hitachi-HTS725050A9A362 / File '/tmp/Bonnie.97743', size: 2097152000
-
-                 -------Sequential Output-------- ---Sequential Input-- --Random--
-                 -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
-Machine      GB   M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
-worblehat     2    58.4 54.2  92.2 13.3  57.9  6.2 157.9 100   5593  100  2067  2.6   
-worblehat     8    73.6 67.6  70.6 10.2  31.6  4.2  68.9 59.6  53.8  3.8   185  1.8
-worblehat    32    48.7 55.0  53.4 18.6  22.6  2.7  54.4 47.7  55.8  4.8    76  1.2
-
-
-In phase 1, Bonnie wrote the file by doing 2000 million putc() macro invocations
-In phase 2, Bonnie wrote the 2000-Mb file using efficient block writes
-In phase 3, Bonnie ran through the 2000-Mb file just created, changing each block and rewriting it
-In phase 4, Bonnie read the file using 2000 million gets() macro invocations
-In phase 5, Bonnie read the 2000-Mb file using efficient block reads
-In phase 6, Bonnie created 4 child processes, and had them execute 4000 seeks to random locations in the file. On 10% of these seeks, they changed the block that they had read and re-wrote it.
-
-worblehat ||                      | 
-2000      || MB                   | 
-  58.4    || r  seq char   M/sec  | An output rate of 58.4 M per second.
-  54.2    || r  seq char   %CPU   | ... consuming 54.2% of one CPU's time.
-  92.2    || r  seq block  M/sec  | Output rate of 92.2 M per second.
-  12.3    || r  seq block  %CPU   | ... consuming 12.3% of one CPU's time.
-  57.9    || rw seq rewrt  M/sec  | Cover 57.9 M per second.
-   6.2    || rw seq rewrt  %CPU   | ... consuming 6.2% of one CPU's time.
- 157.9    || w  seq char   M/sec  | Input rate of 157.9 M per second.
- 100      || w  seq char   %CPU   | This work consumed 100% of one CPU's time. This is amazingly high. The 2GB file is probably too small to be an effective test.
-5593      || w  seq block  M/sec  | Input rate of 5592 M per second.
- 100      || w  seq block  %CPU   | ... this work consumed 100% of one CPU's time.
-2067      || r  rand seeks /sec   | Effective seek rate was 2067 seeks per second.
-   2.6    || r  rand seeks %CPU   | ... consuming 2.6% of one CPU's time.
-
---------------------

@@ -1,0 +1,11 @@
+Input files are split and assigned to mappers.
+Each mapper will receive a chunk bounded by:
+
+* The file size -- normally, each mapper handles at most one file (and typically, one part of a very
+  large file). (footnote: Pig will pre-combine small files into single map inputs with the
+  `pig.splitCombination` commandline parameter.)
+* Min split size -- up to the size of each file, you can force hadoop to make each split larger than `mapred.min.split.size`
+* Block size -- the natural unit of data to feed each map task is the size of an HDFS file chunk;
+  this is what lets Hadoop "bring the compute to the data".
+
+If the

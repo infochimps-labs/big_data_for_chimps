@@ -1,3 +1,62 @@
+=== How big is a Terabyte? ===
+
+colobus-master-0 /usr/lib/hadoop$ hdp-du s3n://bigdata.chimpy.us/data/results/wikipedia/full
+Found 5 items
+s3n://bigdata.chimpy.us/data/results/wikipedia/full/page_metadata      	     2233601837	         2.1 GB
+s3n://bigdata.chimpy.us/data/results/wikipedia/full/pagelinks          	    49777662270	        46.4 GB
+s3n://bigdata.chimpy.us/data/results/wikipedia/full/pageviews          	   846600801080	       788.5 GB
+s3n://bigdata.chimpy.us/data/results/wikipedia/full/redirects_page_metadata	      400190601	       381.7 MB
+s3n://bigdata.chimpy.us/data/results/wikipedia/full/undirected_pagelinks	    13182759459	        12.3 GB
+                                                       5 entries       	   912195015247	       849.5 GB
+
+wikipedia corpus: 	40 GB
+Hour-by-hour weather: 	12 GB
+
+Every pageview of the World Cup website during the year: 	1TB
+Every pitch of every MLB baseball game, with full game state, 2007-2011 < 100 GB
+
+10 trillion digits of Pi
+Google Books N-Grams			2 TB
+Common Crawl Web Corpus			60 TB
+Planet.osm contains the entire planet. This is a snapshot of the current data, usually from last Wednesday. This is almost 20 GB compressed or 150 GB uncompressed XML.
+
+
+For the below: the *must* haves, not the "gee that would be swell"
+
+How much data under management do customers have, month on month, bringing in?
+* cold load?
+* hot load?
+How many disparate data sources?
+
+How large is analytic team?
+
+* "I use Amazon cloud infrastructure; it's important you run on AWS"
+* "I don't care where
+* Exploratory data analysis
+
+
+From http://developer.yahoo.com/blogs/hadoop/posts/2010/05/scalability_of_the_hadoop_dist/ -- May 5, 2010
+
+	Throughput
+Get block locations	126,119 ops/s
+Create new block	5,600 ops/s
+
+Throughput
+Average read throughput	66 MB/s
+Average write throughput	40 MB/s
+
+terasort
+
+ On a 100-node cluster with a quad dual-core CPU hardware the running time should be roughly within
+ 10 minutes (one of our customers sorted 1TB in 6 minutes on a 76-node cluster, the numbers are
+ likely to go down with new 12-core CPU machines). 
+
+March 30, 2010
+ 
+ 4 1TB hard disks in a JBOD (Just a Bunch Of Disks) configuration
+2 quad core CPUs, running at least 2-2.5GHz
+16-24GBs of RAM (24-32GBs if you’re considering HBase)
+Gigabit Ethernet
 
 http://www.cs.duke.edu/starfish/mr-apps.html
 
@@ -39,6 +98,67 @@ From http://www.cs.duke.edu/starfish/files/socc10-mr-opt.pdf
 	dfs.replication                        	Block replication factor in Hadoop's HDFS filesystem                	3       	2
 	dfs.block.size                         	HDFS block size (data size processed per mapper task in our setting)	64MB    	128MB
 
+
+
+=== JVM Tuning ===
+
+Abandon Hope All Ye who Enter Here
+ From  http://www.infoq.com/interviews/szegedi-performance-tuning[InfoQ: Attila Szegedi on JVM and GC Performance Tuning at Twitter]
+
+__________________________________________________________________________
+So when go and deal with a performance problem with some team within Twitter, are you looking at the code first or do you tend to look at the way the garbage collector’s configured or where do you start?
+Well, a garbage collector is a global service for a particular JVM and as such, its own operation is affected by the operation of all the code in the JVM which is the Java libraries, third party libraries that have been used and so on, which means that, you can’t really, or, let me put it this way: if you need to look at the application code in order to tune the garbage collector, then you are doing it wrong because from the point of view of the application, garbage collectors are a blackbox and vice-versa.
+
+From the point of view of the garbage collector, the application is a blackbox. You only just see the statistical behavior basically: allocation rates, the typical duration of life of the objects and so on. So, the correct way to tune the GC is to actually inspect the GC logs, see the overall utilization of memory, memory patterns, GC frequencies - observe it over time and tune with that in mind.
+And you would do that level of logging in production?
+Yes, we do. It’s not that heavy because GC will only log when it does something. Now, if it’s doing something too frequently, then your problem is not the logging; then your problem is that it’s doing something too frequently and when it’s sufficiently nicely tuned, then it’s infrequent than compared to the work that it has to do to clean up memory, just the cost of writing a line to the log is completely negligible. You don’t really perceive that.
+So when we are talking about tuning the collector, we are mostly talking about the length and frequency of pauses, right?
+Yes, that’s the thing that bites us, yes.
+What are the main factors that contribute to that within HotSpot. Do you use HotSpot? So within the HotSpot collector?
+Yes. So, within HotSpot, the frequency and duration of the garbage collector pauses; well, generally: if you had a JVM with infinite memory, then you will never have to GC, right? And if you have a JVM with a single byte of free memory then you are GC-ing all the time. And between the two extremes, you have an asymptotically decreasing proportion of your CPU going towards GC which basically means that the best way to minimize the frequencies of your GC is to give your JVM as much memory as you can. Specifically, the frequency of minor GCs is pretty much exactly inversely proportional to the size of the new generation. And as for the old generation GCs, but you really want to avoid those altogether. So, you want to tune your systems so that those never happen. It’s another question whether it’s actually possible to achieve in a non-trivial system with a HotSpot, it’s hard.
+__________________________________________________________________________
+
+
+Using http://www.textuality.com/bonnie/advice.html[bonnie] for disk benchmarking:
+
+--------------------
+$ bonnie -d /tmp -s 2000 -m worblehat-Hitachi-HTS725050A9A362 / File '/tmp/Bonnie.97743', size: 2097152000
+
+                 -------Sequential Output-------- ---Sequential Input-- --Random--
+                 -Per Char- --Block--- -Rewrite-- -Per Char- --Block--- --Seeks---
+Machine      GB   M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU M/sec %CPU  /sec %CPU
+worblehat     2    58.4 54.2  92.2 13.3  57.9  6.2 157.9 100   5593  100  2067  2.6   
+worblehat     8    73.6 67.6  70.6 10.2  31.6  4.2  68.9 59.6  53.8  3.8   185  1.8
+worblehat    32    48.7 55.0  53.4 18.6  22.6  2.7  54.4 47.7  55.8  4.8    76  1.2
+
+
+In phase 1, Bonnie wrote the file by doing 2000 million putc() macro invocations
+In phase 2, Bonnie wrote the 2000-Mb file using efficient block writes
+In phase 3, Bonnie ran through the 2000-Mb file just created, changing each block and rewriting it
+In phase 4, Bonnie read the file using 2000 million gets() macro invocations
+In phase 5, Bonnie read the 2000-Mb file using efficient block reads
+In phase 6, Bonnie created 4 child processes, and had them execute 4000 seeks to random locations in the file. On 10% of these seeks, they changed the block that they had read and re-wrote it.
+
+worblehat ||                      | 
+2000      || MB                   | 
+  58.4    || r  seq char   M/sec  | An output rate of 58.4 M per second.
+  54.2    || r  seq char   %CPU   | ... consuming 54.2% of one CPU's time.
+  92.2    || r  seq block  M/sec  | Output rate of 92.2 M per second.
+  12.3    || r  seq block  %CPU   | ... consuming 12.3% of one CPU's time.
+  57.9    || rw seq rewrt  M/sec  | Cover 57.9 M per second.
+   6.2    || rw seq rewrt  %CPU   | ... consuming 6.2% of one CPU's time.
+ 157.9    || w  seq char   M/sec  | Input rate of 157.9 M per second.
+ 100      || w  seq char   %CPU   | This work consumed 100% of one CPU's time. This is amazingly high. The 2GB file is probably too small to be an effective test.
+5593      || w  seq block  M/sec  | Input rate of 5592 M per second.
+ 100      || w  seq block  %CPU   | ... this work consumed 100% of one CPU's time.
+2067      || r  rand seeks /sec   | Effective seek rate was 2067 seeks per second.
+   2.6    || r  rand seeks %CPU   | ... consuming 2.6% of one CPU's time.
+
+--------------------
+
+	
+=== PigMix ===
+	
 quoted from PigMix docs:
 
 
