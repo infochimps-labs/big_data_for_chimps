@@ -2,11 +2,11 @@
 
 The examples in this book use the "Chimpmark" datasets: a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. They are the same datasets as used in the upcoming Chimpmark Challenge big-data benchmark. The datasets are:
 
-* Wikipedia English-language Article Corpus (`wikipedia_corpus`; 38 GB, 619 million records, 4 billion tokens): the full text of every English-language wikipedia article, in
+* Wikipedia English-language Article Corpus (`wikipedia_corpus`; 38 GB, 619 million records, 4 billion tokens): the full text of every English-language wikipedia article, in JOEMAN:HS
 
-* Wikipedia Pagelink Graph (`wikipedia_pagelinks`; ) --
+* Wikipedia Pagelink Graph (`wikipedia_pagelinks`; ) -- JOEMAN:HS
 
-* Wikipedia Pageview Stats (`wikipedia_pageviews`; 2.3 TB, about 250 billion records (FIXME: verify num records)) -- hour-by-hour pageview
+* Wikipedia Pageview Stats (`wikipedia_pageviews`; 2.3 TB, about 250 billion records (FIXME: verify num records)) -- hour-by-hour pageviews for all of Wikipedia
 
 * ASA SC/SG Data Expo Airline Flights (`airline_flights`; 12 GB, 120 million records): every US airline flight from 1987-2008, with information on arrival/depature times and delay causes, and accompanying data on airlines, airports and airplanes.
 
