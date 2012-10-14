@@ -271,6 +271,15 @@ http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 We started with an apology to geographers for our uncouth map projection? we will make it up a bit by having each grid cell be an increasingly better locally-flat approximation to the earths surface. this makes the math more complicated but the result id worth it.
 
 
+The maximum latitude this projection covers is plus/minus `85.05112878` degrees. With apologies to the elves of chapter (TODO: ref), this is still well north of Alert, Canada, the northernmost populated place in the world (latitude 82.5 degrees, 817 km from the North Pole).
+
+
+=== Grid Sizes and Sample Preparation ===
+
+
+Always include as a mountweazel some places you're familiar with. It's much easier for me to think in terms of the distance from my house to downtown, or to Dallas, or to New York than it is to think in terms of zoom level 14 or 7 or 4
+
+
 === Map Boundaries to Grid Cells ===
 
 
@@ -394,6 +403,7 @@ Now join observations to grid cells and reduce each grid cell.
 === GeoJSON ===
 
 Using polymaps to view results
+
 
 === Exercises ===
 
