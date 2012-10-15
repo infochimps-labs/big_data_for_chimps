@@ -47,6 +47,10 @@ module Wukong
       1 << zl
     end
 
+    #
+    # Tile coordinates
+    #
+
     # Convert longitude in degrees to _floating-point_ tile x,y coordinates at given zoom level
     def lng_zl_to_tile_xf(longitude, zl)
       raise ArgumentError, "longitude must be within bounds ((#{longitude}) vs #{ALLOWED_LONGITUDE})" unless (ALLOWED_LONGITUDE.include?(longitude))
@@ -81,107 +85,114 @@ module Wukong
       [lng, lat]
     end
 
+    #
+    # Quadkey coordinates
+    #
+
+    # converts from even/odd state of tile x and tile y to quadkey. NOTE: bit order means y, x
+    BIT_TO_QUADKEY = { [false, false] => "0", [false, true] => "1", [true, false] => "2", [true, true] => "3", }
+    # converts from quadkey char to bits. NOTE: bit order means y, x
+    QUADKEY_TO_BIT = { "0" => [0,0], "1" => [0,1], "2" => [1,0], "3" => [1,1]}
+
     # Convert from tile x,y into a quadkey at a specified zoom level
-    def tile_xy_to_quadkey(tile_x, tile_y, zl)
-      quadkey = ""
-      for i in zl.downto(1)
-        digit    = 0
-        mask     = 1 << (i - 1)
-        digit   += 1 unless (tile_x & mask) == 0
-        digit   += 2 unless (tile_y & mask) == 0
-        quadkey += digit.to_s
+    def tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
+      quadkey_chars = []
+      tx = tile_x.to_i
+      ty = tile_y.to_i
+      zl.times do
+        quadkey_chars.push BIT_TO_QUADKEY[[ty.odd?, tx.odd?]] # bit order y,x
+        tx >>= 1 ; ty >>= 1
       end
-      return quadkey
+      quadkey_chars.join.reverse
     end
 
     # Convert a quadkey into tile x,y coordinates and level
-    def quadkey_to_tile_xy(quadkey)
+    def quadkey_to_tile_xy_zl(quadkey)
+      raise ArgumentError, "Quadkey must containing only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
       tile_x = tile_y = 0
       zl = quadkey.to_s.length
-      for i in zl.downto(1)
-        mask = 1 << (i - 1)
-        char = quadkey[zl - i]
-        case char
-        when "0" then next
-        when "1" then tile_x |= mask ; next
-        when "2" then tile_y |= mask ; next
-        when "3" then tile_x |= mask ; tile_y |= mask ; next
-        else
-          raise "Quadkey must be a string containing only the characters 0, 1, 2 or 3!"
-        end
+      tx = 0 ; ty = 0
+      quadkey.chars.each do |char|
+        ybit, xbit = QUADKEY_TO_BIT[char] # bit order y, x
+        tx = (tx << 1) + xbit
+        ty = (ty << 1) + ybit
       end
-      [tile_x, tile_y, zl]
+      [tx, ty, zl]
     end
 
     # Convert a lat/lng and zoom level into a quadkey
     def lng_lat_zl_to_quadkey(longitude, latitude, zl)
-      pixel_x, pixel_y = lng_lat_to_pixel_xy(longitude, latitude, zl)
-      tile_x,  tile_y  = pixel_xy_to_tile_xy(pixel_x, pixel_y)
-      tile_xy_to_quadkey(tile_x, tile_y, zl)
+      tile_x, tile_y = lng_lat_zl_to_tile_xy(longitude, latitude, zl)
+      tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
     end
+
+    #
+    # Bounding box coordinates
+    #
 
     # Convert a quadkey into a bounding box using adjacent tile
     def quadkey_to_bbox(quadkey)
-      tile_x,   tile_y, zl = quadkey_to_tile_xy(quadkey)
-      pixel_x0, pixel_y0      = tile_xy_to_pixel_xy(tile_x, tile_y)
-      top_lat,  top_lng       = pixel_xy_to_lng_lat(pixel_x0, pixel_y0, zl)
-
-      pixel_x1, pixel_y1      = tile_xy_to_pixel_xy(tile_x + 1, tile_y + 1)
-      btm_lat, btm_lng  = pixel_xy_to_lng_lat(pixel_x1, pixel_y1, zl)
-      [top_lat, top_lng, btm_lat, btm_lng]
+      tile_x, tile_y, zl = quadkey_to_tile_xy_zl(quadkey)
+      # bottom right of me is top left of my southeast neighbor
+      left,  top  = tile_xy_zl_to_lng_lat(tile_x,     tile_y,     zl)
+      right, btm  = tile_xy_zl_to_lng_lat(tile_x + 1, tile_y + 1, zl)
+      [left, top, right, btm]
     end
 
     # Retuns the smallest quadkey containing both of corners of the given bounding box
-    def quadkey_containing_bbox(lat_1, lng_1, lat_2, lng_2)
-      tile_1 = lng_lat_zl_to_quadkey(lat_1, lng_1, 23)
-      tile_2 = lng_lat_zl_to_quadkey(lat_2, lng_2, 23)
+    def quadkey_containing_bbox(left, top, right, btm)
+      qk_tl = lng_lat_zl_to_quadkey(left,  top, 23)
+      qk_2 = lng_lat_zl_to_quadkey(right, btm, 23)
+      # the containing qk is the longest one that both agree on
       containing_key = ""
-      tile_1.chars.zip(tile_2.chars).each do |pair|
-        break unless pair.first == pair.last
-        containing_key += pair.first
+      qk_tl.chars.zip(qk_2.chars).each do |char_tl, char_2|
+        break if char_tl != char_2
+        containing_key << char_tl
       end
       containing_key
     end
 
     # Returns a bounding box containing the circle created by the lat/lng and radius
     def lng_lat_rad_to_bbox(longitude, latitude, radius)
-      north_lat, north_lng = point_north(longitude, latitude, radius)
-      east_lat,  east_lng  = point_east(longitude, latitude, radius)
-      south_lat, south_lng = point_north(longitude, latitude, -radius)
-      west_lat,  west_lng  = point_east(longitude, latitude, -radius)
-      [north_lat, west_lng, south_lat, east_lng]
+      left, _    = point_east( longitude, latitude, -radius)
+      _,     top = point_north(longitude, latitude,  radius)
+      right, _   = point_east( longitude, latitude,  radius)
+      _,     btm = point_north(longitude, latitude, -radius)
+      [left, top, right, btm]
     end
 
     # Returns the centroid of a bounding box
     #
-    # @param [Array<Float, Float>] top_left  Longitude, Latitude of top left point
-    # @param [Array<Float, Float>] btm_right Longitude, Latitude of bottom right point
+    # @param [Array<Float, Float>] left_top  Longitude, Latitude of NW point
+    # @param [Array<Float, Float>] right_btm Longitude, Latitude of SE point
     #
     # @return [Array<Float, Float>] Longitude, Latitude of centroid
-    def bbox_centroid(top_left, btm_right)
-      lng1, lat1 = top_left
-      lng2, lat2 = btm_right
-      haversine_midpoint(lng_1, lat_1, lng_2, lat_2)
+    def bbox_centroid(left_top, right_btm)
+      haversine_midpoint(*left_top, *right_btm)
     end
 
     # Return the haversine distance in meters between two points
-    def haversine_distance(lng_1, lat_1, lng_2, lat_2)
-      delta_lng = (lng_2 - lng_1).abs.to_radians
-      delta_lat = (lat_2 - lat_1).abs.to_radians
-      lat_1_rad = lat_1.to_radians
-      lat_2_rad = lat_2.to_radians
+    def haversine_distance(left, top, right, btm)
+      delta_lng = (right - left).abs.to_radians
+      delta_lat = (btm   - top ).abs.to_radians
+      top_rad = top.to_radians
+      btm_rad = btm.to_radians
 
-      a = (Math.sin(delta_lat / 2.0))**2 + Math.cos(lat_1_rad) * Math.cos(lat_2_rad) * (Math.sin(delta_lng / 2.0))**2
-      c = 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a))
-      c * EARTH_RADIUS
+      aa = (Math.sin(delta_lat / 2.0))**2 + Math.cos(top_rad) * Math.cos(btm_rad) * (Math.sin(delta_lng / 2.0))**2
+      cc = 2.0 * Math.atan2(Math.sqrt(aa), Math.sqrt(1.0 - aa))
+      cc * EARTH_RADIUS
     end
 
     # Return the haversine midpoint in meters between two points
-    def haversine_midpoint(lng_1, lat_1, lng_2, lat_2)
-      bearing_x = Math.cos(lat_2.to_radians) * Math.cos((lng_2 - lng_1).to_radians)
-      bearing_y = Math.cos(lat_2.to_radians) * Math.sin((lng_2 - lng_1).to_radians)
-      mid_lat   = Math.atan2((Math.sin(lat_1.to_radians) + Math.sin(lat_2.to_radians)), (Math.sqrt((Math.cos(lat_1.to_radians) + bearing_x)**2 + bearing_y**2)))
-      mid_lng   = lng_1.to_radians + Math.atan2(bearing_y, (Math.cos(lat_1.to_radians) + bearing_x))
+    def haversine_midpoint(left, top, right, btm)
+      cos_btm   = Math.cos(btm.to_radians)
+      cos_top   = Math.cos(top.to_radians)
+      bearing_x = cos_btm * Math.cos((right - left).to_radians)
+      bearing_y = cos_btm * Math.sin((right - left).to_radians)
+      mid_lat   = Math.atan2(
+        (Math.sin(top.to_radians) + Math.sin(btm.to_radians)),
+        (Math.sqrt((cos_top + bearing_x)**2 + bearing_y**2)))
+      mid_lng   = left.to_radians + Math.atan2(bearing_y, (cos_top + bearing_x))
       [mid_lng.to_degrees, mid_lat.to_degrees]
     end
 
