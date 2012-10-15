@@ -9,3 +9,43 @@ Each mapper will receive a chunk bounded by:
   this is what lets Hadoop "bring the compute to the data".
 
 If the
+
+
+
+=== Choosing a file size ===
+
+==== Jobs with Map and Reduce ====
+
+For jobs that have a reducer, the total size of the output dataset divided by the number of reducers implies the size of your output files footnote:[Large variance in counts of reduce keys not only drives up reducer run times, it causes variance in output sizes; but that's just insult added to injury. Worry about that before you worry about the target file size.].
+Of course your working dataset is less than a few hundred MB this doesn't matter.
+
+If your working set is large enough to care and less than about 10 TB, size your reduce set for files of about 1 to 2 GB. 
+
+* _Number of mappers_: by default, Hadoop will launch one mapper per HDFS block; it won't assign more than one file to each mapper footnote:[Pig has a special option to roll up small files]. More than a few thousand 
+
+* _Reducer efficiency_: as explained later (TODO: ref reducer_size), your reducers are most efficient at 0.5 to 2 GB. 
+
+* _HDFS block size_: `>=` 1-2 GB -- a typically-seen hadoop block size is 128 MB; as you'll see later, there's a good case for even larger block sizes. You'd like each file to hold 4 or more blocks.
+* _your network connection_ (`<` 4GB): a mid-level US internet connection will download a 4 GB file segment in about 10 minutes, upload it in about 2 hours.
+* _a DVD_: `<` 4 GB -- A DVD holds about 4GB. I don't know if you use DVDs still, but it's a data point.
+* _Cloud file stores_: `<` 5 GB -- The Amazon S3 system now allows files greater than 5 GB, but it requires a special multi-part upload transfer.
+* _Browsability_: a 1 GB file has about a million 1kB records.
+
+
+Even if you don't find any of those compelling enough to hang your hat on, I'll just say that files of 2 GB are large enough to be efficient and small enough to be manageable; they also avoid those upper limits even with natural variance in reduce sizes.
+
+If your dataset is
+
+==== Mapper-only jobs ====
+
+
+There's a tradeoff:
+
+If you set your min-split-size larger than your block size, you'll get non-local map tasks, which puts a load on your network.
+
+However, if you let it launch one job per block, you'll have two problems. First, one mapper per HDFS block can cause a large number of tasks: a 1 TB input dataset of 128 MB HDFS blocks requires 8,000 map tasks. Make sure your map task runtimes aren't swamped by job startup times and that your jobtracker heap size has been configured to handle that job count. Secondly, if your job is ever-so-slightly expansive -- if it turns a 128 MB input block into a 130 MB output file -- then you will double the block count of the dataset. It takes twice the actual size to store on disk and implies twice the count of mappers in subsequent stages. 
+
+My recommendation: (TODO: need to re-confirm with numbers; current readers please take with a grain of salt.)
+
+To learn more, see the 
+

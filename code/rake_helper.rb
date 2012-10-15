@@ -14,6 +14,7 @@ task :force
 
 Pathname.register_paths(
   book_root: BOOK_ROOT,
+  root: [:book_root]
   code: [:book_root, 'code'],
   data: [:book_root, 'data'],
   work: [:book_root, 'tmp'],

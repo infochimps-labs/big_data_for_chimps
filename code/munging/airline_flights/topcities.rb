@@ -11,7 +11,7 @@ Pathname.register_paths(
   )
 
 AIRPORTS_TO_MATCH = [
-  [ 'Tokyo',              1, "NRT", ],
+  [ 'Tokyo',              1, "HND", ],
   [ 'Guangzhou',          2, "CAN", ],
   [ 'Seoul',              3, "ICN", ],
   [ 'Shanghai',           4, "PVG", ],
@@ -126,6 +126,7 @@ AIRPORTS_TO_MATCH = [
   [ 'Dallas',           113, "DFW", ],
   [ 'Las.*Vegas',       114, "LAS", ],
   [ 'Antalya',          115, "AYT", ],
+  [ 'Auckland',         116, "AKL", ],
 ]
 
 MATCHED_AIRPORTS = {}

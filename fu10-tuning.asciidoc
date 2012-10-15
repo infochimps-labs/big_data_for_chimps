@@ -108,6 +108,16 @@ an m2.2xlarge:
   - overall 50 GB in, 53 GB out, 12.5 min * 6 m2.2xl = $1.12
   - for 1 TB, ~ 30 m2.2xl 50 min
 
+
+=== Happy Reducers ===
+
+
+<<reducer_size>>
+==== Merge Sort Input Buffers ====
+
+
+In pre-2.0 Hadoop (the version most commonly found at time of writing in 2012), there's a hard limit of 2 GB in the buffers used for merge sorting of mapper outputs footnote[it's even worse than that, actually; see `mapred.job.shuffle.input.buffer.percent` in the tuning-for-the-foolish chapter.]. You want to make good use of those buffers, but 
+
 == Hadoop Tuning for the foolish and brave
 
 === Measuring your system: theoretical limits ===
