@@ -10,6 +10,7 @@ Bachelor of Arts, Computer Science - Cornell University, Ithaca NY, 1992-1996
 * Core committer for Wukong, the leading ruby library for Hadoop 
 * Core committer for Ironfan, a framework for provisioning complex distributed systems in the cloud or data center.
 * Wrote the most widely-used cookbook for deploying hadoop clusters using Chef
+* Contributed chapter to _The Definitive Guide to Hadoop_ by Tom White
 
 
 

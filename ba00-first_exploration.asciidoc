@@ -13,13 +13,15 @@ Hadoop's bargain is thus: you must agree to write all your programs according to
 
 For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
 
-Let's walk through an example. I'm going to leave out the code samples for the moment (you'll see them later in the book) so we can concentrate on the step-by-step transformation of the data
+Let's walk through an example. I'm going to leave out the code samples for the moment (you'll see them later in the book) so we can concentrate on the step-by-step transformation of the data.
 
 === Where is Barbecue?
 
 The Wikipedia community has geolocated a great number of its articles. Not just defined places like Austin, TX, but one million deep: landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World") have computer-readable locations. What's more, since the connections among pages are robot-legible, links within topics can be read to imply a geolocation -- the movie "Dazed and Confused" (which took place in austin) and the artist Janis Joplin (who got her start in Austin) can be identifiably paired with the loose geolocation of Austin, TX.
 
-Among all these first-and-second level connections, there's so much structure that it should be possible to identify the words that define the cultural "flavor" of a region -- and conversely, to identify the regional flavor of a topic. Here's how hadoop makes answering a deep question like that simple.
+Among all these first-and-second level connections, there's so much structure that it should be possible to identify the words that define the cultural "flavor" of a region -- and conversely, to identify the regional flavor of a topic. Here's how Hadoop makes answering a deep question like that simple.
+
+JOEMAN:Comment Consider forming this into a more clear question. The analysis that proceeds is of course interesting, but you don't stage me with a very clear question. Seeking the 'flavor' of a region doesn't immediately strike me as a problem I have or can imagine having - unless I'm trying to create a Lonely Planet guide, for example. More context for the example can encourage interest and attention.
 
 ==== Summarize every page on Wikipedia
 
@@ -87,7 +89,7 @@ image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Be
 
 We accomplished a fairly sophisticated data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
 
-As you'll see, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no hadoop cluster in sight; and they will then run, unchanged, against the whole of wikipedia on dozens or hundreds of machines in a hadoop cluster.
+As you'll see, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
 
 That's the approach we'll follow through this book: develop simple, maintainable transform/reshape scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 

@@ -30,7 +30,7 @@ Feel free to hop around among chapters; the application chapters don't have larg
 
 You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should correspond cleanly to languages like Python or Scala.
 
-You should a
+You should a JOEMAN:HS
 
 All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You don't *need* to have an existing Hadoop installation, but you won't really be learning unless you spend some time on a real environment. The book gives straightforward instructions for creating a Hadoop cluster on the Amazon EC2 cloud.
 
@@ -39,11 +39,11 @@ You should have an actual project in mind that requires a big data toolkit to so
 [[about_is_not_for]]
 === Who this book is not for ===
 
-This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
+This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
 
 That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production. 
 
-The book does have some content on machine learning with Hadoop, on provisioning and deploying hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
+The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 
 [[about_how_written]]
 === How this book is being written ===

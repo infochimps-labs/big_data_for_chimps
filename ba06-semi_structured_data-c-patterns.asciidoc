@@ -1,7 +1,7 @@
 
-To explore data, you need data, in a form you can use, and that means engaging in the necassary evils of data munging: code to turn the data you have into the data you'd like to use. Whether it's public or commercial data ((data_commons)), data from a legacy database, or managing unruly human-entered data, you will need to effectively
+To explore data, you need data, in a form you can use, and that means engaging in the necessary evils of data munging: code to turn the data you have into the data you'd like to use. Whether it's public or commercial data ((data_commons)), data from a legacy database, or managing unruly human-entered data, you will need to effectively transform the data into a format that can be used and understood.
 
-Your goal is to take data from the _source domain_ (the shape, structure and cognitive model of the raw data) to the _target domain_ (the shape, structure and cognitive model you will work with) in a process that is 
+Your goal is to take data from the _source domain_ (the shape, structure and cognitive model of the raw data) to the _target domain_ (the shape, structure and cognitive model you will work with) in a process that is JOEMAN:HS
 
 // prepare? munge?
 
@@ -12,7 +12,7 @@ Your goal is to take data from the _source domain_ (the shape, structure and cog
 * Transform: the _semantic_ transformation of structured data in the source domain to active models in the target domain
 * Normalize
   ** clean up errors and missing fields
-  ** augment with data drom other tables
+  ** augment with data from other tables
 * Canonicalization:
   ** choose exemplars and mountweazels
   ** pull summary statistics
@@ -32,12 +32,12 @@ DL TODO: (fix style (document pig style); align terminology with above `wikipedi
 
 image::images/semistructured_data_workflow.png[Semistructured Data Workflow]
 
-* Raw data, as it comes from the source. This could be unstructured (lines of text,
+* Raw data, as it comes from the source. This could be unstructured (lines of text, JOEMAN:HS
 * Source domain models:
 * Target domain models:
 * Transformer:
 
-You'll be tempted to move code too far to the right -- to put transformation code into
+You'll be tempted to move code too far to the right -- to put transformation code into JOEMAN:HS
 Resist the urge. At the beginning of the project you're thinking about the details of extracting the data, and possibly still puzzling out the shape of the target domain models.
 Make the source domain models match the raw data as closely as reasonable, doing only the minimum effective work to make the data active.
 
@@ -51,8 +51,8 @@ Thomas Hobbes wrote that the natural life of man is "solitary, poor, nasty, brut
 and so should your data munging scripts be:
 
 * Solitary: write discrete, single concern scripts. It's much easier to validate the data when your transformations are simple to reason about. 
-* Poor: spend wisely. It's especially important to optimize for programmer time, not cluster efficency: you will probably spend more in opportunity cost to write the code than you ever will running it. Even if it will be a production ETL footnote:[ETL = Extraction, Transformation and Loading -- what you call data munging when it runs often and well enough to deserve an enterprise-y name] job, get it running well and then make it run quickly. The hard parts are not where you expect them to be.
-* Nasty: as you'll see, the real work in data munging are the special cases and domain incompatibilities. Ugly transformations will lead to necessarily ugly code, but even still there are ways to handle it. There's also a certain type of brittleness that is *good* -- a script that quietly introduces corrupt data 
+* Poor: spend wisely. It's especially important to optimize for programmer time, not cluster efficiency: you will probably spend more in opportunity cost to write the code than you ever will running it. Even if it will be a production ETL footnote:[ETL = Extraction, Transformation and Loading -- what you call data munging when it runs often and well enough to deserve an enterprise-y name] job, get it running well and then make it run quickly. The hard parts are not where you expect them to be.
+* Nasty: as you'll see, the real work in data munging are the special cases and domain incompatibilities. Ugly transformations will lead to necessarily ugly code, but even still there are ways to handle it. There's also a certain type of brittleness that is *good* -- a script that quietly introduces corrupt data JOEMAN:HS
 * Brutish: be effective, not elegant. Fight the ever-strong temptation to automate the in-automatable. Here are some street-fighting techniques we'll use below:
   ** Hand-curating a 200-row join table is the kind of thing you learn computer programing to avoid, but it's often the smart move.
   ** Faced with a few bad records that don't fit any particular pattern, you can write a script to recognize and repair them; or, if it's of modern size, just hand-fix them and save a diff. You've documented the change concisely and given future-you a chance to just re-apply the patch.

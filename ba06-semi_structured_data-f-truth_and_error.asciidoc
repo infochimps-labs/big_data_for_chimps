@@ -74,7 +74,7 @@ Given a billion of anything, one-in-a-million errors become commonplace. Given a
 
 A nice rule of thumb -- and an insidious fallacy, the kind that makes airplanes crash and economies crumble.  You may have a billion records *modelable* by a normal distribution, but you don't have a normal distribution of values.
 
-First of all, even as a statistical process, a successful model for the bulk is suspect at the extreme tails. Furthermore, it neglects the "Black Swan"
+First of all, even as a statistical process, a successful model for the bulk is suspect at the extreme tails. Furthermore, it neglects the "Black Swan" principle, that something unforeseen and unpredictable based on prior data could show up.
 
 ===== Unusual records are unusual
 
@@ -101,7 +101,7 @@ However, read broadly it's dangerous. 10 million years is long enough to let me 
 
 * sabotage by disgruntled employees 
 * an act of war causing simultaneous destruction of their datacenters
-* firmware failure simultaneously destroying every harddrive from one vendor
+* firmware failure simultaneously destroying every hard drive from one vendor
 * a software update with an errant exclamation point causing the system to invalidate good blocks and preserve bad blocks
 * http://en.wikipedia.org/wiki/Geomagnetic_reversal[Geomagnetic reversal] of the earth's magnetic field causing unmitigated spike in cosmic-ray error rate
 

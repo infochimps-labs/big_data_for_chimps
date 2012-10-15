@@ -1,11 +1,11 @@
 [[TODO]]
 == TODO / Errata ==
 
-
 * The chapter on tuning requires *heavy* technical review. It is largely synthesized from recommendations by others, but needs to be buttoned up and fact-checked.
 
 * The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
 
+* check that joeman is the man
 
 [[todo_tasks]]
 === Tasks for later ===
@@ -58,6 +58,11 @@ Conventions:
 
 Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]`
 (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
+
+===== JOEMAN:Notation
+| :HS			| Half Sentence
+| :Comment		| General editorial comment
+| :FIN			| Chapter / section needs finishing, conclusion, summary
 
 ===== Blocks
 
