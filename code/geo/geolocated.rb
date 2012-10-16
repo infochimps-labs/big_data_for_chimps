@@ -21,13 +21,76 @@ module Wukong
 
     module ByCoordinates
       extend Gorillib::Concern
-      included do |klass|
-        warn "You must define methods `longitude` and `latitude`" unless klass.method_defined?(:longitude) && klass.method_defined?(:latitude)
-      end
 
-      def quadkey(zl) ; tile_xy_to_quadkey(tile_x, tile_y) ; end
-      def tile_x(zl)  ; lng_lat_zl_to_tile_xy(latitude, longitude, zl)  ; end
+      # The quadkey is a string of 2-bit tile selectors for a quadtile
+      #
+      # @example
+      #   infochimps_hq = Geo::Place.receive("Infochimps HQ", -97.759003, 30.273884)
+      #   infochimps_hq.quadkey(8) # => "02313012"
+      #
+      # Interesting quadkey properties:
+      #
+      # * The quadkey length is its zoom level
+      #
+      # * To zoom out (lower zoom level, larger quadtile), just truncate the
+      #   quadkey: austin at ZL=8 has quadkey "02313012"; at ZL=3, "023"
+      #
+      # * Nearby points typically have "nearby" quadkeys: up to the smallest
+      #   tile that contains both, their quadkeys will have a common prefix.
+      #   If you sort your records by quadkey,
+      #   - Nearby points are nearby-ish on disk. (hello, HBase/Cassandra
+      #     database owners!) This allows efficient lookup and caching of
+      #     "popular" regions or repeated queries in an area.
+      #   - the tiles covering a region can be covered by a limited, enumerable
+      #     set of range scans. For map-reduce programmers, this leads to very
+      #     efficient reducers
+      #
+      # * The quadkey is the bit-interleaved combination of its tile ids:
+      #
+      #       tile_x      58  binary  0  0  1  1  1  0  1  0
+      #       tile_y      105 binary 0  1  1  0  1  0  0  1
+      #       interleaved     binary 00 10 11 01 11 00 01 10
+      #       quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
+      #
+      def quadkey(zl)    ; Wukong::Geolocated.tile_xy_zl_to_quadkey(  tile_x(zl), tile_y(zl), zl) ; end
 
+      # the packed quadkey is the integer formed by interleaving the bits of tile_x with tile_y:
+      #
+      #       tile_x      58  binary  0  0  1  1  1  0  1  0
+      #       tile_y      105 binary 0  1  1  0  1  0  0  1
+      #       interleaved     binary 00 10 11 01 11 00 01 10
+      #       quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
+      #
+      # (see `quadkey` for more.)
+      #
+      # At zoom level 15, the packed quadkey is a 30-bit unsigned integer --
+      # meaning you can store it in a pig `int`; for languages with an `unsigned
+      # int` type, you can go to zoom level 16 before you have to use a
+      # less-efficient type. Zoom level 15 has a resolution of about one tile
+      # per kilometer (about 1.25 km/tile near the equator; 0.75 km/tile at
+      # London's latitude). It takes 1 billion tiles to tile the world at that
+      # scale. Ruby's integer type goes up to 60 bits, enough for any practical
+      # zoom level.
+      #
+      def packed_qk      ; Wukong::Geolocated.tile_xy_zl_to_packed_qk(tile_x(zl), tile_y(zl), zl) ; end
+
+      # @return [Float] x index of the tile this object lies on at given zoom level
+      def tile_xf(zl)    ; Wukong::Geolocated.lng_zl_to_tile_xf(longitude, zl)  ; end
+      # @return [Float] y index of the tile this object lies on at given zoom level
+      def tile_yf(zl)    ; Wukong::Geolocated.lat_zl_to_tile_yf(latitude,  zl)  ; end
+      # @return [Integer] x index of the tile this object lies on at given zoom level
+      def tile_x(zl)     ; tile_xf(zl).floor  ; end
+      # @return [Integer] y index of the tile this object lies on at given zoom level
+      def tile_y(zl)     ; tile_yf(zl).floor  ; end
+
+      # @return [Float] tile coordinates `(x,y)` for this object at given zoom level
+      def tile_xy(zl)    ; [tile_x(xl), tile_y(zl)] ; end
+
+      # @returns [Array<Numeric, Numeric>] a `[longitude, latitude]` pair representing object as a point.
+      def lng_lat        ; [longitude, latitude] ; end
+
+      # @returns [left, top, right, btm]
+      def bbox_for_radius(radius) ; Wukong::Geolocated.lng_lat_rad_to_bbox(longitude, latitude, radius) ; end
     end
 
     # TODO: remove unless defined?
@@ -108,8 +171,7 @@ module Wukong
 
     # Convert a quadkey into tile x,y coordinates and level
     def quadkey_to_tile_xy_zl(quadkey)
-      raise ArgumentError, "Quadkey must containing only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
-      tile_x = tile_y = 0
+      raise ArgumentError, "Quadkey must contain only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
       zl = quadkey.to_s.length
       tx = 0 ; ty = 0
       quadkey.chars.each do |char|
@@ -118,6 +180,23 @@ module Wukong
         ty = (ty << 1) + ybit
       end
       [tx, ty, zl]
+    end
+
+    # Convert from tile x,y into a packed quadkey at a specified zoom level
+    def tile_xy_zl_to_packed_qk(tile_x, tile_y, zl)
+      # don't optimize unless you're sure your way is faster; string ops are
+      # faster than you think and loops are slower than you think
+      quadkey_str = tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
+      quadkey_str.to_i(4)
+    end
+
+    # Convert a packed quadkey (integer) into tile x,y coordinates and level
+    def packed_qk_zl_to_tile_xy(packed_qk, zl=16)
+      # don't "optimize" this without testing... string operations are faster than you think in ruby
+      raise ArgumentError, "Quadkey must be an integer in range of the zoom level: #{packed_qk}, #{zl}" unless packed_qk.is_a?(Fixnum) && (packed_qk < 2 ** (zl*2))
+      quadkey_rhs = packed_qk.to_s(4)
+      quadkey     = ("0" * (zl - quadkey_rhs.length)) << quadkey_rhs
+      quadkey_to_tile_xy_zl(quadkey)
     end
 
     # Convert a lat/lng and zoom level into a quadkey
