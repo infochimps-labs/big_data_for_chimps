@@ -93,19 +93,14 @@ module Wukong
       def bbox_for_radius(radius) ; Wukong::Geolocated.lng_lat_rad_to_bbox(longitude, latitude, radius) ; end
     end
 
-
-
-    # TODO: remove unless defined?
-    unless defined?(EARTH_RADIUS)
-      EARTH_RADIUS      =  6371000 # meters
-      MIN_LONGITUDE     = -180
-      MAX_LONGITUDE     =  180
-      MIN_LATITUDE      = -85.05112878
-      MAX_LATITUDE      =  85.05112878
-      ALLOWED_LONGITUDE = (MIN_LONGITUDE..MAX_LONGITUDE)
-      ALLOWED_LATITUDE  = (MIN_LATITUDE..MAX_LATITUDE)
-      TILE_PIXEL_SIZE   =  256
-    end
+    EARTH_RADIUS      =  6371000 # meters
+    MIN_LONGITUDE     = -180
+    MAX_LONGITUDE     =  180
+    MIN_LATITUDE      = -85.05112878
+    MAX_LATITUDE      =  85.05112878
+    ALLOWED_LONGITUDE = (MIN_LONGITUDE..MAX_LONGITUDE)
+    ALLOWED_LATITUDE  = (MIN_LATITUDE..MAX_LATITUDE)
+    TILE_PIXEL_SIZE   =  256
 
     # Width or height in number of tiles
     def map_tile_size(zl)

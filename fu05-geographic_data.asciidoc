@@ -42,7 +42,89 @@ The quadkey is a string of 2-bit tile selectors for a quadtile
   infochimps_hq = Geo::Place.receive("Infochimps HQ", -97.759003, 30.273884)
   infochimps_hq.quadkey(8) # => "02313012"
 
-Interesting quadtile properties:
+First, some preliminaries:
+
+    EARTH_RADIUS      =  6371000 # meters
+    MIN_LONGITUDE     = -180
+    MAX_LONGITUDE     =  180
+    MIN_LATITUDE      = -85.05112878
+    MAX_LATITUDE      =  85.05112878
+    ALLOWED_LONGITUDE = (MIN_LONGITUDE..MAX_LONGITUDE)
+    ALLOWED_LATITUDE  = (MIN_LATITUDE..MAX_LATITUDE)
+    TILE_PIXEL_SIZE   =  256
+
+    # Width or height in number of tiles
+    def map_tile_size(zl)
+      1 << zl
+    end
+
+It's straightforward to calculate tile_x indices from the longitude (because all the brutality is taken up in the Mercator projection's severe distortion).
+
+Finding the Y tile index requires a slightly more complicated formula:
+
+
+In code:
+    
+    # Convert longitude, latitude in degrees to _floating-point_ tile x,y coordinates at given zoom level
+    def lat_zl_to_tile_yf(longitude, latitude, zl)
+      tile_size = map_tile_size(zl)
+      xx = (longitude.to_f + 180.0) / 360.0
+      sin_lat = Math.sin(latitude.to_radians)
+      yy = Math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * Math::PI)
+      #
+      [ (map_tile_size(zl) * xx).floor,
+        (map_tile_size(zl) * (0.5 - yy)).floor ]
+    end
+
+    # Convert from tile_x, tile_y, zoom level to longitude and latitude in
+    # degrees (slight loss of precision).
+    #
+    # Tile coordinates may be floats or integer; they must lie within map range.
+    def tile_xy_zl_to_lng_lat(tile_x, tile_y, zl)
+      tile_size = map_tile_size(zl)
+      raise ArgumentError, "tile index must be within bounds ((#{tile_x},#{tile_y}) vs #{tile_size})" unless ((0..(tile_size-1)).include?(tile_x)) && ((0..(tile_size-1)).include?(tile_x))
+      xx =       (tile_x.to_f / tile_size)
+      yy = 0.5 - (tile_y.to_f / tile_size)
+      lng = 360.0 * xx - 180.0
+      lat = 90 - 360 * Math.atan(Math.exp(-yy * 2 * Math::PI)) / Math::PI
+      [lng, lat]
+    end
+
+===== Quadkey to and from Lng/Lat =====
+
+
+    # converts from even/odd state of tile x and tile y to quadkey. NOTE: bit order means y, x
+    BIT_TO_QUADKEY = { [false, false] => "0", [false, true] => "1", [true, false] => "2", [true, true] => "3", }
+    # converts from quadkey char to bits. NOTE: bit order means y, x
+    QUADKEY_TO_BIT = { "0" => [0,0], "1" => [0,1], "2" => [1,0], "3" => [1,1]}
+
+    # Convert from tile x,y into a quadkey at a specified zoom level
+    def tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
+      quadkey_chars = []
+      tx = tile_x.to_i
+      ty = tile_y.to_i
+      zl.times do
+        quadkey_chars.push BIT_TO_QUADKEY[[ty.odd?, tx.odd?]] # bit order y,x
+        tx >>= 1 ; ty >>= 1
+      end
+      quadkey_chars.join.reverse
+    end
+
+    # Convert a quadkey into tile x,y coordinates and level
+    def quadkey_to_tile_xy_zl(quadkey)
+      raise ArgumentError, "Quadkey must contain only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
+      zl = quadkey.to_s.length
+      tx = 0 ; ty = 0
+      quadkey.chars.each do |char|
+        ybit, xbit = QUADKEY_TO_BIT[char] # bit order y, x
+        tx = (tx << 1) + xbit
+        ty = (ty << 1) + ybit
+      end
+      [tx, ty, zl]
+    end
+
+ 
+==== Interesting quadtile properties ====
 
 * The quadkey length is its zoom level
 
@@ -72,7 +154,10 @@ Interesting quadtile properties:
 
 * a limited number of range scans suffice to cover any given area
 * each grid cell's parents are a 2-place bit shift of the grid index itself.
-  
+
+
+A 64-bit quadkey -- corresponding to zoom level 32 -- has an accuracty of better than 1 cm over the entire globe. In some intensive database installs, rather than storing longitude and latitude separately as floating-point numbers, consider storing either the interleaved packed quadkey, or the individual 32-bit tile ids as your indexed value. The performance impact for Hadoop is probably not worth it, but for a database schema it may be.
+
 References:
 
 * http://msdn.microsoft.com/en-us/library/bb259689.aspx
@@ -81,7 +166,6 @@ References:
 * https://github.com/simplegeo/polymaps
 
 === Quadkey Ready Reference ===
-
 
 
 image::images/quadkey_ref-zoom_levels.png[Quadtile properties and data storage sizes by zoom level]
@@ -93,9 +177,6 @@ image::images/quadkey_ref-world_cities.png[Quadtile Properties for major world c
 The (ref table) gives the full coordinates at every zoom level for our exemplar set.
 
 image::images/quadkey_ref-full_props-by_zl.png[Coordinates at every zoom level for some exemplars]
-
-
-
 
 ==== Quadtile practicalities ====
 
@@ -109,53 +190,59 @@ When points cross major tile boundaries, the result is less pretty. Austin's air
 
 image::images/fu05-geographic-path-hq-to-airport.png[Path from Chimp HQ to AUS Airport]
 
+
+===== Calculating Distances =====    
+
+To find the distance between two points on the globe, we use the Haversine formula
+
+
+in code:
+
+    # Return the haversine distance in meters between two points
+    def haversine_distance(left, top, right, btm)
+      delta_lng = (right - left).abs.to_radians
+      delta_lat = (btm   - top ).abs.to_radians
+      top_rad = top.to_radians
+      btm_rad = btm.to_radians
+
+      aa = (Math.sin(delta_lat / 2.0))**2 + Math.cos(top_rad) * Math.cos(btm_rad) * (Math.sin(delta_lng / 2.0))**2
+      cc = 2.0 * Math.atan2(Math.sqrt(aa), Math.sqrt(1.0 - aa))
+      cc * EARTH_RADIUS
+    end
+
+    # Return the haversine midpoint in meters between two points
+    def haversine_midpoint(left, top, right, btm)
+      cos_btm   = Math.cos(btm.to_radians)
+      cos_top   = Math.cos(top.to_radians)
+      bearing_x = cos_btm * Math.cos((right - left).to_radians)
+      bearing_y = cos_btm * Math.sin((right - left).to_radians)
+      mid_lat   = Math.atan2(
+        (Math.sin(top.to_radians) + Math.sin(btm.to_radians)),
+        (Math.sqrt((cos_top + bearing_x)**2 + bearing_y**2)))
+      mid_lng   = left.to_radians + Math.atan2(bearing_y, (cos_top + bearing_x))
+      [mid_lng.to_degrees, mid_lat.to_degrees]
+    end
+
+    # From a given point, calculate the point directly north a specified distance
+    def point_north(longitude, latitude, distance)
+      north_lat = (latitude.to_radians + (distance.to_f / EARTH_RADIUS)).to_degrees
+      [longitude, north_lat]
+    end
+
+    # From a given point, calculate the change in degrees directly east a given distance
+    def point_east(longitude, latitude, distance)
+      radius = EARTH_RADIUS * Math.sin(((Math::PI / 2.0) - latitude.to_radians.abs))
+      east_lng = (longitude.to_radians + (distance.to_f / radius)).to_degrees
+      [east_lng, latitude]
+    end
+
+
 === K-means clustering to summarize ===
 
 ==== Reference for sizes and zooms ====
 
 http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 
-
-
-
-
-
-
-1 tile at Zoom 11 is about { ben white, research, 183, 360 } -
-
-    ZL               11
-    G         468,  843
-    TMS       468, 1204
-    QT      02313012122
-    #tiles    4,194,304
-    MB@10k       40,960 MB
-
-1 tile at Zoom 12 is about {lake austin, rsrc, 183, mopac }
-
-    ZL               12
-    G         936, 1686
-    TMS       936, 2409
-    QT      023130121220
-    #tiles   16,777,216
-    MB@10k      163,840 MB
-
-1 tile at Zoom 13 is { lake austin, 38th, I35, mopac }
-
-    ZL               13
-    G        1872, 3372
-    TMS      1872, 4819
-    QT      0231301212200
-    #tiles   67,108,864
-    MB@10k      655,360 MB              2**26 * 10 * 1024 / (1024 ** 2)
-
-1 tile at Zoom 14 is { lake austin, 15th, I35, Lamar }
-
-    ZL               14
-    G        3743, 6745
-    TMS      3743, 9638
-    QT      02313012033113
-    #tiles  268,435,456
-    MB@10k    2,621,440
 
 === Map Points to Grid Cells ===
 
