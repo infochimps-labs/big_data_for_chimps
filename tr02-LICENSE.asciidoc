@@ -11,3 +11,10 @@ ____
 
 Code is Apache licensed unless specifically labeled otherwise.
 
+
+
+==== Open Street Map ====
+
+Some map images taken from Open Street Map, via Stamen's wonderful http://maps.stamen.com/m2i/#toner-lite/768:512/11/30.2901/-97.7497["Map -> Image" tool].
+
+

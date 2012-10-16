@@ -28,9 +28,9 @@ describe Wukong::Geolocated do
         class TestPoint
           include Gorillib::Model
           include Wukong::Geolocated::ByCoordinates
-          field :name,       String, position: 0,   description: "Name of this location"
-          field :longitude,  Float,  position: 1,   description: "Longitude (X) of a point, in decimal degrees"
-          field :latitude,   Float,  position: 2,   description: "Latitude (Y) of a point, in decimal degrees"
+          field :name,       String, position: 0,   doc: "Name of this location"
+          field :longitude,  Float,  position: 1,   doc: "Longitude (X) of a point, in decimal degrees"
+          field :latitude,   Float,  position: 2,   doc: "Latitude (Y) of a point, in decimal degrees"
         end
       end
       Wukong::TestPoint

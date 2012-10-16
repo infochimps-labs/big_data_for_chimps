@@ -2,12 +2,9 @@
 
 
 [[quadkey]]
-=== The Quadkey Grid System ===
-
-http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+=== The Quadtile Grid System ===
 
 
-=== K-means clustering to summarize ===
 Large-scale geodata processing in hadoop starts with the grid system, a simple butv very powerful idea.
 put the map on a simple, flat Mercator projection- the one that geographers cringe, where you just directly map longitude and latitude to (X,Y) (footnote: somehow in naetiral speech people want to say "lat, long". You should instead say "lng, lat" -- it's consistent with the (X, Y) convention and also avoids using ´long´, a keyword in pig and other languages).
 Now divide the world into four and make a Z pattern across them:
@@ -19,206 +16,95 @@ Now divide the world into four and make a Z pattern across them:
 
 Within each of those, make a Z again:
 
-what you end up with has the following properties:
+image::images/quadkeys-nearby_points_are_nearby.png[Z-path of quadtiles]
 
-* you have a 1-d index into a 2-d space
-* nearby points in space are typically nearby in index value. this means that geographic locality falls out of sorting -- Hadoop's fundamental locality operation
-*
+As you go along, index each tile:
+
+image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
+
+This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By sorting all records by the quadtile they rest on, geographic locality falls out of numerical locality. Hadoop's fundamental locality operation (TODO: reword)
+
+Each grid cell is contained in its parent
+
+image::images/quadkeys-numbering-zl0-zl1.png[Z-path of quad tiles]
+
+
+quadkeys-3d-stack
+
+The quadkey is a string of 2-bit tile selectors for a quadtile
+
+@example
+  infochimps_hq = Geo::Place.receive("Infochimps HQ", -97.759003, 30.273884)
+  infochimps_hq.quadkey(8) # => "02313012"
+
+Interesting quadtile properties:
+
+* The quadkey length is its zoom level
+
+* To zoom out (lower zoom level, larger quadtile), just truncate the
+  quadkey: austin at ZL=8 has quadkey "02313012"; at ZL=3, "023"
+
+* Nearby points typically have "nearby" quadkeys: up to the smallest
+  tile that contains both, their quadkeys will have a common prefix.
+  If you sort your records by quadkey,
+  - Nearby points are nearby-ish on disk. (hello, HBase/Cassandra
+    database owners!) This allows efficient lookup and caching of
+    "popular" regions or repeated queries in an area.
+  - the tiles covering a region can be covered by a limited, enumerable
+    set of range scans. For map-reduce programmers, this leads to very
+    efficient reducers
+
+* The quadkey is the bit-interleaved combination of its tile ids:
+
+      tile_x      58  binary  0  0  1  1  1  0  1  0
+      tile_y      105 binary 0  1  1  0  1  0  0  1
+      interleaved     binary 00 10 11 01 11 00 01 10
+      quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
+      packed                 11718
+
+      
+* You can also form a "packed" quadkey -- the integer formed by interleaving the bits as shown above. At zoom level 15, the packed quadkey is a 30-bit unsigned integer -- meaning you can store it in a pig `int`; for languages with an `unsigned int` type, you can go to zoom level 16 before you have to use a less-efficient type. Zoom level 15 has a resolution of about one tile per kilometer (about 1.25 km/tile near the equator; 0.75 km/tile at London's latitude). It takes 1 billion tiles to tile the world at that scale. 
+
 * a limited number of range scans suffice to cover any given area
 * each grid cell's parents are a 2-place bit shift of the grid index itself.
+  
+References:
+
+* http://msdn.microsoft.com/en-us/library/bb259689.aspx
+* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+* http://wiki.openstreetmap.org/wiki/QuadTiles
+* https://github.com/simplegeo/polymaps
+
+=== Quadkey Ready Reference ===
 
 
-quoting Bing maps docco:
 
-______
-	Given latitude and longitude in degrees, and the level of detail, the pixel XY coordinates can be calculated as follows:
+image::images/quadkey_ref-zoom_levels.png[Quadtile properties and data storage sizes by zoom level]
 
-	sin_lat = sin(latitude * pi/180)
-	tile_x  = floor( (2 ** level) * ((longitude + 180) / 360) )
-	tile_y  = floor( (2 ** level) * (0.5 – log((1 + sin_lat)/(1 – sin_lat)) / (4 * pi)) )
+Though quadtile properties do vary, the variance is modest within most of the inhabited world:
 
-	if lat >  85.05112878 then tile_y = 'A'
-	if lat < -85.05112878 then tile_y = 'B'
+image::images/quadkey_ref-world_cities.png[Quadtile Properties for major world cities]
 
-longitude and latitude are on the WGS 84 datum. So that the map can be square without tearing at the poles, the latitude is constrained to -85.05112878 to 85.05112878; longitude ranges naturally from -180 to +180 degrees
+The (ref table) gives the full coordinates at every zoom level for our exemplar set.
 
-Let's na
-
-Quadtree key, or quadkey:
-
-    tile_y  = 3 = 0   1   1
-    tile_x  = 6 =   1   1   0
-    quadkey =   = 0 1 1 1 1 0
-                =  1   3   2
-
-	To optimize the indexing and storage of tiles, the two-dimensional tile XY coordinates are combined into one-dimensional strings called quadtree keys, or “quadkeys” for short. Each quadkey uniquely identifies a single tile at a particular level of detail, and it can be used as an key in common database B-tree indexes. To convert tile coordinates into a quadkey, the bits of the Y and X coordinates are interleaved, and the result is interpreted as a base-4 number (with leading zeros maintained) and converted into a string. For instance, given tile XY coordinates of (3, 5) at level 3, the quadkey is determined as follows:
-
-	tileX = 3 = 011 2
-
-	tileY = 5 = 101 2
-
-	quadkey = 100111 2 = 213 4 = “213”
-
-	Quadkeys have several interesting properties. First, the length of a quadkey (the number of digits) equals the level of detail of the corresponding tile. Second, the quadkey of any tile starts with the quadkey of its parent tile (the containing tile at the previous level). As shown in the example below, tile 2 is the parent of tiles 20 through 23, and tile 13 is the parent of tiles 130 through 133:
-
-	Finally, quadkeys provide a one-dimensional index key that usually preserves the proximity of tiles in XY space. In other words, two tiles that have nearby XY coordinates usually have quadkeys that are relatively close together. This is important for optimizing database performance, because neighboring tiles are usually requested in groups, and it’s desirable to keep those tiles on the same disk blocks, in order to minimize the number of disk reads.
+image::images/quadkey_ref-full_props-by_zl.png[Coordinates at every zoom level for some exemplars]
 
 
 
 
-	Map resolution = 156543.04 meters/pixel * cos(latitude) / (2 ^ zoomlevel)
+==== Quadtile practicalities ====
 
-	Remember that the zoom level goes from 1 to 19, and that latitude goes from -90 to 90 (assuming your cosine function works with degrees; if you need radians, multiply the latitude by Pi/180). The equation naturally fails if you get too close to either pole, as the Mercator projection also fails when you get too close to the poles.
+===== Working with paths =====
 
-	From this equation, we can calculate an estimated scale for each zoom level by assuming that we are at the equator
-_______
+The _smallest tile that fully encloses a set of points_ is given by the tile with the largest common quadtile prefix. For example, the University of Texas (quad `0231_3012_0331_1131`) and my office (quad `0231_3012_0331_1211`) are covered by the tile `0231_3012_0331_1`.
 
-	http://bcdcspatial.blogspot.com/2012/02/onlineoffline-mapping-finding-tile-urls.html
+image::images/fu05-geographic-path-hq-to-ut.png[Path from Chimp HQ to UT campus]
 
-	'''
-	Mostly direct port of awesome article by Joe Schwartz - http://msdn.microsoft.com/en-us/library/bb259689.aspx
-	'''
-	from __future__ import division
-	import math
+When points cross major tile boundaries, the result is less pretty. Austin's airport (quad `0231301212221213`) shares only the zoom-level 8 tile `02313012`:
 
-	class TileUtils(object):
+image::images/fu05-geographic-path-hq-to-airport.png[Path from Chimp HQ to AUS Airport]
 
-	    earth_radius = 6378137
-	    min_lat = -85.05112878
-	    max_lat = 85.05112878
-	    min_lng = -180
-	    max_lng = 180
-
-	    def clipValue(self, value, minValue, maxValue):
-		'''
-		Makes sure that value is within a specific range.
-		If not, then the lower or upper bounds is returned
-		'''
-		return min(max(value, minValue), maxValue)
-
-	    def getMapDimensionsByZoomLevel(self, zoomLevel):
-		'''
-		Returns the width/height in pixels of the entire map
-		based on the zoom level.
-		'''
-		return 256 << zoomLevel
-
-	    def getGroundResolution(self, latitude, level):
-		'''
-		returns the ground resolution for based on latitude and zoom level.
-		'''
-		latitude = self.clipValue(latitude, self.min_lat, self.max_lat);
-		mapSize = self.getMapDimensionsByZoomLevel(level)
-		return math.cos(latitude * math.pi / 180) * 2 * math.pi * self.earth_radius / mapSize
-
-	    def getMapScale(self, latitude, level, dpi=96):
-		'''
-		returns the map scale on the dpi of the screen
-		'''
-		dpm = dpi / 0.0254 #convert to dots per meter
-		return self.getGroundResolution(latitude, level) * dpm
-
-	    def convertLatLngToPixelXY(self, lat, lng, level):
-		'''
-		returns the x and y values of the pixel corresponding to a latitude and longitude.
-		'''
-		mapSize = self.getMapDimensionsByZoomLevel(level)
-
-		lat = self.clipValue(lat, self.min_lat, self.max_lat)
-		lng = self.clipValue(lng, self.min_lng, self.max_lng)
-
-		x = (lng + 180) / 360
-		sinlat = math.sin(lat * math.pi / 180)
-		y = 0.5 - math.log((1 + sinlat) / (1 - sinlat)) / (4 * math.pi)
-
-		pixelX = int(self.clipValue(x * mapSize + 0.5, 0, mapSize - 1))
-		pixelY = int(self.clipValue(y * mapSize + 0.5, 0, mapSize - 1))
-		return (pixelX, pixelY)
-
-	    def convertPixelXYToLngLat(self, pixelX, pixelY, level):
-		'''
-		converts a pixel x, y to a latitude and longitude.
-		'''
-		mapSize = self.getMapDimensionsByZoomLevel(level)
-		x = (self.clipValue(pixelX, 0, mapSize - 1) / mapSize) - 0.5
-		y = 0.5 - (self.clipValue(pixelY, 0, mapSize - 1) / mapSize)
-
-		lat = 90 - 360 * math.atan(math.exp(-y * 2 * math.pi)) / math.pi
-		lng = 360 * x
-
-		return (lng, lat)
-
-	    def convertPixelXYToTileXY(self, pixelX, pixelY):
-		'''
-		Converts pixel XY coordinates into tile XY coordinates of the tile containing
-		'''
-		return(int(pixelX / 256), int(pixelY / 256))
-
-	    def convertTileXYToPixelXY(self, tileX, tileY):
-		'''
-		Converts tile XY coordinates into pixel XY coordinates of the upper-left pixel
-		'''
-		return(tileX * 256, tileY * 256)
-
-	    def tileXYZToQuadKey(self, x, y, z):
-		'''
-		Computes quadKey value based on tile x, y and z values.
-		'''
-		quadKey = ''
-		for i in range(z, 0, -1):
-		    digit = 0
-		    mask = 1 << (i - 1)
-		    if(x & mask) != 0:
-			digit += 1
-		    if(y & mask) != 0:
-			digit += 2
-		    quadKey += str(digit)
-		return quadKey
-
-	    def quadKeyToTileXYZ(self, quadKey):
-		'''
-		Computes tile x, y and z values based on quadKey.
-		'''
-		tileX = 0
-		tileY = 0
-		tileZ = len(quadKey)
-
-		for i in range(tileZ, 0, -1):
-		    mask = 1 << (i - 1)
-		    value = quadKey[tileZ - i]
-
-		    if value == '0':
-			continue
-
-		    elif value == '1':
-			tileX |= mask
-
-		    elif value == '2':
-			tileY |= mask
-
-		    elif value == '3':
-			tileX |= mask
-			tileY |= mask
-
-		    else:
-			raise Exception('Invalid QuadKey')
-
-		return (tileX, tileY, tileZ)
-
-	    def convertLngLatToTileXY(self, lng, lat, level):
-		pixelX, pixelY = self.convertLatLngToPixelXY(lat, lng, level)
-		return self.convertPixelXYToTileXY(pixelX, pixelY)
-
-	    def getTileOrigin(self, tileX, tileY, level):
-		'''
-		Returns the upper-left hand corner lat/lng for a tile
-		'''
-		pixelX, pixelY = self.convertTileXYToPixelXY(tileX, tileY)
-		lng, lat = self.convertPixelXYToLngLat(pixelX, pixelY, level)
-		return (lat, lng)
-
-
-
+=== K-means clustering to summarize ===
 
 ==== Reference for sizes and zooms ====
 

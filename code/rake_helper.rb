@@ -2,6 +2,7 @@ require 'configliere' ; Settings.use :commandline
 require 'gorillib'
 require 'gorillib/data_munging'
 require 'pry'
+require 'rake'
 
 BOOK_ROOT = (ENV['BOOK_CONTENTS'] || File.expand_path('..', File.dirname(__FILE__)))
 
@@ -14,7 +15,7 @@ task :force
 
 Pathname.register_paths(
   book_root: BOOK_ROOT,
-  root: [:book_root]
+  root: [:book_root],
   code: [:book_root, 'code'],
   data: [:book_root, 'data'],
   work: [:book_root, 'tmp'],

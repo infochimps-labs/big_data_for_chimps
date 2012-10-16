@@ -93,6 +93,8 @@ module Wukong
       def bbox_for_radius(radius) ; Wukong::Geolocated.lng_lat_rad_to_bbox(longitude, latitude, radius) ; end
     end
 
+
+
     # TODO: remove unless defined?
     unless defined?(EARTH_RADIUS)
       EARTH_RADIUS      =  6371000 # meters
