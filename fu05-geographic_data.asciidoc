@@ -24,12 +24,17 @@ image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
 
 This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By sorting all records by the quadtile they rest on, geographic locality falls out of numerical locality. Hadoop's fundamental locality operation (TODO: reword)
 
+==== Converting points to quadkeys (quadtile indexes)
+
 Each grid cell is contained in its parent
 
-image::images/quadkeys-numbering-zl0-zl1.png[Z-path of quad tiles]
 
+image::images/quadkeys-numbering-select_down.png[Tile index for central Texas]
 
-quadkeys-3d-stack
+You can also think of it as a tree:
+
+image::images/quadkeys-3d-stack.png[Z-path of quad tiles]
+
 
 The quadkey is a string of 2-bit tile selectors for a quadtile
 
