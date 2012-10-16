@@ -68,6 +68,8 @@ include::fu08-hadoop_api.asciidoc[]
 
 include::fu09-hadoop_internals.asciidoc[]
 
+include::fu10-tuning-pathologies.asciidoc[]
+
 include::fu10-tuning-hadoop_settings.asciidoc[]
 
 include::fu10-tuning.asciidoc[]
