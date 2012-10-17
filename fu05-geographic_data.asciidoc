@@ -1,18 +1,15 @@
 == Geo Data ==
 
 
-[[quadkey]]
-=== The Quadtile Grid System ===
+=== Geospatial JOIN using quadtiles ===
 
+Doing a "what's nearby" query on a large dataset is difficult unless you can ensure the right locality. Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
 
-Large-scale geodata processing in hadoop starts with the grid system, a simple butv very powerful idea.
-put the map on a simple, flat Mercator projection- the one that geographers cringe, where you just directly map longitude and latitude to (X,Y) (footnote: somehow in naetiral speech people want to say "lat, long". You should instead say "lng, lat" -- it's consistent with the (X, Y) convention and also avoids using ´long´, a keyword in pig and other languages).
+==== The Quadtile Grid System ====
+
+We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it.
+
 Now divide the world into four and make a Z pattern across them:
-
-   1 -- 2
-      /
-     /
-   3 -- 4
 
 Within each of those, make a Z again:
 
@@ -22,12 +19,143 @@ As you go along, index each tile:
 
 image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
 
-This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By sorting all records by the quadtile they rest on, geographic locality falls out of numerical locality. Hadoop's fundamental locality operation (TODO: reword)
+This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By applying Hadoop's fundamental locality operation -- sorting -- geographic locality falls out of numerical locality.
+
+==== Patterns in UFO Sightings ====
+
+Let's put Hadoop into practice for something really important: understanding where a likely alien invasion will take place. The National UFO Reporting Center has compiled a dataset of 60,000+ documented UFO sightings, with metadata. We can combine that with the 7 million labelled points of interest in the Geonames dataset: airports and zoos, capes to craters, schools, churches and more.
+
+Going in to this, I predict that UFO sightings will generally follow the population distribution (because you need people around to see them) but that sightings in cities will be under-represented per capita. I also suspect UFO sightings will be more likely near airports and military bases, and in the southwestern US. We will restrict attention only to the continental US; coverage of both datasets is spotty elsewhere, which will contaminate our results.
+
+Looking through some weather reports, visibilities of ten to fifteen kilometers (6-10 miles) are a reasonable midrange value; let's use that distance to mean "nearby". Given this necessarily-fuzzy boundary, let's simplify matters further by saying two objects are nearby if one point lies within the 20-km-per-side bounding box centered on the other:
+
+
+          +---------+---------+
+	  |		    B |
+	  |		      |
+	  |		      |
+	  |		      |
+	  +	    A	      +
+	  |		      |   C
+	  |		      |
+	  |		      |
+	  |		      |           B is nearby A; C is not. Sorry, C.
+	  +---------+---------+
+	            |- 10 km -|
+
+==== Mapper: dispatch objects to rendezvous at quadtiles ====
+		    
+What we will do is partition the world by quadtile, and ensure that each candidate pair of points arrives at the same quadtile.
+
+Our mappers will send the highly-numerous geonames points directly to their quadtile, where they will wait individually. But we can't send each UFO sighting only to the quadtile it sits on: it might be nearby a place on a neighboring tile.
+
+If the quadtiles are always larger than our nearbyness bounding box, then it's enough to just look at each of the four corners of our bounding box; all candidate points for nearbyness must live on the 1-4 quadtiles those corners touch. Consulting the geodata ready reference (TODO: ref) later in the book, zoom level 11 gives a grid size of 13-20km over the continental US, so it will serve.
+
+So for UFO points, we will use the `bbox_for_radius` helper to get the left-top and right-bottom points, convert each to quadtile id's, and emit the unique 1-4 tiles the bounding box covers.
+
+Example values:
+
+        longitude  latitude    left     top     right    bottom    nw_tile_id   se_tile_id
+ 	...        ...
+ 	...        ...
+
+Data is cheap and code is expensive, so for these 60,000 points we'll just serialize out the bounding box coordinates with each record rather than recalculate them in the reducer. We'll discard most of the UFO sightings fields, but during development let's keep the location and time fields in so we can spot-check results.
+
+Mapper output:
+
+
+==== Reducer: combine objects on each quadtile ====
+
+The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
+
+	# from wukong/geo helpers
+	
+        class BoundingBox
+          def contains?(obj)
+	    ( (obj.longitude >= left)  && (obj.latitude <= top) &&
+	      (obj.longitude <= right) && (obj.latitude >= btm)
+	  end
+	end
+	  
+	# nearby_ufos.rb
+
+	class NearbyReducer
+
+	  def process_group(group)
+	    # gather up all the sightings
+	    sightings = []
+	    group.gather(UfoSighting) do |sighting|
+              sightings << sighting
+            end
+	    # the remaining records are places
+	    group.each do |place|
+	      sighted = false
+	      sightings.each do |sighting|
+	        if sighting.contains?(place)
+		  sighted = true
+		  yield combined_record(place, sighting)
+		end
+              end
+	      yield unsighted_record(place) if not sighted
+	    end
+	  end
+
+	  def combined_record(place, sighting)
+	    (place.to_tuple + [1] + sighting.to_tuple)
+	  end
+	  def unsighted_record(place)
+	    place.to_tuple + [0]
+	  end 
+	end      
+
+For now I'm emitting the full place and sighting record, so we can see what's going on. In a moment we will change the `combined_record` method to output a more disciplined set of fields.
+
+Output data:
+
+        ...
+
+==== Comparing Distributions ====
+
+We now have a set of `[place, sighting]` pairs, and we want to understand how the distribution of coincidences compares to the background distribution of places.
+
+(TODO: don't like the way I'm currently handling places near multiple sightings)
+
+That is, we will compare the following quantities:
+
+    count of sightings
+    count of features
+    for each feature type, count of records
+    for each feature type, count of records near a sighting
+
+The dataset at this point is small enough to do this locally, in R or equivalent; but if you're playing along at work your dataset might not be. So let's use pig.
+
+    place_sightings = LOAD "..." AS (...);
+
+    features = GROUP place_sightings BY feature;
+
+    feature_stats = FOREACH features {
+      sighted = FILTER place_sightings BY sighted;
+      GENERATE features.feature_code,
+        COUNT(sighted)      AS sighted_count,
+	COUNT_STAR(sighted) AS total_count
+	;
+    };
+    
+    STORE feature_stats INTO '...';
+
+results:
+
+    ... TODO move results over from cluster ...
+
+
+    
+
+[[quadkey]]
+=== Quadtile Practicalities ===
 
 ==== Converting points to quadkeys (quadtile indexes)
 
 Each grid cell is contained in its parent
-
 
 image::images/quadkeys-numbering-select_down.png[Tile index for central Texas]
 
@@ -58,13 +186,17 @@ First, some preliminaries:
       1 << zl
     end
 
+The maximum latitude this projection covers is plus/minus `85.05112878` degrees. With apologies to the elves of chapter (TODO: ref), this is still well north of Alert, Canada, the northernmost populated place in the world (latitude 82.5 degrees, 817 km from the North Pole).
+
 It's straightforward to calculate tile_x indices from the longitude (because all the brutality is taken up in the Mercator projection's severe distortion).
 
 Finding the Y tile index requires a slightly more complicated formula:
 
 
+This makes each grid cell be an increasingly better locally-flat approximation to the earth's surface, palliating the geographers anger at our clumsy map projection.
+
 In code:
-    
+
     # Convert longitude, latitude in degrees to _floating-point_ tile x,y coordinates at given zoom level
     def lat_zl_to_tile_yf(longitude, latitude, zl)
       tile_size = map_tile_size(zl)
@@ -90,8 +222,41 @@ In code:
       [lng, lat]
     end
 
-===== Quadkey to and from Lng/Lat =====
+Note: be careful to always put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as ´long´ -- it's a keyword in pig and other languages. When appropriate I use `lng`.
 
+==== Interesting quadtile properties ====
+
+* The quadkey's length is its zoom level.
+
+* To zoom out (lower zoom level, larger quadtile), just truncate the
+  quadkey: austin at ZL=8 has quadkey "02313012"; at ZL=3, "023"
+
+* Nearby points typically have "nearby" quadkeys: up to the smallest
+  tile that contains both, their quadkeys will have a common prefix.
+  If you sort your records by quadkey,
+  - Nearby points are nearby-ish on disk. (hello, HBase/Cassandra
+    database owners!) This allows efficient lookup and caching of
+    "popular" regions or repeated queries in an area.
+  - the tiles covering a region can be covered by a limited, enumerable
+    set of range scans. For map-reduce programmers, this leads to very
+    efficient reducers
+
+* The quadkey is the bit-interleaved combination of its tile ids:
+
+      tile_x      58  binary  0  0  1  1  1  0  1  0
+      tile_y      105 binary 0  1  1  0  1  0  0  1
+      interleaved     binary 00 10 11 01 11 00 01 10
+      quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
+      packed                 11718
+
+* You can also form a "packed" quadkey -- the integer formed by interleaving the bits as shown above. At zoom level 15, the packed quadkey is a 30-bit unsigned integer -- meaning you can store it in a pig `int`; for languages with an `unsigned int` type, you can go to zoom level 16 before you have to use a less-efficient type. Zoom level 15 has a resolution of about one tile per kilometer (about 1.25 km/tile near the equator; 0.75 km/tile at London's latitude). It takes 1 billion tiles to tile the world at that scale.
+
+* a limited number of range scans suffice to cover any given area
+* each grid cell's parents are a 2-place bit shift of the grid index itself.
+
+A 64-bit quadkey -- corresponding to zoom level 32 -- has an accuracty of better than 1 cm over the entire globe. In some intensive database installs, rather than storing longitude and latitude separately as floating-point numbers, consider storing either the interleaved packed quadkey, or the individual 32-bit tile ids as your indexed value. The performance impact for Hadoop is probably not worth it, but for a database schema it may be.
+
+===== Quadkey to and from Longitude/Latitude =====
 
     # converts from even/odd state of tile x and tile y to quadkey. NOTE: bit order means y, x
     BIT_TO_QUADKEY = { [false, false] => "0", [false, true] => "1", [true, false] => "2", [true, true] => "3", }
@@ -123,50 +288,7 @@ In code:
       [tx, ty, zl]
     end
 
- 
-==== Interesting quadtile properties ====
-
-* The quadkey length is its zoom level
-
-* To zoom out (lower zoom level, larger quadtile), just truncate the
-  quadkey: austin at ZL=8 has quadkey "02313012"; at ZL=3, "023"
-
-* Nearby points typically have "nearby" quadkeys: up to the smallest
-  tile that contains both, their quadkeys will have a common prefix.
-  If you sort your records by quadkey,
-  - Nearby points are nearby-ish on disk. (hello, HBase/Cassandra
-    database owners!) This allows efficient lookup and caching of
-    "popular" regions or repeated queries in an area.
-  - the tiles covering a region can be covered by a limited, enumerable
-    set of range scans. For map-reduce programmers, this leads to very
-    efficient reducers
-
-* The quadkey is the bit-interleaved combination of its tile ids:
-
-      tile_x      58  binary  0  0  1  1  1  0  1  0
-      tile_y      105 binary 0  1  1  0  1  0  0  1
-      interleaved     binary 00 10 11 01 11 00 01 10
-      quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
-      packed                 11718
-
-      
-* You can also form a "packed" quadkey -- the integer formed by interleaving the bits as shown above. At zoom level 15, the packed quadkey is a 30-bit unsigned integer -- meaning you can store it in a pig `int`; for languages with an `unsigned int` type, you can go to zoom level 16 before you have to use a less-efficient type. Zoom level 15 has a resolution of about one tile per kilometer (about 1.25 km/tile near the equator; 0.75 km/tile at London's latitude). It takes 1 billion tiles to tile the world at that scale. 
-
-* a limited number of range scans suffice to cover any given area
-* each grid cell's parents are a 2-place bit shift of the grid index itself.
-
-
-A 64-bit quadkey -- corresponding to zoom level 32 -- has an accuracty of better than 1 cm over the entire globe. In some intensive database installs, rather than storing longitude and latitude separately as floating-point numbers, consider storing either the interleaved packed quadkey, or the individual 32-bit tile ids as your indexed value. The performance impact for Hadoop is probably not worth it, but for a database schema it may be.
-
-References:
-
-* http://msdn.microsoft.com/en-us/library/bb259689.aspx
-* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
-* http://wiki.openstreetmap.org/wiki/QuadTiles
-* https://github.com/simplegeo/polymaps
-
-=== Quadkey Ready Reference ===
-
+=== Quadtile Ready Reference ===
 
 image::images/quadkey_ref-zoom_levels.png[Quadtile properties and data storage sizes by zoom level]
 
@@ -178,9 +300,8 @@ The (ref table) gives the full coordinates at every zoom level for our exemplar 
 
 image::images/quadkey_ref-full_props-by_zl.png[Coordinates at every zoom level for some exemplars]
 
-==== Quadtile practicalities ====
 
-===== Working with paths =====
+==== Working with paths ====
 
 The _smallest tile that fully encloses a set of points_ is given by the tile with the largest common quadtile prefix. For example, the University of Texas (quad `0231_3012_0331_1131`) and my office (quad `0231_3012_0331_1211`) are covered by the tile `0231_3012_0331_1`.
 
@@ -190,8 +311,7 @@ When points cross major tile boundaries, the result is less pretty. Austin's air
 
 image::images/fu05-geographic-path-hq-to-airport.png[Path from Chimp HQ to AUS Airport]
 
-
-===== Calculating Distances =====    
+==== Calculating Distances ====
 
 To find the distance between two points on the globe, we use the Haversine formula
 
@@ -236,33 +356,16 @@ in code:
       [east_lng, latitude]
     end
 
-
-=== K-means clustering to summarize ===
-
-==== Reference for sizes and zooms ====
-
-http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
-
-
-=== Map Points to Grid Cells ===
-
-We started with an apology to geographers for our uncouth map projection? we will make it up a bit by having each grid cell be an increasingly better locally-flat approximation to the earths surface. this makes the math more complicated but the result id worth it.
-
-
-The maximum latitude this projection covers is plus/minus `85.05112878` degrees. With apologies to the elves of chapter (TODO: ref), this is still well north of Alert, Canada, the northernmost populated place in the world (latitude 82.5 degrees, 817 km from the North Pole).
-
-
-=== Grid Sizes and Sample Preparation ===
+==== Grid Sizes and Sample Preparation ====
 
 
 Always include as a mountweazel some places you're familiar with. It's much easier for me to think in terms of the distance from my house to downtown, or to Dallas, or to New York than it is to think in terms of zoom level 14 or 7 or 4
 
-
-=== Map Boundaries to Grid Cells ===
-
+==== Map Boundaries to Grid Cells ====
 
 
-=== Map Regions to Grid Cells ===
+==== Map Regions to Grid Cells ====
+
 
 ==== Adaptive Grid Size ====
 
@@ -374,6 +477,9 @@ Pivot:
 * D:          `[             0010 0011       0110 1000 1001 1100 ]`
 
 
+=== K-means clustering to summarize ===
+
+
 ==== Map Observations to Grid Cells ====
 
 Now join observations to grid cells and reduce each grid cell.
@@ -381,7 +487,6 @@ Now join observations to grid cells and reduce each grid cell.
 === GeoJSON ===
 
 Using polymaps to view results
-
 
 === Exercises ===
 
@@ -417,3 +522,9 @@ Example: merge all cells whose contents lie within 10% of each other
 
 **Exercise 2**:
 
+References:
+
+* http://msdn.microsoft.com/en-us/library/bb259689.aspx
+* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+* http://wiki.openstreetmap.org/wiki/QuadTiles
+* https://github.com/simplegeo/polymaps
