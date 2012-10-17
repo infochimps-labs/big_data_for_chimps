@@ -9,8 +9,8 @@ class Airport
   field :faa,          String, doc: "3-letter FAA code, or blank if not assigned.",  length: 3, identifier: true, :blankish => ["", nil]
   field :utc_offset,   Float,  doc: "Hours offset from UTC. Fractional hours are expressed as decimals, eg. India is 5.5.",      validates: {  inclusion: (-12...12) }
   field :dst_rule,     String, doc: "Daylight savings time rule. One of E (Europe), A (US/Canada), S (South America), O (Australia), Z (New Zealand), N (None) or U (Unknown). See the readme for more.", validates: {  inclusion: %w[E A S O Z N U] }
-  field :latitude,     Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North.", validates: {  inclusion: (-90.0...90.0) }
   field :longitude,    Float,  doc: "Decimal degrees, usually to six significant digits. Negative is West,  positive is East.",  validates: {  inclusion: (-180...180) }
+  field :latitude,     Float,  doc: "Decimal degrees, usually to six significant digits. Negative is South, positive is North.", validates: {  inclusion: (-90.0...90.0) }
   field :altitude,     Float,  doc: "Elevation in meters."
   field :name,         String, doc: "Name of airport."
   field :country,      String, doc: "Country or territory where airport is located.", length: 2
@@ -67,6 +67,14 @@ class Airport
 
   def faa_controlled?
     icao =~ /^(?:K|P[ABFGHJKMOPW]|T[IJ]|NS(AS|FQ|TU))/
+  end
+end
+### @export "airport_load"
+class Airport
+  include Gorillib::Model::LoadFromTsv
+  self.tsv_options.merge!(num_fields: 10..20)
+  def self.load_airports(filename)
+    load_tsv(filename){|airport| yield(airport) }
   end
 
 end
