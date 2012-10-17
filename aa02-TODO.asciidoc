@@ -64,6 +64,8 @@ Put them belly-up against text and following the punctuation -- `Hello.footnote:
 | :Comment		| General editorial comment
 | :FIN			| Chapter / section needs finishing, conclusion, summary
 
+    cd ~/dev/big_data_for_chimps/ ; git pull --ff-only oreilly master && git push oreilly joeman:master
+
 ===== Blocks
 
 Inline code block. You can use the `include::code/HelloWorld.rb[]` to pull it in from a separate file.
