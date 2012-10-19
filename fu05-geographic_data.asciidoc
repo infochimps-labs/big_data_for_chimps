@@ -369,14 +369,42 @@ Always include as a mountweazel some places you're familiar with. It's much easi
 
 ==== Adaptive Grid Size ====
 
-The world is a big place, but we don't use all of it. Most of the world is water. Lots of it is Kansas.
+The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303]. 
 
-We can use the grid system to very naturally describe multiscale data.
+Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that 
+Monaco fits easily within on one zoom-level 12 quadtile; Russia spans two zoom-level 1 quadtiles.
+Without multiscaling, to cover the globe at 1-km scale and 64-kB records would take 70 terabytes -- and 1-km is not all that satisfactory. Huge parts of the world would be taken up by grid cells holding no border that simply said "Yep, still in Russia".
 
-key things with an out-of-band
-Quadkey 0112XX means "I carry the information for grids 011200, 011201, ... 011233".
+There's a simple modification of the grid system that lets us very naturally describe multiscale data.
 
-Choose an upper bound for range, and decompose thing to that level -- so even if something applied to grid 0123XXX, but your upper raneg is 5 quads, you would duplicate that row as 01230XX, 01231XX, etc. (fn: this is a small penalty, since the grid scales exponentially.)
+The figures (REF: multiscale images) show the quadtiles covering Japan at ZL=7. For reasons you'll see in a bit, we will split everything up to at least that zoom level; we'll show the further decomposition down to ZL=9.
+
+image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 7]
+
+Already six of the 16 tiles shown don't have any land coverage, so you can record their values:
+
+    1330000xx  { Pacific Ocean }
+    1330011xx  { Pacific Ocean }
+    1330013xx  { Pacific Ocean }
+    1330031xx  { Pacific Ocean }
+    1330033xx  { Pacific Ocean }
+    1330032xx  { Pacific Ocean }
+
+Pad out each of the keys with `x`'s to meet our lower limit of ZL=9.
+
+The quadkey `1330011xx` means "I carry the information for grids `133001100`, `133001101`, `133001110`, `133001111`, ".
+
+image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 8]
+
+
+
+image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 9]
+
+
+You should uniformly decompose everything to some upper zoom level so that if you join on something uniformly distributed across the globe you don't have cripplingly large skew in data size sent to each partition.  A zoom level of 7 implies 16,000 tiles -- a small quantity given the exponential growth of tile sizes
+
+
+
 With the upper range as your partition key, and the whole quadkey is the sort key, you can now do joins
 
 * read keys on each side until one key is equal to or a prefix of the other.
@@ -410,6 +438,9 @@ You must emit high-level grid cells with the lsb filled with XX or something tha
      10.10.00
      10.11.--
 
+
+
+     
 === Weather Near You ===
 
 ==== Find the Voronoi Polygon for each Weather Station ====
@@ -524,6 +555,7 @@ Example: merge all cells whose contents lie within 10% of each other
 
 References:
 
+* http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
 * http://msdn.microsoft.com/en-us/library/bb259689.aspx
 * http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 * http://wiki.openstreetmap.org/wiki/QuadTiles

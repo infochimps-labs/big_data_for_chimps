@@ -10,11 +10,11 @@ module Wukong
 
       def quadkey   ; Wukong::Geolocated.tile_xy_zl_to_quadkey(  tile_x, tile_y, zl) ; end
       def packed_qk ; Wukong::Geolocated.tile_xy_zl_to_packed_qk(tile_x, tile_y, zl) ; end
-      
+
       # Base of URL for map tile server; anything X/Y/Z.png-addressable works,
       # eg `http://b.tile.openstreetmap.org`. Defaults to 'http://b.tile.stamen.com/toner-lite'`.
       class_attribute :tileserver_url_base
-      self.tileserver_url_base = 'http://a.tile.stamen.com/toner-lite'      
+      self.tileserver_url_base = 'http://a.tile.stamen.com/toner-lite'
 
       def self.from_whatever(hsh)
         zl = hsh[:zl] ? hsh[:zl].to_i : nil
@@ -41,19 +41,19 @@ module Wukong
         [tileserver_url_base, zl, tile_x, tile_y].join('/') << ".png"
       end
 
-      # A 
+      # A
       #
       # @example
       #   qt = Quadtile.from_whatever(longitude: -97.759003, latitude: 30.273884, zl: 15)
       #   qt.slug  # tile-15-64587
-      #   
+      #
       #
       # @returns [String]
       def basename(options={})
         options = { sep: '-', ext: 'png'}
         sep = options[:sep]
         # "%s%s%02d%s%04d%s%04d.%s" % [slug, sep, zl, sep, tile_x, sep, tile_y, options[:ext]]
-        "%02d/%s%s%s.%s" % [zl, slug, sep, quadkey, options[:ext]]
+        "%s/%02d/%s%s%s.%s" % [slug, zl, slug, sep, quadkey, options[:ext]]
       end
 
       # Fetch the contents of a map tile from a tileserver
@@ -63,7 +63,7 @@ module Wukong
       def fetch
         self.class.tileserver_conn.get(tile_url)
       end
-      
+
     end
   end
 end
