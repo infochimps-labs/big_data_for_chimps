@@ -394,11 +394,11 @@ Pad out each of the keys with `x`'s to meet our lower limit of ZL=9.
 
 The quadkey `1330011xx` means "I carry the information for grids `133001100`, `133001101`, `133001110`, `133001111`, ".
 
-image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 8]
+image::images/fu05-quadkeys-multiscale-ZL8.png[Japan at Zoom Level 8]
 
 
 
-image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 9]
+image::images/fu05-quadkeys-multiscale-ZL9.png[Japan at Zoom Level 9]
 
 
 You should uniformly decompose everything to some upper zoom level so that if you join on something uniformly distributed across the globe you don't have cripplingly large skew in data size sent to each partition.  A zoom level of 7 implies 16,000 tiles -- a small quantity given the exponential growth of tile sizes
