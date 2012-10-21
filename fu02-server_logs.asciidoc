@@ -147,3 +147,27 @@ include::code/server_logs/server_logs-04-page_page_edges-03-reducer.log[]
 ----
 
 You'll learn more about this in the chapter on ((Processing Graphs)), but 
+
+
+== Geo-IP Matching ==
+
+[[range_query]]
+[[geo_ip_matching]]
+
+You can learn a lot about your site's audience in aggregate by mapping IP addresses to geolocation. Not just in itself, but joined against other datasets, like census data, store locations, weather and time. footnote:[These databases only impute a coarse-grained estimate of each visitor's location -- they hold no direct information about the persom. Please consult your priest/rabbi/spirit guide/grandmom or other appropriate moral compass before diving too deep into the world of unmasking your site's guests.]
+
+Maxmind makes their http://www.maxmind.com/en/geolite[GeoLite IP-to-geo database] available under an open license (CC-BY-SA)footnote:[For serious use, there are professional-grade datasets from Maxmind, Quova, Digital Element among others.]. Out of the box, its data model caters to range queries in a relational database:
+
+
+
+
+
+
+
+
+
+
+
+
+
+

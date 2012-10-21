@@ -443,6 +443,13 @@ You must emit high-level grid cells with the lsb filled with XX or something tha
      
 === Weather Near You ===
 
+The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
+
+You'll run in to two problems:
+
+* First, 
+
+
 ==== Find the Voronoi Polygon for each Weather Station ====
 
 ==== Map Polygons to Grid Tiles ====
@@ -560,3 +567,4 @@ References:
 * http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 * http://wiki.openstreetmap.org/wiki/QuadTiles
 * https://github.com/simplegeo/polymaps
+* http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
