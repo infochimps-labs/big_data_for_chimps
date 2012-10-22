@@ -417,7 +417,6 @@ You must emit high-level grid cells with the lsb filled with XX or something tha
 
 * Find the corresponding tile ID,
 * Index into the table to find the first tile whose ID is larger than the given one.
- This is why you must split in four parts
 
      00.00.00
      00.00.01
@@ -439,18 +438,15 @@ You must emit high-level grid cells with the lsb filled with XX or something tha
      10.11.--
 
 
+==== Tree structure of Quadtile indexing ====
 
+You can look at quadtiles is as a tree structure
+
+* Each branch splits the plane exactly in half by area
+* Only leaf nodes hold data
      
-=== Weather Near You ===
+The first quadtile scheme required we develop every branch of the tree to the same depth. The multiscale quadtile scheme effectively says "hey, let's only expand each branch to its required depth". Our rule to break up a quadtile if any section of it needs development preserves the "only leaf nodes hold data". Breaking tiles always exactly in two makes it easy to assign features to their quadtile and facilitates joins betweeen datasets that have never met. There are other ways to make these tradeoffs, though -- read about K-D trees in the "keep exploring" section at end of chapter.
 
-The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
-
-You'll run in to two problems:
-
-* First, 
-
-
-==== Find the Voronoi Polygon for each Weather Station ====
 
 ==== Map Polygons to Grid Tiles ====
 
@@ -509,14 +505,48 @@ For each grid, also calculate the area each polygon covers within that grid.
 
 Pivot:
 
-* A:          `[ 0000       0010                   1000             ]`
-* B:          `[ 0000 0001 0010 0011                               ]`
+* A:          `[ 0000       0010                   1000          ]`
+* B:          `[ 0000 0001 0010 0011                             ]`
 * C:          `[ 0000 0001 0010 0011 0100 0110                   ]`
 * D:          `[             0010 0011       0110 1000 1001 1100 ]`
 
 
-=== K-means clustering to summarize ===
 
+
+=== Weather Near You ===
+
+The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
+
+So weather data is gathered at a _point_, but imputes information about a _region_. You can't just slap each point down on coarse-grained tiles -- the closest weather station might lie just over on the next quad, and you're writing a check for very difficult calculations at run time.
+
+We also have a severe version of the multiscale problem: 
+
+* The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean.
+* The coverage varies wildly over time. In the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone. 
+
+These factors rule out any naïve approach to locality, but there's an elegant solution.
+
+==== Find the Voronoi Polygon for each Weather Station ====
+
+http://en.wikipedia.org/wiki/Voronoi_diagram
+
+
+It's straightforward to draw the right picture.
+connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally.
+
+If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. 
+
+Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other. Locations on the boundary of each Voronoi polygon are equidistant from the two points that define the area on either side.
+
+Hooray! Now our path is clear:
+
+* Use the weather station locations to define a set of Voronoi polygons. We will treat each weather station's observations as applying uniformly to the whole of that polygon.
+* Break those polygons up by quadtile, as we did above, to produce quadtiles that are either contain a piece of boundary (in which case they are at the lower-bound zoom level), or are entirely contained within a boundary.
+* Also produce the reverse mapping, from weather station to the quadtile IDs its polygon covers.
+
+footnote:[http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet] -- requires a Java-enabled browser]
+
+footnote:[John Snow, the father of epidemiology, mapped cholera cases from an 1854 outbreak against the voronoi regions defined by each neighborhood's closest water pump. The resulting infographic made plain to contemporary physicians and officials that bad drinking water, not "miasma" (bad air), transmitted cholera. http://johnsnow.matrix.msu.edu/book_images12.php]
 
 ==== Map Observations to Grid Cells ====
 
@@ -526,7 +556,45 @@ Now join observations to grid cells and reduce each grid cell.
 
 Using polymaps to view results
 
+
+
+=== K-means clustering to summarize ===
+
+
+
+
+=== Keep Exploring ===
+
+===== Balanced Quadtiles =====
+
+Earlier, we described how quadtiles define a tree structure, where each branch of the tree divides the plane exactly in half and leaf nodes hold features. The multiscale scheme handles skewed distributions by developing each branch only to a certain depth. Splits are even, but the tree is lopsided (the many finer zoom levels you needed for New York City than for Irkutsk).
+
+K-D trees are another approach. The rough idea: rather than blindly splitting in half by area, split the plane to have each half hold the same-ish number of points. It's more complicated, but it leads to a balanced tree while still accommodating highly-skew distributions. Jacob Perkins (`@thedatachef`) has a http://thedatachef.blogspot.com/2012/10/k-d-tree-generation-with-apache-pig.html[great post about K-D trees] with further links.
+
+===== It's not just for Geo =====
+
+Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space. 
+
 === Exercises ===
+
+**Exercise 2**: Extend quadtile mapping to three dimensions
+
+To jointly model network and spatial relationship of neurons in the brain, you will need to use not two but three spatial dimensions. Write code to map positions within a 200mm-per-side cube to an "octcube" index analogous to the quadtile scheme. How large (in mm) is each cube using 30-bit keys? using 63-bit keys?
+
+For even higher dimensions of fun, extend the  http://en.wikipedia.org/wiki/Voronoi_diagram#Higher-order_Voronoi_diagrams[Voronoi diagram to three dimensions].
+
+**Exercise 3**: Locality
+
+We've seen a few ways to map feature data to joinable datasets. Describe how you'd join each possible pair of datasets from this list (along with the story it would tell):
+
+* Census data: dozens of variables, each attached to a census tract ID, along with a region polygon for each census tract.
+* Cell phone antenna locations: cell towers are spread unevenly, and have a maximum range that varies by type of antenna.
+  - case 1: you want to match locations to the single nearest antenna, if any is within range.
+  - case 2: you want to match locations to all antennae within range.
+* Wikipedia pages having geolocations.
+* Disease reporting: 60,000 points distributed sparsely and unevenly around the country, each reporting the occurence of a disease.
+
+For example, joining disease reports against census data might expose correlations of outbreak with ethnicity or economic status. I would prepare the census regions as quadtile-split polygons. Next, map each disease report to the right quadtile and in the reducer identify the census region it lies within. Finally, join on the tract ID-to-census record table.
 
 **Exercise 1**: Write a generic utility to do multiscale smoothing
 
@@ -558,9 +626,7 @@ Example: merge all cells whose contents lie within 10% of each other
     19  20  12  14     . 20. 12  14
     20  21   8   3     .   .  8   3
 
-**Exercise 2**:
-
-References:
+=== References ===
 
 * http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
 * http://msdn.microsoft.com/en-us/library/bb259689.aspx
@@ -568,3 +634,5 @@ References:
 * http://wiki.openstreetmap.org/wiki/QuadTiles
 * https://github.com/simplegeo/polymaps
 * http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
+
+

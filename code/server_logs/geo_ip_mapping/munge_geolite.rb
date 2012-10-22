@@ -32,7 +32,9 @@ lines = 0
 LOCATIONS = {}
 locations_file = Pathname.of(:geolite_locations).open(encoding: "ISO-8859-1")
 locations_file.readline; locations_file.readline
-locations_file.each do |line|
+locations_file.
+  # readlines[0..1000].
+  each do |line|
   location_id, country_id, admin1_id, city, postal_code, latitude, longitude, metro_code, area_code = line.chomp.gsub(/"/, '').split(',', 9)
   LOCATIONS[location_id.to_i] = [ location_id.to_i, longitude.to_f, latitude.to_f, country_id, admin1_id, city, postal_code, metro_code, area_code ]
 end
@@ -61,12 +63,14 @@ module IpCensus
     def emit_range(rng, location_id)
       location = LOCATIONS[location_id]
       warn "No location #{location_id.inspect}" unless location || (location_id == 0)
-      rng.bitness_blocks(24).each do |blk_min, blk_max|
+      rng.bitness_blocks(16).each do |blk_min, blk_max|
+        # raise [blk_min, blk_max, blk_min.to_hex[0..-5], blk_max.to_hex[0..-5]].inspect if blk_min.to_hex[0..-3] != blk_max.to_hex[0..-3]
         yield [
+          blk_min.to_hex[0..3],
+          blk_min.to_hex[4..-1],
+          blk_max.to_hex[4..-1],
           blk_min.to_i,
           blk_max.to_i,
-          blk_min.dotted,
-          blk_max.dotted,
           location,
         ].flatten
       end
