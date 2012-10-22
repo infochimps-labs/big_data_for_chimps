@@ -1,6 +1,19 @@
 == Geo Data ==
 
 
+=== Features of Features ===
+
+Geographic data shows up in the form of
+
+* Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
+* Paths -- an array of points `[[longitude,latitude],[longitude,latitude],...]`
+* Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
+* "Feature" -- a generic term for "Point or Path or Region".
+* "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
+* 
+
+Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.] 
+
 === Geospatial JOIN using quadtiles ===
 
 Doing a "what's nearby" query on a large dataset is difficult unless you can ensure the right locality. Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
@@ -20,6 +33,8 @@ As you go along, index each tile:
 image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
 
 This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By applying Hadoop's fundamental locality operation -- sorting -- geographic locality falls out of numerical locality.
+
+Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
 
 ==== Patterns in UFO Sightings ====
 
@@ -44,7 +59,7 @@ Looking through some weather reports, visibilities of ten to fifteen kilometers 
 	            |- 10 km -|
 
 ==== Mapper: dispatch objects to rendezvous at quadtiles ====
-		    
+
 What we will do is partition the world by quadtile, and ensure that each candidate pair of points arrives at the same quadtile.
 
 Our mappers will send the highly-numerous geonames points directly to their quadtile, where they will wait individually. But we can't send each UFO sighting only to the quadtile it sits on: it might be nearby a place on a neighboring tile.
@@ -69,14 +84,14 @@ Mapper output:
 The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
 
 	# from wukong/geo helpers
-	
+
         class BoundingBox
           def contains?(obj)
 	    ( (obj.longitude >= left)  && (obj.latitude <= top) &&
 	      (obj.longitude <= right) && (obj.latitude >= btm)
 	  end
 	end
-	  
+
 	# nearby_ufos.rb
 
 	class NearbyReducer
@@ -105,8 +120,8 @@ The reducer is now fairly simple. Each quadtile will have a handful of UFO sight
 	  end
 	  def unsighted_record(place)
 	    place.to_tuple + [0]
-	  end 
-	end      
+	  end
+	end
 
 For now I'm emitting the full place and sighting record, so we can see what's going on. In a moment we will change the `combined_record` method to output a more disciplined set of fields.
 
@@ -140,15 +155,95 @@ The dataset at this point is small enough to do this locally, in R or equivalent
 	COUNT_STAR(sighted) AS total_count
 	;
     };
-    
+
     STORE feature_stats INTO '...';
 
 results:
 
     ... TODO move results over from cluster ...
 
+=== Data Model ===
 
-    
+We'll represent geographic features in two different ways, depending on focus:
+
+* If the geography is the focus -- it's a set of features with data riding sidecar -- use GeoJSON data structures.
+* If the object is the focus -- among many interesting fields, some happen to have a position or other geographic context -- use a natural Wukong model.
+* If you're drawing on traditional GIS tools, if possible use GeoJSON; if not use the legacy format it forces, and a lot of cursewords as you go.
+
+==== GeoJSON ====
+
+GeoJSON is a new but well-thought-out geodata format; here's a brief overview. The http://www.geojson.org/geojson-spec.html[GeoJSON] spec is about as readable as I've seen, so refer to it for anything deeper.
+
+The fundamental GeoJSON data structures are:
+
+----
+    module GeoJson
+      class Base ; include Wukong::Model ; end
+      
+      class FeatureCollection < Base
+        field :type,  String
+        field :features, Array, of: Feature
+	field :bbox,     BboxCoords
+      end
+      class Feature < Base
+        field :type,  String,
+	field :geometry, Geometry
+	field :properties
+	field :bbox,     BboxCoords
+      end
+      class Geometry < Base
+        field :type,  String,
+	field :coordinates, Array, doc: "for a 2-d point, the array is a single `(x,y)` pair. For a polygon, an array of such pairs."
+      end
+
+      # lowest value then highest value (left low, right high; 
+      class BboxCoords < Array
+	def left  ; self[0] ; end
+	def btm   ; self[1] ; end
+	def right ; self[2] ; end
+        def top   ; self[3] ; end
+      end	
+    end
+----
+
+Notes:
+* you should Polygons
+* note these orderings:
+  - Point: `longitude, latitude`
+  - Polygon: `[ [[lng1,lat1],[lng2,lat2],...,[lngN,latN],[lng1,lat1]] ]` -- you must repeat the first point. The first array is the outer ring; other paths in the array are interior rings or holes (eg South Africa/Lesotho). For regions with multiple parts (US/Alaska/Hawaii) use a MultiPolygon.
+  - Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`  
+
+An example hash, taken from the spec:
+
+----
+
+  {
+    "type": "FeatureCollection",
+    "features": [
+      { "type":       "Feature",
+        "properties": {"prop0": "value0"},
+        "geometry":   {"type": "Point", "coordinates": [102.0, 0.5]}
+      },
+      { "type":       "Feature",
+        "properties": {
+          "prop0":    "value0",
+          "prop1":    {"this": "that"}
+        },
+	"bbox":       [ 
+        "geometry": {
+          "type":     "Polygon",
+          "coordinates": [
+            [ [-10.0, 0.0], [5.0, -1.0], [101.0, 1.0],
+              [100.0, 1.0], [-10.0, 0.0] ]
+            ]
+	}
+      }
+    ]
+  }
+----
+
+
+
 
 [[quadkey]]
 === Quadtile Practicalities ===
@@ -369,9 +464,9 @@ Always include as a mountweazel some places you're familiar with. It's much easi
 
 ==== Adaptive Grid Size ====
 
-The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303]. 
+The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303].
 
-Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that 
+Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that
 Monaco fits easily within on one zoom-level 12 quadtile; Russia spans two zoom-level 1 quadtiles.
 Without multiscaling, to cover the globe at 1-km scale and 64-kB records would take 70 terabytes -- and 1-km is not all that satisfactory. Huge parts of the world would be taken up by grid cells holding no border that simply said "Yep, still in Russia".
 
@@ -444,7 +539,7 @@ You can look at quadtiles is as a tree structure
 
 * Each branch splits the plane exactly in half by area
 * Only leaf nodes hold data
-     
+
 The first quadtile scheme required we develop every branch of the tree to the same depth. The multiscale quadtile scheme effectively says "hey, let's only expand each branch to its required depth". Our rule to break up a quadtile if any section of it needs development preserves the "only leaf nodes hold data". Breaking tiles always exactly in two makes it easy to assign features to their quadtile and facilitates joins betweeen datasets that have never met. There are other ways to make these tradeoffs, though -- read about K-D trees in the "keep exploring" section at end of chapter.
 
 
@@ -512,36 +607,38 @@ Pivot:
 
 
 
-
 === Weather Near You ===
 
 The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
 
 So weather data is gathered at a _point_, but imputes information about a _region_. You can't just slap each point down on coarse-grained tiles -- the closest weather station might lie just over on the next quad, and you're writing a check for very difficult calculations at run time.
 
-We also have a severe version of the multiscale problem: 
+We also have a severe version of the multiscale problem:
 
 * The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean.
-* The coverage varies wildly over time. In the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone. 
+* The coverage varies wildly over time. In the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone.
 
-These factors rule out any naïve approach to locality, but there's an elegant solution.
 
 ==== Find the Voronoi Polygon for each Weather Station ====
 
-http://en.wikipedia.org/wiki/Voronoi_diagram
+These factors rule out any naïve approach to locality, but there's an elegant solution known as a http://en.wikipedia.org/wiki/Voronoi_diagram[Voronoi diagram].
+
+The Voronoi diagram covers the plane with polygons, one per point -- I'll call that the "centerish" of the polygon. Within each polygon, you are closer to its centerish than any other. By extension, locations on the boundary of each Voronoi polygon are equidistant from the centerish on either side; polygon corners are equidistant from centerishes of all touching polygons.
+
+If you'd like to skip the details, just admire the diagram (REF) and agree that it's the "right" picture. As you would in practice, we're going to use vetted code from someone with a PhD and not write it ourselves.
+
+The details: Connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally. If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other.
+
+TODO: above paragraph not very clear, may not be necessary.
 
 
-It's straightforward to draw the right picture.
-connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally.
+==== Break polygons on quadtiles ====
 
-If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. 
+Now our path is clear:
 
-Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other. Locations on the boundary of each Voronoi polygon are equidistant from the two points that define the area on either side.
-
-Hooray! Now our path is clear:
-
-* Use the weather station locations to define a set of Voronoi polygons. We will treat each weather station's observations as applying uniformly to the whole of that polygon.
-* Break those polygons up by quadtile, as we did above, to produce quadtiles that are either contain a piece of boundary (in which case they are at the lower-bound zoom level), or are entirely contained within a boundary.
+* Use the weather station locations to define a set of Voronoi polygons. Treat each weather station's observations as applying uniformly to the whole of that polygon.
+* Choose a lower-bound zoom level that avoids skew but doesn't balloon the dataset's size.
+* Break the Voronoi polygons up by quadtile as we did above -- quadtiles will either contain a piece of boundary (and so are at the lower-bound zoom level), or are entirely contained within a boundary.
 * Also produce the reverse mapping, from weather station to the quadtile IDs its polygon covers.
 
 footnote:[http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet] -- requires a Java-enabled browser]
@@ -573,7 +670,7 @@ K-D trees are another approach. The rough idea: rather than blindly splitting in
 
 ===== It's not just for Geo =====
 
-Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space. 
+Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
 
 === Exercises ===
 
@@ -581,7 +678,7 @@ Taking a step back, the fundamental idea this chapter introduced is a direct way
 
 To jointly model network and spatial relationship of neurons in the brain, you will need to use not two but three spatial dimensions. Write code to map positions within a 200mm-per-side cube to an "octcube" index analogous to the quadtile scheme. How large (in mm) is each cube using 30-bit keys? using 63-bit keys?
 
-For even higher dimensions of fun, extend the  http://en.wikipedia.org/wiki/Voronoi_diagram#Higher-order_Voronoi_diagrams[Voronoi diagram to three dimensions].
+For even higher dimensions of fun, extend the http://en.wikipedia.org/wiki/Voronoi_diagram#Higher-order_Voronoi_diagrams[Voronoi diagram to three dimensions].
 
 **Exercise 3**: Locality
 
@@ -634,5 +731,3 @@ Example: merge all cells whose contents lie within 10% of each other
 * http://wiki.openstreetmap.org/wiki/QuadTiles
 * https://github.com/simplegeo/polymaps
 * http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
-
-

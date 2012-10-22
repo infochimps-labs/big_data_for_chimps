@@ -47,3 +47,5 @@ output-long
 output-scribe
 images/*-noversion
 Backup\ *
+images/map_grid_cells-osm
+images/map_grid_cells
