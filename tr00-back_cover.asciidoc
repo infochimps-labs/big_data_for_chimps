@@ -15,9 +15,6 @@ exploratory no production
 
 
 
-
-
-
 Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this sentence.
 
 What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing; and in doing so, exposes a core simplicity that makes programming it exceptionally fun.

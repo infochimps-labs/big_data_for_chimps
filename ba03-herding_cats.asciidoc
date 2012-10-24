@@ -15,7 +15,6 @@ Don't use NFS
 
 === Stupid Hadoop Tricks ===
 
-
 ==== Mappers that process filenames, not file contents ====
 
 You can output anything you want in your mappers. 

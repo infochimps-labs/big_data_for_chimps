@@ -24,7 +24,3 @@ Let's pick up the example from <<first_exploration>>
 	<math>
 	\operatorname{pmi}(x;y) \equiv \log\frac{p(x,y)}{p(x)p(y)} = \log\frac{p(x|y)}{p(x)} = \log\frac{p(y|x)}{p(y)}.
 	</math>
-
-
-	
-

@@ -4,8 +4,6 @@ One dataset will be el diablo, can be used in several ways to send statistical a
 * lure a median algorithm into over/under split its results
 * total, average and stddev will suffer LOP if not compensating sum.
 
-
-
 Generate 1 zillion random numbers
 
 * `1e12 + x`, x in a small range

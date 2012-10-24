@@ -1,3 +1,7 @@
+== Hadoop Internals ==
+
+=== Mappers ===
+
 Input files are split and assigned to mappers.
 Each mapper will receive a chunk bounded by:
 
@@ -9,8 +13,6 @@ Each mapper will receive a chunk bounded by:
   this is what lets Hadoop "bring the compute to the data".
 
 If the
-
-
 
 === Choosing a file size ===
 

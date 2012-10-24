@@ -14,7 +14,62 @@ Libraries:
   ** https://github.com/clbustos/distribution.git[Distribution] -- probability distributions; uses fast GSL or Statistics2 if available
 
 * https://github.com/v01d/ruby-gsl-ng[ruby-gsl-ng] -- interface to the GSL, JRuby-compatible. Incomplete tho. 
-  
+
+
+=== Line numbering and exact median ===
+
+Line numbering is _astonishingly_ hard. Each reducer needs to know how many records came before it -- but that information is non-local. It's a total sort with a degree of difficulty.
+
+
+===== Mapper
+
+Choose how you're going to partition and order the data.
+
+Pig comes with a sampling partitioner to do a total sort with no pre-knowledge of the key distribution. If you know something about the data, you can partition yourself, saving a pass over the data. Temperature has a non-uniform distribution (there are more warm and chilly days than boiling or frigid days) Let's be thoughtful but not overthink; we'll take 25 C as the midpoint
+
+	# TODO: inverse distribution 
+        return low_bound if temp < -30
+        return hi_bound  if temp >= 80
+        (temp - 25.0)
+
+sidebar: If the partition is the filename: in Pig, look at the `PathPartitioner`; in Wukong and Hadoop streaming, use the `ENV['map_input_file']` environment variable. To partition randomly see <<consistent_random_sampling>>. 
+
+For each record, emit a 
+
+        [partition_key]   B    [key]  [record]
+
+Each mapper must also emit how many keys _it_ saw for each partition key, and send that list to every partition:
+
+        0   A    [p0_count, p1_count, ... pN_count]
+        1   A    [p0_count, p1_count, ... pN_count]
+	...
+        N   A    [p0_count, p1_count, ... pN_count]
+
+Now each reducer can figure out which partition key in order it is, sum the counts for every partition, 
+
+
+=== Approximate Median ===
+
+Compare :
+Count bins (histogram)
+For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possible values?
+
+observations:
+
+* it's hadoop, we don't have to be total wusses
+* the reducer already does a sort, so worrying about order N beyond that is silly
+* 
+
+set of numbers with exact ranks below and above -- might not be members though
+cap on output from any mapper -- target of data sent to each reducer
+if binning is easy then data sent to reducer will be small, if not it will be large
+can also adjust the partition vs local sort
+
+* single precision: 24 bits, exp - 126 to + 127 (8 bits)
+* double precision: 53 bits, exp -1022 to +1023 (11 bits)
+
+
+
 === Some Useful Statistical Functions ===
 
 ==== avoiding ((underflow)) and ((loss of precision)) ====
@@ -420,35 +475,6 @@ keep sums using
 
     
   
-
-
-
-=== Median ===
-
-Naïve: 
-* do a total sort.
-* Pull out the %iles
-
-Compare :
-Count bins (histogram)
-For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possible values?
-
-
-observations:
-
-* it's hadoop, we don't have to be total wusses
-* the reducer already does a sort, so worrying about order N beyond that is silly
-* 
-
-set of numbers with exact ranks below and above -- might not be members though
-cap on output from any mapper -- target of data sent to each reducer
-if binning is easy then data sent to reducer will be small, if not it will be large
-can also adjust the partition vs local sort
-
-* single precision: 24 bits, exp - 126 to + 127 (8 bits)
-* double precision: 53 bits, exp -1022 to +1023 (11 bits)
-
-
 ==== Approximate methods ====
 
 We can also just approximate. 

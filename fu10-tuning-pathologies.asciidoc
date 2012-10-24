@@ -1,7 +1,5 @@
 == Pathology of Tuning (aka "when you should touch that dial") ==
 
-
-
 === Map tasks that output slightly more data than they read ===
 
 If your mapper task is slightly expansive (outputs more data than it reads), you may end up with an output file that for every input block emits one full block and almost-empty block. For example, a task whose output is about 120% of its input will have an output block ratio of 60% -- 40% of the disk space is wasted, and downstream map tasks will be inefficient. 
