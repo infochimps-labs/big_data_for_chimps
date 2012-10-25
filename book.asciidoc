@@ -1,10 +1,6 @@
 = Big Data for Chimps
 
-include::aa01-about.asciidoc[]
-
 include::ba00-first_exploration.asciidoc[]
-
-include::ba00-intro_to_wukong.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
@@ -59,6 +55,8 @@ include::ba05-overview_of_datasets.asciidoc[]
 include::ba07-data_formats.asciidoc[]
 
 include::mu06-best_practices_and_pedantic_points_of_style.asciidoc[]
+
+include::aa01-about.asciidoc[]
 
 include::tr01-authors.asciidoc[]
 
