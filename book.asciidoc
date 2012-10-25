@@ -4,8 +4,6 @@ include::ba00-first_exploration.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
 
-include::ba02-simple_stream.asciidoc[]
-
 include::ba06-semi_structured_data-a.asciidoc[]
 
 include::ba06-semi_structured_data-c-patterns.asciidoc[]
@@ -25,6 +23,8 @@ include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
 include::fu05-geographic_data.asciidoc[]
 
 include::fu02-server_logs.asciidoc[]
+
+include::ba02-simple_stream.asciidoc[]
 
 include::mu02-why_hadoop.asciidoc[]
 
@@ -53,8 +53,6 @@ include::mu04-data_modeling.asciidoc[]
 include::ba05-overview_of_datasets.asciidoc[]
 
 include::ba07-data_formats.asciidoc[]
-
-include::mu06-best_practices_and_pedantic_points_of_style.asciidoc[]
 
 include::aa01-about.asciidoc[]
 
