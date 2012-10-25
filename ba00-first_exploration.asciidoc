@@ -73,8 +73,8 @@ Let's pause, take a breath, and examine the data we've produced.
 
 We've turned articles that have a geolocation into coarse-grained regions that have implied frequencies for words. The particular frequencies arise from this combination of forces:
 
-* _signal_: Words that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
-* _background_: The natural frequency of each word: ("second" is used more often than "syzygy"), adjusted by the frequency each word is used in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
+* _signal_: Terms that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
+* _background_: The natural frequency of each term -- "second" is used more often than "syzygy" -- slanted by its frequency in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
 * _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
 
 Our next task -- the sprint home -- is to separate the signal from the background and (as much as possible) from the noise.
@@ -93,17 +93,25 @@ It's a simple sequence of _transforms_ (operations on each record in isolation: 
 
 To expose signal from the noise, we'll pull out a trick called "Pointwise Mutual Information" (PMI) <<pmi>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach that isolates the background and noise by comparing these rates:
 
-* the rate the word 'barbecue' is used
-* the rate that words are used on grid cell 023130130
-* the rate the word 'barbecue' is used on grid cell 023130130
+* the rate the term 'barbecue' is used
+* the rate that terms are used on grid cell 023130130
+* the rate the term 'barbecue' is used on grid cell 023130130
 
-We can continue just as above to get those figures: group the data (globally, and each tile); calculate rates in each group; and combine specific rates to form the PMI scores. Rather than step through each operation, I'll wave my hands and pull its output from the oven:
+Just as above, we can transform and reshape to get those figures:
+
+* group the data by term; count occurrences
+* group the data by tile; count occurrences
+* group the data by term and tile; count occurrences
+* count total occurrences
+* combine those counts into rates, and form the PMI scores.
+
+Rather than step through each operation, I'll wave my hands and pull its output from the oven:
 
 ------
 023130130 {(("texas",X),...,("longhorns",X),...("bbq",X),...,...}
 ------
 
-Finally, use a data visualization tool to see the result. As expected, you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
+As expected, you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
 
 .Not the actual output, but gives you the picture; TODO insert actual results
 image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
@@ -112,7 +120,7 @@ footnote:[You can use a fancier version of the approach used here to geolocate t
 
 ==== Takeaways
 
-We accomplished a fairly sophisticated data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
+We accomplished a complex data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
 
 As you'll see, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
 
