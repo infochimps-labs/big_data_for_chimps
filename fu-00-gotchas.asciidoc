@@ -1,0 +1,22 @@
+== Gotchas ==
+
+
+* Hadoop commandline tools use the trash to delete items; programs using the hadoop API do not. <remark>verify Pig uses the trash</remark>
+
+* The tasktracker heap size does not impact the amount of memory available for your tasks. You must adjust `mapred.map.child.java.opts` or `mapred.reduce.child.java.opts`.
+
+* Stripe your data across all disks
+  - Don't use the root drive
+  - Don't RAID your disks
+
+
+* Don't hit external services -- see <<server_logs_ddos>>.
+
+
+== Tips ==
+
+
+* Remove files from the trash immediately with `hadoop fs -rm -skipTrash /users/(you)/.Trash`
+
+== Common Error Messages ==
+
