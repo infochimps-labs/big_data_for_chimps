@@ -1,17 +1,41 @@
 == Pathology of Tuning (aka "when you should touch that dial") ==
 
+=== Mapper ===
 
+==== Map tasks "spill" multiple times ====
 
-=== Map tasks that output slightly more data than they read ===
+xx
 
-If your mapper task is slightly expansive (outputs more data than it reads), you may end up with an output file that for every input block emits one full block and almost-empty block. For example, a task whose output is about 120% of its input will have an output block ratio of 60% -- 40% of the disk space is wasted, and downstream map tasks will be inefficient. 
+==== Map tasks that output slightly more data than they read ====
 
-. Check this by comparing (TODO: grab actual terms) HDFS bytes read with mapper output size. 
+If your mapper task is slightly expansive (outputs more data than it reads), you may end up with an output file that for every input block emits one full block and almost-empty block. For example, a task whose output is about 120% of its input will have an output block ratio of 60% -- 40% of the disk space is wasted, and downstream map tasks will be inefficient.
+
+. Check this by comparing (TODO: grab actual terms) HDFS bytes read with mapper output size.
 
 You can check the block ratio of your output dataset with `hadoop fsck -blocks`
 
 (TODO: capture output)
 
-If your mapper task is expansive and the ratio is less than aobut 60%, you may want to set a min split size of about 
+If your mapper task is expansive and the ratio is less than aobut 60%, you may want to set a min split size of about
 
-Alternatively, turn up the min split size on the _next_ stage, sized so that it 
+Alternatively, turn up the min split size on the _next_ stage, sized so that it
+
+[[many_non_local_mappers]]
+==== Many non-local mappers ====
+
+
+==== Tons of tiny little mappers ====
+
+
+
+==== Reducer merge (sort+shuffle) is longer than Reducer processing ====
+
+xx
+
+==== Output Commit phase is longer than Reducer processing ====
+
+xx
+
+==== lll
+
+xx

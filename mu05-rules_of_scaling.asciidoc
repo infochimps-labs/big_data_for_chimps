@@ -45,7 +45,6 @@ Optimizing your data path can in many cases subtract 90% of your run time
 
 Find the parts that are annoying -- 
 
-
 Corrolaries:
 
     Automate out of boredom or terror, never efficiency

@@ -7,7 +7,7 @@ require_relative '../rake_helper'
 require_relative '../geo'
 
 Pathname.register_paths(
-  images:     [:root, 'images', 'map_grid_cells-qk'],
+  images:     [:root, 'images', 'map_grid_cells'],
   )
 
 Settings.use :commandline
@@ -34,7 +34,6 @@ def fetch_tile(tile_info)
   end
 end
 
-
 tile_info = Settings.to_hash
 
 MAX_TILES_TO_FETCH = 1e4 unless defined?(MAX_TILES_TO_FETCH)
@@ -57,22 +56,22 @@ def quadkey_range(quadkey, zl, zl_max, &block)
   end
 end
 
+# Guess the zoom level from quadkey if missing
+Settings.zl ||= Settings.quadkey.length.to_s if Settings.quadkey.present?
+# and then extract the range if any
+zl_min, zl_max = Settings.zl.split('-', 2)
+zl_min = zl_min.to_i
+zl_max = zl_max ? zl_max.to_i : zl_min
+
 if Settings.quadkey.present?
   Settings.quadkey.gsub!(/_/, '')
-
-  # Guess the zoom level from quadkey if missing
-  Settings.zl ||= Settings.quadkey.length.to_s
-  # and then extract the range if any
-  zl_min, zl_max = Settings.zl.split('-', 2)
-  zl_min = zl_min.to_i
-  zl_max = zl_max ? zl_max.to_i : zl_min
 
   quadkey_range(Settings.quadkey, zl_min, zl_max) do |quadkey|
     fetch_tile(tile_info.merge(quadkey: quadkey, zl: quadkey.length))
   end
 
-# else
-#   (zl_min.to_i .. zl_max.to_i).each do |zl|
-#     fetch_tile(tile_info.merge(zl: zl))
-#   end
+else
+  (zl_min.to_i .. zl_max.to_i).each do |zl|
+    fetch_tile(tile_info.merge(zl: zl))
+  end
 end

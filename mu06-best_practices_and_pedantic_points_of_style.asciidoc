@@ -2,7 +2,6 @@
 
 Here's a brain dump of things to do or not do
 
-
 === File Organization ===
 
 * do not: try to have a uniform naming scheme for all files
@@ -34,9 +33,7 @@ these are the features of a datastore
 * rate limit dangerous actions
 
 
-==== In general, things to never do ====
-
-While I have your attention, please don't do any of these things
+==== Don't ====
 
 * write a static configuration language.
 * use XML. If you do use XML, use a disciplined subset that I can parse naively.
@@ -53,9 +50,4 @@ Unless any of the following is your full-time job and area of specific expertise
 * touch raw sockets
 * matrix solver
 
-Proposed rule: "Never adopt a new lang until it has libs for OAuth+SSL, matrix solving, & LOGO" // Which 3 would you choose?
-
-
-=== Dammit Encoding ===
-
-Using `cut -c` ("chop off line at this many characters") can fail when there are extended characters in the line.
+Proposed rule: "Never adopt a new lang until it has libs for OAuth+SSL, matrix solving, & LOGO"

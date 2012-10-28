@@ -6,7 +6,7 @@ describe Wukong::Geolocated do
   let(:aus_lat){    30.273884 }
   let(:sat_lng){   -98.486123 } # San Antonio, TX
   let(:sat_lat){    29.42575  }
-  let(:dpi){      72 }
+  let(:dpi){ 72 }
   #
   let(:aus_tile_x_3){  1.82758 } # zoom level 3
   let(:aus_tile_y_3){  3.29356 }
@@ -186,11 +186,11 @@ describe Wukong::Geolocated do
     end
 
     it "returns a bounding box given a quadkey" do
-      left, top, right, btm = Wukong::Geolocated.quadkey_to_bbox(aus_quadkey_3)
+      left, btm, right, top = Wukong::Geolocated.quadkey_to_bbox(aus_quadkey_3)
       left.should  be_within(0.0001).of(-135.0)
-      top.should   be_within(0.0001).of(  40.9799)
       right.should be_within(0.0001).of(- 90.0)
       btm.should   be_within(0.0001).of(   0.0)
+      top.should   be_within(0.0001).of(  40.9799)
     end
 
     it "returns the smallest quadkey containing two points" do
@@ -198,16 +198,16 @@ describe Wukong::Geolocated do
     end
 
     it "returns a bounding box given a point and radius" do
-      left, top, right, btm = Wukong::Geolocated.lng_lat_rad_to_bbox(aus_lng, aus_lat, radius)
+      left, btm, right, top = Wukong::Geolocated.lng_lat_rad_to_bbox(aus_lng, aus_lat, radius)
 
       left.should  be_within(0.0001).of(-108.1723)
-      top.should   be_within(0.0001).of(  39.2671)
       right.should be_within(0.0001).of(- 87.3457)
       btm.should   be_within(0.0001).of(  21.2807)
+      top.should   be_within(0.0001).of(  39.2671)
     end
 
     it "returns a centroid given a bounding box" do
-      mid_lng, mid_lat = Wukong::Geolocated.bbox_centroid([aus_lng, aus_lat], [sat_lng, sat_lat])
+      mid_lng, mid_lat = Wukong::Geolocated.bbox_centroid([aus_lng, sat_lat], [sat_lng, aus_lat])
       mid_lng.should be_within(0.0001).of(-98.1241)
       mid_lat.should be_within(0.0001).of( 29.8503)
     end
@@ -225,7 +225,7 @@ describe Wukong::Geolocated do
     end
 
     it "calculates the haversine midpoint between two points" do
-      lng, lat = Wukong::Geolocated.haversine_midpoint(aus_lng, aus_lat, sat_lng, sat_lat)
+      lng, lat = Wukong::Geolocated.haversine_midpoint(aus_lng, sat_lat, sat_lng, aus_lat)
       lng.should be_within(0.0001).of(-98.1241)
       lat.should be_within(0.0001).of( 29.8503)
     end

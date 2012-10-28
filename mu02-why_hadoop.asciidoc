@@ -46,7 +46,6 @@ The machines in stage 1 ('label') are allowed no locality. They see each record 
 As each pile of output products starts to accumulate, we can begin to group them. Every group is assigned to its own reducer (it's important to be fair that no one is over-worked.) When a pile reaches a convenient size, it is shipped to the appropriate reducer while the mapper keeps working. Once the map finishes, we organize those piles for its reducer to process, each in proper order.
 
 If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
-
     
 === Disk is the new tape ===
 
@@ -73,7 +72,6 @@ Heaven knows Hadoop has its flaws, and its codebase is long and hairy, but its c
 * logging
 * serialization
 
-
 ==== Economics: ====
 
 Say you want to store a billion objects, each 10kb in size. At commodity cloud storage prices in 2012, this will cost roughly [^1]
@@ -98,12 +96,7 @@ By contrast, it costs [^1]
 
 In a database world, the dominant cost of an engineering project is infrastructure. In a hadoop world, the dominant cost is engineers.
 
-
-
 [^1] I admit these are not apples-to-apples comparisons. But the differences are orders of magnitude: subtly isn't called for
-
-
-
 
 === Notes ===
 

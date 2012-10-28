@@ -5,7 +5,6 @@
 
 * The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
 
-* check that joeman is the man
 
 [[todo_tasks]]
 === Tasks for later ===
@@ -16,17 +15,57 @@
 [[todo_hey_editor]]
 ==== Hey Editor ====
 
-* Does a bulleted list have a dot at the end of the line?
-* How do I slide a chapter title to be before `1` (eg the about this book)?
+* Does a bulleted list have a period at the end of the line?
+* How do I make a chapter index that is less than `1` (eg the "about this book" section)?
 * What does "replaceable" mean?
 * When introducing a _new term_ do I decorate it at all besides the emphasis?
-* Indexing hints yes or no?
-
+* Indexing hints, yes or no?
 
 [[style_notes]]
-==== Style notes:
+=== Style notes:
 
-===== Markup
+==== Markup
+
+Conventions:
+
+[[syntax_table]]
+.A Table
+[options="header"]
+|=======
+| syntax                                | docbook               | description
+| `+plus signs+`			| monospaced      	| +monospaced text+
+| `\`backticks\``			| `<literal>`     	| generic `literal text`
+| `*+star plus+*`			| `<userinput>`   	| *+literal commands typed by user+* or `pass:[<userinput>foo</userinput>]`
+| `_++bar plus plus++_`			| `<replaceable>` 	| _+replaceable+_ or `pass:[<replaceable>foo</replaceable>]`
+| `_**++bar star star plus plus++**_`	| user inp+replbl	| _+user input replaceable+_ or `pass:[<userinput><replaceable>foo</replaceable></userinput>]`
+| `_underscores_`			| `<emphasis>`    	|  _emphasized text_ and _new terms_.
+| `'single_quotes'`			| `<emphasis>`  	| _URLs_, _email addresses_, _filenames_, and _file extensions_
+| `[role="filename"]'/pathto/file.ext'`	| `<filename>`    	| [role="filename"]'/pathto/file.ext'
+| `[role="citetitle"]'Hadoop'`		| `<book title>`  	| [role="citetitle"]'Hadoop'
+| `*asterisks*` 			| bold text	      	| *bold text* should _not_ be used for emphasis -- use underscores.
+| `H~2~O and 2^5^ = 32`			| super/subscripts   	| H~2~O and 2^5^ = 32. Subscripts and superscripts. For mathematical equations, italicize the variables: _x_^2^ + _y_^2^ = _z_^2^
+| `<<double angles>>`			| `<xref>`      	| <<style_notes>>
+| footnote:[This is a footnote.]`	| footnotes      	| footnotefootnote:[This is a footnote.]. Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]` (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
+| `.I am a Title!`			| figure titles 	| Titles for figures, tables, examples, and sidebars, but not sections.
+| 
+|=======
+
+
+[[block_table]]
+.Block Table
+[options="header"]
+|======
+| `.Image    \n image::path/image.jpg`    	| image    	| 
+| `[quote]   \n ___`                       	| `<quote>` 	| underbars
+| `.Code blk \n ==== ---- \n [source,ruby]`	| code block 	|
+| `.Sidebar  \n ****`                        	| sidebar 	|
+| `.Table    \n [options="header"] \n |==== \n`	| table  	|
+|               `++++ \n <remark>`       	| secret message | plus
+| `[WARNING] \n =====`                     	| NOTE, TIP, WARNING, CAUTION |
+|======
+
+
+==== Titles ====
 
 ----
 == Chapter
@@ -35,40 +74,78 @@
 ===== Passage
 ----
 
-Conventions:
+==== Lists ====
 
-| monospaced     	|   `+plus signs+` | +monospaced text+
-| `<literal>`    	|   `\`backticks\`` | generic `literal text`
-| `<userinput>`       	|   `*+star plus+*`  | *+literal commands typed by user+* or `pass:[<userinput>foo</userinput>]`
-| 
-| `<replaceable>`	|   `_++bar plus plus++_` | _+replaceable+_ or `pass:[<replaceable>foo</replaceable>]`
-| user inp+replbl       |   `_**++bar star star plus plus++**_` _+user input replaceable+_ or `pass:[<userinput><replaceable>foo</replaceable></userinput>]`
+===== Definition Lists ===== 
 
-| `<emphasis>`  	|   `_underscores_` for _emphasized text_
-                              ** indicates _new terms_, _URLs_, _email addresses_, _filenames_, and _file extensions_
-                              ** for consistency don't use `'single quotes'` for _emphasis_ except to indicate a filename or path
-| `<filename>`   	|   [role="filename"]'/path/to/file.ext'
-| `<book title>`	|   [role="citetitle"]'Hadoop	| The Definitive Guide'
-| bold text     	|   `*asterisks*` for *bold text* should _not_ be used for emphasis -- use underscores.
-| `<Math>`              |    ** Subscripts and superscripts work like so: H~2~O and 2^5^ = 32 (but if you're doing math, you'd probably want to italicize the variables, like so: _x_^2^ + _y_^2^ = _z_^2^). For more on math see !!ORMTODO!!.
-| `<xref>`              |  `<<double angles>>` | <<style_notes>>
-| footnotes       	| `footnote:[This is a standard footnote.]`
+----
+Term 1::
+  Definition/description
+Term 2::
+  Something else
+----
 
-| Use a title (`.I am a Title!`) for figures, tables, examples, and sidebars, but not otherwise.
+===== Bulleted (aka Itemized) Lists
 
-Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]`
-(note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
+* lions
+* tigers
+** sabre-toothed
+** teapotted
+* bears
 
-===== JOEMAN:Notation
+===== Ordered (aka Numbered) Lists ===== 
+
+. Preparation
+. Assembly
+.. Measure 
+.. Combine
+.. Bake
+. Applause
+
+
+
+==== JOEMAN:Notation ====
+
 | :HS			| Half Sentence
 | :Comment		| General editorial comment
 | :FIN			| Chapter / section needs finishing, conclusion, summary
 
-    cd ~/dev/big_data_for_chimps/ ; git pull --ff-only oreilly master && git push oreilly joeman:master
+==== References ====
 
-===== Blocks
 
-Inline code block. You can use the `include::code/HelloWorld.rb[]` to pull it in from a separate file.
+
+==== Blocks ====
+
+===== Quote =====
+
+Here's a `<quote>` by Tracy Morgan:
+
+[quote]
+____
+Live every week like it was Shark Week
+____
+
+===== Images & Figures =====
+
+See https://prod.oreilly.com/external/illustrations/[guidelines for illustrations]
+
+Somewhere nearby is <<FIG1_syntax>> (a figure, titled and cross-referenced).
+
+----
+[[FIG_syntax]]
+.A figure
+image::images/quadkeys-numbering-zl0-zl1.png[alt="This is the alt text" width="222px"]
+----
+
+[[FIG_syntax]]
+.A figure
+image::images/quadkeys-numbering-zl0-zl1.png[alt="This is the alt text" width="222px"]
+
+===== Code Block =====
+
+Inline code block. You can use `include::code/HelloWorld.rb[]` to pull it in from a separate file.
+
+Prefix each with `[[ref_name]]`
 
 ----
 [source,java]
@@ -97,7 +174,57 @@ EOF
 ----
 ====
 
+===== Sidebar =====
+
 .A Sidebar
 ****
 This is a sidebar!!
 ****
+
+==== Tables ====
+
+----
+[[STD_TABLE]]
+.A Table
+[options="header"]
+|=======
+| syntax                                | docbook               | description
+| `+plus signs+`			| monospaced      	| +monospaced text+
+|=======
+----
+
+==== Secret Messages ====
+
+++++
+<remark>Use a passthrough block like this for notes to production staff</remark>
+++++
+
+// javascript-style comments are totally invisible
+
+==== Admonitions (Notes and Warnings)
+
+Here are some admonitions:
+
+[NOTE]
+===============================
+O'Reilly Animal books traditionally make no distinction between the
+DocBook +<note>+, +<tip>+, and +<important>+ elements.
+===============================
+
+.Titled Admonition
+[TIP]
+===============================
+We do support optional titles in admonitions (in most series).
+===============================
+
+[WARNING]
+===============================
+O'Reilly Animal books traditionally make no distinction between the
+DocBook +<warning>+ and +<caution>+ elements.
+===============================
+
+[CAUTION]
+===============================
+O'Reilly Animal books traditionally make no distinction between the
+DocBook +<warning>+ and +<caution>+ elements.
+===============================

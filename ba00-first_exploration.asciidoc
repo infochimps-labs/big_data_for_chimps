@@ -25,34 +25,41 @@ JOEMAN:Comment Consider forming this into a more clear question. The analysis th
 
 ==== Summarize every page on Wikipedia
 
-.Snippet from the Wikipedia article on "Lexington, Texas"
+First, we need to summarize the words associated with each topic, by preparing the "word bag" from its wikipedia page. The wordbag <<wp_lexington_article>> text turns into the <<wp_lexington_wordbag>>
+
+[[wp_lexington_article]]
+._Wikipedia article on "Lexington, Texas"_
 [quote, wikipedia, http://en.wikipedia.org/wiki/Lexington,_Texas]
 ______
-Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker called "the best Texas BBQ in the world" is located in Lexington.
+Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
 ______
 
-First, we need to summarize the words associated with each topic, by preparing the "word bag" from its wikipedia page:
-
-.Wordbag of Wikipedia article on "Lexington, Texas"
+[[wp_lexington_wordbag]]
+._Wordbag of Wikipedia article on "Lexington, Texas"_
 ------
-Lexington,_Texas {("texas",4)("lexington",2),("called",2),("best",2),("bbq",2),("barbecue",1), ...}
+Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-Next, we will join with the page metadata to annotate each wordbag with its geo coordinates:
+Next, annotate each wordbag with its geo coordinates (by joining with the page metadata):
 
+[[wp_lexington_wordbag_and_coords]]
+._Wordbag with coordinates_
 ------
-Lexington,_Texas -97.01 30.41 {("texas",4)("lexington",2),("called",2),("best",2),("bbq",2),("barbecue",1), ...}
+Lexington,_Texas -97.01 30.41 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
 ==== Bin Locations
 
-Now we're ready to summarize words by region: divide the world into grid cells and map each wordbag onto its article's grid cell. We'll use the "quad key", a geographic grid well-suited to big data (see <<quadkey,"Geographic Data">> later in the book):
+Now we're ready to summarize words by region: divide the world into grid cells and map each wordbag onto its article's grid cell.
 
+------
+Lexington,_Texas 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
+------
+
+The two coordinates column has turned into a funny-looking single number -- this is the "quad key", a grid scheme well-suited to big data (see chapter on <<quadkey,"Geographic Data">>). For now, just know that it's a <<unique key for each grid,quadkey_central_texas>>.
+
+[[quadkey_central_texas]]
 image::images/Quadtree-google_maps_screenshot.png[Grid tiles for Central Texas]
-
-------
-Lexington,_Texas 023130130 {("texas",4)("lexington",2),("called",2),("best",2),("bbq",2),("barbecue",1), ...}
-------
 
 Next, combine the individual word bags to find each grid cell's word bag:
 
@@ -60,34 +67,60 @@ Next, combine the individual word bags to find each grid cell's word bag:
 023130130 {(("many", X),...,("texas",X),...,("town",X)...("longhorns",X),...("bbq",X),...}
 ------
 
-These frequencies reflect a mixture of several forces:
+==== A pause, to think
 
-* _background_: The natural frequency of each word: ("second" is used more often than "syzygy"), adjusted by the frequency each word is used in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
-* _signal_: Words that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
+Let's pause, take a breath, and examine the data we've produced.
+
+We've turned articles that have a geolocation into coarse-grained regions that have implied frequencies for words. The particular frequencies arise from this combination of forces:
+
+* _signal_: Terms that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
+* _background_: The natural frequency of each term -- "second" is used more often than "syzygy" -- slanted by its frequency in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
 * _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
 
-We will expose the signal using Pointwise Mutual Information (pmi TODO: ref), a simple approach that will remove the background and let us control for the noise. It combines
+Our next task -- the sprint home -- is to separate the signal from the background and (as much as possible) from the noise.
 
-* rate the word 'barbecue' is used
-* rate that words are used on grid cell 023130130
-* rate the word 'barbecue' is used on grid cell 023130130
+Take a quick backward glance, though, to see the fundamental pattern that got us here. We
 
-We'll use a Pig script to group and find each rate, and lastly to calculate the PMI scores:
+. transformed articles into wordbags
+. augmented each wordbag with coordinates, using a join
+. converted each article's precise point into the coarse-grained tile it sits on
+. brought all wordbags for each tile together;
+. merging each tile's word counts into a single combined wordbag.
+
+It's a simple sequence of _transforms_ (operations on each record in isolation: steps 1, 3 and 5) and _reshapes_ -- operations that combine multiple rows, from different tables (the join in step 2) or in the same dataset (the group in step 4).
+
+==== Pulling signal from noise
+
+To expose signal from the noise, we'll pull out a trick called "Pointwise Mutual Information" (PMI) <<pmi>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach that isolates the background and noise by comparing these rates:
+
+* the rate the term 'barbecue' is used
+* the rate that terms are used on grid cell 023130130
+* the rate the term 'barbecue' is used on grid cell 023130130
+
+Just as above, we can transform and reshape to get those figures:
+
+* group the data by term; count occurrences
+* group the data by tile; count occurrences
+* group the data by term and tile; count occurrences
+* count total occurrences
+* combine those counts into rates, and form the PMI scores.
+
+Rather than step through each operation, I'll wave my hands and pull its output from the oven:
 
 ------
 023130130 {(("texas",X),...,("longhorns",X),...("bbq",X),...,...}
 ------
 
-Finally, use a data visualization tool to see the result:
+As expected, you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
 
+.Not the actual output, but gives you the picture; TODO insert actual results
+image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
 
 footnote:[You can use a fancier version of the approach used here to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. (see Baldridge et al TODO: reference)]
 
-image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
-
 ==== Takeaways
 
-We accomplished a fairly sophisticated data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
+We accomplished a complex data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
 
 As you'll see, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
 

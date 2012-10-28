@@ -147,3 +147,78 @@ include::code/server_logs/server_logs-04-page_page_edges-03-reducer.log[]
 ----
 
 You'll learn more about this in the chapter on ((Processing Graphs)), but 
+
+
+== Geo-IP Matching ==
+
+[[range_query]]
+[[geo_ip_matching]]
+
+You can learn a lot about your site's audience in aggregate by mapping IP addresses to geolocation. Not just in itself, but joined against other datasets, like census data, store locations, weather and time. footnote:[These databases only impute a coarse-grained estimate of each visitor's location -- they hold no direct information about the persom. Please consult your priest/rabbi/spirit guide/grandmom or other appropriate moral compass before diving too deep into the world of unmasking your site's guests.]
+
+Maxmind makes their http://www.maxmind.com/en/geolite[GeoLite IP-to-geo database] available under an open license (CC-BY-SA)footnote:[For serious use, there are professional-grade datasets from Maxmind, Quova, Digital Element among others.]. Out of the box, its columns are `beg_ip`, `end_ip`, `location_id`, where the first two columns show the low and high ends (inclusive) of a range that maps to that location. Every address lies in at most one range; locations may have multiple ranges.
+
+This arrangement caters to range queries in a relational database, but isn't suitable for our needs. A single IP-geo block can span thousands of addresses.
+
+To get the right locality, take each range and break it at some block level. Instead of having `1.2.3.4` to `1.2.5.6` on one line, let's use the first three quads (first 24 bits) and emit rows for `1.2.3.4` to `1.2.3.255`, `1.2.4.0` to `1.2.4.255`, and `1.2.5.0` to `1.2.5.6`. This lets us use the first segment as the partition key, and the full ip address as the sort key.
+
+
+
+          lines            bytes  description                  file            
+      15_288_766   1_094_541_688  24-bit partition key         maxmind-geolite_city-20121002.tsv
+       2_288_690     183_223_435  16-bit partition key         maxmind-geolite_city-20121002-16.tsv
+       2_256_627      75_729_432  original (not denormalized)  GeoLiteCity-Blocks.csv
+
+       
+=== Range Queries ===       
+
+This is a generally-applicable approach for doing range queries.
+
+* Choose a regular interval, fine enough to avoid skew but coarse enough to avoid ballooning the dataset size.
+* Whereever a range crosses an interval boundary, split it into multiple records, each filling or lying within a single interval.
+* Emit a compound key of `[interval, join_handle, beg, end]`, where
+  - `interval` is 
+  - `join_handle` identifies the originating table, so that records are grouped for a join (this is what ensures 
+  If the interval is transparently a prefix of the index (as it is here), you can instead just ship the remainder: `[interval, join_handle, beg_suffix, end_suffix]`.
+* Use the 
+
+
+In the geodata section, the "quadtile" scheme is (if you bend your brain right) something of an extension on this idea -- instead of splitting ranges on regular intervals, we'll split regions on a regular grid scheme.
+
+[[server_logs_ddos]]
+=== Using Hadoop for website stress testing ("Benign DDos")
+
+Hadoop is engineered to consume the full capacity of every available resource up to the currently-limiting one. So in general, you should never issue requests against external services from a Hadoop job -- one-by-one queries against a database; crawling web pages; requests to an external API. The resulting load spike will effectively be attempting what web security folks call a "DDoS", or distributed denial of service attack.
+
+Unless of course you are trying to test a service for resilience against an adversarial DDoS -- in which case that assault is a feature, not a bug!
+
+.elephant_stampede
+----
+
+        require 'faraday'
+	
+        processor :elephant_stampede do
+
+	  def process(logline)
+	    beg_at = Time.now.to_f
+	    resp = Faraday.get url_to_fetch(logline)
+	    yield summarize(resp, beg_at)
+	  end
+
+	  def summarize(resp, beg_at)
+	    duration = Time.now.to_f - beg_at
+	    bytesize = resp.body.bytesize
+	    { duration: duration, bytesize: bytesize }
+	  end
+
+	  def url_to_fetch(logline)
+	    logline.url
+	  end
+	end
+
+	flow(:mapper){ input > parse_loglines > elephant_stampede }
+----	
+
+	
+You must use Wukong's eventmachine bindings to make more than one simultaneous request per mapper.
+

@@ -1,0 +1,31 @@
+== Hello, Reviewers ==
+
+I work somehow from the inside out -- generate broad content, fill in, fill in, and asymptotically approach coherency. So you will notices sentences that stop in the
+
+I'm endeavoring to leave fewer of these in chapters that hit the preview version, and to fill in the existing ones.
+
+=== Controversials
+
+I'd love feedback on a few decisions.
+
+**Sensible but nonstandard terms**: I want to flatten the learning curve for folks who have great hopes of never reading the source code or configuring Hadoop's internals. So where technical hadoop terms are especially misleading, I'm using an isomorphic but nonstandard one (introducing it with the technical term, of course). For example, I refer to the "early sort passes" and "last sort pass", rather than the misleading "shuffle" and "sort" terms from the source code.
+
+On the one hand, I know from experience that people go astray with those terms: far more sorting goes on during the shuffle phase than the sort phase. On the other hand, I don't want to leave them stranded with idiosyncratic jargon. Please let me know where I've struck the wrong balance.
+
+* "early sort passes" vs "shuffle phase"
+* "last sort pass" vs "sort phase"
+* "commit/output" for "commit".
+* for configuration options, use the standardized names from wukong (eg `midflight_compress_codec`, `midflight_compress_on` and `output_compress_codec` for `mapred.map.output.compression.codec`, `mapred.compress.map.output` and  `mapred.output.compression.codec`).
+
+**Vernacular Ruby? or Friendly to non-natives Ruby?**: I'm a heavy Ruby user, but I also believe it's the most readable language available. I want to show people the right way to do things, but some of its idioms can be distracting to non-native speakers. 
+
+      # Vernacular                     # Friendly
+ 
+      def bork(xx, yy=nil)             def bork(xx, yy=nil)
+        yy ||= xx                        yy = xx if (not yy)
+	xx * yy                          return xx * yy
+      end                              end
+
+      items = list.map(&:to_s)         items = list.map{|el| el.to_s }
+
+My plan is to use vernacular ruby -- with the one exception of providing `return` statements. I'd rather annoy rubyists than visitors, so please let me know what idioms seem opaque, and whether I should explain or eliminate them.

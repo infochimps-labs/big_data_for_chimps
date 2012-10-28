@@ -1,3 +1,31 @@
+== Hadoop Execution in Detail  ==
+
+=== Launch ===
+
+When you launch a job (with `pig`, `wukong run`, or `hadoop jar`), it starts a local process that
+
+* reads hadoop config files (`core-site.xml`, `hdfs-site.xml`, `mapred-site.xml`) and prepares a synthesized configuration.
+* asks the jobtracker for a job ID, and calculates input splits 
+* pushed your program and its assets (jars, script files, distributed cache contents) into the job's directory on the HDFS.
+* asks the jobtracker enqueue the job.
+
+After a few seconds you should see the job appear on the jobtracker interface. The jobtracker will begin dispatching the job to workers with free slots, as directed by its scheduler footnote:[unless your cluster is heavily used by multiple people, the default scheduler is fine. If fights start breaking out, quickly consult (TODOREF Hadoop Operations) for guidance on the other choices]. It knows where all the input blocks are, and will try to launch each task on the same machine as its input ("bring the compute to the data"). The jobtracker will tell you how many map tasks are "local" (launched on a different machine than its input); if it's not harmlessly small, see <<many_non_local_mappers>>.
+
+The launching process doesn't take many resources, so for a development cluster it's OK to launch a job from a worker machine. Terminating the launch process won't affect the job execution, but its output is useful. To record its output even if you log off, use the `nohup` command:
+
+----
+    nohup [...normal launch command...] >> /tmp/my_job-`date +%F`.log 2>&1 &
+----
+
+Run `tail -f /tmp/my_job-*.log` to keep watching the job's progress.
+
+[NOTE]
+======
+The job draws its default configuration from the _launch_ machine's config file. Make sure those defaults doesn't conflict with appropriate values for the workers that will actually execute the job! One great way to screw this up is to launch a job from your dev machine, go to dinner and come back to find it using one reducer and a tiny heap size. Another is to start your job from a master that is provisioned differently from the workers.
+======
+
+=== Split ===
+
 Input files are split and assigned to mappers.
 Each mapper will receive a chunk bounded by:
 
@@ -8,9 +36,37 @@ Each mapper will receive a chunk bounded by:
 * Block size -- the natural unit of data to feed each map task is the size of an HDFS file chunk;
   this is what lets Hadoop "bring the compute to the data".
 
-If the
+Exercises:
+
+* Create a 2GB file having a 128MB block size on the HDFS. Run `wu-stream cat cat --min_split_mb=1900` on it. How many map tasks will launch? What will the "non-local" cell on the jobtracker report? Try it out for 1900, and also for values of 128, 120, 130, 900 and 1100.
+
+=== Mappers ===
 
 
+
+===== Hadoop Streaming (Wukong, MrJob, etc) =====
+
+If it's a Hadoop "streaming" job (Wukong, MrJob, etc), the child process is a Java jar that itself hosts your script file:
+
+* it forks the script in a new process. The child ulimit applies to this script, but the heap size and other child process configs do not.
+* passes all the Hadoop configs as environment variables, changing `.` dots to `_` underbars. Some useful examples:
+  - `map_input_file`  -- the file this task is processing
+  - `map_input_start` -- the offset within that file
+  - `mapred_tip_id`   -- the task ID. This is a useful ingredient in a unique key, or if for some reason you want each mapper's output to go to a distinct reducer partition.
+* directs its input to the script's `STDIN`. Not all input formats are streaming-friendly.
+* anything the script sends to its `STDOUT` becomes the jar's output.
+
+forks yet another 
+
+Once the maps start, it's normal for them to seemingly sit at 0% progress for a little while: they don't report back until a certain abount of data has passed through. Annoyingly, jobs with gzipp'ed input will remain mute until they are finished (and then go instantly from 0 to 100%).
+
+
+*exercise*: Write a mapper that ignores its input but emits a configurable number of bytes, with a configurable number of bytes per line. Run it with one mapper and one reducer. Compare what happens when the output is just below, and just above, each of these thresholds:
+  - the HDFS block size
+  - the mapper sortbuf spill threshold
+  - the mapper sortbuf data threshold
+  - the mapper sortbuf total threshold
+  
 
 === Choosing a file size ===
 

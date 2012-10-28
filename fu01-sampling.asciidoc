@@ -25,50 +25,70 @@
 
 We're not going to worry about extracting samples larger than fit on one reducer.
 
+[[consistent_random_sampling]]
+=== Consistent Random Sampling ===
 
-=== Random Sampling ===
+The simplest kind of sample is a uniform sample selecting a fraction `p` of the full dataset.
 
-"Binomial" sampling -- emit each line with fraction
+The naive way take is to generate a random number and select each line if it is less than the probability `p`. Don't do this.
 
-To take a random sample, fraction `p` of the full dataset:
-* write a mapper that emits lines with probability `p`
-* use a null reducer or no reducer ("-D mapred.reduce.tasks=0")
+You want your job to be deterministic. In the large, so that it is predictable and debuggable. in the small, a mapper may be re-tried if the attempt fails, or while doing speculative execution.
 
-**(don't do this -- random numbers in hadoop jobs == bad)**
+What we'll do instead is use a standard digest function (for example, the MD5 hash or murmur hash).  A digest function turns any key into a fixed-size number, with the important property that any small change in the input string results in an arbitrarily large change in the output number. It's deterministic (the same input always gives the same output) but effectively washes out all information from the input string.
+
+Then, rather than compare a random number against a fraction, we'll turn the digest into an integer (by treating the lowest 64 bits as an integer) and compare it to that fraction of the largest 64-bit number.
+
+<remark>confirm that it's LSB not MSB we want</remark>
 
 A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby example] is available in the wukong examples:
 
-<pre>
-#
-# Probabilistically emit some fraction of record/lines
-#
-# Set the sampling fraction at the command line using the
-#   --sampling_fraction=
-# option: for example, to take a random 1/1000th of the lines in huge_files,
-#  ./examples/sample_records.rb --sampling_fraction=0.001 --go huge_files sampled_files
-#
-class Mapper < Wukong::Streamer::LineStreamer
-  include Wukong::Streamer::Filter
+	#
+	# Probabilistically emit some fraction of record/lines
+	#
+	# Set the sampling fraction at the command line using the
+	#   --sampling_fraction=
+	# option: for example, to take a random 1/1000th of the lines in huge_files,
+	#  ./examples/sample_records.rb --sampling_fraction=0.001 --go huge_files sampled_files
+	#
+	class Mapper < Wukong::Streamer::LineStreamer
+	  include Wukong::Streamer::Filter
 
-  #
-  # floating-point number between 0 and 1 giving the fraction of lines to emit:
-  # at sampling_fraction=1 all records are emitted, at 0 none are.
-  #
-  def sampling_fraction
-    @sampling_fraction ||= ( options[:sampling_fraction] && options[:sampling_fraction].to_f ) or
-      raise "Please supply a --sampling_fraction= argument, a decimal number between 0 and 1"
-  end
+	  def intialize(*)
+	    super
+	    get_sampling_threshold
+	  end
 
-  # randomly decide to emit +sampling_fraction+ fraction of lines
-  def emit? line
-    rand < self.sampling_fraction
-  end
-end
+	  # randomly decide to emit +sampling_fraction+ fraction of lines
+	  def emit? line
+	     digest_i < sampling_threshold
+	  end
+	  
+        protected
 
-# Execute the script with nil reducer
-Script.new( Mapper, nil ).run
-</pre>
+	  # Uses the sampling_fraction, a real value between 0 and 1 giving the fraction of lines to
+	  # emit.  at sampling_fraction=1 all records are emitted, at 0 none are.
+	  #
+	  # @return [Integer] between 0 and MAX_DIGEST; values below the sampling_threshold should be emitted.
+	  def get_sampling_threshold
+            if not options[:sampling_fraction] then raise ArgumentError, "Please supply a --sampling_fraction -- a real value between 0 and 1" ; end
+	    @sampling_threshold = (Float(options[:sampling_fraction]) * MAX_DIGEST).to_i
+	  end
+	  
+	  # @return [Integer] the last 64 bits of the record's md5 hash
+	  def digest_i(record)
+	    Digest::MD5.digest(record.to_s).unpack('Q*').last
+	  end
+	  # One more than the largest possible digest int that digest_i will return.
+	  MAX_DIGEST = 2 ** 64
+	end
 
+	# Execute the script with nil reducer
+	Script.new( Mapper, nil ).run
+
+
+References:
+* See this http://blog.rapleaf.com/dev/?p=187[rapleaf blog post] for why randomness is considered harmful.
+	
 === Random Sampling using strides ===
 
 Another, often faster, way of doing random sampling is to
@@ -76,11 +96,6 @@ generate a geometrically-distributed (rather than uniformly-distributed) samplin
 For each value `R`, Your mapper skips `R` lines and
 
 see section on statistics for how to get a geometrically-distributed number.
-
-=== Consistent Sampling ===
-
-See this [http://blog.rapleaf.com/dev/?p=187 rapleaf blog post]
-
 
 === Constant-Memory "Reservoir" Sampling ===
 
@@ -101,10 +116,7 @@ Each mapper outputs the sampling index of each preserved row as the key, and the
 
 It's essential that you keep the sampling index given by the first pass.
 
-
-
 === References ===
-
 
 * http://db.cs.berkeley.edu/papers/UCB-PhD-olken.pdf[Random Sampling from Databases], Frank Olken, 1993
 

@@ -1,10 +1,8 @@
 == Pig UDFs (User-Defined Functions) ==
 
-
 === LoadFunc / StoreFunc : Wonderdog -- an ElasticSearch UDF ===
 
 placeholder
-
 
 ''''
 

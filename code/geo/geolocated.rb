@@ -89,7 +89,7 @@ module Wukong
       # @returns [Array<Numeric, Numeric>] a `[longitude, latitude]` pair representing object as a point.
       def lng_lat        ; [longitude, latitude] ; end
 
-      # @returns [left, top, right, btm]
+      # @returns [left, btm, right, top]
       def bbox_for_radius(radius) ; Wukong::Geolocated.lng_lat_rad_to_bbox(longitude, latitude, radius) ; end
     end
 
@@ -210,15 +210,15 @@ module Wukong
     def quadkey_to_bbox(quadkey)
       tile_x, tile_y, zl = quadkey_to_tile_xy_zl(quadkey)
       # bottom right of me is top left of my southeast neighbor
-      left,  top  = tile_xy_zl_to_lng_lat(tile_x,     tile_y,     zl)
-      right, btm  = tile_xy_zl_to_lng_lat(tile_x + 1, tile_y + 1, zl)
-      [left, top, right, btm]
+      left,  top = tile_xy_zl_to_lng_lat(tile_x,     tile_y,     zl)
+      right, btm = tile_xy_zl_to_lng_lat(tile_x + 1, tile_y + 1, zl)
+      [left, btm, right, top]
     end
 
     # Retuns the smallest quadkey containing both of corners of the given bounding box
-    def quadkey_containing_bbox(left, top, right, btm)
+    def quadkey_containing_bbox(left, btm, right, top)
       qk_tl = lng_lat_zl_to_quadkey(left,  top, 23)
-      qk_2 = lng_lat_zl_to_quadkey(right, btm, 23)
+      qk_2  = lng_lat_zl_to_quadkey(right, btm, 23)
       # the containing qk is the longest one that both agree on
       containing_key = ""
       qk_tl.chars.zip(qk_2.chars).each do |char_tl, char_2|
@@ -231,28 +231,28 @@ module Wukong
     # Returns a bounding box containing the circle created by the lat/lng and radius
     def lng_lat_rad_to_bbox(longitude, latitude, radius)
       left, _    = point_east( longitude, latitude, -radius)
-      _,     top = point_north(longitude, latitude,  radius)
-      right, _   = point_east( longitude, latitude,  radius)
       _,     btm = point_north(longitude, latitude, -radius)
-      [left, top, right, btm]
+      right, _   = point_east( longitude, latitude,  radius)
+      _,     top = point_north(longitude, latitude,  radius)
+      [left, btm, right, top]
     end
 
     # Returns the centroid of a bounding box
     #
-    # @param [Array<Float, Float>] left_top  Longitude, Latitude of NW point
-    # @param [Array<Float, Float>] right_btm Longitude, Latitude of SE point
+    # @param [Array<Float, Float>] left_btm  Longitude, Latitude of SW point
+    # @param [Array<Float, Float>] right_top Longitude, Latitude of NE point
     #
     # @return [Array<Float, Float>] Longitude, Latitude of centroid
-    def bbox_centroid(left_top, right_btm)
-      haversine_midpoint(*left_top, *right_btm)
+    def bbox_centroid(left_btm, right_top)
+      haversine_midpoint(*left_btm, *right_top)
     end
 
     # Return the haversine distance in meters between two points
-    def haversine_distance(left, top, right, btm)
+    def haversine_distance(left, btm, right, top)
       delta_lng = (right - left).abs.to_radians
-      delta_lat = (btm   - top ).abs.to_radians
-      top_rad = top.to_radians
+      delta_lat = (top   - btm ).abs.to_radians
       btm_rad = btm.to_radians
+      top_rad = top.to_radians
 
       aa = (Math.sin(delta_lat / 2.0))**2 + Math.cos(top_rad) * Math.cos(btm_rad) * (Math.sin(delta_lng / 2.0))**2
       cc = 2.0 * Math.atan2(Math.sqrt(aa), Math.sqrt(1.0 - aa))
@@ -260,7 +260,7 @@ module Wukong
     end
 
     # Return the haversine midpoint in meters between two points
-    def haversine_midpoint(left, top, right, btm)
+    def haversine_midpoint(left, btm, right, top)
       cos_btm   = Math.cos(btm.to_radians)
       cos_top   = Math.cos(top.to_radians)
       bearing_x = cos_btm * Math.cos((right - left).to_radians)
