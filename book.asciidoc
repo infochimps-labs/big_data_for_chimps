@@ -1,5 +1,7 @@
 = Big Data for Chimps
 
+include::aa03-hello_reviewers.asciidoc[]
+
 include::ba00-first_exploration.asciidoc[]
 
 include::ba01-chimpanzee_and_elephant.asciidoc[]
