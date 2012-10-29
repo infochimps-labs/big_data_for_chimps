@@ -40,23 +40,20 @@ ______
 Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-Next, annotate each wordbag with its geo coordinates (by joining with the page metadata):
+Note that the articles can be processed in a stream, each on its own, in any order, and without reference to information from elsewhere. That's important! A whole bunch of luxuries come forth -- most importantly, that we can parallelize the process across as many machines as we care to afford. We'll call this type of step a "stream".
+
+==== Bin by Location
+
+Next we will annotate each wordbag with the geolocation of its article. Those are kept in a different data file, but we can merge the two files by joining each article metadata record with the wordbag having the same id. Here's its output:
 
 [[wp_lexington_wordbag_and_coords]]
 ._Wordbag with coordinates_
 ------
-Lexington,_Texas -97.01 30.41 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
+Lexington,_Texas -97.01 30.41 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-==== Bin Locations
-
-Now we're ready to summarize words by region: divide the world into grid cells and map each wordbag onto its article's grid cell.
-
-------
-Lexington,_Texas 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
-------
-
-The two coordinates column has turned into a funny-looking single number -- this is the "quad key", a grid scheme well-suited to big data (see chapter on <<quadkey,"Geographic Data">>). For now, just know that it's a <<unique key for each grid,quadkey_central_texas>>.
+The funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that 
+footnote:[a "quadkey", described later in <<quadkey,"Geographic Data">>]
 
 [[quadkey_central_texas]]
 image::images/Quadtree-google_maps_screenshot.png[Grid tiles for Central Texas]
@@ -79,7 +76,7 @@ We've turned articles that have a geolocation into coarse-grained regions that h
 
 Our next task -- the sprint home -- is to separate the signal from the background and (as much as possible) from the noise.
 
-Take a quick backward glance, though, to see the fundamental pattern that got us here. We
+Take a quick backward glance, also, to see the fundamental pattern that got us here. We
 
 . transformed articles into wordbags
 . augmented each wordbag with coordinates, using a join

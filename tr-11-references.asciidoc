@@ -1,0 +1,5 @@
+
+
+* http://hadoop.apache.org/docs/mapreduce/current/streaming.html[Hadoop Streaming FAQ]
+
+* http://hadoop.apache.org/docs/r0.20.2/mapred-default.html[
