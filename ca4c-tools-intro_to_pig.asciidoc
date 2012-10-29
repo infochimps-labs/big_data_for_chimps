@@ -1,0 +1,30 @@
+------
+stream do |article|
+  words = Wukong::TextUtils.tokenize(article.text, remove_stopwords: true)
+  words.group_by(&:to_s).map{|word, occurs|
+    yield [article.id, word, occurs.count]
+  end
+end
+------
+
+Reading it as prose the script says "for each article: break it into a list of words; group all occurrences of each word and count them; then output the article id, word and count."
+
+
+
+.Snippet from the Wikipedia article on "Barbecue"
+[quote, wikipedia, http://en.wikipedia.org/wiki/Barbeque]
+____
+Each Southern locale has its own particular variety of barbecue, particularly concerning the sauce. North Carolina sauces vary by region; eastern North Carolina uses a vinegar-based sauce, the center of the state enjoys Lexington-style barbecue which uses a combination of ketchup and vinegar as their base, and western North Carolina uses a heavier ketchup base. Lexington boasts of being "The Barbecue Capital of the World" and it has more than one BBQ restaurant per 1,000 residents. In much of the world outside of the American South, barbecue has a close association with Texas. Many barbecue restaurants outside the United States claim to serve "Texas barbecue", regardless of the style they actually serve. Texas barbecue is often assumed to be primarily beef. This assumption, along with the inclusive term "Texas barbecue", is an oversimplification. Texas has four main styles, all with different flavors, different cooking methods, different ingredients, and different cultural origins. In the June 2008 issue of Texas Monthly Magazine Snow's BBQ in Lexington was rated as the best BBQ in the state of Texas. This ranking was reinforced when New Yorker Magazine also claimed that Snow's BBQ was "The Best Texas BBQ in the World".
+____
+
+The output of the first stage 
+
+----
+37135	texas   	8
+37135	barbecue	8
+37135	bbq     	5
+37135	different	4
+37135	lexington	3
+37135	north   	3
+37135	carolina	3
+----

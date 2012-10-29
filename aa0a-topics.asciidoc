@@ -1,0 +1,80 @@
+1. *First exploration*
+   - motivation
+   - walkthrough
+   - reflection
+
+2. *Stream*
+   - Why Hadoop I: Simple Parallelism
+   - Chimps at typewriters
+   - Pig Latin translation
+   - Testing it at commandline
+   - Running it on cluster
+
+3. *Reshape*
+   - Locality
+   - Elves pt1
+   - Simple Join
+   - Elves pt2
+   - Partition key + sort key
+
+4. *Using Hadoop and herding `cat`s*
+   - overview of wukong
+   - overview of pig
+   - toolset overview
+
+7. *`cat` herding*
+   - Simple (!) munging
+   - total sort
+   - sampling
+   
+5. *Data munging (Semi-structured data)*
+  
+
+6. *Statistics*
+   - First pig
+   - 
+  
+* *Log Processing*
+   - Sessionizing a log
+   
+8. *Statistics*
+   - Average, StdDev, etc of a huge spreadsheet
+   - Exact Percentiles (Median) of a huge spreadsheet
+   - Approximate Percentiles (Median) of a huge spreadsheet
+   - Histogram
+
+* *Geographic*
+   - mechanics of handling geo data
+   - Statistics on grid cells
+   - Clustering
+   - Pointwise mutual information
+
+* *Text Processing*
+   - Inverted Index (word count)
+   - Minhash
+
+* *Time Series*
+   - weather & flight delays for prediction
+   - Anomaly detection
+   - Wikipedia Pageview
+   - Flight delays
+   - World Cup
+
+* *Graph*
+   - Adjacency List / Edge List conversion
+   - Minimal Spanning Tree
+   - Pagerank
+   - Undirecting a graph
+   - Assemble a min-index Adj. list 
+   - Breadth-First Search
+   - Min-degree undirected graph
+
+* *Hadoop Internals*
+
+
+* *Tuning, for the wise and lazy*
+
+
+* *Tuning, for the brave and foolish*
+
+

@@ -1,4 +1,4 @@
-=== Notes on Chimpanzee and Elephant ===
+=== Partition Key and Sort Key ===
 
 the Elves' system is meant to evoke the liabilities of database and worker-queue based systems:
 

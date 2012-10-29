@@ -1,4 +1,3 @@
-
 ------
 stream do |article|
   words = Wukong::TextUtils.tokenize(article.text, remove_stopwords: true)
