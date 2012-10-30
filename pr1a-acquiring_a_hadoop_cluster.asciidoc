@@ -1,0 +1,25 @@
+[[hadoop_cluster_howto]]
+== Acquiring a Hadoop Cluster
+
+==== References to help you build a real cluster ====
+
+TODO: linkplz to resources for getting a Hadoop cluster
+
+* Hadoop Def Guide / Hadoop Operations
+* Elastic MapReduce
+* Ironfan
+* Homebrew
+
+==== Insultingly short directions for getting a test cluster ====
+
+TODO: make this less insultingly short
+
+===== Homebrew =====
+
+`brew install hadoop`
+
+===== Amazon Elastic Map-Reduce =====
+
+Use the EMR console to spin up a cluster. Don't specify a job, but do tell it to stay running.
+
+Then just log in and use it as a normal hadoop cluster.

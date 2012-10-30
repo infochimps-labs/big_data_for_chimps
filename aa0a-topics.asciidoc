@@ -9,6 +9,7 @@
    - Pig Latin translation
    - Testing it at commandline
    - Running it on cluster
+   - Input Splits
 
 3. *Reshape*
    - Locality

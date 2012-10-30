@@ -27,6 +27,9 @@ Alternatively, turn up the min split size on the _next_ stage, sized so that it
 ==== Tons of tiny little mappers ====
 
 
+===== CombineFileInputFormat =====
+
+...TODO...
 
 ==== Reducer merge (sort+shuffle) is longer than Reducer processing ====
 

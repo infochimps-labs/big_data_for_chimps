@@ -40,7 +40,7 @@ ______
 Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-Note that the articles can be processed in a stream, each on its own, in any order, and without reference to information from elsewhere. That's important! A whole bunch of luxuries come forth -- most importantly, that we can parallelize the process across as many machines as we care to afford. We'll call this type of step a "stream".
+Note that the articles can be processed in a stream, each on its own, in any order, and without reference to information from elsewhere. That's important! A whole bunch of luxuries come forth -- most importantly, that we can parallelize the process across as many machines as we care to afford. We'll call this type of step a "transform".
 
 ==== Bin by Location
 
