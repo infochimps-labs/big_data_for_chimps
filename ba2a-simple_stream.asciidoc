@@ -111,9 +111,7 @@ Now let's run it on the full Shakespeare corpus. Even this is hardly enough data
    
 ==== Brief Anatomy of a Hadoop Job ====
 
-We'll go into much more detail in (TODO: ref), but here's a high-level picture of what's happening as the job runs.
-
-    
+We'll go into much more detail in (TODO: ref), but here's a high-level picture of what's happening as the job runs.    
 
 ==== Chimpanzee and Elephant: Splits ====
 

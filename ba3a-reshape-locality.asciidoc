@@ -1,0 +1,63 @@
+== Reshape Steps ==
+
+=== Locality of Reference ===
+
+Ever since there were
+
+    [] [] [] [] 
+    [] [] [] [] eight computers and a network,
+    
+programmers have wished that eight computers solved problems twice as fast as `[] [] [] []` four computers. The problem comes when the computer
+
+			  [] [] [] [] [] [] [] over here needs to talk to the computer
+	     over here -> [] [] [] [] [] [] [] 
+	  and this one -> [] [] [] [] [] [] [] 
+	       needs to talk to this one ^
+	       
+and so forth. 
+
+If you've ever had lunch with a very large troop of chimpanzees, hollering across the room to pass the bananas, and grabbing each other's anthill-poking twigs, you can imagine how hard it is to get any work done.
+
+=== Locality: Examples ===
+
+This book is fundamentally about just one thing: helping you identify the key locality of a data problem. 
+
+* Count the occurrences of every word in a large body of text: gather each occurrence into groups by word, then count each group.
+
+* To sort a large number of names, group each name by its first few letters (eg "Aaron" = "aa", "Zoe" = "zo"), making each group small enough to efficiently sort in memory. Reading the output of each group in the order of its label will produce the whole dataset in order.
+
+* Counting the average number of Twitter messages per day in each user's timeline requires two steps. First, take every 'A follows B' link and get it into the same locality as the user record for its "B".  Next, group all those links by the user record for 'A', and sum their messages-per-day.
+
+* Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
+
+TODO: make these longer, or shorter, but mostly clearer.
+
+=== The Hadoop Haiku ===
+
+You can try to make it efficient for any computer to talk to any other computer. But it requires top-of-the-line  hardware, and clever engineers to build it, and a high priesthood to maintain it, and this attracts project managers, which means meetings, and soon everything is quite expensive, so expensive that only nation states and huge institutions can afford to do so. This of course means you can only use these expensive supercomputer for Big Important Problems -- so unless you take drastic actions, like joining the NSA or going to grad school, you can't get to play on them.
+
+Instead of being clever, be simple.
+
+The bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:
+
+      data flutters by
+          elephants make sturdy piles
+        insight rustles forth
+
+More prosaically, 
+
+1. *label*      -- turn each input record into any number of labelled records
+2. *group/sort* -- hadoop groups those records uniquely under each label, in a sorted order
+3. *reduce*     -- for each group, process its records in order; emit anything you want.
+
+The trick lies in the 'group/sort' step: assigning the same label to two records in the 'label' step ensures that they will become local in the reduce step.
+
+/////////////////////////
+
+The machines in stage 1 ('label') are allowed no locality. They see each record exactly once, but with no promises as to order, and no promises as to which one sees which record. We've 'moved the compute to the data', allowing each process to work quietly on the data in its work space.
+
+As each pile of output products starts to accumulate, we can begin to group them. Every group is assigned to its own reducer. When a pile reaches a convenient size, it is shipped to the appropriate reducer while the mapper keeps working. Once the map finishes, we organize those piles for its reducer to process, each in proper order.
+
+If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
+
+footnote:[Don't conflate a 'reshape' job with the 'reduce' phase of a job. While stream steps are directly just mapper-only jobs, a reshape typically requires a mapper phase and reducer phase and maybe even a few of each.]

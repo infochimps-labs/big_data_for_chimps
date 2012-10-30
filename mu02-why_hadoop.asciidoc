@@ -4,48 +4,6 @@
 * Disk is the new tape -- Random access on bulk storage is very slow
 * Fun -- Resilient distributed frameworks have traditionally been very conceptually complex, where by complex I mean "MPI is a soul-sucking hellscape"
 
-=== Locality of Reference ===
-
-Ever since there were        [] [] [] [] 
-                             [] [] [] [] eight computers and a network, 
-programmers have wished that eight computers solved problems 
-            twice as fast as [] [] [] [] four computers. That's linear scaling [1], and it's pretty awesome any time you can achieve it.
-
-The problem comes when the computer
-                  [] [] [] [] [] [] [] over here needs to talk to the computer
-     over here -> [] [] [] [] [] [] [] 
-  and this one -> [] [] [] [] [] [] [] 
-       needs to talk to this one ^ 
-and so forth. 
-
-If you've ever had lunch with a very large troop of chimpanzees, hollering across the room to pass the bananas over here, and pardon me may I borrow your anthill-poking twig, and my aren't these tasty grubs, you can imagine how hard it is to get any work done. 
-
-You can try to make it efficient for any computer to talk to any other computer. But it requires top-of-the-line  hardware, and clever engineers to build it, and a high priesthood to maintain it, and this attracts project managers, which means meetings, and soon everything is quite expensive, so expensive that only nation states and huge institutions can afford to do so. This of course means you can only use these expensive supercomputer for Big Important Problems -- so unless you take drastic actions, like joining the NSA or going to grad school, you can't get to play on them. [2]
-
-Instead of being clever, be simple [4]. 
-
-The bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:
-
-      data flutters by
-          elephants make sturdy piles
-        insight rustles forth
-
-More prosaically, 
-
-1. *label*      -- turn each input record one-by-one into a reducible record with a label attached
-2. *group/sort* -- hadoop groups those records uniquely under each label, in a sorted order
-3. *process*    -- for each group, process its reducible records in order, emitting anything you want.
-
-The trick lies in the 'group/sort' step. The only locality available is to assign the same label to each set of objects that you'd like to party together
-
-
-If you agree to that contract, Hadoop not only makes the locality problem go away but alsp makes a whole lot of other hassles disappear. You get to write simple, focused code snippets and let Hadoop manage all the complexity.
-
-The machines in stage 1 ('label') are allowed no locality. They see each record exactly once, but with no promises as to order, and no promises as to which one sees which record. We've 'moved the compute to the data', allowing each process to work quietly on the data in its work space.
-
-As each pile of output products starts to accumulate, we can begin to group them. Every group is assigned to its own reducer (it's important to be fair that no one is over-worked.) When a pile reaches a convenient size, it is shipped to the appropriate reducer while the mapper keeps working. Once the map finishes, we organize those piles for its reducer to process, each in proper order.
-
-If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
     
 === Disk is the new tape ===
 
