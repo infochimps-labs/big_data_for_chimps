@@ -53,3 +53,7 @@ include::ha2a-tuning-wise_and_lazy.asciidoc[]
 include::ha3a-tuning-brave_and_foolish.asciidoc[]
 
 include::ca4d-overview_of_datasets.asciidoc[]
+
+include::tr1a-authors.asciidoc[]
+
+include::tr5a-back_cover.asciidoc[]
