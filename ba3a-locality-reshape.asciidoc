@@ -44,7 +44,7 @@ Map/Reduce proposes this fair bargain. You must agree to only write programs tha
 ----
       data flutters by
           elephants make sturdy piles
-        insight rustles forth
+        insight shuffles forth
 ----
 
 If you do so, Hadoop will provide near-linear scaling on massive numbers of machines, a framework that hides and optimizes the complexity of distributed computing, a rich ecosystem of tools, and one of the most adorable open-source project mascots to date.
