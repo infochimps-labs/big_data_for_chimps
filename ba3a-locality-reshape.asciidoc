@@ -38,7 +38,7 @@ You can try to make it efficient for any computer to talk to any other computer.
 
 Instead of being clever, be simple.
 
-Map/Reduce proposes this fair bargain. You must agree to only write programs that fit the Map-Reduce Haiku:
+Map/Reduce proposes this fair bargain. You must agree to write only one type of program, one that's as simple and constrained as a haiku. 
 
 .The Map/Reduce Haiku
 ----
