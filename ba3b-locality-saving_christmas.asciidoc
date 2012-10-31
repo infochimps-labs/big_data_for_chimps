@@ -6,9 +6,7 @@ Luckily, their friends at the Elephant & Chimpanzee Data Shipment Company were a
 
 === The Need for Locality ===
 
-Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
-
-This places a strong demand on *locality*: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth. To meet the range of asks from children of every corner, each elf is capable of making any kind of toy, from Autobot to Pony to X-box:
+To meet the range of asks from children of every corner, each elf is capable of making any kind of toy, from Autobot to Pony to X-box:
 
 image::images/elves_at_workstation-480.jpg[Elf Workstations, pre-Hadoop]
 
@@ -90,7 +88,9 @@ Now it is still true that each elf workstation has incoming mail from every lett
 
 === Sorted Batches ===
 
-You may have noticed that something important has been left out: Santa's need for all the gifts to come out in order (locality). The elephants, of course, did not forget; I've just skipped over that part of the story.
+Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
+
+This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
 
 Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find at a very organized person's desk:
 
