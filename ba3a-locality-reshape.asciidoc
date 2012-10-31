@@ -38,11 +38,16 @@ You can try to make it efficient for any computer to talk to any other computer.
 
 Instead of being clever, be simple.
 
-The bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:
+Map/Reduce proposes this fair bargain. You must agree to only write programs that fit the Map-Reduce Haiku:
 
+.The Map/Reduce Haiku
+----
       data flutters by
           elephants make sturdy piles
         insight rustles forth
+----
+
+If you do so, Hadoop will provide near-linear scaling on massive numbers of machines, a framework that hides and optimizes the complexity of distributed computing, a rich ecosystem of tools, and one of the most adorable open-source project mascots to date.
 
 More prosaically, 
 
@@ -52,12 +57,4 @@ More prosaically,
 
 The trick lies in the 'group/sort' step: assigning the same label to two records in the 'label' step ensures that they will become local in the reduce step.
 
-/////////////////////////
-
-The machines in stage 1 ('label') are allowed no locality. They see each record exactly once, but with no promises as to order, and no promises as to which one sees which record. We've 'moved the compute to the data', allowing each process to work quietly on the data in its work space.
-
-As each pile of output products starts to accumulate, we can begin to group them. Every group is assigned to its own reducer. When a pile reaches a convenient size, it is shipped to the appropriate reducer while the mapper keeps working. Once the map finishes, we organize those piles for its reducer to process, each in proper order.
-
-If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
-
-footnote:[Don't conflate a 'reshape' job with the 'reduce' phase of a job. While stream steps are directly just mapper-only jobs, a reshape typically requires a mapper phase and reducer phase and maybe even a few of each.]
+Let's join back up with the Chimpanzee and Elephant Shipping Company and see this in practice.
