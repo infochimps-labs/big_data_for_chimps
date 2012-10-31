@@ -1,66 +1,55 @@
 = Big Data for Chimps
 
-include::aa03-hello_reviewers.asciidoc[]
+include::aa0b-about.asciidoc[]
 
-include::ba00-first_exploration.asciidoc[]
+include::aa0c-hello_reviewers.asciidoc[]
 
-include::ba01-chimpanzee_and_elephant.asciidoc[]
+include::ba1a-first_exploration.asciidoc[]
 
-include::ba06-semi_structured_data-a.asciidoc[]
+include::ba2a-simple_stream.asciidoc[]
 
-include::ba06-semi_structured_data-c-patterns.asciidoc[]
+include::ba3a-locality-reshape.asciidoc[]
 
-include::ba06-semi_structured_data-b-wikipedia_other.asciidoc[]
+include::ba3c-locality-simple_reshape.asciidoc[]
 
-include::ba06-semi_structured_data-c-wikipedia_corpus.asciidoc[]
+include::ba3b-locality-saving_christmas.asciidoc[]
 
-include::ba06-semi_structured_data-d-airline_flights.asciidoc[]
+include::ba3d-locality-efficient_santa.asciidoc[]
 
-include::ba06-semi_structured_data-f-truth_and_error.asciidoc[]
-
-include::ba06-semi_structured_data-daily_weather.asciidoc[]
-
-include::ba06-semi_structured_data-z-other_strategies.asciidoc[]
+include::ba3e-locality-partition_and_sort_keys.asciidoc[]
 
 include::fu05-geographic_data.asciidoc[]
 
 include::fu02-server_logs.asciidoc[]
 
-include::ba02-simple_stream.asciidoc[]
-
 include::mu02-why_hadoop.asciidoc[]
-
-include::fu02-statistics.asciidoc[]
-
-include::fu02-statistics-distribution_of_weather_measurements.asciidoc[]
-
-include::fu03-advanced_pig.asciidoc[]
-
-include::fu04-processing_text.asciidoc[]
-
-include::mu03-how_to_think.asciidoc[]
 
 include::fu01-sampling.asciidoc[]
 
-include::fu10-tuning-hadoop_settings.asciidoc[]
+include::ha1a-hadoop_internals.asciidoc[]
 
-include::fu10-tuning.asciidoc[]
+include::ba7a-data_formats.asciidoc[]
 
-include::fu10-tuning-pathologies.asciidoc[]
+include::ba6a-semi_structured_data.asciidoc[]
 
-include::mu05-rules_of_scaling.asciidoc[]
+include::ba6b-semi_structured_data-wikipedia_other.asciidoc[]
 
-include::mu04-data_modeling.asciidoc[]
+include::ba6c-semi_structured_data-wikipedia_corpus.asciidoc[]
 
-include::ba05-overview_of_datasets.asciidoc[]
+include::ba6d-semi_structured_data-patterns.asciidoc[]
 
-include::ba07-data_formats.asciidoc[]
+include::ba6e-semi_structured_data-airline_flights.asciidoc[]
 
-include::aa01-about.asciidoc[]
+include::ba6f-semi_structured_data-daily_weather.asciidoc[]
 
-include::tr01-authors.asciidoc[]
+include::ba6g-semi_structured_data-truth_and_error.asciidoc[]
 
-include::tr03-colophon.asciidoc[]
+include::ba6h-semi_structured_data-other_strategies.asciidoc[]
 
+include::ha2b-tuning-pathology.asciidoc[]
 
+include::ha2a-tuning-wise_and_lazy.asciidoc[]
 
+include::ha3a-tuning-brave_and_foolish.asciidoc[]
+
+include::ca4d-overview_of_datasets.asciidoc[]
