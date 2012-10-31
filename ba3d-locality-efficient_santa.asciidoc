@@ -8,7 +8,7 @@ As you recall, the bargain that Map/Reduce proposes is that you agree to only wr
 
       data flutters by
           elephants make sturdy piles
-        insight rustles forth
+        insight shuffles forth
 
 More prosaically, 
 
@@ -17,8 +17,6 @@ More prosaically,
 3. *reduce*     -- for each group, process its records in order; emit anything you want.
 
 The trick lies in the 'group/sort' step: assigning the same label to two records in the 'label' step ensures that they will become local in the reduce step.
-
-/////////////////////////
 
 The machines in stage 1 ('label') are allowed no locality. They see each record exactly once, but with no promises as to order, and no promises as to which one sees which record. We've 'moved the compute to the data', allowing each process to work quietly on the data in its work space.
 
