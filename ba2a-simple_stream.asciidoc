@@ -73,9 +73,9 @@ So that's what it looks like when a `cat` is feeding the program data; let's see
     
 ==== Chimpanzee and Elephant: A Day at Work ====
 
-Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands out the day's translation manual to all the chimps.
+Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands the day's translation manual to chimps as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
 
-Throughout the day, he also coordinates assigning each block of pages as each chimp signals the need for a fresh assignment. Some passages are harder than others, and you don't want some chimps to be goofing off while others are stuck with Troilus and Cressida into Kinyarwanda, so it's important that any elephant can deliver page blocks to any chimpanzee. On the other hand, sending page blocks all around would take up time and clog the hallways. 
+Some passages are harder than others, and you don't want some chimps to be goofing off while others are stuck with Troilus and Cressida into Kinyarwanda, so it's important that any elephant can deliver page blocks to any chimpanzee. On the other hand, sending page blocks all around would take up time and clog the hallways. 
 
 The elephant's chief librarian, Nanette, employs several tricks to avoid this congestion.
 
@@ -115,26 +115,22 @@ We'll go into much more detail in (TODO: ref), but here's a high-level picture o
 
 ==== Chimpanzee and Elephant: Splits ====
 
-I've danced around a minor but important detail that the workers take care of. The books are chopped up into set numbers of pages -- but the chimps translate _paragraphs_, not pages, and a page block boundary might happen mid-paragraph footnote:[in Hadoop, splits can technically happen anywhere, but the default and typically-most-efficient choice is to split at HDFS blocks as described here.].
+I've danced around a minor but important detail that the workers take care of. The books are chopped up into set numbers of pages -- but the chimps translate _sentences_, not pages, and a page block boundary might happen mid-sentence footnote:[in Hadoop, splits can technically happen anywhere, but the default and typically-most-efficient choice is to split at HDFS blocks, as described here.].
 
-On the chimp's part, it skips the first paragraph if it's partial, and carries on from there. Since there are many paragraphs in each page block, that's no big deal. When it gets to the end of the page block, it doesn't stop typing until is reaches the end of the current paragraph, even if it overhangs -- the extra pages show up just the same, even if they belonged to a different cubicle's elephant.
+Each chimp skips the first sentence of a block if it's partial, and carries on from there. Since there are many sentences in each page block, that's no big deal. When he gets to the end of the page block, he doesn't stop typing until is completes the current sentence. The overhanging text shows up just the same, thanks to savvy action by his elephant partner.
 
-In practice, Hadoop users only need to worry about record splitting when writing a custom `InputFormat` or practicing advanced magick. You'll see lots of reference to it though -- it's a crucial subject for those inside the framework, but for regular users the story I just told is more than enough detail.
+In practice, Hadoop users only need to worry about record splitting when writing a custom `InputFormat` or when practicing advanced magick. You'll see lots of reference to it though -- it's a crucial subject for those inside the framework, but for regular users the story I just told is more than enough detail.
 
 === Exercises ===
 
-==== Exercise 1.1: Three Stupid but Useful Scripts ====
+==== Exercise 1.1: Running time ====
+
+It's important to build your intuition about what makes a program fast or slow. 
 
 Write the following scripts:
 
 * *null.rb*      -- emits nothing.
 * *identity.rb*  -- emits every line exactly as it was read in.
-
-These are kinda stupid, but useful for testing -- see exercise 1.2 for example.
-
-==== Exercise 1.2: Running time ====
-
-It's important to build your intuition about what makes a program fast or slow. 
 
 Let's run the *reverse.rb* and *piglatin.rb* scripts from this chapter, and the *null.rb* and *identity.rb* scripts from exercise 1.1, against the 30 Million Wikipedia Abstracts dataset.
 

@@ -4,9 +4,9 @@
 
 When you launch a job (with `pig`, `wukong run`, or `hadoop jar`), it starts a local process that
 
-* reads hadoop config files (`core-site.xml`, `hdfs-site.xml`, `mapred-site.xml`) and prepares a synthesized configuration.
-* asks the jobtracker for a job ID, and calculates input splits 
-* pushed your program and its assets (jars, script files, distributed cache contents) into the job's directory on the HDFS.
+* prepares a synthesized configuration from config files of the program and the machine (`core-site.xml`, `hdfs-site.xml`, `mapred-site.xml`).
+* asks the jobtracker for a job ID
+* pushes your program and its assets (jars, script files, distributed cache contents) into the job's directory on the HDFS.
 * asks the jobtracker enqueue the job.
 
 After a few seconds you should see the job appear on the jobtracker interface. The jobtracker will begin dispatching the job to workers with free slots, as directed by its scheduler footnote:[unless your cluster is heavily used by multiple people, the default scheduler is fine. If fights start breaking out, quickly consult (TODOREF Hadoop Operations) for guidance on the other choices]. It knows where all the input blocks are, and will try to launch each task on the same machine as its input ("bring the compute to the data"). The jobtracker will tell you how many map tasks are "local" (launched on a different machine than its input); if it's not harmlessly small, see <<many_non_local_mappers>>.
@@ -27,6 +27,7 @@ The job draws its default configuration from the _launch_ machine's config file.
 === Split ===
 
 Input files are split and assigned to mappers.
+
 Each mapper will receive a chunk bounded by:
 
 * The file size -- normally, each mapper handles at most one file (and typically, one part of a very
@@ -35,7 +36,7 @@ Each mapper will receive a chunk bounded by:
 * Min split size -- up to the size of each file, you can force hadoop to make each split larger than `mapred.min.split.size`
 * Block size -- the natural unit of data to feed each map task is the size of an HDFS file chunk;
   this is what lets Hadoop "bring the compute to the data".
-
+  
 Exercises:
 
 * Create a 2GB file having a 128MB block size on the HDFS. Run `wu-stream cat cat --min_split_mb=1900` on it. How many map tasks will launch? What will the "non-local" cell on the jobtracker report? Try it out for 1900, and also for values of 128, 120, 130, 900 and 1100.
@@ -66,6 +67,10 @@ Once the maps start, it's normal for them to seemingly sit at 0% progress for a 
   - the mapper sortbuf spill threshold
   - the mapper sortbuf data threshold
   - the mapper sortbuf total threshold
+
+===== Speculative Execution ======
+
+For exploratory work, it's worth 
   
 
 === Choosing a file size ===

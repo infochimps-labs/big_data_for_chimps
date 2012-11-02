@@ -731,3 +731,5 @@ Example: merge all cells whose contents lie within 10% of each other
 * http://wiki.openstreetmap.org/wiki/QuadTiles
 * https://github.com/simplegeo/polymaps
 * http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
+
+* http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]

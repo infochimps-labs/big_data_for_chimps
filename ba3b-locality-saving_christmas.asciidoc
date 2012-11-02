@@ -66,16 +66,18 @@ image::images/elephant_and_chimpanzee.048-480.jpg[Work orders go off in batches]
 
 === Toy Assembly ===
 
-Lastly, the toy wishes come to dedicated workstations:
-
-         ROBOTS               PARCHEESI               COAL
-         ROOMBAS              PONIES                  COAL
-         RAZOR SCOOTERS       QUIDDITCH BROOMS        SCHOOL SUPPLIES
+Lastly, the toy wishes come to dedicated workstations. All wishes for a kind of toy go to the same workstation -- the station that sees wishes for Ponies sees every Pony wish.
 
 image::images/elephant_and_chimpanzee.011-480.jpg[Each toy at a unique station]
-	 
-All wishes for a kind of toy go to the same workstation -- the station that sees wishes for Ponies sees every Pony wish. A station might handle several types of toys in a factory run, but it always sees them in a continuous batch. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for gift-wrapping Quidditch Brooms.
 
+A station might handle several types of toys in a factory run, but it always sees them in a continuous batch. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for gift-wrapping Quidditch Brooms.
+
+	Doll	Julia    	Anchorage	USA
+        Doll	Madison  	Zanesville	USA
+	Doll	Wei Ju		Shenzen	        China
+	...
+	Coal	Jim		Mountain View	CA
+	 
 === Why it's efficient ===
 
 Now it is still true that each elf workstation has incoming mail from every letter-reader. A constant stream of elephants are constantly dropping off order batches, some light, some heavy, even occasionally a shrug and an empty load. But the delivery isn't harum-scarum all-at-once, it's orderly and purposeful. If one workstation is slow, the elephants wait patiently -- it doesn't slow down the entire operation. And most importantly, all the work of organizing the work requests happens in parallel with reading the letters. It's pretty impressive.
@@ -85,25 +87,3 @@ Now it is still true that each elf workstation has incoming mail from every lett
 
 * consistent hashing smooths the workload
   - but if it's a great year for Real American Dolls, that workstation can be overloaded. This is the problem of "skew", and we'll talk about this in some detail later.
-
-=== Sorted Batches ===
-
-Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
-
-This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
-
-Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find at a very organized person's desk:
-
-image::images/paper_sorter.jpg[paper sorter]
-
-Chimpanzees file each toy request in the order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
-
-image::images/elephant_and_chimpanzee.048-480.jpg[Secondary sort]
-
-This makes life very efficient for the elves. They just start pulling work orders from their elephants, always choosing the request that's next in Santa Visit Order:
-
-image::images/elephant_and_chimpanzee.049-480.jpg[Secondary sort]
-
-Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy. 
-
-JOEMAN:FIN

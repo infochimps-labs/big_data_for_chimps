@@ -24,12 +24,34 @@ Alternatively, turn up the min split size on the _next_ stage, sized so that it
 ==== Many non-local mappers ====
 
 
+==== A few mappers are really slow
+
+
 ==== Tons of tiny little mappers ====
 
 
 ===== CombineFileInputFormat =====
 
 ...TODO...
+
+=== Reducer ===
+
+
+==== Tons of data to a few reducers (high skew)
+
+* Did you set a partition key?
+* Can you use a finer partition key?
+* Can you use a combiner?
+
+* Are there lots of records with a NULL key?
+
+  - Here's a great way to get null keys: `j = JOIN a BY akey LEFT OUTER, b by bkey; res = FOREACH j GENERATE bkey AS key, a::aval, b::bval; grouped = GROUP res BY key;`. Whenever there's a key in `a` with no match in `b`, `bkey` will be null and the final `GROUP` statement will be painful. You probably meant to say `... GENERATE akey AS key ....`.
+
+* Does your data have intrinsically high skew? -- If records follow a long-tail distribution, 
+* Do you have an "LA and New York" problem? If you're unlucky, the two largest keys might be hashed to the same reducer. Try running with one fewer reducers -- it should jostle the keys onto different machines.
+
+If you have irrevocably high skew, Pig offers a http://pig.apache.org/docs/r0.9.2/perf.html#Skewed-Joins[`skewed` join] operator.
+
 
 ==== Reducer merge (sort+shuffle) is longer than Reducer processing ====
 
@@ -39,6 +61,12 @@ xx
 
 xx
 
-==== lll
+==== Way more total data to reducers than cumulative cluster RAM ====
 
-xx
+If you are generating a huge amount of midflight data for a merely-large amount of reducer output data, you might be a candidate for a better algorithm.
+
+
+In the graph analytics chapter, we talk about "counting triangles": how many of your friends-of-friends are also direct friends? 
+More than a million people follow Britney Spears and Justin Bieber on Twitter. If they follow each other (TODO: verify that they do), the "obvious" way of counting shared friends will result in trillions (`10^12`) of candidates -- but only millions if results. This is an example of "multiplying the short tails" of two distributions. The graph analytics chapter shows you one pattern for handling this.
+
+If you can't use a better algorithm, then as they said in Jaws: "you're going to need a bigger boat".
