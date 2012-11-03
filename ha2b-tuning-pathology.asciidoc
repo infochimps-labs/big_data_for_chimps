@@ -1,12 +1,55 @@
 == Pathology of Tuning (aka "when you should touch that dial") ==
 
+Checklist:
+
+
+* Unless your map task is CPU-intensive, mapper task throughput should be comparable to baseline throughput.
+* The number of non-local map tasks is small.
+* Map tasks take more than a minute or so.
+* Either 'Spilled bytes' and 'mapper output bytes' are nearly equal, or 'Spilled bytes' is three or more times 'mapper output bytes'.
+* The size of each output file is not close-to-but-above the HDFS block size
+
 === Mapper ===
+
+==== A few map tasks take noticably longer than all the rest
+
+Typically, the only good reason for a map task to run much longer than its peers is if it's processing a lot more data.
+
+The jobtracker assigns blocks in decreasing order of size to help prevent the whole job waiting on one last mapper.  If your input format is non-splitable (eg it's `.bz2` compressed), and some files are huge, those files will take proportionally longer. If these are so imbalanced as to cause trouble, I can't offer much more than a) don't write imbalance files, or b) switch to a splitable format.
+
+If some map tasks are very slow, but aren't processing proportionally more data, look for the following:
+
+* Check the logs of the slow tasks -- did they hit a patch of bad records and spend all their time rescuing a ton of exceptions?
+* Some records take far longer to process than others -- for example a complex regexp (regular expression) that requires a lot of backtracking.
+* If the slow tasks always occur on the same machine(s), they might be failing.
+* Check the logs for both the child processes and the daemons -- are there timeouts or other errrors?
+
+==== Tons of tiny little mappers ====
+
+For jobs with a reduce step, the number of map tasks times the heap size of each mapper should be about twice the size of the input data. 
+
+===== CombineFileInputFormat =====
+
+...TODO...
+
+
+[[many_non_local_mappers]]
+==== Many non-local mappers ====
+
+* A prior stage used one (or very few) reducers
+* You recently enlarged your cluster
+* HDFS is nearly full
+* Overloaded data nodes
 
 ==== Map tasks "spill" multiple times ====
 
-xx
+Each mapper is responsible for sorting the individual records it emits, allowing the reducers to just do a merge sort. It does so by filing records into a fixed-size sort buffer (the analog of the inbox sorter on the back of each elephant). Each time the sort buffer overflows, the mapper will "spill" it to disk; once finished, it merge sorts those spills to produce its final output. Those merge passes are not cheap -- the full map output is re-read and re-written. If the midflight data size is several times your allocable heap, then those extra merge passes are necessary: you should smile at how well Hadoop is leveraging what RAM you have.
 
-==== Map tasks that output slightly more data than they read ====
+However, if a mapper's midflight size even slightly exceeds the sort buffer size, it will trigger an extra spill, causing a 20-40% performance hit.
+
+On the jobtracker, check that the 
+
+==== Job output files that are each slightly larger than an HDFS block ====
 
 If your mapper task is slightly expansive (outputs more data than it reads), you may end up with an output file that for every input block emits one full block and almost-empty block. For example, a task whose output is about 120% of its input will have an output block ratio of 60% -- 40% of the disk space is wasted, and downstream map tasks will be inefficient.
 
@@ -19,20 +62,6 @@ You can check the block ratio of your output dataset with `hadoop fsck -blocks`
 If your mapper task is expansive and the ratio is less than aobut 60%, you may want to set a min split size of about
 
 Alternatively, turn up the min split size on the _next_ stage, sized so that it
-
-[[many_non_local_mappers]]
-==== Many non-local mappers ====
-
-
-==== A few mappers are really slow
-
-
-==== Tons of tiny little mappers ====
-
-
-===== CombineFileInputFormat =====
-
-...TODO...
 
 === Reducer ===
 

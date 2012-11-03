@@ -37,6 +37,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 * `io.sort.mb` default `X`, recommended at least `1.25 * typical output size` (so for a 128MB block size, 160). It's reasonable to devote up to 70% of the child heap size to this value.
 
+[[io_sort_factor]]
 * `io.sort.factor`: default `X`, recommended `io.sort.mb * 0.x5 * (seeks/s) / (thruput MB/s)`
   - you want transfer time to dominate seek time; too many input streams and the disk will spend more time switching among them than reading them.
   - you want the CPU well-fed: too few input streams and the merge sort will run the sort buffers dry.
