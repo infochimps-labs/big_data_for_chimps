@@ -1,14 +1,5 @@
 == Pathology of Tuning (aka "when you should touch that dial") ==
 
-Checklist:
-
-
-* Unless your map task is CPU-intensive, mapper task throughput should be comparable to baseline throughput.
-* The number of non-local map tasks is small.
-* Map tasks take more than a minute or so.
-* Either 'Spilled bytes' and 'mapper output bytes' are nearly equal, or 'Spilled bytes' is three or more times 'mapper output bytes'.
-* The size of each output file is not close-to-but-above the HDFS block size
-
 === Mapper ===
 
 ==== A few map tasks take noticably longer than all the rest
@@ -81,14 +72,9 @@ Alternatively, turn up the min split size on the _next_ stage, sized so that it
 
 If you have irrevocably high skew, Pig offers a http://pig.apache.org/docs/r0.9.2/perf.html#Skewed-Joins[`skewed` join] operator.
 
-
 ==== Reducer merge (sort+shuffle) is longer than Reducer processing ====
 
-xx
-
 ==== Output Commit phase is longer than Reducer processing ====
-
-xx
 
 ==== Way more total data to reducers than cumulative cluster RAM ====
 
@@ -99,3 +85,13 @@ In the graph analytics chapter, we talk about "counting triangles": how many of 
 More than a million people follow Britney Spears and Justin Bieber on Twitter. If they follow each other (TODO: verify that they do), the "obvious" way of counting shared friends will result in trillions (`10^12`) of candidates -- but only millions if results. This is an example of "multiplying the short tails" of two distributions. The graph analytics chapter shows you one pattern for handling this.
 
 If you can't use a better algorithm, then as they said in Jaws: "you're going to need a bigger boat".
+
+
+
+=== Checklist ===
+
+* Unless your map task is CPU-intensive, mapper task throughput should be comparable to baseline throughput.
+* The number of non-local map tasks is small.
+* Map tasks take more than a minute or so.
+* Either 'Spilled bytes' and 'mapper output bytes' are nearly equal, or 'Spilled bytes' is three or more times 'mapper output bytes'.
+* The size of each output file is not close-to-but-above the HDFS block size

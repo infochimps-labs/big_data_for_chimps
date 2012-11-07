@@ -51,3 +51,10 @@ The book does have some content on machine learning with Hadoop, on provisioning
 I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[the Infochimps blog] after minor cleanup.
 
 We really mean it about the git social-coding thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. However! We might not use your feedback, no matter how dazzlingly cogent it is; and while we are soliciting comments from readers, we are not seeking content from collaborators.
+
+== Hello, Early Releasers ==
+
+TODO
+
+* Fork the book on github 
+* Contact us! Best is to file an issue on the bugtracker. meghan@oreilly.com or flip@infochimps.com --
