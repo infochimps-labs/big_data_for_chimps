@@ -1,5 +1,6 @@
 == Pathology of Tuning (aka "when you should touch that dial") ==
 
+
 === Mapper ===
 
 ==== A few map tasks take noticably longer than all the rest
@@ -87,6 +88,30 @@ More than a million people follow Britney Spears and Justin Bieber on Twitter. I
 If you can't use a better algorithm, then as they said in Jaws: "you're going to need a bigger boat".
 
 
+=== System ===
+
+
+==== Excessive Swapping ====
+
+* don't use swap -- deprovision it.
+* if you're going to use swap, set swappiness and overcommit
+
+Otherwise, treat the presence of _any_ significant swap activity as if the system were <<out_of_memory>>.
+
+[[out_of_memory]]
+==== Out of Memory / No C+B reserve ====
+
+Your system is out of memory if any of the following occurs:
+
+* there is no remaining reserve for system caches+buffers
+* significant swap activity
+* OOM killer (the operating system's Out Of Memory handler) kills processes
+
+For Hadoop's purposes, if the OS has no available space for caches+buffers, it has already run out of system RAM -- even if it is not yet swapping or OOMing
+
+* check overcommit
+
+You may have to reduce slots, or reduce heap per slot.
 
 === Checklist ===
 

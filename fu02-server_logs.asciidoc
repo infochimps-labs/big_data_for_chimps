@@ -149,7 +149,7 @@ include::code/server_logs/server_logs-04-page_page_edges-03-reducer.log[]
 You'll learn more about this in the chapter on ((Processing Graphs)), but 
 
 
-== Geo-IP Matching ==
+=== Geo-IP Matching ===
 
 [[range_query]]
 [[geo_ip_matching]]

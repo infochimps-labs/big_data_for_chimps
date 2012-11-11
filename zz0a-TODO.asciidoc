@@ -1,6 +1,18 @@
 [[TODO]]
 == TODO / Errata ==
 
+* Hello, reviewers
+* Winston:
+  - outline
+  - promise     -- what will this talk do?
+  - heuristics
+    - cycle       -- say what you'll say/say it/say it again
+    - punctuation -- re-situate audience
+    - near-miss   -- "isn't the concept, but doesn't miss it by much." (arch vs arch w/o top; arch vs arch where legs are pushed together).
+    - ask a qn    -- rhetorical question. Frequent and answerable
+  - 
+* 
+
 * The chapter on tuning requires *heavy* technical review. It is largely synthesized from recommendations by others, but needs to be buttoned up and fact-checked.
 
 * The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.

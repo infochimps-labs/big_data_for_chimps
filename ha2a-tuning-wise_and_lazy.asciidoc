@@ -2,6 +2,102 @@
 
 There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747. Many of them interact surprisingly, and many settings improve some types of jobs while impeding others. This chapter will help you determin
 
+* Baseline constraints of system components: CPU, disk, memory, network
+* Baseline constraints of Atomic operations: stream, join, sort, filter
+* Baseline constraints of each stage: setup, read, mapper, spill/combine, midflight, shuffle, reducer, write, replicate, commit.
+
+Hadoop is designed to put its limiting resource at full utilization.
+
+=== Baseline Performance ===
+
+best-case scenario:
+
+* all-local mapper tasks
+* mapper throughput at baseline rate
+* low mapper setup overhead
+* one mapper spill per record
+* low variance in mapper finish time
+* shuffle is largely complete when last merge segments come in
+* reducer throughput at baseline rate
+* low replication overhead
+
+
+=== Performance constraints: job stages ===
+
+Raw ingredients:
+
+* _scripts_:
+  - nullify	 --
+  - identity	 --
+  - faker	 -- generates address records _deterministically_.
+    - should have a partition key we can make dance (see below)
+    - should have a total-ordered line number
+   
+* _files_:
+  - zeros	 -- 512 zero-byte files
+  - oneline	 -- 512 files, each with only its index 
+  - fakered	 -- faker.rb-generated 64-GB dataset as 1 64-GB file, 8 8-GB, 64 1-GB, 512 128-MB files. Re-running faker script will recreate fakered dataset.
+  -
+* _setups_:
+  - free-shuf 	-- set up reduce-slotted-only workers, with max-sized shuffle buffers, no shuffle flush (i.e as close as we can get to zero shuffle)
+  - baseline    -- large output block size, replication factor 1
+
+* setup
+  - zeros	-- mapper-only	-- swallow
+  - oneline	-- mapred	-- identity
+* read
+  - fakered-128	-- mapper-only	-- emit nothing
+* mapper
+  - fakered-128	-- mapper-only	-- split fields, regexp, but don't emit
+  - fakered-128	-- mapper-only	-- split fields, regexp, emit
+  - oneline	-- mapper-only	-- faker
+* spill/combine
+  - fakered-128	-- mapred	-- identity 
+  - oneline	-- mapred	-- faker
+* midflight: 
+  - xx		-- free-shuffle	-- swallow
+* shuffle; with various sizes of data per reducer
+  - fakered	-- lo-skew	-- swallow
+  - fakered	-- hi-skew	-- swallow
+* reducer
+  - fakered	-- mapred	-- identity	-- identity	-- replication factor 1
+  - oneline	-- mapred	-- identity	-- faker	-- replication factor 1
+  - fakered	-- mapred	-- identity	-- split fields, regexp, but don't emit	-- replication factor 1
+  - fakered	-- mapred	-- identity	-- split fields, regexp, emit	-- replication factor 1
+* write
+  - oneline	-- mapred	-- identity	-- faker
+* replicate
+  - oneline	-- mapred	-- identity	-- faker	-- replication factor 1
+  - oneline	-- mapred	-- identity	-- faker	-- replication factor 2
+  - oneline	-- mapred	-- identity	-- faker	-- replication factor 3
+  - oneline	-- mapred	-- identity	-- faker	-- replication factor 5
+* commit
+  - oneline	-- mapred	-- identity	-- identity
+  - oneline	-- mapred	-- identity	-- swallow
+
+===== Variation =====
+
+* non-local map tasks
+* EBS volumes
+* slowstart
+* more reducers than slots
+* S3 vs EBS vs HBase vs Elasticsearch vs ephemeral HDFS
+
+=== Performance constraints: by operation ===
+
+**mapper-only performance**
+
+disk-cpu-disk only
+
+* FOREACH only
+* FILTER on a numeric column only
+* MATCH only
+* decompose region into tiles
+
+**midflight**
+
+//////////////////////////////////////////////////////////////////////////
+
 * What are the maximum practical capabilities of my system, and are they reasonable?
 * How do I determine a job's primary constraint, and whether it's worthwhile to optimize it?
 * If I must to optimize a job, what setting adjustments are relevant, and what are the tradeoffs those adjustments?

@@ -1,0 +1,134 @@
+There's an excellent methodology for performance analysis known as the http://dtrace.org/blogs/brendan/2012/02/29/the-use-method/["USE Method"]: "For every resource, check Utilization, Saturation and Errors" footnote:[developed by Brendan Gregg for system performance tuning, modified here for Hadoop]:
+
+* utilization -- How close to capacity is the resource? (ex: CPU usage, % disk used)
+* saturation  -- How often is work waiting? (ex: network drops or timeouts)
+* errors      -- Are there error events?
+
+For example, if our resource were a supermarket checkout cashier, some USE metrics would include:
+
+* utilization: flow of items across the belt; constantly stopping to look up the price of tomatoes or check coupons will harm utilization.
+* saturation: number of customers waiting in line
+* errors: calling for the manager
+
+As you can see, it's possible to have low utilization and high saturation (a cashier in training with a long line), high utilization and low saturation (steady stream of customers but no line), or any other combination.
+
+===== Resource List =====
+
+The USE method can help you identify the limiting resource of a job, to diagnose a faulty or misconfigured system, and to guide tuning and provisioning of the base system.
+
+* system CPU
+* system memory
+* system disk IO
+* system disk 
+
+* mapper task CPU
+* mapper taks 
+Network interface -- throughput
+Storage devices	  -- throughput, capacity
+Controllers	  -- storage, network cards
+Interconnects	  -- CPUs, memory, throughput
+
+* disk throughput
+* handler threads
+* garbage collection events
+
+
+[[use_method_table]]
+.USE Method Checklist
+[options="header"]
+|=======
+| resource              | type        	| metric
+|			|		|  			|
+| CPU    		| utilization	| 			|
+|			|		|  			|
+|			|		|  			|
+| CPU    		| saturation	| 			|
+|			|		|  			|
+|			|		|  			|
+|			|		|  			|
+| memory capacity	| utilization	| 			|
+|			|		|  			|
+|			|		|  			|
+| memory capacity	| saturation	| swap activity		| `vmstat 1`
+|			|		|  			|
+|			|		|  			|
+| OS caches/buffers	| utilization	| total c+b		| `free`
+|			|		|  			|
+|			|		|  			|
+| disk I/O		| 		| 			|
+|			|		| 			|
+|			|		|  			|
+|			|		|  			|
+| disk capacity		| 		| 			|
+|			|		| total HDFS free	|
+|			|		| datanode data dir	|
+|			|		| mapred scratch space	| 
+|			|		|  			|
+|			|		|  			|
+|			|		|  			|
+| network I/O		| utilization	| 			|
+|			|		|  			|
+|			|		|  			|
+| network I/O		| saturation	| 			|
+|			|		|  			|
+|			|		|  			|
+|			|		|  			|
+| handler threads	| utilization	|  			|
+|			|		|  			|
+| mapper sort buffer	| utilization	| record size limit	|
+|			|		| record count limit	|
+| mapper sort buffer	| saturation	| spill count		| spill counters
+|			|		| 			| io sort factor
+|			|		|  			|
+|			|		|  			|
+| shuffle buffers	| utilization	|  			|
+|			|		|  			|
+| shuffle buffers	| saturation	|  			|
+|			|		|  			|
+|			|		|  			|
+| job process		| errors	| 			| stderr log
+|            		|       	| 			| stdout log
+|            		|        	| 			| counters
+| datanode		| errors	| 			|
+| namenode		| errors	| 			|
+| secondarynn		| errors	| 			|
+| tasktracker		| errors	| 			|
+| jobtracker		| errors	| 			|
+|=======
+
+Metrics:
+
+* number of spills
+* disk {read,write} {req/s,MB/s}
+* CPU % {by process}
+* GC
+  - heap used (total, %)
+  - new gen pause
+  - old gen pause
+  - old gen rate
+  - STW count
+* system memory
+  - resident ram {by process}
+  - paging
+* network interface
+  - throughput {read, write}
+  - queue
+* handler threads
+  - handlers
+  - xceivers
+* 
+
+
+Exchanges:
+
+* 
+* shuffle buffers -- memory for disk
+* gc options -- CPU for memory
+
+
+
+===== Exercises =====
+
+For each of the utilization and saturation metrics listed above, describe job or tunable adjustments that would drive it to an extreme. For example, the obvious way to drive shuffle saturation (number of merge passes after mapper completion) is to bring a ton of data down on one reducer -- but excessive map tasks or a `reduce_slowstart_pct` of 100% will do so as well.
+
+
