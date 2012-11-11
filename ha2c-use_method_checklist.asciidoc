@@ -1,3 +1,6 @@
+[[use_method]]
+=== The USE Method applied to Hadoop ===
+
 There's an excellent methodology for performance analysis known as the http://dtrace.org/blogs/brendan/2012/02/29/the-use-method/["USE Method"]: "For every resource, check Utilization, Saturation and Errors" footnote:[developed by Brendan Gregg for system performance tuning, modified here for Hadoop]:
 
 * utilization -- How close to capacity is the resource? (ex: CPU usage, % disk used)
@@ -39,10 +42,10 @@ Interconnects	  -- CPUs, memory, throughput
 |=======
 | resource              | type        	| metric
 |			|		|  			|
-| CPU    		| utilization	| 			|
+| CPU    		| utilization	| 			| CPU %, overall
+|			|		|  			| CPU %, each child process
 |			|		|  			|
-|			|		|  			|
-| CPU    		| saturation	| 			|
+| CPU    		| saturation	| 			| 
 |			|		|  			|
 |			|		|  			|
 |			|		|  			|
@@ -124,6 +127,7 @@ Exchanges:
 * 
 * shuffle buffers -- memory for disk
 * gc options -- CPU for memory
+
 
 
 

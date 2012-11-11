@@ -96,6 +96,11 @@ disk-cpu-disk only
 
 **midflight**
 
+
+==== Active vs Passive Benchmarks ====
+
+When tuning, you should engage in _active benchmarking_. Passive benchmarking would be to start a large job run, time it on the wall clock (plus some other global measures) and call that a number. Active benchmarking means that while that job is running you watch the fine-grained metrics (following the <<use_method>>) -- validate that the limiting resource is what you believe it to be, and understand how the parameters you are varying drive tradeoffs among other resources.
+
 //////////////////////////////////////////////////////////////////////////
 
 * What are the maximum practical capabilities of my system, and are they reasonable?
@@ -234,9 +239,11 @@ _note: I may go with min/TB, to have them be directly comparable. Throughput is 
 
 === Measuring your system: imaginary limits ===
 
-* http://www.textuality.com/bonnie/advice.html[Bonnie] for disk 
+* http://code.google.com/p/bonnie-64/[Bonnie] for disk; http://www.textuality.com/bonnie/advice.html[advice], https://blogs.oracle.com/roch/entry/decoding_bonnie[more advice]
 * http://www.coker.com.au/bonnie/[Bonnie++]  for disk 
 * http://www.phoronix-test-suite.com/?k=downloads[Phoronix] for a broad-based test
+
+Test these with a file size equal to your HDFS block size.
 
 === Measuring your system: practical limits ===
 

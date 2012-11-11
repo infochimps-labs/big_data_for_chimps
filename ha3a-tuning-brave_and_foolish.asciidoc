@@ -114,3 +114,6 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 
 * Bump `mapreduce.job.counters.limit` -- it's not configurable per-job.
+
+
+
