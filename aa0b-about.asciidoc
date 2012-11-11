@@ -1,3 +1,10 @@
+// :author:        Philip (flip) Kromer
+// :doctype: 	book
+// :toc:
+// :icons:
+// :lang: 		en
+// :encoding: 	utf-8
+
 [[about]]
 == About  ==
 

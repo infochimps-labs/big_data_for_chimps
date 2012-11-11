@@ -49,8 +49,10 @@ I've borrowed many of the system-level metrics from http://dtrace.org/blogs/bren
 |			|		|  			|
 | CPU    		| utilization	| system CPU		| `top`/`htop`: CPU %, overall
 |			|		| job process CPU	| `top`/`htop`: CPU %, each child process
+| 			| saturation	| max user processes	| `ulimit -u` ("noproc" in `/etc/security/limits.d/...`)
 | mapper slots		| utilization	| mapper slots used	| jobtracker console; impacted by `mapred.tasktracker.map.tasks.maximum`
 | mapper slots  	| saturation	| mapper tasks waiting	| jobtracker console; impacted by scheduler and by speculative execution settings
+|			|		| combiner activity	| jobtracker console (TODO table cell name)
 | reducer slots		| utilization	| reducer slots used	| jobtracker console; impacted by `mapred.tasktracker.reduce.tasks.maximum`
 | reducer slots 	| saturation	| reducer tasks waiting	| jobtracker console; impacted by scheduler and by speculative execution and slowstart settings
 | task startup overhead	|		|  			|
@@ -82,8 +84,6 @@ I've borrowed many of the system-level metrics from http://dtrace.org/blogs/bren
 |			|		| MB/s, read		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
 |			|		| MB/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
 | system disk I/O	| saturation	| queued requests	| `iostat -xnz 1`; look for "avgqu-sz" > 1, or high "await".
-| 			|		| open file handles	| `ulimit -n` ("nofile" in `/etc/security/limits.d/...`)
-| 			|		| max user processes	| `ulimit -u` ("noproc" in `/etc/security/limits.d/...`)
 | system disk I/O	| errors	|  			| `/sys/devices/…/ioerr_cnt`; `smartctl`, `/var/log/messages`
 |			|		|  			|
 | *network concerns*	|		|  			|
@@ -104,6 +104,7 @@ I've borrowed many of the system-level metrics from http://dtrace.org/blogs/bren
 |			|		| HDFS directories	| `du -smc /path/to/mapred_scratch_dirs` (for all directories in `dfs.data.dir`, `dfs.name.dir`, `fs.checkpoint.dir`)
 |			|		| mapred scratch space	| `du -smc /path/to/mapred_scratch_dirs` (TODO scratch dir tunable)
 |			|		| total HDFS free	| namenode console
+| 			|		| open file handles	| `ulimit -n` ("nofile" in `/etc/security/limits.d/...`)
 | job process		| errors	| 			| stderr log
 |            		|       	| 			| stdout log
 |            		|        	| 			| counters
@@ -149,6 +150,13 @@ If at all possible, use a remote monitoring framework like Ganglia, Zabbix or Na
 
 ===== Exercises =====
 
-For each of the utilization and saturation metrics listed above, describe job or tunable adjustments that would drive it to an extreme. For example, the obvious way to drive shuffle saturation (number of merge passes after mapper completion) is to bring a ton of data down on one reducer -- but excessive map tasks or a `reduce_slowstart_pct` of 100% will do so as well.
+**Exercise 1**: start an intensive job (eg <remark>TODO: name one of the example jobs</remark>) that will saturate but not overload the cluster. Record all of the above metrics during each of the following lifecycle steps:
+
+* map step, before reducer job processes start (data read, mapper processing, combiners, spill)
+* near the end of the map step, so that mapper processing and reducer merge are proceeding simultaneously
+* reducer process step (post-merge; reducer processing, writing and replication proceeding)
+
+
+**Exercise 2**: For each of the utilization and saturation metrics listed above, describe job or tunable adjustments that would drive it to an extreme. For example, the obvious way to drive shuffle saturation (number of merge passes after mapper completion) is to bring a ton of data down on one reducer -- but excessive map tasks or a `reduce_slowstart_pct` of 100% will do so as well.
 
 
