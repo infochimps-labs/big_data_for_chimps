@@ -1,0 +1,25 @@
+[[glossary]]
+== Glossary ==
+
+* secondarynn (aka "secondary namenode") -- handles compaction of namenode directory. It is NOT a backup for the namenode.
+* support daemon			 -- one of namenode, datanode, jobtracker, tasktracker or secondarynn.
+* task process (aka "child process")	 -- the actual process that executes your code
+* tasktracker				 -- interface between jobracker and task processes. It does NOT execute your code, and typically requires a minimal amount of RAM.
+* shuffle merge				 -- (aka shuffle and sort)
+* shuffle buffer			 -- 
+* map sort buffer			 -- 
+* Resident memory (RSS or RES)		 -- 
+* JVM					 -- 
+* JVM heap size				 -- 
+* Old-Gen heap				 -- 
+* New-Gen heap				 -- portion of JVM ram used for short-lived objects. If too small, transient objects will go into the old-gen, causing fragmentation and an eventual STW garbage collection.
+* garbage collection			 -- 
+* STW garbage collection		 -- "Stop-the-world" garbage collection, a signal that there has been significant fragmentation or heap pressure. Not Good.
+* attempt ID				 -- 
+* task ID				 -- 
+* job ID				 -- 
+
+Questions:
+
+* "task process" or "job process" for child process?
+* 

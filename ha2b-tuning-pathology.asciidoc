@@ -113,6 +113,11 @@ For Hadoop's purposes, if the OS has no available space for caches+buffers, it h
 
 You may have to reduce slots, or reduce heap per slot.
 
+
+==== Stop-the-world (STW) Garbage collections ====
+
+STW garbage collection on a too-large heap can lead to socket timeouts, increasing the load and memory pressure on other machines, leading to a cascading degradation of the full cluster.
+
 === Checklist ===
 
 * Unless your map task is CPU-intensive, mapper task throughput should be comparable to baseline throughput.

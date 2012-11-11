@@ -30,6 +30,8 @@ include::ha1a-hadoop_internals.asciidoc[]
 
 include::ha2b-tuning-pathology.asciidoc[]
 
+include::ha2c-use_method_checklist.asciidoc[]
+
 include::ba7a-data_formats.asciidoc[]
 
 include::ba6a-semi_structured_data.asciidoc[]

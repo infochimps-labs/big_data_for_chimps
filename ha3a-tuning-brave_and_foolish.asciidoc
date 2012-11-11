@@ -68,7 +68,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 **Storage**
   
-* `mapred.system.dir`: default `X` recommende `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
+* `mapred.system.dir`: default `X` recommended `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
 
 * Ensure the HDFS data dirs (`dfs.name.dir`, `dfs.data.dir` and `fs.checkpoint.dir`), and the mapreduce local scratch dirs (`mapred.system.dir`) include all your data volumes (and are off the root partition). The more volumes to write to the better. Include all the volumes in all of the preceding. If you have a lot of volumes, you'll need to ensure they're all attended to; have 0.5-2x the number of cores as physical volumes.
   - HDFS-3652 -- don't name your dirs `/data1/hadoop/nn`, name them `/data1/hadoop/nn1`  ( final element differs).
