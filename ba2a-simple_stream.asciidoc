@@ -4,8 +4,8 @@
 
 As you know, chimpanzees love nothing more than sitting at typewriters processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of carge with great determination. The chimpanzees and the elephants realized there was a real business opportunity from combining their strengths, and so they formed the Chimpanzee and Elephant Data Shipping Corporation.
 
-They were soon hired by a publishing firm to translate the works of Shakespeare into every language. 
-In the system they set up, each chimpanzee sits at a typewriter doing exactly one thing well: read a set of passages, and type out the corresponding text in a new language. Each elephant has a pile of books, which she breaks up into "blocks" (a consecutive bundle of pages, tied up with string). 
+They were soon hired by a publishing firm to translate the works of Shakespeare into every language.
+In the system they set up, each chimpanzee sits at a typewriter doing exactly one thing well: read a set of passages, and type out the corresponding text in a new language. Each elephant has a pile of books, which she breaks up into "blocks" (a consecutive bundle of pages, tied up with string).
 
 ==== A Simple Streamer ====
 
@@ -62,7 +62,7 @@ We're hardly as clever as a language-chained chimpanzee, but even we can transla
 ****
 
 To test the program on the commandline, run
-    
+
     wu-local examples/text/pig_latin.rb data/magi.txt -
 
 The last line of its output should look like
@@ -70,18 +70,18 @@ The last line of its output should look like
     Everywhere-way ey-thay are-way isest-way. Ey-thay are-way e-thay agi-may.
 
 So that's what it looks like when a `cat` is feeding the program data; let's see how it works when an elephant is setting the pace.
-    
+
 ==== Chimpanzee and Elephant: A Day at Work ====
 
 Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands the day's translation manual to chimps as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
 
-Some passages are harder than others, and you don't want some chimps to be goofing off while others are stuck translating _King Lear_ into Kinyarwanda. So it's important that any elephant can deliver page blocks to any chimpanzee. On the other hand, sending page blocks all around would take up time and clog the hallways. 
+Some passages are harder than others, so it's important that any elephant can deliver page blocks to any chimpanzee -- otherwise you'd have some chimps goofing off while others are stuck translating _King Lear_ into Kinyarwanda. On the other hand, sending page blocks around arbitrarily will clog the hallways and exhaust the elephants.
 
-The elephant's chief librarian, Nanette, employs several tricks to avoid this congestion.
+The elephants' chief librarian, Nanette, employs several tricks to avoid this congestion.
 
-Since each chimpanzee typically shares a cubicle with an elephant, it's much more convenient to just hand a new page block across the desk then it is to carry it down the hall. J.T. assigns tasks accordingly, using a manifest of page blocks he requests from Nanette footnote:[If most tasks aren't 'local', it means someone is off their game -- see <<many_non_local_mappers>>.].
+Since each chimpanzee typically shares a cubicle with an elephant, it's most convenient to hand a new page block across the desk rather then carry it down the hall. J.T. assigns tasks accordingly, using a manifest of page blocks he requests from Nanette. Together, they're able to make most tasks be "local".
 
-Second, the page blocks of each play are not kept together -- they're distributed all around the office. So one elephant might have pages from Act I of _Hamlet_, Act II of _The Tempest_, and the first four scenes of _King Lear_. Also, there isn't just one copy of each play; there are typically three 'replicas' of each book collectively on hand footnote:[Does that sound complicated? It is -- Nanette is able to keep track of all those blocks, but if she calls in sick, nobody can get anything done. You do NOT want Nanette to call in sick.]. So even if a chimp falls behind, JT can count on one of his colleagues having a cubicle-local replica. (There's another benefit to having multiple copies: it ensures there's always a copy available. If one elephant is absent for the day, leaving her desk locked, Nanette will direct someone to make a xerox copy from either of the two other replicas.)
+Second, the page blocks of each play are distributed all around the office, not stored in one book together. One elephant might have pages from Act I of _Hamlet_, Act II of _The Tempest_, and the first four scenes of _Troilus and Cressida_ footnote:[Does that sound complicated? It is -- Nanette is able to keep track of all those blocks, but if she calls in sick, nobody can get anything done. You do NOT want Nanette to call in sick.]. Also, there are multiple 'replicas' (typically three) of each book collectively on hand. So even if a chimp falls behind, JT can depend that some other colleague will have a cubicle-local replica. (There's another benefit to having multiple copies: it ensures there's always a copy available. If one elephant is absent for the day, leaving her desk locked, Nanette will direct someone to make a xerox copy from either of the two other replicas.)
 
 Nanette and J.T. exercise a bunch more savvy optimizations (like handing out the longest passages first, or having folks who finish early pitch in so everyone can go home at the same time, and more). There's no better demonstration of power through simplicity.
 
@@ -89,7 +89,9 @@ Nanette and J.T. exercise a bunch more savvy optimizations (like handing out the
 
 _Note: this assumes you have a working Hadoop cluster, however large or small; if not, see appendix._
 
-First, copy the data onto the cluster.
+As you have guessed, Hadoop is organized very much like the Chimpanzee&Elephant team. Let's dive in and see it in action.
+
+First, copy the data onto the cluster:
 
     hadoop fs -mkdir ./data
     hadoop fs -put   wukong_example_data/text ./data/
@@ -107,10 +109,12 @@ After outputting a bunch of happy robot-ese to your screen, the job should appea
 Now let's run it on the full Shakespeare corpus. Even this is hardly enough data to make Hadoop break a sweat, but it does show off the power of distributed computing.
 
     wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
-   
+
 ==== Brief Anatomy of a Hadoop Job ====
 
 We'll go into much more detail in (TODO: ref), but here are the essentials of what you just performed.
+
+===== Copying files to the HDFS =====
 
 When you ran the `hadoop fs -mkdir` command, the Namenode (Nanette's Hadoop counterpart) simply made a notation in its directory: no data was stored. If you're familiar with the term, think of the namenode as a 'File Allocation Table (FAT)' for the HDFS.
 
@@ -121,11 +125,17 @@ When you run `hadoop fs -put ...`, the putter process does the following for eac
 3. The putter process transfers the file over the network to the first data node in the set; that datanode transfers its contents to the next one, and so forth. The putter doesn't consider its job done until a full set of replicas have acknowledged successful receipt.
 4. As soon as each HDFS block fills, even if it is mid-record, it is closed; steps 2 and 3 are repeated for the next block.
 
+===== Running on the cluster =====
+
+* Sent the job and its assets (code files, etc) to the jobtracker
+* 
+
+
 ==== Chimpanzee and Elephant: Splits ====
 
 I've danced around a minor but important detail that the workers take care of. For the Chimpanzees, books are chopped up into set numbers of pages -- but the chimps translate _sentences_, not pages, and a page block boundary might happen mid-sentence.
 
-The Hadoop equivalent of course is that a data record may cross and HDFS block boundary. (In fact, you can force map-reduce splits to happen anywhere in the file, but the default and typically most-efficient choice is to split at HDFS blocks.) 
+The Hadoop equivalent of course is that a data record may cross and HDFS block boundary. (In fact, you can force map-reduce splits to happen anywhere in the file, but the default and typically most-efficient choice is to split at HDFS blocks.)
 
 A mapper will skip the first record of a split if it's partial and carry on from there. Since there are many records in each split, that's no big deal. When it gets to the end of the split, the task doesn't stop processing until is completes the current record -- the framework makes the overhanging data seamlessley appear.
 
@@ -135,7 +145,7 @@ In practice, Hadoop users only need to worry about record splitting when writing
 
 ==== Exercise 1.1: Running time ====
 
-It's important to build your intuition about what makes a program fast or slow. 
+It's important to build your intuition about what makes a program fast or slow.
 
 Write the following scripts:
 
@@ -146,7 +156,7 @@ Let's run the *reverse.rb* and *piglatin.rb* scripts from this chapter, and the 
 
 First, though, write down an educated guess for how much longer each script will take than the `null.rb` script takes (use the table below). So, if you think the `reverse.rb` script will be 10% slower, write '10%'; if you think it will be 10% faster, write '- 10%'.
 
-Next, run each script three times, mixing up the order. Write down 
+Next, run each script three times, mixing up the order. Write down
 
 * the total time of each run
 * the average of those times
@@ -162,10 +172,10 @@ Most people are surprised by the result.
 
 ==== Exercise 1.2: A Petabyte-scale `wc` command ====
 
-Create a script, `wc.rb`, that emit the length of each line, the count of bytes it occupies, and the number of words it contains. 
+Create a script, `wc.rb`, that emit the length of each line, the count of bytes it occupies, and the number of words it contains.
 
 Notes:
 
 * The `String` methods `chomp`, `length`, `bytesize`, `split` are useful here.
 * Do not include the end-of-line characters (`\n` or `\r`) in your count.
-* As a reminder -- for English text the byte count and length are typically similar, but the funny characters in a string like "Iñtërnâtiônàlizætiøn" require more than one byte each. The character count says how many distinct 'letters' the string contains, regardless of how it's stored in the computer. The byte count describes how much space a string occupies, and depends on arcane details of how strings are stored. 
+* As a reminder -- for English text the byte count and length are typically similar, but the funny characters in a string like "Iñtërnâtiônàlizætiøn" require more than one byte each. The character count says how many distinct 'letters' the string contains, regardless of how it's stored in the computer. The byte count describes how much space a string occupies, and depends on arcane details of how strings are stored.

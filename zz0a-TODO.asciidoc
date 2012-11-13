@@ -44,3 +44,12 @@ Make the locality examples either longer, or shorter -- but mostly clearer.
     - ask a qn    -- rhetorical question. Frequent and answerable
   - 
 * 
+
+
+
+==== Organization ====
+
+* Practice   -- A real question, on real data, as we'd really do it. I'll especially try to highlight where you should be disciplined, where you should be clever, and where you should keep it simple
+* Patterns   -- Reasoning forward from the practical case to show the general patterns that guide its execution
+* Principles -- Lastly, the larger philosophy that should guide your thinking
+

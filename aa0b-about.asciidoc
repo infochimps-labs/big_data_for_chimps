@@ -35,11 +35,11 @@ Feel free to hop around among chapters; the application chapters don't have larg
 [[about_is_for]]
 === Who this book is for ===
 
-You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala. Familiarity with SQL will help a bit, but isn't essential.
+You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala. Familiarity with SQL will help a bit, but isn't essential. 
 
-All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop).
+This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation.
 
-You do need a Hadoop installation of some sort, even if it's a single machine. While a multi-machine cluster isn't essential, you'll learn best by spending some time on a real environment with real data. Appendix (TODO: ref) describes your options for installing Hadoop.
+All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You do need a Hadoop installation of some sort, even if it's a single machine. While a multi-machine cluster isn't essential, you'll learn best by spending some time on a real environment with real data. Appendix (TODO: ref) describes your options for installing Hadoop.
 
 Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
 

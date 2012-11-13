@@ -13,7 +13,7 @@ Hadoop's bargain is thus: you must agree to write all your programs according to
 
 For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
 
-Let's walk through an example. I'm going to leave out the code samples for the moment (you'll see them later in the book) so we can concentrate on the step-by-step transformation of the data.
+Let's walk through an example. I'll omit code samples for the moment (you'll see them later in the book) so we can concentrate on the step-by-step transformation of the data.
 
 === Where is Barbecue?
 
@@ -23,14 +23,15 @@ Among all these first-and-second level connections, there's so much structure th
 
 ==== Summarize every page on Wikipedia
 
-First, we will summarize each topic by preparing its "word bag" -- a simple count of the words on its wikipedia page. This snippet of the <<wp_lexington_article>> text turns into the <<wp_lexington_wordbag>>
+First, we will summarize each topic by preparing its "word bag" -- a simple count of the words on its wikipedia page. This snippet of the <<wp_lexington_article>> text:
 
 [[wp_lexington_article]]
 ._Wikipedia article on "Lexington, Texas"_
-[quote, wikipedia, http://en.wikipedia.org/wiki/Lexington,_Texas]
 ______
 Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
 ______
+
+turns into <<wp_lexington_wordbag,this wordbag>>:
 
 [[wp_lexington_wordbag]]
 ._Wordbag for "Lexington, Texas"_
@@ -38,7 +39,7 @@ ______
 Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-Note that the articles can be processed in a stream, each on its own, in any order, and without reference to information from elsewhere. That's important! A whole bunch of luxuries come forth -- most importantly, that we can parallelize the process across as many machines as we care to afford. We'll call this type of step a "transform".
+You can carry out this process on each article separately, in any order, and without reference to information from elsewhere. That's important! Among other things, it lets us parallelize the process across as many machines as we care to afford. We'll call this type of step a "transform": it's independent, non-order-dependent, and isolated.
 
 ==== Bin by Location
 
@@ -50,7 +51,7 @@ Next we will annotate each wordbag with the geolocation of its article. Those ar
 Lexington,_Texas -97.01 30.41 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-The funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that 
+The funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that
 footnote:[a "quadkey", described later in <<quadkey,"Geographic Data">>]
 
 
@@ -66,17 +67,7 @@ Next, combine the individual word bags to find each grid cell's word bag:
 
 ==== A pause, to think
 
-Let's pause, take a breath, and examine the data we've produced.
-
-We've turned articles that have a geolocation into coarse-grained regions that have implied frequencies for words. The particular frequencies arise from this combination of forces:
-
-* _signal_: Terms that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
-* _background_: The natural frequency of each term -- "second" is used more often than "syzygy" -- slanted by its frequency in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
-* _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
-
-Our next task -- the sprint home -- is to separate the signal from the background and (as much as possible) from the noise.
-
-Take a quick backward glance, also, to see the fundamental pattern that got us here. We
+Let's pause, take a breath, and examine the fundamental pattern that got us here. We
 
 . transformed articles into wordbags
 . augmented each wordbag with coordinates, using a join
@@ -86,9 +77,17 @@ Take a quick backward glance, also, to see the fundamental pattern that got us h
 
 It's a simple sequence of _transforms_ (operations on each record in isolation: steps 1, 3 and 5) and _reshapes_ -- operations that combine multiple rows, from different tables (the join in step 2) or in the same dataset (the group in step 4).
 
+In doing so, we've turned articles that have a geolocation into coarse-grained regions that have implied frequencies for words. The particular frequencies arise from this combination of forces:
+
+* _signal_: Terms that describe aspects of the human condition specific to each region, like "longhorns" or "barbecue", and direct references to place names, such as "Austin" or "Texas"
+* _background_: The natural frequency of each term -- "second" is used more often than "syzygy" -- slanted by its frequency in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
+* _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
+
+Our next task -- the sprint home -- is to separate the signal from the background and (as much as possible) from the noise.
+
 ==== Pulling signal from noise
 
-To expose signal from the noise, we'll pull out a trick called <<pmi,"Pointwise Mutual Information" (PMI)>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach to isolate the noise and background. It compares the following:
+To isolate the signal, we'll pull out a trick called <<pmi,"Pointwise Mutual Information" (PMI)>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach to isolate the noise and background. It compares the following:
 
 * the rate the term 'barbecue' is used
 * the rate that terms are used on grid cell 023130130
@@ -118,10 +117,10 @@ footnote:[You can use a fancier version of the approach used here to geolocate t
 
 ==== Takeaways
 
-We accomplished a complex data exploration without doing anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data. 
+We accomplished an elaborate data exploration, yet at no point did we do anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data.
 
-As you'll see, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
+As you'll see later, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
 
 That's the approach we'll follow through this book: develop simple, maintainable transform/reshape scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 
-The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to think at scale, to choose a workable series of chess moves connecting the data you have to the insight you need. In the first part of the book, after briefly becoming familiar with the basic framework, we'll proceed through a series of examples to help you identify the key locality and thus the transformation each step calls for. In the second part of that book, we'll apply this to a range of interesting problems and so build up a set of reusable tools for asking deep questions in actual practice. 
+The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to think at scale, to choose a workable series of chess moves connecting the data you have to the insight you need. In the first part of the book, after briefly becoming familiar with the basic framework, we'll proceed through a series of examples to help you identify the key locality and thus the transformation each step calls for. In the second part of that book, we'll apply this to a range of interesting problems and so build up a set of reusable tools for asking deep questions in actual practice.

@@ -1,0 +1,64 @@
+
+
+[[hadoop_filesyste_commands]]
+.Hadoop Filesystem Commands
+[options="header"]
+|=======
+| action                   	| command        	| notes
+|        	        	|
+| list files  	        	| `hadoop fs -ls`
+| list files' disk usage      	| `hadoop fs -du`
+| total HDFS usage/available  	| visit namenode console
+|        	        	|
+|        	        	|
+| copy local -> HDFS     	|
+| copy HDFS -> local    	|
+| copy HDFS -> remote HDFS	|
+|        	        	|
+| make a directory        	| `hadoop fs -mkdir ${DIR}`
+| move/rename 	        	| `hadoop fs -mv ${FILE}`
+| dump file to console       	| `hadoop fs -cat ${FILE} \| cut -c 10000 \| head -n 10000`
+|        	        	|
+|                		|
+| remove a file  		|
+| remove a directory tree     	|
+| remove a file, skipping Trash	|
+| empty the trash NOW  		|
+|                		|
+| health check of HDFS 		|
+| report block usage of files	|
+|                		|
+| decommission nodes   		|
+|                		|
+|                		|
+| list running jobs   		|
+| kill a job         		|
+| kill a task attempt   	|
+|                		|
+|                		|
+| CPU usage by process		| `htop`, or `top` if that's not installed
+| Disk activity       		|
+| Network activity     		|
+|                		|
+|======
+
+[[regexp_cheatsheet]]
+.Regular Expression Cheatsheet
+[options="header"]
+|=======
+| action                   	|
+|                		|
+| TODO               		|
+|=======
+
+[[pig_cheatsheet]]
+.Pig Operator Cheatsheet
+[options="header"]
+|=======
+| action                   	|
+|                		|
+|                		| JOIN
+|                		| FILTER
+|                		|
+|=======
+
