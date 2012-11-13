@@ -1,4 +1,6 @@
+== Cheatsheets ==
 
+=== Terminal Commands ===
 
 [[hadoop_filesyste_commands]]
 .Hadoop Filesystem Commands
@@ -40,7 +42,16 @@
 | Disk activity			|
 | Network activity		|
 |				|
+|				| `grep -e '[regexp]'`
+|				| `head`, `tail`
+|				| `wc`
+|				| `uniq -c`
+|				| `sort -n -k2`
+|				|
+|				|
 |======
+
+=== Regular Expressions ===
 
 
 [[regexp_cheatsheet]]
