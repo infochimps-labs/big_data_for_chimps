@@ -2,20 +2,19 @@
 == TODO / Errata ==
 
 * Hello, reviewers
-* Winston:
-  - outline
-  - promise     -- what will this talk do?
-  - heuristics
-    - cycle       -- say what you'll say/say it/say it again
-    - punctuation -- re-situate audience
-    - near-miss   -- "isn't the concept, but doesn't miss it by much." (arch vs arch w/o top; arch vs arch where legs are pushed together).
-    - ask a qn    -- rhetorical question. Frequent and answerable
-  - 
-* 
 
 * The chapter on tuning requires *heavy* technical review. It is largely synthesized from recommendations by others, but needs to be buttoned up and fact-checked.
 
 * The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
+
+
+===== First exploration
+
+<remark>JOEMAN:Comment Consider forming this into a more clear question. The analysis that proceeds is of course interesting, but you don't stage me with a very clear question. Seeking the 'flavor' of a region doesn't immediately strike me as a problem I have or can imagine having - unless I'm trying to create a Lonely Planet guide, for example. More context for the example can encourage interest and attention.</remark>
+
+===== Reshape / Locality
+
+Make the locality examples either longer, or shorter -- but mostly clearer.
 
 
 [[todo_tasks]]
@@ -33,210 +32,15 @@
 * When introducing a _new term_ do I decorate it at all besides the emphasis?
 * Indexing hints, yes or no?
 
-[[style_notes]]
-=== Style notes:
+==== Random Notes ====
 
-==== Markup
-
-Conventions:
-
-[[syntax_table]]
-.A Table
-[options="header"]
-|=======
-| syntax                                | docbook               | description
-| `+plus signs+`			| monospaced      	| +monospaced text+
-| `\`backticks\``			| `<literal>`     	| generic `literal text`
-| `*+star plus+*`			| `<userinput>`   	| *+literal commands typed by user+* or `pass:[<userinput>foo</userinput>]`
-| `_++bar plus plus++_`			| `<replaceable>` 	| _+replaceable+_ or `pass:[<replaceable>foo</replaceable>]`
-| `_**++bar star star plus plus++**_`	| user inp+replbl	| _+user input replaceable+_ or `pass:[<userinput><replaceable>foo</replaceable></userinput>]`
-| `_underscores_`			| `<emphasis>`    	|  _emphasized text_ and _new terms_.
-| `'single_quotes'`			| `<emphasis>`  	| _URLs_, _email addresses_, _filenames_, and _file extensions_
-| `[role="filename"]'/pathto/file.ext'`	| `<filename>`    	| [role="filename"]'/pathto/file.ext'
-| `[role="citetitle"]'Hadoop'`		| `<book title>`  	| [role="citetitle"]'Hadoop'
-| `*asterisks*` 			| bold text	      	| *bold text* should _not_ be used for emphasis -- use underscores.
-| `H~2~O and 2^5^ = 32`			| super/subscripts   	| H~2~O and 2^5^ = 32. Subscripts and superscripts. For mathematical equations, italicize the variables: _x_^2^ + _y_^2^ = _z_^2^
-| `<<double angles>>`			| `<xref>`      	| <<style_notes>>
-| footnote:[This is a footnote.]`	| footnotes      	| footnotefootnote:[This is a footnote.]. Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]` (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
-| `.I am a Title!`			| figure titles 	| Titles for figures, tables, examples, and sidebars, but not sections.
-| 
-|=======
-
-
-[[block_table]]
-.Block Table
-[options="header"]
-|======
-| `.Image    \n image::path/image.jpg`    	| image    	| 
-| `[quote]   \n ___`                       	| `<quote>` 	| underbars
-| `.Code blk \n ==== ---- \n [source,ruby]`	| code block 	|
-| `.Sidebar  \n ****`                        	| sidebar 	|
-| `.Table    \n [options="header"] \n |==== \n`	| table  	|
-|               `++++ \n <remark>`       	| secret message | plus
-| `[WARNING] \n =====`                     	| NOTE, TIP, WARNING, CAUTION |
-|======
-
-
-==== Titles ====
-
-----
-== Chapter
-=== Section
-==== Sub-section
-===== Passage
-----
-
-==== Lists ====
-
-===== Definition Lists ===== 
-
-----
-Term 1::
-  Definition/description
-Term 2::
-  Something else
-----
-
-===== Bulleted (aka Itemized) Lists
-
-* lions
-* tigers
-** sabre-toothed
-** teapotted
-* bears
-
-===== Ordered (aka Numbered) Lists ===== 
-
-. Preparation
-. Assembly
-.. Measure 
-.. Combine
-.. Bake
-. Applause
-
-
-
-==== JOEMAN:Notation ====
-
-| :HS			| Half Sentence
-| :Comment		| General editorial comment
-| :FIN			| Chapter / section needs finishing, conclusion, summary
-
-==== References ====
-
-
-
-==== Blocks ====
-
-===== Quote =====
-
-Here's a `<quote>` by Tracy Morgan:
-
-[quote]
-____
-Live every week like it was Shark Week
-____
-
-===== Images & Figures =====
-
-See https://prod.oreilly.com/external/illustrations/[guidelines for illustrations]
-
-Somewhere nearby is <<FIG1_syntax>> (a figure, titled and cross-referenced).
-
-----
-[[FIG_syntax]]
-.A figure
-image::images/quadkeys-numbering-zl0-zl1.png[alt="This is the alt text" width="222px"]
-----
-
-[[FIG_syntax]]
-.A figure
-image::images/quadkeys-numbering-zl0-zl1.png[alt="This is the alt text" width="222px"]
-
-===== Code Block =====
-
-Inline code block. You can use `include::code/HelloWorld.rb[]` to pull it in from a separate file.
-
-Prefix each with `[[ref_name]]`
-
-----
-[source,java]
-CODE_BLOCK_NOTE = Standard line length for code is 85 in an "Animal" book:"
-
-STANDARD LINE_FORMAT = <<-EOF
-0        10        20        30        40        50        60        70        80
-1234567890123456789012345678901234567890123456789012345678901234567890123456789012345
-EOF
-----
-
-Contrast the code block above with <<style_code_example>>, which is a _formal_ code example (titled and cross-referenced).
-
-[[style_code_example]]
-.An Example
-====
-----
-[source,ruby]
-
-CODE_BLOCK_NOTE = "Note that the line length is a bit longer here (90 in an Animal):"
-
-LINE_FORMAT = <<-EOF
-0        10        20        30        40        50        60        70        80        9
-123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
-EOF
-----
-====
-
-===== Sidebar =====
-
-.A Sidebar
-****
-This is a sidebar!!
-****
-
-==== Tables ====
-
-----
-[[STD_TABLE]]
-.A Table
-[options="header"]
-|=======
-| syntax                                | docbook               | description
-| `+plus signs+`			| monospaced      	| +monospaced text+
-|=======
-----
-
-==== Secret Messages ====
-
-++++
-<remark>Use a passthrough block like this for notes to production staff</remark>
-++++
-
-// javascript-style comments are totally invisible
-
-==== Admonitions (Notes and Warnings)
-
-Here are some admonitions:
-
-[NOTE]
-===============================
-O'Reilly Animal books traditionally make no distinction between the
-DocBook +<note>+, +<tip>+, and +<important>+ elements.
-===============================
-
-.Titled Admonition
-[TIP]
-===============================
-We do support optional titles in admonitions (in most series).
-===============================
-
-[WARNING]
-===============================
-O'Reilly Animal books traditionally make no distinction between the
-DocBook +<warning>+ and +<caution>+ elements.
-===============================
-
-[CAUTION]
-===============================
-O'Reilly Animal books traditionally make no distinction between the
-DocBook +<warning>+ and +<caution>+ elements.
-===============================
+* Winston:
+  - outline
+  - promise     -- what will this talk do?
+  - heuristics
+    - cycle       -- say what you'll say/say it/say it again
+    - punctuation -- re-situate audience
+    - near-miss   -- "isn't the concept, but doesn't miss it by much." (arch vs arch w/o top; arch vs arch where legs are pushed together).
+    - ask a qn    -- rhetorical question. Frequent and answerable
+  - 
+* 

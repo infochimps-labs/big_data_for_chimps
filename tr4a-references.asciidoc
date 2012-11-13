@@ -1,5 +1,13 @@
 == References ==
 
+
+==== Other Hadoop Books ====
+
+* Hadoop the Definitive Guide, Tom White
+* Hadoop Operations, Eric Sammer
+* http://www.manning.com/holmes/[Hadoop In Practice] (Alex Holmes)
+
+
 * http://hadoop.apache.org/docs/mapreduce/current/streaming.html[Hadoop Streaming FAQ]
 * http://hadoop.apache.org/docs/r0.20.2/mapred-default.html[Hadoop Configuration defaults -- mapred]
 

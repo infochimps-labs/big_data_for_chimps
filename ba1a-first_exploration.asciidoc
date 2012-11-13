@@ -21,11 +21,9 @@ The Wikipedia community has geolocated a great number of its articles. Not just 
 
 Among all these first-and-second level connections, there's so much structure that it should be possible to identify the words that define the cultural "flavor" of a region -- and conversely, to identify the regional flavor of a topic. Here's how Hadoop makes answering a deep question like that simple.
 
-JOEMAN:Comment Consider forming this into a more clear question. The analysis that proceeds is of course interesting, but you don't stage me with a very clear question. Seeking the 'flavor' of a region doesn't immediately strike me as a problem I have or can imagine having - unless I'm trying to create a Lonely Planet guide, for example. More context for the example can encourage interest and attention.
-
 ==== Summarize every page on Wikipedia
 
-First, we need to summarize the words associated with each topic, by preparing the "word bag" from its wikipedia page. The wordbag <<wp_lexington_article>> text turns into the <<wp_lexington_wordbag>>
+First, we will summarize each topic by preparing its "word bag" -- a simple count of the words on its wikipedia page. This snippet of the <<wp_lexington_article>> text turns into the <<wp_lexington_wordbag>>
 
 [[wp_lexington_article]]
 ._Wikipedia article on "Lexington, Texas"_
@@ -35,7 +33,7 @@ Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which T
 ______
 
 [[wp_lexington_wordbag]]
-._Wordbag of Wikipedia article on "Lexington, Texas"_
+._Wordbag for "Lexington, Texas"_
 ------
 Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
@@ -55,7 +53,9 @@ Lexington,_Texas -97.01 30.41 023130130 {("texas",4)("lexington",2),("best",2),(
 The funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that 
 footnote:[a "quadkey", described later in <<quadkey,"Geographic Data">>]
 
+
 [[quadkey_central_texas]]
+.Grid Tiles for Central Texas
 image::images/Quadtree-google_maps_screenshot.png[Grid tiles for Central Texas]
 
 Next, combine the individual word bags to find each grid cell's word bag:
@@ -88,7 +88,7 @@ It's a simple sequence of _transforms_ (operations on each record in isolation: 
 
 ==== Pulling signal from noise
 
-To expose signal from the noise, we'll pull out a trick called "Pointwise Mutual Information" (PMI) <<pmi>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach that isolates the background and noise by comparing these rates:
+To expose signal from the noise, we'll pull out a trick called <<pmi,"Pointwise Mutual Information" (PMI)>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach to isolate the noise and background. It compares the following:
 
 * the rate the term 'barbecue' is used
 * the rate that terms are used on grid cell 023130130
@@ -110,6 +110,7 @@ Rather than step through each operation, I'll wave my hands and pull its output 
 
 As expected, you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
 
+[[baldridge_bbq_wine]]
 .Not the actual output, but gives you the picture; TODO insert actual results
 image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
 

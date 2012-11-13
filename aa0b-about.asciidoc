@@ -26,11 +26,11 @@ All of the examples use real data, and describe patterns found in many problem d
 * Searching, filtering and herding records in bulk
 * Advanced queries against spatial or time-series data sets.
 
-This is not a beginner's book. There is emphasis on simplicity and fun, which should make this book especially appealing to beginners, but this is not an approach you'll outgrow. We emphasize simplicity and fun because it's a far more powerful approach, and one that generates the most value: humans are important, robots are cheap. The code you see is adapted from programs we write at Infochimps. There are sections describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
+This is not a beginner's book. The emphasis on simplicity and fun should make it especially appealing to beginners, but this is not an approach you'll outgrow. The emphasis is on simplicity and fun because it's the most powerful approach, and generates the most value, for creative analytics: humans are important, robots are cheap. The code you see is adapted from programs we write at Infochimps. There are sections describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
 
-Most of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Let me put that more strongly: if you're a beginning user, you should not *read* this book -- you should have it open next to you while you *write* whatever code each chapter inspires you to produce. The book's website has sample solutions, and data sets to compare against your output.
+Most of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Deep learning will come less from having the book in front of you as you _read_ it than from having the book next to you while you *write* code inspired by it. There are sample solutions and result datasets on the book's website.
 
-Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters. 
+Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters.
 
 [[about_is_for]]
 === Who this book is for ===
@@ -39,7 +39,7 @@ You should be familiar with at least one programming language, but it doesn't ha
 
 All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop).
 
-You don't _need_ to have an existing Hadoop installation, but you'll learn best by spending some time on a real environment. Setting up a cluster is outside of this book's scope, but (TODO: ref) has instructions for getting a test cluster, and references to help you set up a real cluster
+You do need a Hadoop installation of some sort, even if it's a single machine. While a multi-machine cluster isn't essential, you'll learn best by spending some time on a real environment with real data. Appendix (TODO: ref) describes your options for installing Hadoop.
 
 Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
 

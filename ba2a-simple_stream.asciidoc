@@ -75,7 +75,7 @@ So that's what it looks like when a `cat` is feeding the program data; let's see
 
 Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands the day's translation manual to chimps as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
 
-Some passages are harder than others, and you don't want some chimps to be goofing off while others are stuck with Troilus and Cressida into Kinyarwanda, so it's important that any elephant can deliver page blocks to any chimpanzee. On the other hand, sending page blocks all around would take up time and clog the hallways. 
+Some passages are harder than others, and you don't want some chimps to be goofing off while others are stuck translating _King Lear_ into Kinyarwanda. So it's important that any elephant can deliver page blocks to any chimpanzee. On the other hand, sending page blocks all around would take up time and clog the hallways. 
 
 The elephant's chief librarian, Nanette, employs several tricks to avoid this congestion.
 
@@ -112,15 +112,14 @@ Now let's run it on the full Shakespeare corpus. Even this is hardly enough data
 
 We'll go into much more detail in (TODO: ref), but here are the essentials of what you just performed.
 
-When you ran the `hadoop fs -mkdir` command, the Namenode (Nanette's Hadoop counterpart) simply made a notation in its directory: no data was stored. If you're familiar with the term, think of the namenode as a 'FAT (File Allocation Table)' for the HDFS.
+When you ran the `hadoop fs -mkdir` command, the Namenode (Nanette's Hadoop counterpart) simply made a notation in its directory: no data was stored. If you're familiar with the term, think of the namenode as a 'File Allocation Table (FAT)' for the HDFS.
 
 When you run `hadoop fs -put ...`, the putter process does the following for each file:
-* Contacts the namenode to create the file. This also just makes a note of the file; the namenode doesn't ever have actual data pass through it.
-* Instead, the putter process asks the namenode to allocate a new data block. The namenode designates a set of datanodes (typically three), along with a permanently-unique block ID.
-* The putter process transfers the file over the network to the first data node in the set; that datanode transfers its contents to the next one, and so forth. The putter doesn't consider its job done until a full set of replicas have acknowledged successful receipt.
-* As soon as that HDFS block fills, even if it is mid-record, 
 
-
+1. Contacts the namenode to create the file. This also just makes a note of the file; the namenode doesn't ever have actual data pass through it.
+2. Instead, the putter process asks the namenode to allocate a new data block. The namenode designates a set of datanodes (typically three), along with a permanently-unique block ID.
+3. The putter process transfers the file over the network to the first data node in the set; that datanode transfers its contents to the next one, and so forth. The putter doesn't consider its job done until a full set of replicas have acknowledged successful receipt.
+4. As soon as each HDFS block fills, even if it is mid-record, it is closed; steps 2 and 3 are repeated for the next block.
 
 ==== Chimpanzee and Elephant: Splits ====
 
@@ -128,7 +127,7 @@ I've danced around a minor but important detail that the workers take care of. F
 
 The Hadoop equivalent of course is that a data record may cross and HDFS block boundary. (In fact, you can force map-reduce splits to happen anywhere in the file, but the default and typically most-efficient choice is to split at HDFS blocks.) 
 
-A mapper will the first record of a split if it's partial and carry on from there. Since there are many records in each split, that's no big deal. When it gets to the end of the split, the task doesn't stop processing until is completes the current record -- the framework makes the overhanging data seamlessley appear.
+A mapper will skip the first record of a split if it's partial and carry on from there. Since there are many records in each split, that's no big deal. When it gets to the end of the split, the task doesn't stop processing until is completes the current record -- the framework makes the overhanging data seamlessley appear.
 
 In practice, Hadoop users only need to worry about record splitting when writing a custom `InputFormat` or when practicing advanced magick. You'll see lots of reference to it though -- it's a crucial subject for those inside the framework, but for regular users the story I just told is more than enough detail.
 

@@ -2,19 +2,25 @@
 
 === Locality of Reference ===
 
-Ever since there were
+    Ever since there were 
 
-    [] [] [] [] 
-    [] [] [] [] eight computers and a network,
+        [] [] [] [] 
+        [] [] [] [] eight computers and a network,
     
-programmers have wished that eight computers solved problems twice as fast as `[] [] [] []` four computers. The problem comes when the computer
+    programmers have wished that
 
-			  [] [] [] [] [] [] [] over here needs to talk to the computer
-	     over here -> [] [] [] [] [] [] [] 
-	  and this one -> [] [] [] [] [] [] [] 
-	       needs to talk to this one ^
-	       
-and so forth. 
+       eight computers   [] [] [] [] [] [] [] [] []
+       solved problems
+       twice as fast as
+       four computers    [] [] [] []
+
+    The problem comes
+          when the computer over here \/ 
+       needs to talk to   [] [] [] [] [] [] [] <- the one over here
+                          [] [] [] [] [] [] [] <- or the one here
+	  and this one -> [] [] [] [] [] [] []
+            needs to talk to this one ^^
+    and so forth. 
 
 If you've ever had lunch with a very large troop of chimpanzees, hollering across the room to pass the bananas, and grabbing each other's anthill-poking twigs, you can imagine how hard it is to get any work done.
 
@@ -30,7 +36,7 @@ This book is fundamentally about just one thing: helping you identify the key lo
 
 * Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
 
-TODO: make these longer, or shorter, but mostly clearer.
+<remark>TODO: make these longer, or shorter, but mostly clearer.</remark>
 
 === The Hadoop Haiku ===
 
