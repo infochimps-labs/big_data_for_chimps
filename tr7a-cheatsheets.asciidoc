@@ -6,7 +6,7 @@
 .Hadoop Filesystem Commands
 [options="header"]
 |=======
-| action			| command		| notes
+| action			| command
 |				|
 | list files			| `hadoop fs -ls`
 | list files' disk usage	| `hadoop fs -du`
@@ -58,7 +58,7 @@
 .Regular Expression Cheatsheet
 [options="header"]
 |=======
-| action			|
+| character			| meaning
 |				|
 | TODO				|
 |				|
@@ -89,7 +89,7 @@
 .Pig Operator Cheatsheet
 [options="header"]
 |=======
-| action			|
+| action			| operator
 |				|
 |				| JOIN
 |				| FILTER
