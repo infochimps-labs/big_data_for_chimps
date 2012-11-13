@@ -42,7 +42,11 @@ As each pile of output products starts to accumulate, we can begin to group them
 
 If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
 
-footnote:[Stream steps become mapper-only jobs, but don't conflate a reshape _step_ with the reduce _phase_ of a job. A reshape step typically becomes at least one mapper phase and reducer phase.]
+[NOTE]
+===============================
+Stream steps become mapper-only jobs, but don't conflate a reshape _step_ with the reduce _phase_ of a job. A reshape step typically becomes at least one mapper phase and reducer phase.
+===============================
+
 
 ==== The Reducer Guarantee ====
 

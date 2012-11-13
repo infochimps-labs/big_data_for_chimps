@@ -1,6 +1,8 @@
 == Geo Data ==
 
 
+
+
 === Features of Features ===
 
 Geographic data shows up in the form of
@@ -24,12 +26,16 @@ We'll start by adopting the simple, flat Mercator projection -- directly map lon
 
 Now divide the world into four and make a Z pattern across them:
 
-Within each of those, make a Z again:
+Within each of those, make a <<z_path_of_quadtiles, Z again>>:
 
+[[z_path_of_quadtiles]]
+.Z-path of quadtiles
 image::images/quadkeys-nearby_points_are_nearby.png[Z-path of quadtiles]
 
-As you go along, index each tile:
+As you go along, index each tile, as shown in <<quadtile_numbering>>:
 
+[[quadtile_numbering]]
+.Quadtile Numbering
 image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
 
 This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By applying Hadoop's fundamental locality operation -- sorting -- geographic locality falls out of numerical locality.
@@ -206,12 +212,11 @@ The fundamental GeoJSON data structures are:
     end
 ----
 
-Notes:
-* you should Polygons
-* note these orderings:
-  - Point: `longitude, latitude`
-  - Polygon: `[ [[lng1,lat1],[lng2,lat2],...,[lngN,latN],[lng1,lat1]] ]` -- you must repeat the first point. The first array is the outer ring; other paths in the array are interior rings or holes (eg South Africa/Lesotho). For regions with multiple parts (US/Alaska/Hawaii) use a MultiPolygon.
-  - Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`  
+GeoJSON specifies these orderings for features:
+
+* Point: `[longitude, latitude]`
+* Polygon: `[ [[lng1,lat1],[lng2,lat2],...,[lngN,latN],[lng1,lat1]] ]` -- you must repeat the first point. The first array is the outer ring; other paths in the array are interior rings or holes (eg South Africa/Lesotho). For regions with multiple parts (US/Alaska/Hawaii) use a MultiPolygon.
+* Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`  
 
 An example hash, taken from the spec:
 
@@ -317,7 +322,11 @@ In code:
       [lng, lat]
     end
 
-Note: be careful to always put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as ´long´ -- it's a keyword in pig and other languages. When appropriate I use `lng`.
+[NOTE]
+=========================
+Take care to put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as `long` -- it's a keyword in pig and other languages. I like `lng`.
+=========================
+
 
 ==== Interesting quadtile properties ====
 
@@ -451,16 +460,18 @@ in code:
       [east_lng, latitude]
     end
 
-==== Grid Sizes and Sample Preparation ====
-
+===== Grid Sizes and Sample Preparation =====
 
 Always include as a mountweazel some places you're familiar with. It's much easier for me to think in terms of the distance from my house to downtown, or to Dallas, or to New York than it is to think in terms of zoom level 14 or 7 or 4
 
-==== Map Boundaries to Grid Cells ====
+==== Distributing Boundaries and Regions to Grid Cells ====
 
+(TODO: Section under construction)
 
-==== Map Regions to Grid Cells ====
+This section will show how to
 
+* efficiently segment region polygons (county boundaries, watershed regions, etc) into grid cells
+* store data pertaining to such regions in a grid-cell form: for example, pivoting a population-by-county table into a population-of-each-overlapping-county record on each quadtile.
 
 ==== Adaptive Grid Size ====
 
@@ -500,7 +511,7 @@ You should uniformly decompose everything to some upper zoom level so that if yo
 
 
 
-With the upper range as your partition key, and the whole quadkey is the sort key, you can now do joins
+With the upper range as your partition key, and the whole quadkey is the sort key, you can now do joins. In the reducer,
 
 * read keys on each side until one key is equal to or a prefix of the other.
 * emit combined record using the more specific of the two keys
@@ -535,10 +546,7 @@ You must emit high-level grid cells with the lsb filled with XX or something tha
 
 ==== Tree structure of Quadtile indexing ====
 
-You can look at quadtiles is as a tree structure
-
-* Each branch splits the plane exactly in half by area
-* Only leaf nodes hold data
+You can look at quadtiles is as a tree structure. Each branch splits the plane exactly in half by area, and only leaf nodes hold data.
 
 The first quadtile scheme required we develop every branch of the tree to the same depth. The multiscale quadtile scheme effectively says "hey, let's only expand each branch to its required depth". Our rule to break up a quadtile if any section of it needs development preserves the "only leaf nodes hold data". Breaking tiles always exactly in two makes it easy to assign features to their quadtile and facilitates joins betweeen datasets that have never met. There are other ways to make these tradeoffs, though -- read about K-D trees in the "keep exploring" section at end of chapter.
 
@@ -613,52 +621,50 @@ The weather station data is sampled at each weather station, and forms our best 
 
 So weather data is gathered at a _point_, but imputes information about a _region_. You can't just slap each point down on coarse-grained tiles -- the closest weather station might lie just over on the next quad, and you're writing a check for very difficult calculations at run time.
 
-We also have a severe version of the multiscale problem:
-
-* The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean.
-* The coverage varies wildly over time. In the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone.
+We also have a severe version of the multiscale problem.  The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean. It also varies wildly over time: in the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone.
 
 
 ==== Find the Voronoi Polygon for each Weather Station ====
 
-These factors rule out any naïve approach to locality, but there's an elegant solution known as a http://en.wikipedia.org/wiki/Voronoi_diagram[Voronoi diagram].
+These factors rule out any naïve approach to locality, but there's an elegant solution known as a Voronoi diagram footnote:[see http://en.wikipedia.org/wiki/Voronoi_diagram[Wikipedia entry] or (with a Java-enabled browser) this http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet]].
 
-The Voronoi diagram covers the plane with polygons, one per point -- I'll call that the "centerish" of the polygon. Within each polygon, you are closer to its centerish than any other. By extension, locations on the boundary of each Voronoi polygon are equidistant from the centerish on either side; polygon corners are equidistant from centerishes of all touching polygons.
+The Voronoi diagram covers the plane with polygons, one per point -- I'll call that the "centerish" of the polygon. Within each polygon, you are closer to its centerish than any other. By extension, locations on the boundary of each Voronoi polygon are equidistant from the centerish on either side; polygon corners are equidistant from centerishes of all touching polygons footnote:[John Snow, the father of epidemiology, mapped cholera cases from an 1854 outbreak against the voronoi regions defined by each neighborhood's closest water pump. The resulting infographic made plain to contemporary physicians and officials that bad drinking water, not "miasma" (bad air), transmitted cholera. http://johnsnow.matrix.msu.edu/book_images12.php].
 
 If you'd like to skip the details, just admire the diagram (REF) and agree that it's the "right" picture. As you would in practice, we're going to use vetted code from someone with a PhD and not write it ourselves.
 
 The details: Connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally. If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other.
 
-TODO: above paragraph not very clear, may not be necessary.
+<remark>TODO: above paragraph not very clear, may not be necessary.</remark>
 
 
 ==== Break polygons on quadtiles ====
 
-Now our path is clear:
+Now let's put Mr. Voronoi to work. Use the weather station locations to define a set of Voronoi polygons, treating each weather station's observations as applying uniformly to the whole of that polygon.
 
-* Use the weather station locations to define a set of Voronoi polygons. Treat each weather station's observations as applying uniformly to the whole of that polygon.
-* Choose a lower-bound zoom level that avoids skew but doesn't balloon the dataset's size.
-* Break the Voronoi polygons up by quadtile as we did above -- quadtiles will either contain a piece of boundary (and so are at the lower-bound zoom level), or are entirely contained within a boundary.
-* Also produce the reverse mapping, from weather station to the quadtile IDs its polygon covers.
+Break the Voronoi polygons up by quadtile as we did above -- quadtiles will either contain a piece of boundary (and so are at the lower-bound zoom level), or are entirely contained within a boundary. You should choose a lower-bound zoom level that avoids skew but doesn't balloon the dataset's size.
 
-footnote:[http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet] -- requires a Java-enabled browser]
-
-footnote:[John Snow, the father of epidemiology, mapped cholera cases from an 1854 outbreak against the voronoi regions defined by each neighborhood's closest water pump. The resulting infographic made plain to contemporary physicians and officials that bad drinking water, not "miasma" (bad air), transmitted cholera. http://johnsnow.matrix.msu.edu/book_images12.php]
+Also produce the reverse mapping, from weather station to the quadtile IDs its polygon covers.
 
 ==== Map Observations to Grid Cells ====
 
 Now join observations to grid cells and reduce each grid cell.
 
-=== GeoJSON ===
-
-Using polymaps to view results
-
-
+// === GeoJSON ===
+// Using polymaps to view results
 
 === K-means clustering to summarize ===
 
+(TODO: section under construction)
 
+we will describe how to use clustering to form a progressive summary of point-level detail.
 
+there are X million wikipedia topics
+
+at distant zoom levels, storing them in a single record would be foolish
+
+what we can do is summarize their contents -- coalesce records into groups based on their natural spatial arrangement. If the points represented foursquare checkins, those clusters would match the population distribution. If they were wind turbine generators, they would cluster near shores and praries.
+
+K-Means Clustering is an effective way to form that summarization.
 
 === Keep Exploring ===
 
@@ -674,13 +680,13 @@ Taking a step back, the fundamental idea this chapter introduced is a direct way
 
 === Exercises ===
 
-**Exercise 2**: Extend quadtile mapping to three dimensions
+**Exercise 1**: Extend quadtile mapping to three dimensions
 
 To jointly model network and spatial relationship of neurons in the brain, you will need to use not two but three spatial dimensions. Write code to map positions within a 200mm-per-side cube to an "octcube" index analogous to the quadtile scheme. How large (in mm) is each cube using 30-bit keys? using 63-bit keys?
 
 For even higher dimensions of fun, extend the http://en.wikipedia.org/wiki/Voronoi_diagram#Higher-order_Voronoi_diagrams[Voronoi diagram to three dimensions].
 
-**Exercise 3**: Locality
+**Exercise 2**: Locality
 
 We've seen a few ways to map feature data to joinable datasets. Describe how you'd join each possible pair of datasets from this list (along with the story it would tell):
 
@@ -693,7 +699,7 @@ We've seen a few ways to map feature data to joinable datasets. Describe how you
 
 For example, joining disease reports against census data might expose correlations of outbreak with ethnicity or economic status. I would prepare the census regions as quadtile-split polygons. Next, map each disease report to the right quadtile and in the reducer identify the census region it lies within. Finally, join on the tract ID-to-census record table.
 
-**Exercise 1**: Write a generic utility to do multiscale smoothing
+**Exercise 3**: Write a generic utility to do multiscale smoothing
 
 Its input is a uniform sampling of values: a value for every grid cell at some zoom level.
 However, lots of those values are similar.
