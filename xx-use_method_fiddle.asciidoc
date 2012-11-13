@@ -1,0 +1,202 @@
+== Hadoop Metrics ==
+
+[[use_method]]
+=== The USE Method applied to Hadoop ===
+
+There's an excellent methodology for performance analysis known as the http://dtrace.org/blogs/brendan/2012/02/29/the-use-method/["USE Method"]: For every resource, check Utilization, Saturation and Errors" footnote:[developed by Brendan Gregg for system performance tuning, modified here for Hadoop]:
+
+* utilization -- How close to capacity is the resource? (ex: CPU usage, % disk used)
+* saturation  -- How often is work waiting? (ex: network drops or timeouts)
+* errors      -- Are there error events?
+
+For example, USE metrics for a supermarket cashier would include:
+
+* checkout utilization: flow of items across the belt; constantly stopping to look up the price of tomatoes or check coupons will harm utilization.
+* checkout saturation: number of customers waiting in line
+* checkout errors: calling for the manager
+
+The cashier is an I/O resource; there are also capacity resources, such as available stock of turkeys:
+
+* utilization: amount of remaining stock (zero remaining would be 100% utilization)
+* saturation: in the US, you may need to sign up for turkeys near the Thanksgiving holiday.
+* errors: spoiled or damaged product
+
+As you can see, it's possible to have high utilization and low saturation (steady stream of customers but no line, or no turkeys in stock but people happily buying ham), low utilization and high saturation (a cashier in training with a long line), or any other combination.
+
+=== Why it's interesting ===
+
+It may not be obvious why the USE method is profound -- **"Hey, it's good to record metrics"** isn't new advice.
+
+What's novel is the negative space. **"Hey, it's good _enough_ to record this _limited_ set of metrics"** is quite surprising. Here's "USE method, the extended remix": _For each resource, check Utilization, Saturation and Errors. This is the necessary and sufficient foundation of a system performance analysis, and advanced effort is only justifiable once you have done so_.
+
+There are further benefits:
+
+* An elaborate solution space becomes a finite, parallelizable, delegatable list of activities.
+* Blind spots become obvious. We once had a client issue where datanodes would go dark in difficult-to-reproduce circumstances. After much work, we found that persistent connections from Flume and chatter around numerous small files created by Hive were consuming all available datanode handler threads. We learned by pain what we could have learned by making a list -- there was no visibility for the number of available handler threads.
+* Saturation metrics are often non-obvious, and high saturation can have non-obvious consequences. (For example, the http://www.stevesouders.com/blog/2010/07/13/velocity-tcp-and-the-lower-bound-of-web-performance/[hard lower bound of TCP throughput])
+* It's known that http://rachelbythebay.com/w/2012/06/14/crash/[Teddy Bears make superb level-1 support techs], because being forced to deliver a clear, uninhibited problem statement often suggests its solution. To some extent any framework this clear and simple will carry benefits, simply by forcing an organized problem description.
+
+=== Look for the Bounding Resource ===
+
+The USE metrics described below help you to identify the limiting resource of a job; to diagnose a faulty or misconfigured system; or to guide tuning and provisioning of the base system.
+
+===== Improve / Understand Job Performance =====
+
+Hadoop is designed to drive max utilization for its _bounding resource_ by coordinating manageable saturation_ of the resources in front of it.
+
+The "bounding resource" is the fundamental limit on performance -- you can't process a terabyte of data from disk faster than you can read a terabyte of data from disk. k
+
+* disk read throughput
+* disk write throughput
+* job process CPU
+* child process RAM, with efficient utilization of internal buffers
+* If you don't have the ability to specify hardware, you may need to accept "network read/write throughput" as a bounding resource during replication.
+
+At each step of a job, what you'd like to see is very high utilization of exactly _one_ bounding resource from that list, with reasonable headroom and managed saturation for everything else. What's "reasonable"? As a rule of thumb, utilization above 70% in a non-bounding resource deserves a closer look.
+
+===== Diagnose Flaws =====
+
+===== Balanced Configuration/Provisioning of base system =====
+
+
+=== Resource List ===
+
+Please see the <<glossary>> for definitions of terms. I've borrowed many of the system-level metrics from http://dtrace.org/blogs/brendan/2012/03/07/the-use-method-linux-performance-checklist/[Brendan Gregg's Linux Checklist]; visit there for a more-detailed list.
+
+[[use_method_table]]
+.USE Method Checklist
+[options="header"]
+|=======
+| resource              | type        	| metric 		| instrument
+|			|		|  			|
+| *CPU-like concerns*	|		|  			|
+|			|		|  			|
+| CPU    		| utilization	| system CPU		| `top`/`htop`: CPU %, overall
+|			|		| **job process CPU**	| `top`/`htop`: CPU %, each child process
+| 			| saturation	| max user processes	| `ulimit -u` ("noproc" in `/etc/security/limits.d/...`)
+| mapper slots		| utilization	| mapper slots used	| jobtracker console; impacted by `mapred.tasktracker.map.tasks.maximum`
+| mapper slots  	| saturation	| mapper tasks waiting	| jobtracker console; impacted by scheduler and by speculative execution settings
+|			|		| combiner activity	| jobtracker console (TODO table cell name)
+| reducer slots		| utilization	| reducer slots used	| jobtracker console; impacted by `mapred.tasktracker.reduce.tasks.maximum`
+| reducer slots 	| saturation	| reducer tasks waiting	| jobtracker console; impacted by scheduler and by speculative execution and slowstart settings
+| task startup overhead	|		|  			|
+|			|		|  			|
+| *memory concerns*	|		|  			|
+|			|		|  			|
+| memory capacity	| utilization	| total non-OS RAM	| `free`, `htop`; you want the total excluding caches+buffers.
+|			|		| child process RAM	| `free`, `htop`: "RSS"; impacted by `mapred.map.child.java.opts` and `mapred.reduce.child.java.opts`
+|			| 		| JVM old-gen used 	| JMX
+|			| 		| JVM new-gen used	| JMX
+| memory capacity	| saturation	| swap activity		| `vmstat 1` - look for "r" > CPU count.
+|			|		| old-gen gc count   	| JMX, gc logs (must be specially enabled)
+|			|		| old-gen gc pause time	| JMX, gc logs (must be specially enabled)
+|			|		| new-gen gc pause time	| JMX, gc logs (must be specially enabled)
+| mapper sort buffer	| utilization	| record size limit	| announced in job process logs; controlled indirectly by `io.sort.record.percent`, spill percent tunables
+|			|		| record count limit	| announced in job process logs; controlled indirectly by `io.sort.record.percent`, spill percent tunables
+| mapper sort buffer	| saturation	| spill count		| spill counters (jobtracker console)
+|			|		| sort streams		| io sort factor tunable (`io.sort.factor`)
+| shuffle buffers	| utilization	| buffer size		| child process logs
+|			|		| buffer %used		| child process logs
+| shuffle buffers	| saturation	| spill count		| spill counters (jobtracker console)
+|			|		| sort streams		| merge parallel copies tunable `mapred.reduce.parallel.copies` (TODO: also `io.sort.factor`?)
+| OS caches/buffers	| utilization	| total c+b		| `free`, `htop`
+|			|		|  			|
+| *disk concerns*	|		|  			|
+|			|		|  			|
+| system disk I/O	| utilization	| req/s, read		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+|			|		| req/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+|			|		| MB/s, read		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+|			|		| MB/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+| system disk I/O	| saturation	| queued requests	| `iostat -xnz 1`; look for "avgqu-sz" > 1, or high "await".
+| system disk I/O	| errors	|  			| `/sys/devices/…/ioerr_cnt`; `smartctl`, `/var/log/messages`
+|			|		|  			|
+| *network concerns*	|		|  			|
+|			|		|  			|
+| network I/O		| utilization	| 			| `netstat`; `ip -s {link}`; `/proc/net/{dev}` -- RX/TX throughput as fraction of max bandwidth
+| network I/O		| saturation	| 			| `ifconfig` ("overruns", "dropped"); `netstat -s` ("segments retransmited"); `/proc/net/dev` (RX/TX "drop")
+| network I/O		| errors	| interface-level	| `ifconfig` ("errors", "dropped");   `netstat -i` ("RX-ERR"/"TX-ERR"); `/proc/net/dev` ("errs", "drop")
+|			| 		| request timeouts	| daemon and child process logs
+| handler threads	| utilization	|  			|
+|			|		| nn handlers		| (TODO: how to measure) vs `dfs.namenode.handler.count`
+|			|		| jt handlers		| (TODO: how to measure) vs 
+|			|		| dn handlers		| (TODO: how to measure) vs `dfs.datanode.handler.count`
+|			|		| dn xceivers		| (TODO: how to measure) vs `dfs.datanode.max.xcievers
+|			|		|  			|
+| *framework concerns*	|		|  			|
+|			|		|  			|
+| disk capacity		| 		| system disk used	| `df -bM`
+|			|		| HDFS directories	| `du -smc /path/to/mapred_scratch_dirs` (for all directories in `dfs.data.dir`, `dfs.name.dir`, `fs.checkpoint.dir`)
+|			|		| mapred scratch space	| `du -smc /path/to/mapred_scratch_dirs` (TODO scratch dir tunable)
+|			|		| total HDFS free	| namenode console
+| 			|		| open file handles	| `ulimit -n` ("nofile" in `/etc/security/limits.d/...`)
+| job process		| errors	| 			| stderr log
+|            		|       	| 			| stdout log
+|            		|        	| 			| counters
+| datanode		| errors	| 			|
+| namenode		| errors	| 			|
+| secondarynn		| errors	| 			|
+| tasktracker		| errors	| 			|
+| jobtracker		| errors	| 			|
+|=======
+
+Metrics in bold are critical resources -- you would like to have exactly one of these at its full sustainable level
+
+===== Rough notes =====
+ 
+Metrics:
+
+* number of spills
+* disk {read,write} {req/s,MB/s}
+* CPU % {by process}
+* GC
+  - heap used (total, %)
+  - new gen pause
+  - old gen pause
+  - old gen rate
+  - STW count
+* system memory
+  - resident ram {by process}
+  - paging
+* network interface
+  - throughput {read, write}
+  - queue
+* handler threads
+  - handlers
+  - xceivers
+* 
+
+
+* mapper task CPU
+* mapper taks 
+Network interface -- throughput
+Storage devices	  -- throughput, capacity
+Controllers	  -- storage, network cards
+Interconnects	  -- CPUs, memory, throughput
+
+* disk throughput
+* handler threads
+* garbage collection events
+
+
+Exchanges:
+
+* 
+* shuffle buffers -- memory for disk
+* gc options -- CPU for memory
+
+
+If at all possible, use a remote monitoring framework like Ganglia, Zabbix or Nagios. However http://sourceforge.net/projects/clusterssh[clusterssh] or http://code.google.com/p/csshx[its OSX port] along with the following commands will help
+
+
+===== Exercises =====
+
+**Exercise 1**: start an intensive job (eg <remark>TODO: name one of the example jobs</remark>) that will saturate but not overload the cluster. Record all of the above metrics during each of the following lifecycle steps:
+
+* map step, before reducer job processes start (data read, mapper processing, combiners, spill)
+* near the end of the map step, so that mapper processing and reducer merge are proceeding simultaneously
+* reducer process step (post-merge; reducer processing, writing and replication proceeding)
+
+
+**Exercise 2**: For each of the utilization and saturation metrics listed above, describe job or tunable adjustments that would drive it to an extreme. For example, the obvious way to drive shuffle saturation (number of merge passes after mapper completion) is to bring a ton of data down on one reducer -- but excessive map tasks or a `reduce_slowstart_pct` of 100% will do so as well.
+
+
