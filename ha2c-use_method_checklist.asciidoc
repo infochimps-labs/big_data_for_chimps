@@ -73,66 +73,65 @@ Please see the <<glossary>> for definitions of terms. I've borrowed many of the 
 | *CPU-like concerns*	|		|  			|
 |			|		|  			|
 | CPU    		| utilization	| system CPU		| `top`/`htop`: CPU %, overall
-|			|		| **job process CPU**	| `top`/`htop`: CPU %, each child process
+|			| utilization	| **job process CPU**	| `top`/`htop`: CPU %, each child process
 | 			| saturation	| max user processes	| `ulimit -u` ("noproc" in `/etc/security/limits.d/...`)
 | mapper slots		| utilization	| mapper slots used	| jobtracker console; impacted by `mapred.tasktracker.map.tasks.maximum`
 | mapper slots  	| saturation	| mapper tasks waiting	| jobtracker console; impacted by scheduler and by speculative execution settings
-|			|		| combiner activity	| jobtracker console (TODO table cell name)
+|                	| saturation	| task startup overhead	| ???
+|			| saturation	| combiner activity	| jobtracker console (TODO table cell name)
 | reducer slots		| utilization	| reducer slots used	| jobtracker console; impacted by `mapred.tasktracker.reduce.tasks.maximum`
 | reducer slots 	| saturation	| reducer tasks waiting	| jobtracker console; impacted by scheduler and by speculative execution and slowstart settings
-| task startup overhead	|		|  			|
 |			|		|  			|
-| *memory concerns*	|		|  			|
+| *Memory concerns*	| _____________	| ____________		| _________________
 |			|		|  			|
 | memory capacity	| utilization	| total non-OS RAM	| `free`, `htop`; you want the total excluding caches+buffers.
-|			|		| child process RAM	| `free`, `htop`: "RSS"; impacted by `mapred.map.child.java.opts` and `mapred.reduce.child.java.opts`
-|			| 		| JVM old-gen used 	| JMX
-|			| 		| JVM new-gen used	| JMX
+|			| utilization	| child process RAM	| `free`, `htop`: "RSS"; impacted by `mapred.map.child.java.opts` and `mapred.reduce.child.java.opts`
+|			| utilization	| JVM old-gen used 	| JMX
+|			| utilization	| JVM new-gen used	| JMX
 | memory capacity	| saturation	| swap activity		| `vmstat 1` - look for "r" > CPU count.
-|			|		| old-gen gc count   	| JMX, gc logs (must be specially enabled)
-|			|		| old-gen gc pause time	| JMX, gc logs (must be specially enabled)
-|			|		| new-gen gc pause time	| JMX, gc logs (must be specially enabled)
+|			| saturation	| old-gen gc count   	| JMX, gc logs (must be specially enabled)
+|			| saturation	| old-gen gc pause time	| JMX, gc logs (must be specially enabled)
+|			| saturation	| new-gen gc pause time	| JMX, gc logs (must be specially enabled)
 | mapper sort buffer	| utilization	| record size limit	| announced in job process logs; controlled indirectly by `io.sort.record.percent`, spill percent tunables
-|			|		| record count limit	| announced in job process logs; controlled indirectly by `io.sort.record.percent`, spill percent tunables
+|			| utilization	| record count limit	| announced in job process logs; controlled indirectly by `io.sort.record.percent`, spill percent tunables
 | mapper sort buffer	| saturation	| spill count		| spill counters (jobtracker console)
-|			|		| sort streams		| io sort factor tunable (`io.sort.factor`)
+|			| saturation	| sort streams		| io sort factor tunable (`io.sort.factor`)
 | shuffle buffers	| utilization	| buffer size		| child process logs
-|			|		| buffer %used		| child process logs
+|			| utilization	| buffer %used		| child process logs
 | shuffle buffers	| saturation	| spill count		| spill counters (jobtracker console)
-|			|		| sort streams		| merge parallel copies tunable `mapred.reduce.parallel.copies` (TODO: also `io.sort.factor`?)
+|			| saturation	| sort streams		| merge parallel copies tunable `mapred.reduce.parallel.copies` (TODO: also `io.sort.factor`?)
 | OS caches/buffers	| utilization	| total c+b		| `free`, `htop`
 |			|		|  			|
-| *disk concerns*	|		|  			|
+| *disk concerns*	| _____________	| ____________		| _________________
 |			|		|  			|
 | system disk I/O	| utilization	| req/s, read		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
-|			|		| req/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
-|			|		| MB/s, read		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
-|			|		| MB/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+|			| utilization	| req/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+|			| utilization	| MB/s, read		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
+|			| utilization	| MB/s, write		| `iostat -xz 1` (system-wide); `iotop` (per process); `/proc/{PID}/sched` "se.statistics.iowait_sum"
 | system disk I/O	| saturation	| queued requests	| `iostat -xnz 1`; look for "avgqu-sz" > 1, or high "await".
 | system disk I/O	| errors	|  			| `/sys/devices/…/ioerr_cnt`; `smartctl`, `/var/log/messages`
 |			|		|  			|
-| *network concerns*	|		|  			|
+| *network concerns*	| _____________	| ____________		| _________________
 |			|		|  			|
 | network I/O		| utilization	| 			| `netstat`; `ip -s {link}`; `/proc/net/{dev}` -- RX/TX throughput as fraction of max bandwidth
 | network I/O		| saturation	| 			| `ifconfig` ("overruns", "dropped"); `netstat -s` ("segments retransmited"); `/proc/net/dev` (RX/TX "drop")
 | network I/O		| errors	| interface-level	| `ifconfig` ("errors", "dropped");   `netstat -i` ("RX-ERR"/"TX-ERR"); `/proc/net/dev` ("errs", "drop")
 |			| 		| request timeouts	| daemon and child process logs
-| handler threads	| utilization	|  			|
-|			|		| nn handlers		| (TODO: how to measure) vs `dfs.namenode.handler.count`
-|			|		| jt handlers		| (TODO: how to measure) vs 
-|			|		| dn handlers		| (TODO: how to measure) vs `dfs.datanode.handler.count`
-|			|		| dn xceivers		| (TODO: how to measure) vs `dfs.datanode.max.xcievers
+| handler threads	| utilization	| nn handlers		| (TODO: how to measure) vs `dfs.namenode.handler.count`
+|			| utilization	| jt handlers		| (TODO: how to measure) vs 
+|			| utilization	| dn handlers		| (TODO: how to measure) vs `dfs.datanode.handler.count`
+|			| utilization	| dn xceivers		| (TODO: how to measure) vs `dfs.datanode.max.xcievers
 |			|		|  			|
-| *framework concerns*	|		|  			|
+| *framework concerns*	| _____________	| ____________		| _________________
 |			|		|  			|
-| disk capacity		| 		| system disk used	| `df -bM`
-|			|		| HDFS directories	| `du -smc /path/to/mapred_scratch_dirs` (for all directories in `dfs.data.dir`, `dfs.name.dir`, `fs.checkpoint.dir`)
-|			|		| mapred scratch space	| `du -smc /path/to/mapred_scratch_dirs` (TODO scratch dir tunable)
-|			|		| total HDFS free	| namenode console
-| 			|		| open file handles	| `ulimit -n` ("nofile" in `/etc/security/limits.d/...`)
+| disk capacity		| utilization	| system disk used	| `df -bM`
+|			| utilization	| HDFS directories	| `du -smc /path/to/mapred_scratch_dirs` (for all directories in `dfs.data.dir`, `dfs.name.dir`, `fs.checkpoint.dir`)
+|			| utilization	| mapred scratch space	| `du -smc /path/to/mapred_scratch_dirs` (TODO scratch dir tunable)
+|			| utilization	| total HDFS free	| namenode console
+| 			| utilization	| open file handles	| `ulimit -n` ("nofile" in `/etc/security/limits.d/...`)
 | job process		| errors	| 			| stderr log
-|            		|       	| 			| stdout log
-|            		|        	| 			| counters
+|            		| errors      	| 			| stdout log
+|            		| errors       	| 			| counters
 | datanode		| errors	| 			|
 | namenode		| errors	| 			|
 | secondarynn		| errors	| 			|
