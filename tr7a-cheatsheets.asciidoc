@@ -4,61 +4,82 @@
 .Hadoop Filesystem Commands
 [options="header"]
 |=======
-| action                   	| command        	| notes
-|        	        	|
-| list files  	        	| `hadoop fs -ls`
-| list files' disk usage      	| `hadoop fs -du`
-| total HDFS usage/available  	| visit namenode console
-|        	        	|
-|        	        	|
-| copy local -> HDFS     	|
-| copy HDFS -> local    	|
+| action			| command		| notes
+|				|
+| list files			| `hadoop fs -ls`
+| list files' disk usage	| `hadoop fs -du`
+| total HDFS usage/available	| visit namenode console
+|				|
+|				|
+| copy local -> HDFS		|
+| copy HDFS -> local		|
 | copy HDFS -> remote HDFS	|
-|        	        	|
-| make a directory        	| `hadoop fs -mkdir ${DIR}`
-| move/rename 	        	| `hadoop fs -mv ${FILE}`
-| dump file to console       	| `hadoop fs -cat ${FILE} \| cut -c 10000 \| head -n 10000`
-|        	        	|
-|                		|
-| remove a file  		|
-| remove a directory tree     	|
+|				|
+| make a directory		| `hadoop fs -mkdir ${DIR}`
+| move/rename			| `hadoop fs -mv ${FILE}`
+| dump file to console		| `hadoop fs -cat ${FILE} \| cut -c 10000 \| head -n 10000`
+|				|
+|				|
+| remove a file			|
+| remove a directory tree	|
 | remove a file, skipping Trash	|
-| empty the trash NOW  		|
-|                		|
-| health check of HDFS 		|
+| empty the trash NOW		|
+|				|
+| health check of HDFS		|
 | report block usage of files	|
-|                		|
-| decommission nodes   		|
-|                		|
-|                		|
-| list running jobs   		|
-| kill a job         		|
-| kill a task attempt   	|
-|                		|
-|                		|
+|				|
+| decommission nodes		|
+|				|
+|				|
+| list running jobs		|
+| kill a job			|
+| kill a task attempt		|
+|				|
+|				|
 | CPU usage by process		| `htop`, or `top` if that's not installed
-| Disk activity       		|
-| Network activity     		|
-|                		|
+| Disk activity			|
+| Network activity		|
+|				|
 |======
+
 
 [[regexp_cheatsheet]]
 .Regular Expression Cheatsheet
 [options="header"]
 |=======
-| action                   	|
-|                		|
-| TODO               		|
+| action			|
+|				|
+| TODO				|
+|				|
+| `.`				| any character
+| `\w`				| any word character: a-z, A-Z, 0-9 or `_` underscore. Use `[:word:]` to match extended alphanumeric characters (accented characters and so forth)
+| `\s`				| any whitespace, whether space, tab (`\t`), newline (`\n`) or carriage return (`\r`).
+| `\d`				| 
+| `\x42` (or any number)	| the character with that hexadecimal encoding. 
+| `\b`				| word boundary (zero-width)
+| `^`				| start of line; use `\\A` for start of string (disregarding newlines). (zero-width)
+| `$`				| end of line; use `\\z` for end of string (disregarding newlines). (zero-width)
+| `[^a-mA-M]`			| match character in set
+| `[a-mA-M]`			| reject characters in set
+| `a\|b\|c`			| a or b or c
+| `(...)`			| group
+| `(?:...)`			| non-capturing group
+| `(?<varname>...)`		| named group
+|				|
+| `*`, `+`			| zero or more, one or more. greedy (captures the longest possible match)
+| `*?`, `+?`			| non-greedy zero-or-more, non-greedy one-or-more
+| `{n,m}`			| repeats `n` or more, but `m` or fewer times
+|				|
 |=======
 
 [[pig_cheatsheet]]
 .Pig Operator Cheatsheet
 [options="header"]
 |=======
-| action                   	|
-|                		|
-|                		| JOIN
-|                		| FILTER
-|                		|
+| action			|
+|				|
+|				| JOIN
+|				| FILTER
+|				|
 |=======
 
