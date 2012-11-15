@@ -28,15 +28,14 @@ If you've ever had lunch with a very large troop of chimpanzees, hollering acros
 
 This book is fundamentally about just one thing: helping you identify the key locality of a data problem. 
 
-* Count the occurrences of every word in a large body of text: gather each occurrence into groups by word, then count each group.
+* *word count*: Count the occurrences of every word in a large body of text: gather each occurrence into groups by word, then count each group.
 
-* To sort a large number of names, group each name by its first few letters (eg "Aaron" = "aa", "Zoe" = "zo"), making each group small enough to efficiently sort in memory. Reading the output of each group in the order of its label will produce the whole dataset in order.
+* *total sort*: To sort a large number of names, group each name by its first few letters (eg "Aaron" = "aa", "Zoe" = "zo"), making each group small enough to efficiently sort in memory. Reading the output of each group in the order of its label will produce the whole dataset in order.
 
-* Counting the average number of Twitter messages per day in each user's timeline requires two steps. First, take every 'A follows B' link and get it into the same locality as the user record for its "B".  Next, group all those links by the user record for 'A', and sum their messages-per-day.
+* *network graph statistics*: Counting the average number of Twitter messages per day in each user's timeline requires two steps. First, take every 'A follows B' link and get it into the same locality as the user record for its "B".  Next, group all those links by the user record for 'A', and sum their messages-per-day.
 
-* Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
+* *correlation*: Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
 
-<remark>TODO: make these longer, or shorter, but mostly clearer.</remark>
 
 === The Hadoop Haiku ===
 
