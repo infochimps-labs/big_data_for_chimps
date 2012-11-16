@@ -8,19 +8,19 @@ include::ba1a-first_exploration.asciidoc[]
 
 include::ba2a-simple_stream.asciidoc[]
 
-include::ba3a-locality-reshape.asciidoc[]
-
 include::ba3c-locality-simple_reshape.asciidoc[]
 
 include::ba3b-locality-saving_christmas.asciidoc[]
 
 include::ba3d-locality-efficient_santa.asciidoc[]
 
-include::ba3e-locality-partition_and_sort_keys.asciidoc[]
+include::ba3e-jt_and_nanette_at_work_for_you.asciidoc[]
+
+include::ba3a-locality-reshape.asciidoc[]
 
 include::fu05-geographic_data.asciidoc[]
 
-include::fu02-server_logs.asciidoc[]
+include::fu02-statistics.asciidoc[]
 
 include::mu02-why_hadoop.asciidoc[]
 
@@ -47,13 +47,3 @@ include::ba6e-semi_structured_data-airline_flights.asciidoc[]
 include::ba6f-semi_structured_data-daily_weather.asciidoc[]
 
 include::ba6g-semi_structured_data-truth_and_error.asciidoc[]
-
-include::ba6h-semi_structured_data-other_strategies.asciidoc[]
-
-include::ca4d-overview_of_datasets.asciidoc[]
-
-include::tr7a-cheatsheets.asciidoc[]
-
-include::tr1a-authors.asciidoc[]
-
-include::tr5a-back_cover.asciidoc[]
