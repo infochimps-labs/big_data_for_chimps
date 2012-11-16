@@ -12,7 +12,15 @@
 
 <remark>JOEMAN:Comment Consider forming this into a more clear question. The analysis that proceeds is of course interesting, but you don't stage me with a very clear question. Seeking the 'flavor' of a region doesn't immediately strike me as a problem I have or can imagine having - unless I'm trying to create a Lonely Planet guide, for example. More context for the example can encourage interest and attention.</remark>
 
+===== E&C I
+
+There's actually a direct version of this: early Computers, i.e. people with the job title Computer
+
+* explain more of the role of chimp and elephant, slightly tighter links
+
 ===== Reshape / Locality
+
+Choose a different word for "locality" -- "pivot"
 
 Make the locality examples either longer, or shorter -- but mostly clearer.
 

@@ -5,6 +5,8 @@
 // :lang: 		en
 // :encoding: 	utf-8
 
+image::images/front_cover.jpg[Front Cover]
+
 [[about]]
 == About  ==
 

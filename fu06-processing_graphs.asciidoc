@@ -6,6 +6,9 @@ Assumptions:
 * E does not fit in ram
 * Graph is sparse -- E/V^2 << 1 (the typical degree is smear less than V)
 
+=== Power law Distribution of keys and the Skew Problem
+
+
 === Notation ===
  
 TODO: move this to early in book

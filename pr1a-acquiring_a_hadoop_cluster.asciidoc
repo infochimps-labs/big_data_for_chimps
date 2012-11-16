@@ -1,6 +1,9 @@
 [[hadoop_cluster_howto]]
 == Acquiring a Hadoop Cluster
 
+This book picks up where the internet leaves off,
+and this stuff changes so fast
+
 ==== References to help you build a real cluster ====
 
 TODO: linkplz to resources for getting a Hadoop cluster
@@ -16,10 +19,16 @@ TODO: make this less insultingly short
 
 ===== Homebrew =====
 
-`brew install hadoop`
+   `brew install hadoop`
 
 ===== Amazon Elastic Map-Reduce =====
 
 Use the EMR console to spin up a cluster. Don't specify a job, but do tell it to stay running.
 
 Then just log in and use it as a normal hadoop cluster.
+
+(put a page on Infochimps saying how to get your first cluster, reference that)
+
+===== Way too many options for setting up Hadoop =====
+
+

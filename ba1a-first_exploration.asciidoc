@@ -21,6 +21,12 @@ The Wikipedia community has geolocated a great number of its articles. Not just 
 
 Among all these first-and-second level connections, there's so much structure that it should be possible to identify the words that define the cultural "flavor" of a region -- and conversely, to identify the regional flavor of a topic. Here's how Hadoop makes answering a deep question like that simple.
 
+<remark>Kurt says "Where is this word" is more interesting than "What is this place about" (because you can't answer the first one without global-ness</remark>
+
+[[baldridge_bbq_wine]]
+.Not the actual output, but gives you the picture; TODO insert actual results
+image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
+
 ==== Summarize every page on Wikipedia
 
 First, we will summarize each topic by preparing its "word bag" -- a simple count of the words on its wikipedia page. This snippet of the <<wp_lexington_article>> text:
@@ -107,11 +113,9 @@ Rather than step through each operation, I'll wave my hands and pull its output 
 023130130 {(("texas",X),...,("longhorns",X),...("bbq",X),...,...}
 ------
 
-As expected, you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
+As expected, in <<baldridge_bbq_wine>> you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
 
-[[baldridge_bbq_wine]]
-.Not the actual output, but gives you the picture; TODO insert actual results
-image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
+
 
 footnote:[You can use a fancier version of the approach used here to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. (see Baldridge et al TODO: reference)]
 
