@@ -1,4 +1,4 @@
-== The Stream ==
+== The Stream (ch. B) ==
 
 ==== Chimpanzee and Elephant Start a Business ====
 
@@ -9,7 +9,7 @@ In the system they set up, each chimpanzee sits at a typewriter doing exactly on
 
 ==== A Simple Streamer ====
 
-We're hardly as clever as a language-chained chimpanzee, but even we can translate text into Pig Latin. For the unfamiliar, you turn standard English into Pig Latin as follows:
+We're hardly as clever as one of these multilingual chimpanzees, but even we can translate text into Pig Latin. For the unfamiliar, you turn standard English into Pig Latin as follows:
 
 * If the word begins with a consonant-sounding letter or letters, move them to the end of the word adding "ay": "happy" becomes "appy-hay", "chimp" becomes "imp-chay" and "yes" becomes "es-yay".
 * In words that begin with a vowel, just append the syllable "way": "another" becomes "another-way", "elephant" becomes "elephant-way".

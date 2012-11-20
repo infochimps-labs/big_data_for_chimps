@@ -19,7 +19,7 @@
          2_900	      	Twilio TigerLINE US Street Map                      	geo/us_street_map/addresses
          1_900	      	All US Airline Flights 1987-2009 (ASA Data Expo)    	stat-computing.org/dataexpo/2009
          1_300	      	Geonames Points of Interest                         	geo/geonames/info
-         1_300	      	Daily Prices for all US stocks, 1962–2011           	stats/stock_prices
+         1_300	      	Daily Prices for all US stocks, 1962-2011           	stats/stock_prices
          1_040	      	Patent data (see Google data too)                   	www.nber.org/~jbessen
            573	      	TAKS Exam Scores for all Texas students, 2007-2010  	ripd/texas_taks_exam
            571	      	Pi to 1 Billion decimal places                      	ja0hxv.calico.jp/value/pai/val01/pi
@@ -27,7 +27,6 @@
            362	      	DBpedia Wikipedia Article Features                  	downloads.dbpedia.org/3.7/links
            331	      	DBpedia                                             	spotlight.dbpedia.org/datasets
            310	       	Grouplens: User-Movie affinity                      	graph/grouplens_movies
-           305	 	UFO Sightings (UFORC)                               	geo/ufo_sightings
            223	 	Geonames Postal Codes                               	geo/geonames/postal_codes
            121	 	Book Crossing: User-Book affinity                   	graph/book_crossing
            111		Maxmind GeoLite (IP-Geo) data                       	ripd/geolite.maxmind.com/download
@@ -42,6 +41,7 @@
             11	 	All Scrabble tile combinations with rack value      	misc/words_quackle
           1000	 	Marvel Universe Social Graph
              . 		Materials Safety Datasheets
+             .	 	UFO Sightings (UFORC)                               	geo/ufo_sightings
              . 		Crunchbase
              . 		Natural Earth detailed geographic boundaries
              . 		US Census 2009 ACS (Long-form census)
@@ -72,6 +72,20 @@
 	     .		Github Archive                                  	githubarchive.org
 
 
+
+* yahoo stocks
+* mathematical_constants
+* ACS 2009
+* zillow_neighborhoods
+* marvel comics
+
+* time
+  - timezone
+  - calendars
+  - lunar_eclipses
+* historical currency  
+* sports
+	     
 	     
 -------------------
 
@@ -193,7 +207,7 @@ The Million Song Dataset is also a cluster of complementary datasets contributed
 * Taste Profile subset: user data
 
 
-## Fields
+**Fields**
 
 From the [original documentation](http://labrosa.ee.columbia.edu/millionsong/pages/field-list):
 
@@ -352,6 +366,8 @@ Xinhua News Agency, English Service (xin_eng)
 New in the Fourth Edition
 
 For an example of the data in this corpus, please review http://www.ldc.upenn.edu/Catalog/desc/addenda/LDC2009T13.html[this sample file].
+
+
 
 
 

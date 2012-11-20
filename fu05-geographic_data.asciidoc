@@ -1,8 +1,6 @@
 == Geo Data ==
 
 
-
-
 === Features of Features ===
 
 Geographic data shows up in the form of
@@ -729,6 +727,7 @@ Example: merge all cells whose contents lie within 10% of each other
     19  20  12  14     . 20. 12  14
     20  21   8   3     .   .  8   3
 
+    
 === References ===
 
 * http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.

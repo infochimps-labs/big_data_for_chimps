@@ -1,4 +1,4 @@
-== First Exploration ==
+== First Exploration (ch. A) ==
 [[first_exploration]]
 
 Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this sentence.

@@ -1,4 +1,4 @@
-== Reshape Steps ==
+== Reshape Steps (ch. C) ==
 
 === Locality of Reference ===
 

@@ -15,8 +15,11 @@
 
 == Tips ==
 
-
 * Remove files from the trash immediately with `hadoop fs -rm -skipTrash /users/(you)/.Trash`
 
+* **Input format for Zip files**: http://cotdp.com/2012/07/hadoop-processing-zip-files-in-mapreduce/[ZIP file input format]
+
+
 == Common Error Messages ==
+
 

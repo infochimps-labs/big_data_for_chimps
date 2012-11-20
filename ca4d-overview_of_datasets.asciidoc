@@ -18,6 +18,7 @@ The examples in this book use the "Chimpmark" datasets: a set of freely-redistri
 
 * Retrosheet Game Logs -- every recorded baseball game back to the 1890s
 
+* Gutenberg Corpus
 
 === Wikipedia Page Traffic Statistic V3  ===
   -
@@ -78,5 +79,19 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
             25	 	Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
 
 
-=== download instructions ===
+=== Gutenberg corpus
 
+The main collection is about 650GB (as of October 2011) with nearly 2 million files, 60 languages, and dozens of different file formats.
+
+* http://www.gutenberg.org/feeds/catalog.rdf.bz2[Gutenberg collection catalog] as RDF
+* rsync, repeatable: http://www.gutenberg.org/wiki/Gutenberg:Mirroring_How-To[Mirroring How-To]
+* wget, zip files:   http://www.gutenberg.org/wiki/Gutenberg%3aInformation_About_Robot_Access_to_our_Pages[Gutenberg corpus download instructions]. From a helpful http://webapps.stackexchange.com/questions/12311/how-to-download-all-english-books-from-gutenberg[Stack Overflow thread], you can run `wget -r  -w 2 -m 'http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=en'`
+  - see also http://cotdp.com/2012/07/hadoop-processing-zip-files-in-mapreduce/[ZIP file input format]
+
+----
+    cd /mnt/gutenberg/ ; mkdir -p logs/gutenberg
+    nohup rsync -aviHS --max-size=10M --delete --delete-after --exclude=\*.{m4a,m4b,ogg,spx,tei,md5,db,mus,mid,rst,sib,xml,zip,pdf,jpg,jpeg,png,htm,html,mp3,rtf,wav,mov,mp4,avi,mpg,mpeg,doc,docx,xml,tex,ly,eps,iso,rar} --exclude={\*-h*,old,images} --exclude '*cache/generated' {ftp@ftp.ibiblio.org::gutenberg,/mnt/gutenberg/ftp.ibiblio.org}/2 >> /mnt/gutenberg/logs/gutenberg/rsync-gutenberg-`datename`-part_2.log 2>&1 &
+----
+
+
+* http://ftp.ibiblio.org/1/1/0/100/100.txt[Complete works of William Shakespeare]

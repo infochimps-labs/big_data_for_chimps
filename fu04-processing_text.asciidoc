@@ -6,6 +6,10 @@
 
 
 
+==== Tokenizing in Pig ====
+
+* https://github.com/Ganglion/varaha/blob/master/src/main/java/varaha/text/TokenizeText.java
+
 
 === Pointwise Mutual Information
 
@@ -24,3 +28,11 @@ Let's pick up the example from <<first_exploration>>
 	<math>
 	\operatorname{pmi}(x;y) \equiv \log\frac{p(x,y)}{p(x)p(y)} = \log\frac{p(x|y)}{p(x)} = \log\frac{p(y|x)}{p(y)}.
 	</math>
+
+	
+=== References ===
+
+
+* http://thedatachef.blogspot.com/2011/04/tf-idf-with-apache-pig.html
+* http://hortonworks.com/blog/pig-as-duct-tape-part-three-tf-idf-topics-with-cassandra-python-streaming-and-flask/
+* http://hortonworks.com/blog/pig-macro-for-tf-idf-makes-topic-summarization-2-lines-of-pig/
