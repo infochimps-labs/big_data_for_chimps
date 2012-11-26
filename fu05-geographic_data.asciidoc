@@ -1,7 +1,49 @@
 == Geo Data ==
 
 
-=== Features of Features ===
+Spatial data is of course one of the fundamental ways we understand the universe
+
+There are several big ideas introduced here.
+
+First of course are the actual mechanics of working with spatial data, and projecting the Earth onto a coordinate plane.
+
+
+The statistics and timeseries chapters dealt with their dimensions either singly or interacting weakly,
+
+(...)
+
+It's a good jumping-off point for machine learning.
+
+Take a tour through some of the sites that curate the best in data visualization, and you'll see a strong over-representation of geographic explorations.
+With most datasets, you need to figure out the salient features, eliminate confounding factors, and of course do all the work of transforming them to be joinable footnote:[we dive deeper in the chapter on <<machine_learning>> basics later on]. Geo Data comes out of the
+(TODO: untangle the previous and following paragraphs)
+
+Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
+
+**TODO**:
+
+Will be reorganizing below in this order:
+
+* do a "nearness" query example, 
+* reveal that it is such a thing known as the spatial join, and broaden your mind as to how you think about locality.
+* cover the geographic data model, GeoJSON etc.
+* Spatial concept of Quadtiles -- none of the mechanics of the projection yet
+* Something with Points and regions, using quadtiles
+* Actual mechanics of Quadtile Projection -- from lng/lat to quadkey
+* mutiscale quadkey assignment
+* (k-means will move to ML chapter)
+* complex nearness -- voronoi cells and weather data
+
+=== Spatial Data ===
+
+
+It not only unwinds two dimensions to one, but any system
+it to spatial analysis in more dimensions -- see <<brain_example>>, which also extends the coordinate handling to three dimensions
+
+
+=== Geographic Data Model ===
+
+
 
 Geographic data shows up in the form of
 
@@ -10,9 +52,16 @@ Geographic data shows up in the form of
 * Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
 * "Feature" -- a generic term for "Point or Path or Region".
 * "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
-* 
+*
 
-Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.] 
+.Features of Features
+[NOTE]
+===============================
+There's a slight muddying of the term "feature" -- to a geographer, a feature is a generic term for the _thing_ being described; later, in the chapter on machine learning, a feature
+Since I'm writing as a data scientist dabbling in geography (and because that chapter's hairy enough as it is), we'll just say "object" in place of "geographic feature"
+===============================
+
+Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
 
 === Geospatial JOIN using quadtiles ===
 
@@ -183,7 +232,7 @@ The fundamental GeoJSON data structures are:
 ----
     module GeoJson
       class Base ; include Wukong::Model ; end
-      
+
       class FeatureCollection < Base
         field :type,  String
         field :features, Array, of: Feature
@@ -200,13 +249,13 @@ The fundamental GeoJSON data structures are:
 	field :coordinates, Array, doc: "for a 2-d point, the array is a single `(x,y)` pair. For a polygon, an array of such pairs."
       end
 
-      # lowest value then highest value (left low, right high; 
+      # lowest value then highest value (left low, right high;
       class BboxCoords < Array
 	def left  ; self[0] ; end
 	def btm   ; self[1] ; end
 	def right ; self[2] ; end
         def top   ; self[3] ; end
-      end	
+      end
     end
 ----
 
@@ -214,7 +263,7 @@ GeoJSON specifies these orderings for features:
 
 * Point: `[longitude, latitude]`
 * Polygon: `[ [[lng1,lat1],[lng2,lat2],...,[lngN,latN],[lng1,lat1]] ]` -- you must repeat the first point. The first array is the outer ring; other paths in the array are interior rings or holes (eg South Africa/Lesotho). For regions with multiple parts (US/Alaska/Hawaii) use a MultiPolygon.
-* Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`  
+* Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`
 
 An example hash, taken from the spec:
 
@@ -232,7 +281,7 @@ An example hash, taken from the spec:
           "prop0":    "value0",
           "prop1":    {"this": "that"}
         },
-	"bbox":       [ 
+	"bbox":       [
         "geometry": {
           "type":     "Polygon",
           "coordinates": [
@@ -674,10 +723,9 @@ K-D trees are another approach. The rough idea: rather than blindly splitting in
 
 ===== It's not just for Geo =====
 
-Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
-
 === Exercises ===
 
+[[brain_example]]
 **Exercise 1**: Extend quadtile mapping to three dimensions
 
 To jointly model network and spatial relationship of neurons in the brain, you will need to use not two but three spatial dimensions. Write code to map positions within a 200mm-per-side cube to an "octcube" index analogous to the quadtile scheme. How large (in mm) is each cube using 30-bit keys? using 63-bit keys?
@@ -727,7 +775,7 @@ Example: merge all cells whose contents lie within 10% of each other
     19  20  12  14     . 20. 12  14
     20  21   8   3     .   .  8   3
 
-    
+
 === References ===
 
 * http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
@@ -738,3 +786,4 @@ Example: merge all cells whose contents lie within 10% of each other
 * http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
 
 * http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
+* http://bl.ocks.org/4122298[US County borders in GeoJSON]

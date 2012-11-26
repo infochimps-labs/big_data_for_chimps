@@ -70,7 +70,7 @@
       220_000		Twilio/Wigle.net Street Vector Data Set         	aws.amazon.com/datasets/2408             	snap-5eaf5537	MySQL	geo	A complete database of US street names and address ranges mapped to zip codes and latitude/longitude ranges, with DTMF key mappings for all street names.
              .		US Economic Data 2003-2006                      	aws.amazon.com/datasets/2341             	snap-0bdf3f62		stats	US Economic Data for 2003-2006 from the The US Census Bureau -- raw census data (ACS2002-2006)
 	     .		Github Archive                                  	githubarchive.org
-
+	     		2012 Election Results, by County			https://docs.google.com/spreadsheet/lv?key=0AjYj9mXElO_QdHpla01oWE1jOFZRbnhJZkZpVFNKeVE&toomany=true#gid=19
 
 
 * yahoo stocks
