@@ -13,15 +13,80 @@ Hadoop's bargain is thus: you must agree to write all your programs according to
 
 For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
 
-Let's walk through an example. I'll omit code samples for the moment (you'll see them later in the book) so we can concentrate on the step-by-step transformation of the data.
+Let's walk through an example. For the moment, I'll omit code samples and simplify slightly so we can concentrate on the step-by-step transformation of the data. (You'll see these details later in the book.)
 
 === Where is Barbecue?
 
+I'm from Austin, TX, home of great live music, BBQ,
+
 The Wikipedia community has geolocated a great number of its articles. Not just defined places like Austin, TX, but one million deep: landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World") have computer-readable locations. What's more, since the connections among pages are robot-legible, links within topics can be read to imply a geolocation -- the movie "Dazed and Confused" (which took place in austin) and the artist Janis Joplin (who got her start in Austin) can be identifiably paired with the loose geolocation of Austin, TX.
 
-Among all these first-and-second level connections, there's so much structure that it should be possible to identify the words that define the cultural "flavor" of a region -- and conversely, to identify the regional flavor of a topic. Here's how Hadoop makes answering a deep question like that simple.
+Using only "nearby" the page for Austin, we can train a robot to tell you those things, same as any person on the street could.
 
-<remark>Kurt says "Where is this word" is more interesting than "What is this place about" (because you can't answer the first one without global-ness</remark>
+
+
+Among all these first-and-second level connections, there's so much structure that it should be possible to invert the question: rather than find the topics that describe a region's flavor, can we identify the regional flavor of various topics? Jason Baldrige and (TODO: rest of authors) did an exploration showing that you can; here's a simplified version.
+
+Here's how Hadoop makes answering a deep question like that simple.
+
+=== First Steps
+
+There are a few steps at the start.
+
+==== Why?
+
+Need to say what questions trying to answer
+
+I chose this example first because it touches 
+
+* Text Analysis	   -- the first 
+* Spatial Analysis -- get nearby articles together. We turn pointwise data (attaching the page's topics to its geolocated point); but it could be mining indicators drawn from disease reports looking for an epidemic, or social media chatter about a politician
+* Statistics	   -- we find average
+  Determing something as simple as the count of records becomes challenging
+  Measures that require any global knowledge, like the median, become fiendish. 
+* Raw data munging -- Well, I'll hide the details of this for now, but preliminary to the below was a mass of work just to prepare the data for analysis. 
+
+We'll explore each of these topics, along with time series, graph processing and log analysis. 
+
+==== Plot of this story
+
+1. article -> wordbag  
+2. join on page data to get geolocation
+3. use pagelinks to get larger pool of implied geolocations
+4. turn geolocations into quadtile keys
+5. aggregate topics by quadtile
+6. take summary statistics aggregated over term and quadkey
+7. combine those statistics to identify terms that occur more frequently than the base rate would predict
+8. explore and validate the results                              
+9. filter to find strongly-flavored words, and other reductions of the data for visualization
+
+==== Exemplars and Touchstones
+
+There are three touchstones to hit in every data exploration:
+
+* Confirm the things you know:
+* Confirm or refute the things you suspect.
+* Uncover at least one thing you never suspected.
+
+Things we know: First, common words should show no geographic flavor. 
+Geographic features -- "beach", "mountain", etc -- should be intensely localised.
+
+We will jointly discover two things
+taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc) 
+
+
+ You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
+
+
+Next, we'll choose some _exemplars_: familiar records to trace through
+ "Barbeque" should cover ;
+
+==== Data and features
+
+
+
+=== Summarize every page on Wikipedia
+
 
 [[baldridge_bbq_wine]]
 .Not the actual output, but gives you the picture; TODO insert actual results

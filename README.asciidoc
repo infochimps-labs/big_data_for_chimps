@@ -184,26 +184,32 @@ File organization:
   ** `voronoi_grid_assignment` -- cells that have a piece of border, or the largest grid cell that has no border on it
   ** `a`
   ** Using polymaps to see results
+  
 10.  Processing Graphs
   ** subuniverse extraction
   ** Pagerank
   ** identify strong links
   ** clustering coefficient
+  
 11.  Black-Box Machine Learning
   ** Simple Naive Bayes classification
   ** Document clustering
+  
 12.  Flume and Stream Processing
   ** sources, sinks and decorators
   ** deploying a wukong script as a decorator
   ** parse the twitter stream API feed
+  
 13.  Time Series
   ** windowing
   ** simple anomaly detection
   ** rolling statistics
+  
 14.  Pig UDFs
   ** Basic UDF
   ** why algebraic is awesome and how to be algebraic
-  ** Wonderdog: a LoadFunc / StoreFunc for elasticsearch 
+  ** Wonderdog: a LoadFunc / StoreFunc for elasticsearch
+  
 15.  Installing and Operating a Cluster
 16.  Tuning
 17.  HBase and Databases

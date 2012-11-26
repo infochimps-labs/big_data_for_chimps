@@ -7,18 +7,7 @@ There are several big ideas introduced here.
 
 First of course are the actual mechanics of working with spatial data, and projecting the Earth onto a coordinate plane.
 
-
 The statistics and timeseries chapters dealt with their dimensions either singly or interacting weakly,
-
-(...)
-
-It's a good jumping-off point for machine learning.
-
-Take a tour through some of the sites that curate the best in data visualization, and you'll see a strong over-representation of geographic explorations.
-With most datasets, you need to figure out the salient features, eliminate confounding factors, and of course do all the work of transforming them to be joinable footnote:[we dive deeper in the chapter on <<machine_learning>> basics later on]. Geo Data comes out of the
-(TODO: untangle the previous and following paragraphs)
-
-Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
 
 **TODO**:
 
@@ -34,12 +23,17 @@ Will be reorganizing below in this order:
 * (k-means will move to ML chapter)
 * complex nearness -- voronoi cells and weather data
 
+also TODO: untangle the following two paragraphs, and figure out whether to put them at beginning or end (probably as sidebar, at beginning)
+
+It's a good jumping-off point for machine learning. Take a tour through some of the sites that curate the best in data visualization, and you'll see a strong over-representation of geographic explorations. With most datasets, you need to figure out the salient features, eliminate confounding factors, and of course do all the work of transforming them to be joinable footnote:[we dive deeper in the chapter on <<machine_learning>> basics later on]. Geo Data comes out of the
+
+Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
+
 === Spatial Data ===
 
 
 It not only unwinds two dimensions to one, but any system
 it to spatial analysis in more dimensions -- see <<brain_example>>, which also extends the coordinate handling to three dimensions
-
 
 === Geographic Data Model ===
 
