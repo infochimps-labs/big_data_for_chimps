@@ -37,6 +37,8 @@ There are further benefits:
 * It's known that http://rachelbythebay.com/w/2012/06/14/crash/[Teddy Bears make superb level-1 support techs], because being forced to deliver a clear, uninhibited problem statement often suggests its solution. To some extent any framework this clear and simple will carry benefits, simply by forcing an organized problem description.
 ****
 
+<remark>http://en.wikipedia.org/wiki/Rubber_duck_debugging</remark>
+
 === Look for the Bounding Resource ===
 
 The USE metrics described below help you to identify the limiting resource of a job; to diagnose a faulty or misconfigured system; or to guide tuning and provisioning of the base system.

@@ -19,6 +19,7 @@
 
 * **Input format for Zip files**: http://cotdp.com/2012/07/hadoop-processing-zip-files-in-mapreduce/[ZIP file input format]
 
+* **Calculate file checksums**: https://github.com/jpatanooga/IvoryMonkey[IvoryMonkey by Josh Patterson] (@jpatanooga) will calculate a checksum _locally_ that you can compare with the hadoop filesystem's internal checksum. I'm not aware of a way to calculate the md5 or SHA1 checksum of a file on the HDFS short of doing a map-side job with a non-splitable input format (TODO update command for wukong 3.0 format)
 
 == Common Error Messages ==
 

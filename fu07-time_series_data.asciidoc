@@ -1,11 +1,11 @@
 == Time Series ==
 
+=== sessionizing ===
+
 
 === anomaly detection ===
 
 
-=== predictive models ===
+=== Simple Prediction ===
 
-
-=== sessionizing ===
-
+==== Holt-Winters ====

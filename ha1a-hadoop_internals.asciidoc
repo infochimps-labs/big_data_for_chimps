@@ -36,7 +36,11 @@ Each mapper will receive a chunk bounded by:
 * Min split size -- up to the size of each file, you can force hadoop to make each split larger than `mapred.min.split.size`
 * Block size -- the natural unit of data to feed each map task is the size of an HDFS file chunk;
   this is what lets Hadoop "bring the compute to the data".
-  
+
+* Input format -- some input formats are non-splittable (by necessity, as for some compression formats; or by choice, when you want to enforce no file splits). footnote:[Paraphrasing the Hadoop FAQ, to make a 'non-splittable' FileInputFormat, your particular input-format should return false for the isSplittable call. If you would like the whole file to be a single record, you must also implement a RecordReader interface to do so -- the default is LineRecordReader, which splits the file into separate lines. The other, quick-fix option, is to set mapred.min.split.size to large enough value.]
+
+
+
 Exercises:
 
 * Create a 2GB file having a 128MB block size on the HDFS. Run `wu-stream cat cat --min_split_mb=1900` on it. How many map tasks will launch? What will the "non-local" cell on the jobtracker report? Try it out for 1900, and also for values of 128, 120, 130, 900 and 1100.

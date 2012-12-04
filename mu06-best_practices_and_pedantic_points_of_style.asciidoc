@@ -19,6 +19,14 @@ your filenames start encoding more and more metadata, with files storing simple 
 
 these are the features of a datastore
 
+==== Nits ====
+
+* timestamps in "gold" (master) data, this is the complete list of reasonable choices:
+  - epoch, as integer or as float (but only when subsecond resolution is appropriate)
+  - `YYYYmmddHHMMSSZ`
+  - `YYYY-mm-ddTHH:MM:SS+0:00`
+  - `YYYYmmdd` and `HHMMSS` as separate columns
+
 ==== Truth ====
 
 * managing truth makes up a huge portion of the difficulties in designing systems at scale

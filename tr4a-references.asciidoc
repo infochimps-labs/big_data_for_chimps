@@ -14,3 +14,10 @@
 ==== Source material ====
 
 * http://en.wikipedia.org/wiki/Lexington,_Texas[Wikipedia article on Lexington, Texas] (CC-BY-SA)
+
+
+
+==== Code Sources ====
+
+
+* https://github.com/yohasebe/wp2txt[wp2txt], by http://yohasebe.com[Yoichiro Hasebe]

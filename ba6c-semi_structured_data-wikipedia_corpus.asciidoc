@@ -33,6 +33,15 @@ Now we meet our first two XML-induced complexities: _splitting_ the file among m
 
 FIXME: we used `crack` not plain text the whole way
 
+===== The law of small numbers
+
+The law of small numbers: given millions of things, your one-in-a-million occurrences become commonplace.
+
+Out of 12,389,353 records, almost all look like `<text xml:space="preserve">...stuff</text>` -- but 446 records have an empty body, `<text xml:space="preserve" />`.
+Needless to say, we found this out not while developing locally, but rather some hundreds of thousands of records in while running on the cluster.
+
+This crashing is a _good feature_ of our script: it wasn't clear that an empty article body is permissible.
+
 ===== Custom Splitter / InputFormat =====
 
 At 40GB uncompressed, the articles file will occupy about 320 HDFS blocks (assuming 128MB blocks), each destined for its own mapper. However, the division points among blocks is arbitrary: it might occur in the middle of a word in the middle of a record with no regard for your feelings about the matter. However, if you do it the courtesy of pointing to the first point within a block that a split _should_ have occurred, Hadoop will handle the details of patching it onto the trailing end of the preceding block. Pretty cool.

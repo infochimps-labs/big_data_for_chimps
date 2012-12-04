@@ -183,7 +183,7 @@ All of the below use our data-science friendly configuration parameters.
 It also only concerns jobs worth thinking about -- more than a few dozen gigabytes.
 
 * **What's my map input size?**
-  - the `min.split.size`, file size and block size set the size of the map input.
+  - the min split size, file size and block size set the size of the map input.
   - a 128MB block size is a nice compromise between wasted space and map efficiency, and is the typical map input size.
   - you'd like your map tasks to take at least one minute, but not be the dominant time of the job. If all your map slots are full it's OK if they take longer.
 

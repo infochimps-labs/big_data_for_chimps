@@ -29,3 +29,10 @@ On the one hand, I know from experience that people go astray with those terms: 
       items = list.map(&:to_s)         items = list.map{|el| el.to_s }
 
 My plan is to use vernacular ruby -- with the one exception of providing `return` statements. I'd rather annoy rubyists than visitors, so please let me know what idioms seem opaque, and whether I should explain or eliminate them.
+
+
+
+**output directories with extensions**: If your job outputs tsv files, it will create directory of TSV files with names like `part-00000`. Normally, we hang extensions off the file and never off the directory. However, in Hadoop you don't name those files; and you treat that directory itself as the unit of processing. I've always been on the fence, but now lean towards `/data/results/wikipedia/full/pagelinks.tsv`: you can use the same name in local or hadoop mode; it's advisory; and as mentioned it's the unit of processing.
+
+=== Style Nits
+
