@@ -16,6 +16,7 @@ Before you dive in, browse through the data a bit and think about what you expec
 * By looking through the data, or by reasoning from what you know, which pages should have high similarity?
 
 Now, answer those questions:
+
 * Calculate the degree distribution, etc of the graph, broken down by file type.
 * Find the pagerank. How well does it agree with the degree distribution? 
 * Make a table listing each file on the site along with its intrinsic and graph features: file type, size, visit count, clustering coefficient, degree and pagerank.
