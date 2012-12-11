@@ -15,6 +15,10 @@
 
 * http://en.wikipedia.org/wiki/Lexington,_Texas[Wikipedia article on Lexington, Texas] (CC-BY-SA)
 
+* http://borrelli.org/2012/04/29/installing-hadoop-on-osx-lion/[Installing Hadoop on OSX Lion]
+
+* http://blog.markfeeney.com/2010/10/jmx-through-ssh-tunnel.html[JMX through a ssh tunnel]
+
 
 
 ==== Code Sources ====

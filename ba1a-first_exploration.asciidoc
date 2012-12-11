@@ -72,10 +72,11 @@ Things we know: First, common words should show no geographic flavor.
 Geographic features -- "beach", "mountain", etc -- should be intensely localised.
 
 We will jointly discover two things
-taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc) 
+taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc)
 
+<remark>* compared to other color words, there will be a larger regional variation for the terms "white" and "black" (as they describe ra</remark>
 
- You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
+You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
 
 
 Next, we'll choose some _exemplars_: familiar records to trace through

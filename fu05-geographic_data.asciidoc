@@ -369,6 +369,14 @@ Take care to put coordinates in the order "longitude, latitude", maintaining con
 =========================
 
 
+==== Exploration
+
+* _Exemplars_
+  - Tokyo
+  - San Francisco
+  - The Posse East Bar in Austin, TX footnote:[briefly featured in the Clash's Rock the Casbah Video and where much of this book was written]
+
+
 ==== Interesting quadtile properties ====
 
 * The quadkey's length is its zoom level.
@@ -769,6 +777,7 @@ Example: merge all cells whose contents lie within 10% of each other
     19  20  12  14     . 20. 12  14
     20  21   8   3     .   .  8   3
 
+    
 
 === References ===
 
@@ -781,3 +790,6 @@ Example: merge all cells whose contents lie within 10% of each other
 
 * http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
 * http://bl.ocks.org/4122298[US County borders in GeoJSON]
+
+
+

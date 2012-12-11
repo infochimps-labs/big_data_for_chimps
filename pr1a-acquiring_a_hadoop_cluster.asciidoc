@@ -11,7 +11,8 @@ TODO: linkplz to resources for getting a Hadoop cluster
 * Hadoop Def Guide / Hadoop Operations
 * Elastic MapReduce
 * Ironfan
-* Homebrew
+* If you have a mac, use Homebrew and follow http://borrelli.org/2012/04/29/installing-hadoop-on-osx-lion/[these instructions]
+  - be sure to set the system permissions correctly.
 
 ==== Insultingly short directions for getting a test cluster ====
 

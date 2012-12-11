@@ -61,7 +61,6 @@ At each step of a job, what you'd like to see is very high utilization of exactl
 
 ===== Balanced Configuration/Provisioning of base system =====
 
-
 === Resource List ===
 
 Please see the <<glossary>> for definitions of terms. I've borrowed many of the system-level metrics from http://dtrace.org/blogs/brendan/2012/03/07/the-use-method-linux-performance-checklist/[Brendan Gregg's Linux Checklist]; visit there for a more-detailed list.
@@ -143,7 +142,55 @@ Please see the <<glossary>> for definitions of terms. I've borrowed many of the 
 
 Metrics in bold are critical resources -- you would like to have exactly one of these at its full sustainable level
 
-===== Rough notes =====
+
+
+**Ignore past here please**
+
+**Ignore past here please**
+
+**Ignore past here please**
+
+
+=== See What's Happening ===
+
+
+==== JMX (Java Monitoring Extensions) ====
+
+Whenever folks are having "my programming language is better than yours", the Java afficianado can wait until somebody's scored a lot of points and smugly play the "Yeah, but Java has JMX" card. It's simply amazing.
+
+http://pub.admc.com/howtos/jmx/[Deep Explanation of JMX]
+
+http://visualvm.java.net/download.html[VisualVM] is a client for examining JMX metrics.
+
+If you're running remotely (as you would be on a real cluster), here are instructions for  footnote:[Thanks to Mark Feeney for the writeup]
+
+There is also an http://mx4j.sourceforge.net[open-source version, MX4J].
+
+* You need a file called `jmxremote_optional.jar`, from Oracle Java's "Remote API Reference Implementation"; download from http://www.oracle.com/technetwork/java/javase/tech/download-jsp-141676.html[Oracle]. They like to gaslight web links, so who knows if that will remain stable.
+* Add it to the classpath of 
+
+(on a mac, in `/usr/bin/jvisualvm`)
+
+* Run visualvm `visualvm -cp:a /path/to/jmxremote_optional.jar` (on a mac, add a 'j' in front: `/usr/bin/jvisualvm ...`).
+
+You will need to install several plugins; I use `VisualVM-Extensions`, `VisualVM-MBeans`, `Visual GC`, `Threads Inspector`, `Tracer-{Jvmstat,JVM,Monitpr} Probes`.
+
+
+===== Poor-man's profiling =====
+
+To find the most CPU-intensive java threads:
+
+        ps -e HO ppid,lwp,%cpu --sort %cpu | grep java | tail; sudo killall -QUIT java
+
+The -QUIT sends the SIGQUIT signal to Elasticsearch, but QUIT doesn't actually make the JVM quit. It starts a Javadump, which will write information about all of the currently running threads to standard out.
+
+Other tools:
+
+* Ganglia
+* http://kenai.com/projects/btrace[BTrace]
+
+
+=== Rough notes ===
  
 Metrics:
 
