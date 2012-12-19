@@ -125,3 +125,11 @@ STW garbage collection on a too-large heap can lead to socket timeouts, increasi
 * Map tasks take more than a minute or so.
 * Either 'Spilled bytes' and 'mapper output bytes' are nearly equal, or 'Spilled bytes' is three or more times 'mapper output bytes'.
 * The size of each output file is not close-to-but-above the HDFS block size
+
+=== Other ===
+
+==== Basic Checks ====
+
+* enough disk space
+* hadoop native libraries are discovered (`org.apache.hadoop.util.NativeCodeLoader: Loaded the native-hadoop library` appears in the logs).
+* midstream data uses snappy compression (`org.apache.hadoop.io.compress.snappy.LoadSnappy: Snappy native library is available` appears in the logs).

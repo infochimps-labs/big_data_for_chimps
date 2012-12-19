@@ -1,0 +1,11 @@
+
+
+Distributions:
+
+* First letter of Wikipedia article titles
+
+* Count of inbound links for wikipedia articles
+
+* Total sum of pageviews counts for each page
+
+* 

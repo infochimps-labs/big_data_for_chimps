@@ -1,0 +1,63 @@
+
+
+=== Community Detection ===
+
+
+
+==== On Princesses, Brains, Basket Cases and so forth ====
+
+An elephant named Claire blushingly requests that, if the herd promises not to laugh at past foolishness, she has a story 
+
+Juvenile elephants are horribly self-conscious, what with the uncertain arrival of proper tusks and the embarrassment of not yet having huge, hairy ears. When Claire started secondary school, the fashoin was to wear colorful bracelets supporting a certain cause (this fad was later adopted by humans, long after it had stopped being elephant-cool).
+
+On the first day of secondary school, wearing a bracelet supporting her favorite cause, she was mortified to find that THE REST OF THE HERD WERE OUTFITTED DIFFERENTLY than she was.
+
+Her reaction, she confesses, was to resolve to conform accordingly. Each day, she would note the distribution of bracelets among students she interacted with. On the following day, she would wear a set of bracelets in number to match the proportion of bracelets she saw among her friends. With amused hindsight it's obvious that every other elephant was doing so as well.
+
+Even an Elephant's foreleg has only a certain size, and so very soon the unpopular bracelets were winnowed and the fashion cycle stabilized (much to the gratification of their overindulgent parents). By midway through the semester, you could reliably identify use bracelet color to identfy each elephant's social community. Since the marching-band members largely hung out with other marching-band members, a single color grew to predominate their forelegs. Claire, who was both the captain of the Math Team and the Prom Queen, sported a stable mixture of bracelets (this was tolerated because hey: it's impressive to be friends with the captain of the Math Team).
+
+<remark>The sportos, the motorheads, geeks, sluts, bloods, wasteoids, dweebies, dickheads -- they all adore him. They think he's a righteous dude. -- brain, athlete, basket case, princess, criminal </remark>
+
+==== Label Propogation ====
+
+She proposes, by analogy, the following method:
+
+* At the start of each step, each article has a list of weighted labels:
+
+    [ ["Philosopy", 0.3], ... ]
+
+* in the map phase, send a copy of the data to each neighbor:
+
+     < into_id || [ [label,weight], ... ] >
+
+* in the reduce phase, sum the weights for each inbound label, and eliminate everything with weight less than `1/v`. 
+
+    [ ["Philosopy", 0.35], ... ]
+
+* iterate!    
+
+Initially, we'll repeat the above a fixed number of times; 
+
+==== Specialization to Wikipedia Labeling ====
+
+Wikipedia pages come with an intrinsic 
+
+
+
+==== Convergence ====
+
+As we update the labels for each article, we can have the reducer update a global counter with how much the labels changed.
+
+For things like this, it's reasonable to use the sum-squared difference of weights before and after adjustment. The "squared" part means that large adjustments weigh far more than small ones: an adjustment of 0.2 is four times as strong a vote to keep going as an adjustment of 0.1.
+
+Sometimes there's a rational way to choose a stopping criterion.
+In practice, though, the resulting number of iterations shouldn't change wildly -- week-to-week you're going to end up with a fixed-`N` steps, it's just that `N` will be chosen wisely.
+Minimal Intrusiveness thus says you must not overthink the convergence number or the stopping criterion. 
+The principle of Good Brittleness says that you should fail the workflow if the convergence curve is out of bounds, no matter what iteration strategy you choose.
+It's always a good idea to audit the convergence number at each round of a production job.
+
+==== Applications ====
+
+Since the method is so straightforward and general, it's helpful to run at the beginning of any data exploration involving a graph's modular structure -- clustering, classification and the like.
+
+* http://horicky.blogspot.com/2012/11/detecting-communities-in-social-graph.html[Detecting Communities in Social Graph, Ricky Ho]

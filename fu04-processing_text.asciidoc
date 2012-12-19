@@ -44,7 +44,7 @@ It's essential to use "minimally intrusive" methods to address confounding facto
 
 What we're trying to do is expose a pattern that we believe is robust: that it will shine through any occlusions in the data. Occasionally, as here, we need to directly remove some confounding factor. The naive practitioner thinks, "I will use a powerful algorithm! That's good, because powerful is better than not powerful!" No -- simple and clear is better than powerful.
 
-Any scifi author telling a story set in space must address the  of faster-than-light travel. In Star Wars does this early and well: its choices ("Ships can jump to faraway points in space, but not from too close to a planet and only after calculations taking several seconds; it happens instantaneously, causing nearby stars to appear as nifty blue tracks") are made clear in a few deft lines of dialog.
+Suppose you were instead telling a story set in space - somehow or another, you must address the complication of faster-than-light travel. Star Wars does this early and well: its choices ("Ships can jump to faraway points in space, but not from too close to a planet and only after calculations taking several seconds; it happens instantaneously, causing nearby stars to appear as nifty blue tracks") are made clear in a few deft lines of dialog.
 
 A ham-handed sci-fi author instead brings in complicated machinery requiring a complicated explanation resulting in complicated dialogue. There are two obvious problems: first, the added detail makes the story less clear. It's literally not rocket science: concentrate on heros and the triumph over darkness, not on rocket engines. Second, writing that dialog is wasted work. If it's enough to just have the Wookiee hit the computer with a large wrench, do that.
 
@@ -53,6 +53,7 @@ But it's essential to appreciate that this also _introduces extra confounding fa
 We're trying to tell a story ("words have regional flavor"), but the plot requires a few essential clarifications ("low-frequency terms are imperfectly estimated").  If these patterns are robust, complicated machinery is detrimental. It confuses the audience, and is more work for you; it can also bring more pattern to the data than is actually there, perverting your results.
 
 The only time you should bring in something complicated or novel is when it's a _central_ element of your story. In that case, it's worth spending multiple scenes in which Jedi masters show and tell the mechanics and limitations of The Force.
+
 ===============================
 
 There are two reasonable strategies: be lazy; or consult a sensible mathematician.
@@ -132,6 +133,28 @@ We then make the following adjustments:
 // 	f_wds   		# frequencies of word across all cells/docs
 // 	f_wds_for_doc(doc)	# frequencies of word in given doc
 
+=== Notes ===
+
+
+* http://en.wikipedia.org/wiki/Wikipedia:List_of_controversial_issues
+* http://wordnet.princeton.edu/wordnet/download/
+* http://www.infochimps.com/datasets/list-of-dirty-obscene-banned-and-otherwise-unacceptable-words
+* http://urbanoalvarez.es/blog/2008/04/04/bad-words-list
+* entity names within angle brackets. Where possible these are drawn from Appendix D to ISO 8879:1986, Information Processing - Text & Office Systems - Standard Generalized Markup Language (SGML).
+* http://faculty.cs.byu.edu/~ringger/CS479/papers/Gale-SimpleGoodTuring.pdf
+* http://www.aclweb.org/anthology-new/P/P11/P11-1096.pdf
+* http://www.ling.uni-potsdam.de/~gerlof/docs/npmi-pfd.pdf
+* http://nltk.googlecode.com/svn/trunk/doc/howto/collocations.html
+* Stanford Named Entity Parser - http://nlp.stanford.edu/software/CRF-NER.shtml
+* http://nlp.stanford.edu/software/corenlp.shtml - 
+  > Stanford CoreNLP provides a set of natural language analysis tools which can take raw English language text input and give the base forms of words, their parts of speech, whether they are names of companies, people, etc., normalize dates, times, and numeric quantities, and mark up the structure of sentences in terms of phrases and word dependencies, and indicate which noun phrases refer to the same entities. Stanford CoreNLP is an integrated framework, which make it very easy to apply a bunch of language analysis tools to a piece of text. Starting from plain text, you can run all the tools on it with just two lines of code. Its analyses provide the foundational building blocks for higher-level and domain-specific text understanding applications.
+  > 
+  > Stanford CoreNLP integrates all our NLP tools, including the part-of-speech (POS) tagger, the named entity recognizer (NER), the parser, and the coreference resolution system, and provides model files for analysis of English. The goal of this project is to enable people to quickly and painlessly get complete linguistic annotations of natural language texts. It is designed to be highly flexible and extensible. With a single option you can change which tools should be enabled and which should be disabled.
+  > 
+  > The Stanford CoreNLP code is written in Java and licensed under the GNU General Public License (v2 or later). Source is included. Note that this is the full GPL, which allows many free uses, but not its use in distributed proprietary software. The download is 259 MB and requires Java 1.6+.
+
+* http://cogcomp.cs.illinois.edu/page/software_view/4
+* http://opennlp.apache.org/
 	
 === References ===
 
