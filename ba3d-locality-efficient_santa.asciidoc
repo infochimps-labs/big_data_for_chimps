@@ -7,15 +7,15 @@ This is a literal locality: the presents for Auckland must go in a sack together
 
 Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find at a very organized person's desk:
 
-image::images/paper_sorter.jpg[paper sorter]
+image::images/paper_sorter.png[paper sorter]
 
 Chimpanzees file each toy request in the order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
 
-image::images/elephant_and_chimpanzee.048-480.jpg[Secondary sort]
+image::images/bchm_0209.png[Secondary sort]
 
 This makes life very efficient for the elves. They just start pulling work orders from their elephants, always choosing the request that's next in Santa Visit Order:
 
-image::images/elephant_and_chimpanzee.049-480.jpg[Secondary sort]
+image::images/bchm_0210.png[Secondary sort]
 
 Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy. 
 

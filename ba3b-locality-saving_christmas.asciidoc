@@ -8,11 +8,11 @@ To meet the wishes of children from every corner of the earth, each elf is capab
 
 [[elf_workstation]]
 .The elves' workbenches are meticulous and neat. 
-image::images/elves_at_workstation-480.jpg[Elf Workstations, pre-Hadoop]
+image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 
 [[mail_tree]]
 .Little boys and girls' mail is less so. 
-image::images/fetching_a_letter-480.jpg[Fetching the next letter to Santa]
+image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
 As bags of mail arrived from all over, they were hung from the branches of a large Tree (known as the bag tree, or B.Tree for short.) Each time an elf was ready for the next letter from her region, a big claw arm swung out to the right spot on the B.Tree to retrieve it. Without locality of access (the elf covering Novosibirsk might be in line right behind the elf covering Cucamonga), letters could't be pulled from the tree any faster than the crane arm could move.
 
@@ -53,19 +53,19 @@ As you might guess, they lined up a finite number of chimpanzees at typewriters 
 
         ---------------------------------------
 
-image::images/elephant_and_chimpanzee.009-480.jpg[Chimps read each letter]
-image::images/elephant_and_chimpanzee.010-480.jpg[Letters become work orders]
+image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
+image::images/chimps_and_elves/bchm_0204.png[Letters become work orders]
 
 === Order Delivery ===
 
 In the new system, each type of toy request is handled at the one workbench designated for that toy.  For example, all robots and model cars might go to workbench A, while ponies, coal and yo-yos went to workbench B. 
 
-image::images/elephant_and_chimpanzee.011-480.jpg[Each toy at a unique station]
+image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
 Next to each chimpanzee stands a line of pygmy elephants, one for each workbench.
 Once the chimp is done with a mailbag, those elephants march off, each to its addressed workbench. Behind them a new line of elephants trundle into place.
 
-image::images/elephant_and_chimpanzee.048-480.jpg[Work orders go off in batches]
+image::images/chimps_and_elves/bchm_0206.png[Work orders go off in batches]
 
 === Toy Assembly ===
 
