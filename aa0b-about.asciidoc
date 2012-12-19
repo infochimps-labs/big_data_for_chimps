@@ -63,7 +63,16 @@ We really mean it about the git social-coding thing -- please https://github.com
 
 == Hello, Early Releasers ==
 
+Hello, Courageous Early Released-To!
+
+* level of book: "If it's well-covered on the internet, leave it out".
+
+Chapters and pace:
+
 TODO
 
-* Fork the book on github 
-* Contact us! Best is to file an issue on the bugtracker. meghan@oreilly.com or flip@infochimps.com --
+
+Feedback:
+
+* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`. 
+* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) or flip@infochimps.com (your eager author).
