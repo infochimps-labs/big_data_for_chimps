@@ -7,6 +7,90 @@
 
 image::images/front_cover.jpg[Front Cover]
 
+== Hello, Early Releasers ==
+
+Hello and Thanks, Courageous and Farsighted Early Released-To'er! I want to make sure the book delivers value to you now, and rewards your early confidence by becoming the book you're proud to own.
+
+=== My Questions for You ===
+
+* The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". I hate it when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
+
+* Analogies: We'll be accompanied on part of our journey by Chimpanzee and Elephant, whose adventures are surprisingly relevant to understanding the internals of Hadoop. I don't want to waste your time laboriously remapping those adventures back to the problem at hand, but I definitely don't want to get too cute with the analogy. Again, please let me know if I err on either side.
+
+=== Probable Contents ===
+
+This is the plan. We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
+
+* *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process
+* *Transform-only Job*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+* *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
+* *Server Log Processing*:
+  - Parsing logs and using regular expressions
+  - Histograms and time series of pageviews
+  - Geolocate visitors based on IP
+  - (Ab)Using Hadoop to stress-test your web server
+* *Semi-Structured Data*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
+  - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
+  - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
+  - US Commercial Airline Flights: every commercial airline flight since 1987
+  - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
+  - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
+* *Data Models & Data Formats*: How to design your data models, transmit their contents, and organize their whole.
+* *How to Think*: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+* *Geographic Data*:
+  - C&E
+* *Why Hadoop*: Why and when is Hadoop called for? What changed about the world that we weren'talways doing it this way?
+* *Statistics*:
+  - Sampling responsibly: it's harder and more important than you think
+  - Statistical aggregates and the danger of large numbers
+  - Histograms and Percentiles
+* *Graph Processing*:
+  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
+  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
+  - _(bubble)_ 
+* *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
+  - Indexing documents 
+  - Tokenizing documents using Lucene
+  - Pointwise Mutual Information
+  - _(bubble)_ Minhashing to combat a massive feature space
+  - _(bubble)_ How to cheat with Bloom filters
+  - _(bubble)_ Topic extraction using (to be determined)
+* *Machine Learning for Busy Folks with Things to Do*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
+  - Naive Bayes
+  - Logistic Regression
+  - Random Forest (using Mahout)
+  We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
+* *Hadoop Internals*:
+  - Tuning for the Wise and Lazy
+  - Tuning for the Brave and Foolish
+  - The USE Method for understanding performance and diagnosing problems
+* *Advanced Pig*:
+  - Specialized joins that can dramatically speed up (or make feasible) your data transformations
+  - Pig UDFs (User-Defined Functions) to extend Pig's capabilities
+* *Cheatsheets*:
+  - Regular Expressions
+  - Sizes of the Universe
+  - Hadoop Tuning & Configuration Variables
+
+=== Not Contents ===
+  
+I'm not currently planning to cover Hive -- I believe the pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
+
+Other things I don't plan to include:
+
+* Installing or maintaining Hadoop
+* HBase (or other databases)
+* Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
+* Stream processing with Trident. (A likely sequel should this go well?)
+* At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
+
+=== Feedback ===
+
+* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`. 
+* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
+
+OK! On to the book. Or, on to the introductory parts of the book and then the book.
+
 [[about]]
 == About  ==
 
@@ -60,19 +144,3 @@ The book does have some content on machine learning with Hadoop, on provisioning
 I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[Infochimps blog] after minor cleanup.
 
 We really mean it about the git social-coding thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. However! We might not use your feedback, no matter how dazzlingly cogent it is; and while we are soliciting comments from readers, we are not seeking content from collaborators.
-
-== Hello, Early Releasers ==
-
-Hello, Courageous Early Released-To!
-
-* level of book: "If it's well-covered on the internet, leave it out".
-
-Chapters and pace:
-
-TODO
-
-
-Feedback:
-
-* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`. 
-* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) or flip@infochimps.com (your eager author).
