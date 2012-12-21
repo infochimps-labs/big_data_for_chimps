@@ -20,6 +20,13 @@
 * http://blog.markfeeney.com/2010/10/jmx-through-ssh-tunnel.html[JMX through a ssh tunnel]
 
 
+==== To Consiter ====
+
+* http://www.cse.unt.edu/~rada/downloads.html -- Texts semantically annotated with WordNet 1.6 senses (created at Princeton University), and automatically mapped to WordNet 1.7, WordNet 1.7.1, WordNet 2.0, WordNet 2.1, WordNet 3.0
+
+* 
+
+
 
 ==== Code Sources ====
 

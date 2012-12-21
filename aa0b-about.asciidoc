@@ -21,9 +21,21 @@ Hello and Thanks, Courageous and Farsighted Early Released-To'er! I want to make
 
 This is the plan. We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
-* *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process
+* *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
+  
 * *Transform-only Job*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+  - Chimpanzee and Elephant start a business
+  - Pig Latin translation
+  - Your first job: test at commandline
+  - Run it on cluster
+  - Input Splits
+
+  - Why Hadoop I: Simple Parallelism
+
 * *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
+  - Locality: the central challenge of distributed computing
+  - The Hadoop Haiku
+   
 * *Server Log Processing*:
   - Parsing logs and using regular expressions
   - Histograms and time series of pageviews

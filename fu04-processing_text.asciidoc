@@ -37,10 +37,10 @@ The count of each word is an imperfect estimate of the probability of seeing tha
 
 We want to treat "missing" terms as having occurred some number of times, and adjust the probabilities of all the observed terms.
 
-.Minimally Intrusive
+.Minimally Invasive
 [NOTE]
 ===============================
-It's essential to use "minimally intrusive" methods to address confounding factors.
+It's essential to use "minimally invasive" methods to address confounding factors.
 
 What we're trying to do is expose a pattern that we believe is robust: that it will shine through any occlusions in the data. Occasionally, as here, we need to directly remove some confounding factor. The naive practitioner thinks, "I will use a powerful algorithm! That's good, because powerful is better than not powerful!" No -- simple and clear is better than powerful.
 
@@ -60,9 +60,9 @@ There are two reasonable strategies: be lazy; or consult a sensible mathematicia
 
 To be lazy, add a 'pseudocount' to each term: pretend you saw it an extra small number of times For the common pseudocount choice of 0.5, you would treat absent terms as having been seen 0.5 times, terms observed once as having been seen 1.5 times, and so forth.  Calclulate probabilities using the adjusted count divided by the sum of all adjusted counts (so that they sum to 1). It's not well-justified mathematically, but is easy to code.
 
-Consult a mathematician: for something that is mathematically justifiable, yet still simple enough to be minimally intrusive, she will recommend "Good-Turing" smoothing.
+Consult a mathematician: for something that is mathematically justifiable, yet still simple enough to be minimally invasive, she will recommend "Good-Turing" smoothing.
 
-In this approach, we expand the dataset to include both the pool of counter for terms we saw, and an "absent" pool of fractional counts, to be shared by all the terms we _didn't_ see. Good-Turing says to count the terms that occurred once, and guess that an equal quantity of things _would_ have occurred once, but didn't. This is handwavy, but minimally intrusive; we oughtn't say too much about the things we definitionally can't say much about. 
+In this approach, we expand the dataset to include both the pool of counter for terms we saw, and an "absent" pool of fractional counts, to be shared by all the terms we _didn't_ see. Good-Turing says to count the terms that occurred once, and guess that an equal quantity of things _would_ have occurred once, but didn't. This is handwavy, but minimally invasive; we oughtn't say too much about the things we definitionally can't say much about. 
 
 We then make the following adjustments:
 

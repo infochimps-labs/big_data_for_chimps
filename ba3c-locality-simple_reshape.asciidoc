@@ -1,0 +1,13 @@
+
+
+
+Chimpanzee, Elephant and Elf worked in harmony according to the following workflow:
+
+* Chimpanzee:
+  - turns each child's letter into a set of work orders,
+  - labeled by type of toy and destination,
+  - in file folders partitioned by toy and sorted by destination
+* Elephant:
+  - marches each partition of work orders to the specific workbench for that set of toys
+* Elf:
+  - as soon as enough elephants stand ready, begins merging the file folders from 

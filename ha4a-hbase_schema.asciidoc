@@ -1,0 +1,87 @@
+== HBase Data Model ==
+
+Space doesn't allow treating HBase in any depth, but it's worth equipping you with a few killer dance moves for the most important part of using it well: data modeling. You may be well served to consult other references (like "HBase: The Definitive Guide" (TODO:reference) or the free file:///data/docs/hbase.apache.org/book.html#quickstart[HBase Book] online), play around with HBase, and then come back to enjoy this chapter. 
+
+=== Row Key, Column Family, Column Qualifier, Timestamp, Value ===
+
+HBase stores data in cells, scoped like this:
+
+* Table -- a hard partition of data. Tables are stored, partitioned and optimized in isolation.
+* Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
+* Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
+  - Column Family -- coarse-grained sub-partition of a row; printable characters only (I recommend only using `[a-z_][a-z0-9_]*`). You must declare the column family in advance. There are several options (like number of versions) <remark>TODO: check</remark> you can set independently per column family.
+  - Column Qualifier -- the arbitrary remainder of a column key; 
+* 
+
+That's pretty much it. HBase is not a passenger car like MongoDB, ElasticSearch, or MySQL -- it's a big, powerful dump truck, with no A/C, no joins, no secondary indexes, and minimal transactions. You don't drive a dump truck for its ergonomics or its frills: you drive it because you need to carry a ton of raw data-mining ore to the refinery. Once you learn to play to its strengths, though, you'll find it remarkably powerful.
+
+.Composite Keys
+NOTE notation -- HBase makes heavy use of composite keys (several values combined into a single string). We'll describe them using
+* quote marks (`"literal"`) to mean "that literal string"
+* braces `{field}` mean "substitute value of that field, removing the braces"
+* and separators, commonly `:`, `|` or `-`, to mean "that character, and make damn sure it's not used anywhere in the field value".
+
+=== Simple Table ===
+
+First, let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and you'll benefit from knowing what accessories are available in the rare case they're called for. For small tables there's no harm in making them ergonomic.
+
+==== Airport Metadata ====
+
+The  is a _dense table_: pretty much every row has a value for every column.
+
+* _Fields_: three primary identifiers (IATA, ICAO, FAA), 
+* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)  
+* _You cannot_: look up an airport by anything but its identifiers or location.
+
+[[hbase_schema_airport_metadata]]
+.Airport Metadata
+|=======
+| table  	| row key       	  | column families  | column qualifiers | versions  | value
+| airports	| `{id_type}{identifier}` | each field name  |		      |		  |
+| geo_airports	| `quadkey-airport_id`	  |		  |		      |		  |
+|=======
+
+
+==== Airport Timezone ====
+
+
+=== Range Lookup ===
+
+
+Store IP addresses by their 
+
+[[hbase_schema_airport_metadata]]
+.Airport Metadata
+|=======
+| table  	| row key       	  | column families  | column qualifiers | versions  | value
+| ip    	| `{id_type}{identifier}` | each field name  |		      |		  |
+| geo_ip	| `quadkey-airport_id`	  |		  |		      |		  |
+|=======
+
+
+
+
+=== Row Locality ===
+
+Row keys determine data locality. You must balance two concerns:
+
+* *adjacency is good*, most of the time (hooray locality!). When common data is stored together, it enables
+  - range scans: retrieve all pageviews having the same path prefix, or a continuous map region.
+  - sorted retrieval: ask for the earliest entry, or the top-`k` rated entries
+  - space-efficient caching: map cells for New York City will be much more commonly referenced than those for Montana. Storing records for New York City together means fewer HDFS blocks are hot, which means the opeerating system is better able to cache those blocks.
+  - time-efficient caching: if I retrieve the map cell for Minneapolis, I'm much more likely to next retrieve the adjacent cell for nearby St. Paul. Adjacency means that cell will probably be hot in the cache.
+* *adjacency is bad*, if _everyone_ targets a narrow range of keyspace, as we find with highly-skewed webserver paths or high-speed timestamped logs. For a skew problem, see if file:///data/docs/hbase.apache.org/book.html#important_configurations[managed splitting] (pre-assigning a rough partition of the keyspace to different regions) can help. That won't help for http://ikaisays.com/2011/01/25/app-engine-datastore-tip-monotonically-increasing-values-are-bad/[timestamp keys and other monotonically increasing values] though, because the focal point moves constantly. If you want rows to be mostly local, add some kind of low-cardinality prefix: a metric name, a server or shard id, or even the least-significant four bits. To retrieve whole rows, issue a batch request against each prefix at query time.
+
+
+=== Constraints ===
+
+* Column families
+  - always specify the `versions`: by default it's 3, and you almost always want 1 or a value you've thought very carefully about
+  - Don't use more than two or three column families for a high-impact table; all of them have to keep pace with the most-heavily-used one.
+* Use short row and column names. _Every_ cell is stored with its row, column, timestamp and value, every time. (trust the HBase folks: this is the Right Thing).
+  - even still, fat row names (larger than their contents) often make sense. If so, increase the block size so that table indexes don't eat all your RAM.
+
+
+=== References ===
+
+* I've drawn heavily on the wisdom of http://hbase.apache.org/book.html[HBase Book]
