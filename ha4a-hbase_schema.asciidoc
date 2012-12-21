@@ -33,12 +33,36 @@ The  is a _dense table_: pretty much every row has a value for every column.
 * _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)  
 * _You cannot_: look up an airport by anything but its identifiers or location.
 
+table:
+
+[width="15%"]
+|=======
+|1 |2 |A
+|3 |4 |B
+|5 |6 |C
+|=======
+
+
+table?
+
+
+
 [[hbase_schema_airport_metadata]]
 .Airport Metadata
+[width="100%"]
 |=======
 | table  	| row key       	  | column families  | column qualifiers | versions  | value
 | airports	| `{id_type}{identifier}` | each field name  |		      |		  |
 | geo_airports	| `quadkey-airport_id`	  |		  |		      |		  |
+|=======
+
+[[hbase_schema_airport_metadata]]
+.Airport Metadata
+[width="100%"]
+|=======
+|table          |row key          |column families  |column qualifiers |versions  |value
+|airports       |`{id_type}{identifier}` |each field name  |                  |           |
+|geo_airports   |`quadkey-airport_id`     |               |                   |           |
 |=======
 
 
@@ -52,8 +76,9 @@ Store IP addresses by their
 
 [[hbase_schema_airport_metadata]]
 .Airport Metadata
+
 |=======
-| table  	| row key       	  | column families  | column qualifiers | versions  | value
+|table  	| row key       	  | column families  | column qualifiers | versions  | value
 | ip    	| `{id_type}{identifier}` | each field name  |		      |		  |
 | geo_ip	| `quadkey-airport_id`	  |		  |		      |		  |
 |=======
