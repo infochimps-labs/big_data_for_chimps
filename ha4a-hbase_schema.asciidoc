@@ -33,59 +33,72 @@ The  is a _dense table_: pretty much every row has a value for every column.
 * _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)  
 * _You cannot_: look up an airport by anything but its identifiers or location.
 
-table:
-
-[width="15%"]
-|=======
-|1 |2 |A
-|3 |4 |B
-|5 |6 |C
-|=======
-
-
-table?
-
-
-
 [[hbase_schema_airport_metadata]]
 .Airport Metadata
 [width="100%"]
 |=======
 | table  	| row key       	  | column families  | column qualifiers | versions  | value
 | airports	| `{id_type}{identifier}` | each field name  |		      |		  |
-| geo_airports	| `quadkey-airport_id`	  |		  |		      |		  |
+| geo_airports	| `quadkey-airport_id`	  |		     |		      |		  |
 |=======
-
-[[hbase_schema_airport_metadata]]
-.Airport Metadata
-[width="100%"]
-|=======
-|table          |row key          |column families  |column qualifiers |versions  |value
-|airports       |`{id_type}{identifier}` |each field name  |                  |           |
-|geo_airports   |`quadkey-airport_id`     |               |                   |           |
-|=======
-
 
 ==== Airport Timezone ====
 
 
+
+
 === Range Lookup ===
 
+If you recall, the Geo-IP dataset stores information about IP addresses a block at a time.
 
-Store IP addresses by their 
+* _Fields_: IP address, ISP, latitude, longitude, quadkey
+* _queries_:
+  - given IP address, retrieve geolocation and metadata with very low latency 
+  - given map tile, retrieve all IP address blocks on that title
 
-[[hbase_schema_airport_metadata]]
-.Airport Metadata
 
+[[hbase_schema_ip_geo]]
+.IP-Geolocation lookup
 |=======
 |table  	| row key       	  | column families  | column qualifiers | versions  | value
-| ip    	| `{id_type}{identifier}` | each field name  |		      |		  |
-| geo_ip	| `quadkey-airport_id`	  |		  |		      |		  |
+| ip    	| `ip_upper_in_hex`       | field name       | `-`               | none	  |
+| geo_ip	| `quadkey_15`      	  | field name	     | ip_address        | none	  |
+|=======
+
+Store the _upper_ range of each IP address block in hexadecimal as the row key. To look up an IP address, do a scan query, max 1 result, on the range from the given ip_address to `"xxxxxxxx"` (something larger than the largest 32-bit IP address). A get is simply a scan-with-equality-max-1, so there's no loss of efficiency here.
+
+Since row keys are sorted, the first value equal-or-larger than your key is the end of the block it lies on. For example, say we had block "A" covering `50.60.a0.00` to `50.60.a1.08`, "B" covering `50.60.a1.09` to `50.60.a1.d0`, and "C" covering `50.60.a1.d1` to `50.60.a1.ff`. We would store `50.60.a1.08 => {...A...}`, `50.60.a1.d0 => {...B...}`, and `50.60.a1.ff => {...C...}`. Looking up `50.60.a1.09` would get block B, because `50.60.a1.d0` is lexicographically after it. So would `50.60.a1.d0`; range queries are inclusive on the lower and exclusive on the upper bound, so the row key for block B matches as it should.
+
+=== Web Logs: Rows-As-Columns ===
+
+Assume a high-volume eCommerce website: 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak) from 20-40 servers, and about 600 bytes per log line. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Show that to most databases and they will crumble. Show it to HBase and it will ask you to store it multiple times over (and we will).
+
+* Queries:
+  - Visitor paths: the pages visited on the way to a purchase, including external _referer_ sites, _search terms_ entered, items _added to cart_, and finally _conclusion of purchase_.
+  - Abuse: anomalously large numbers of requests coming from single IP addresses
+  - Product similarity: pages visited in common during a session.
+
+* Fields: `ip_address`, `cookie` (a unique ID assigned to each visitor),
+  - `referer_url`, and `referer_int` showing if the referer was internal (1) or external (0).
+  - `status_code` (an integer declaring the success or particular type of failure for every request.
+
+We'll further augment with these fields:
+
+* `timestamp_rev`, a "reverse timestamp" -- INT_MAX - time.to_i. This means that the most recent visit for that site sorts first in column order. http://hbase.apache.org/book.html#reverse.timestamp
+
+* `url_rev`: domain-reversed url: "com.etsy.www/moms/your.html", so that "com.etsy.www" and "com.etsy.mobile" and so forth are ordered adjacently.
+
+[[hbase_schema_server_logs]]
+.Server logs HBase schema
+|=======
+|table             | row key    	  | column families  | column qualifiers | versions  | value
+| cookie_url_tb    | `..`                 |                   | `-`               | none	  |
+| url_referer      | `..`       	  |        	     |                   | none	  |
+| ip_tb            | `..`         	  |        	     |                   | none	  |
 |=======
 
 
-
-
+ 
 === Row Locality ===
 
 Row keys determine data locality. You must balance two concerns:
