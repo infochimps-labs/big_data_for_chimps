@@ -21,6 +21,9 @@ NOTE notation -- HBase makes heavy use of composite keys (several values combine
 * braces `{field}` mean "substitute value of that field, removing the braces"
 * and separators, commonly `:`, `|` or `-`, to mean "that character, and make damn sure it's not used anywhere in the field value".
 
+* Atomic counters: accumulate a numeric value, guaranteed consistent even if multiple clients simultaneously update it
+* TTL ("Time to Live"): an optional amount of time, after which values are expired.
+
 === Simple Table ===
 
 First, let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and you'll benefit from knowing what accessories are available in the rare case they're called for. For small tables there's no harm in making them ergonomic.
@@ -44,7 +47,11 @@ The  is a _dense table_: pretty much every row has a value for every column.
 
 ==== Airport Timezone ====
 
-
+Here's a great excuse to use HBase's version feature.
+First, be sure to set the VERSIONS option to a very large number when you create the `tzoff` column family.
+Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
+When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
+TODO: local time? utc time? which way must we go.
 
 
 === Range Lookup ===
@@ -79,14 +86,15 @@ Assume a high-volume eCommerce website: 2 million unique daily visitors, causing
   - Product similarity: pages visited in common during a session.
 
 * Fields: `ip_address`, `cookie` (a unique ID assigned to each visitor),
+  - `path`
   - `referer_url`, and `referer_int` showing if the referer was internal (1) or external (0).
-  - `status_code` (an integer declaring the success or particular type of failure for every request.
+  - `status_code` (success or failure of request) `duration` (time taken to render page)
 
 We'll further augment with these fields:
 
 * `timestamp_rev`, a "reverse timestamp" -- INT_MAX - time.to_i. This means that the most recent visit for that site sorts first in column order. http://hbase.apache.org/book.html#reverse.timestamp
 
-* `url_rev`: domain-reversed url: "com.etsy.www/moms/your.html", so that "com.etsy.www" and "com.etsy.mobile" and so forth are ordered adjacently.
+* `url_rev`: domain-reversed url: "org.apache.hbase/book/quickstart.html", so that "org.apache.hbase" and "org.apache.kafka" and so forth are ordered adjacently.
 
 [[hbase_schema_server_logs]]
 .Server logs HBase schema
@@ -97,6 +105,22 @@ We'll further augment with these fields:
 | ip_tb            | `..`         	  |        	     |                   | none	  |
 |=======
 
+Here's what you _don't_ want to do: 
+
+=== Wikipedia: Graph and Corpus ===
+
+
+[[hbase_schema_server_logs]]
+.Wikipedia HBase schema
+|=======
+|table             | row key		   | column families | column qualifiers | versions  | value
+| articles         | `page_id`             |                 | `-`               | none	  |
+| article_versions | `page_id-revision_id` |                 | `-`               | none	  |
+| page_page        | `..`                  |                 | `-`               | none	  |
+| categories       | `..`                  |                 | `-`               | none	  |      
+| redirects        | `..`                  |                 | `-`               | none	  |
+| site_stats       | `..`                  |                 | `-`               | none	  |
+|=======
 
  
 === Row Locality ===
@@ -119,7 +143,26 @@ Row keys determine data locality. You must balance two concerns:
 * Use short row and column names. _Every_ cell is stored with its row, column, timestamp and value, every time. (trust the HBase folks: this is the Right Thing).
   - even still, fat row names (larger than their contents) often make sense. If so, increase the block size so that table indexes don't eat all your RAM.
 
+* All sorting is _lexicographic_: beware the "derp sort". Given row keys 1, 2, 7, 12, and 119, HBase stores them in the order 1, 119, 12, 2, 7: it sorts by the most significant (leftmost) byte first.
+  - zero-pad decimal numbers, and null-pad binary packet numbers. Suppose a certain key ranged from 0 to 60,000; you would zero-pad the number 69 as `00069` (5 bytes); the null-padded version would have bytes `00 45` (2 bytes).
+  - annoyingly, `+` sorts less than `-`, so `+45` precedes `-45`. However, `
+  - reverse timestamp
+
+* Keys should be space-efficient. Use _very_ short names for column families ('u', not 'url'). Don't be profligate with size of column keys and row keys on huge tables: a binary-packed SHA digest of a URL is more efficient than its hex-encoded representation, which is likely more efficient than the URL itself. However, if that bare URL will let you efficiently index on sub-paths, use a bare URL. For another example, we gladly waste 6 bits of every byte in a quadkey, because it lets us do multi-scale queries.
+* Keys should be properly encoded and sanitized
+  - HBase stores and returns arbitrary binary data, unmolested. 
+
+* Always set timestamps on fundamental objects. Server log lines, tweets, blog posts, and airline flight departures all have an intrinsic timestamp of occurrence, and they are all "fundamental" objects, not assertions derived from something else.  In such cases, always set a timestamp.  In contrast, the "May 2012 Archive" page of a blog, containing many posts, is not fundamental; neither is an hourly cached count of server errors. These are _observations_, correct at the time they're made -- so that observation time, not the intrinsic timestamp
+
+
+* make sure you set the VERSIONS when you create the table+column family
+* Once you know your access patterns and can test the response under load, consider enabling compression. RECORD compression works best when you have fat rows (lots of columns) and you typically access the full row. There are so many tradeoffs at play, however, that you really need to just try it. Luckily, Hadoop is sitting right there ready to cross-load your tables.
+
+  
 
 === References ===
 
 * I've drawn heavily on the wisdom of http://hbase.apache.org/book.html[HBase Book]
+
+
+* http://helpmetocode.blogspot.in/2012/04/commands-available-on-hbase-shell.html[HBase Shell Commands]
