@@ -1,6 +1,6 @@
 == HBase Data Model ==
 
-Space doesn't allow treating HBase in any depth, but it's worth equipping you with a few killer dance moves for the most important part of using it well: data modeling. It's also good for your brain -- optimizing data at rest presents new locality constraints, dual to the ones you've by now mastered for data in motion.  So please consult other references (like "HBase: The Definitive Guide" (TODO:reference) or the free file:///data/docs/hbase.apache.org/book.html#quickstart[HBase Book] online), load a ton of data into it, play around, then come back to enjoy this chapter. 
+Space doesn't allow treating HBase in any depth, but it's worth equipping you with a few killer dance moves for the most important part of using it well: data modeling. It's also good for your brain -- optimizing data at rest presents new locality constraints, dual to the ones you've by now mastered for data in motion.  So please consult other references (like "HBase: The Definitive Guide" (TODO:reference) or the free file:///data/docs/hbase.apache.org/book.html#quickstart[HBase Book] online), load a ton of data into it, play around, then come back to enjoy this chapter.
 
 === Row Key, Column Family, Column Qualifier, Timestamp, Value ===
 
@@ -10,8 +10,8 @@ HBase stores data in cells, scoped like this:
 * Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
 * Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
   - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) <remark>TODO: check</remark> you can set independently per column family.
-  - Column Qualifier -- the arbitrary remainder of a column key; 
-* Value -- the contents you'd like to store, anything or nothing. 
+  - Column Qualifier -- the arbitrary remainder of a column key;
+* Value -- the contents you'd like to store, anything or nothing.
 
 Table names and column familty names must be defined in advance, and their names may only contain printable characters (I recommend only using `[a-z_][a-z0-9_]*`). Everything else is bytes in / bytes out, exactly as issued.
 
@@ -38,8 +38,8 @@ First, let's visit the gift shop and see a table with all the options. The urge 
 
 The  is a _dense table_: pretty much every row has a value for every column.
 
-* _Fields_: three primary identifiers (IATA, ICAO, FAA), 
-* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)  
+* _Fields_: three primary identifiers (IATA, ICAO, FAA),
+* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)
 * _You cannot_: look up an airport by anything but its identifiers or location.
 
 [[hbase_schema_airport_metadata]]
@@ -89,7 +89,7 @@ What will we store into HBase? Your first instinct might be to store each of the
 If you recall from (TODO ref server logs chapter), the Geo-IP dataset stores information about IP addresses a block at a time.
 
 * _Fields_: IP address, ISP, latitude, longitude, quadkey
-* _query_: given IP address, retrieve geolocation and metadata with very low latency 
+* _query_: given IP address, retrieve geolocation and metadata with very low latency
 
 [[hbase_schema_ip_geo]]
 .IP-Geolocation lookup
@@ -114,14 +114,59 @@ As for column keys, it's a tossup based on your access pattern. If you always re
 | regions          | `region_name`   	  | (region type)      | (field name)      | none      | Value of field
 |=======
 
-The first part of the tile store's row key is easy:
+Given an arbitrary spatial extent, we want to retrieve all regions, all regions of a given type (country, census block, ...), or the parts of a specific region.
 
-* Given an arbitrary spatial extent, we want to retrieve all regions, all regions of a given type (country, census block, ...), or the parts of a specific region 
 
 ==== Multi-scale indexing ====
 
 At some point of zoom out, there will simply be too much data
 Compute a summary, and store it under the truncate key -- i.e. store the rollup of '012312000' to '012312333' under '012312'.
+
+=== Help HBase be Lazy ===
+
+There's a few ways to help HBase intelligently skip data or lighten its burden.
+
+HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. The pattern with which HBase compacts its store files makes this especially convenient.
+
+In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). HBase will construct a "Bloom filter" on any column family that explicitly enables the feature. A Bloom filter is a specialized data structure to very efficiently test set membership.
+
+Continuing with the autocomplete example, suppose a sizeable minority of developers want to consume pre-baked HTML rather than the existing (and still-popular) JSON response. You could load the HTML responses in a separate table, but in this case all factors point to using a second column family in the autocomplete table. HBase will only have to load one set of Bloom filters and indexes, and since the access patterns will be well-balanced, can efficiently cache its responses.
+
+Lastly, the Autocomplete table is a candidate for row-level compression; enable that option only once you can prove its benefit under a production-sized workload.
+
+=== Wikipedia: Corpus and Graph ===
+
+[[hbase_schema_corpus]]
+.Wikipedia HBase schema
+|=======
+|table              | row key		   | family | qualifier | value    | 
+| articles          | `page_id`             | `t`   |            | text    | 
+| article_versions  | `page_id`             | `t`   |            | text    | timestamp: updated_time
+| article_revisions | `page_id-revision_id` | `v`   |            | text, user_id, comment
+| categories        | `category-page_id`    | `c`   |            | 
+| redirects         | `bad_page_id`         | `r`   |            | `proper_page_id`
+|=======
+
+==== Graph Data ====
+
+Just as we saw with Hadoop, there are two sound choices for storing a graph: as an edge list of `from,into` pairs, or as an adjacency list of all `into` nodes for each `from` node.
+
+[[hbase_schema_wikipedia_pagelinks]]
+.HBase schema for Wikipedia pagelink graph: three reasonable implementations
+|=======
+|table             | row key		   | column families | column qualifiers | value   | options
+| page_page        | `from_page-into_page` | `l` (link)       | (none)            | (none)  | `bloom_filter: true`
+| page_links       | `from_page`           | `l` (links)      | `into_page`       | (none)
+| page_links_ro    | `from_page`           | `a` (adj. list)  | (none)            | serialized adjacency list
+|=======
+
+If we were serving a live wikipedia site, every time a page was updated I'd calculate its adjacency list and store it as a static, serialized value. 
+
+For a general graph in HBase, here are some tradeoffs to consider:
+
+* The pagelink graph never has more than a few hundred links for each page, so there are no concerns about having too many columns per row. On the other hand, there are many celebrities on the Twitter "follower" graph with millions of followers or followees. You can shard those cases across multiple rows, or use an edge list instead.
+* An edge list gives you fast "are these two nodes connected" lookups, using the bloom filter on misses and read cache for frequent hits.
+* If the graph is read-only (eg a product-product similarity graph prepared from server logs), it may make sense to serialize the adjacency list for each node into a single cell. You could also run a regular map/reduce job to roll up the adjacency list into its own column family, and store deltas to that list between rollups.
 
 === Web Logs: Rows-As-Columns ===
 
@@ -141,89 +186,88 @@ We'll further augment with these fields:
 
 * `timestamp_rev`, a "reverse timestamp" -- INT_MAX - time.to_i. This means that the most recent visit for that site sorts first in column order. http://hbase.apache.org/book.html#reverse.timestamp
 
-* `url_rev`: domain-reversed url: "org.apache.hbase/book/quickstart.html", so that "org.apache.hbase" and "org.apache.kafka" and so forth are ordered adjacently.
-
 [[hbase_schema_server_logs]]
 .Server logs HBase schema
 |=======
-|table             | row key    	  | column families  | column qualifiers | versions  | value
-| cookie_url_tb    | `cookie-timebucket`  |                   | `-`               | none	  |
-| url_referer      | `path|path`       	  |        	     |                   | none	  |
-| ip_tb            | `ip-timebucket`   	  |        	     |                   | none	  |
+|table             | row key    	  | family         | qualifier | value           | options
+| visits           | `cookie-timebucket`  | 'r' (referer)   | `referer`     | - 		 |
+| visits           | `cookie-timebucket`  | 's' (search)    | `term`        | - 		 |
+| visits           | `cookie-timebucket`  | 'p' (product)   | `product_id`  | - 		 |
+| visits           | `cookie-timebucket`  | 'z' (checkout)  | `cart_id`     | `{product_ids}` |
+| cookie_urls      | `cookie`             | 'u' (url)       | `-`           |		 |
+| ip_tbs           | `ip-timebucket`   	  |        	    |              |		 |
 |=======
-
-Here's what you _don't_ want to do: lead your row key with the timestamp
-
-==== Atomic Counters ====
-
-
-==== Most-Frequent Element ====
-
-We'd like to track, for each visitor, the most frequent URLs they visit. Locality issues make this impractical to do satisfactorily -- but there's a filthy hack that will let you track the single most frequent element.
-
-What we're going to do is abuse HBase's timestamp feature. Make a new table (`cookie_fave`) and a column family `c` having `VERSIONS: 1`. On each view, we'll do two writes:
-
-1. in the `cookie_url` table, increment the `count = incr row: {cookie}, col: "v":{url}` counter. The return value of the call has the updated count.
-2. in the `cookie_fave` table, do a `put row: {cookie}, col: "c", timestamp: {count}`. Note carefully: we're abusing the timestamp value; the count has nothing to do with time.
-
-To find the value of the most-frequent URL for a given cookie, do a `get row: {cookie}, col: 'c'`
-
-
-
 
 ==== Column Families ====
 
+To understand users' path through the site, 
+
 External referer, Search term, cart action
 
+===== External Referer =====
+
+When storing URLs, it's common to use the "domain-reversed" url (eg "org.apache.hbase/book/quickstart.html"), where the hostname segments are placed in reverse order. This means that pages served from different hosts within the same organization ("org.apache.hbase" and "org.apache.kafka" and so forth) are ordered adjacently.
+
+==== Atomic Counters ====
+
+We'd like to track, for each visitor, the URLs they view with the number of times viewed. HBase offers _atomic counters_, an exceptionally important feature.
+
+In a distributed system, it does not work to read a value from the database, add one to it, and write it back -- some other agent elsewhere may be busy doing the same, or your write may not make it to the server until it's well out of date. Without native support for counters, this simple process requires locking, retries, or other complicated/expensive machinery.  Hbase lets you issue a single 'incr' command, with the guarantee that it will be applied consistently and that you will receive the new value in response.
+
+That makes the visitor-URL tracking trivial. Build a table called `cookie_url`, with a column family `"u"`. On each page view, simply increment the number of times the url has been seen: `count = incr(table: "cookie_url", row: cookie, col: "u:#{url}")`. You don't have to initialize the cell; if it was NULL, HBase will treat it as having a count of zero. 
+
+==== Most-Frequent URLs ====
+
+We'd also like to track, for each visitor, the most _frequent_ URLs they visit. Locality issues typically make queries like this impractical: you need to know the counts for all the URLs to know which is largest. In this case, however, there's a filthy hack that will let you track the single most frequent element.
+
+What we're going to do is abuse HBase's timestamp feature. Add a column family `c` having `VERSIONS: 1` to the `cookie_stats` table. On each view, we'll do two writes:
+
+1. As before, increment the counter for that URL: `count = incr(table: "cookie_url", row: cookie, col: "u:#{url}")`. The return value of the call has the updated count.
+2. Store the URL in the `cookie_stats` table, but use a _timestamp equal to that URL's count_ (not the current time) --  `put("cookie_stats", row: cookie, col: "c", timestamp: count, value: url)`.
+
+To find the value of the most-frequent URL for a given cookie, do a `get(table: "cookie_stats", row: cookie, col: 'c')`. HBase will return the "most recent" value, namely the one with the highest timestamp, which means the value with the highest count. Although we're constantly writing in values with lower counts, HBase ignores them on queries and eventually compacts them away.
+
+==== Most-Recent URLs ====
+
+We'd like to track, for each visitor, the five most recently-viewed products. In the `cookie_stats` table, add a column family `r` having `VERSIONS: 5`. Now each time the visitor loads a product page,
+
+If you can't tolerate
 
 ==== Rollup columns ====
 
 HBase is a database for "billions of rows and millions of columns".
 
-A timestamped metric table like this _writes by the column_ but _reads by the row_. 
-
-=== Help HBase be Lazy ===
-
-There's a few ways to help HBase intelligently skip data or lighten its burden. 
-
-HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. The pattern with which HBase compacts its store files makes this especially convenient.
-
-In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). HBase will construct a "Bloom filter" on any column family that explicitly enables the feature. A Bloom filter is a specialized data structure to very efficiently test set membership.
-
-Continuing with the autocomplete example, suppose a sizeable minority of developers want to consume pre-baked HTML rather than the existing (and still-popular) JSON response. You could load the HTML responses in a separate table, but in this case all factors point to using a second column family in the autocomplete table. HBase will only have to load one set of Bloom filters and indexes, and since the access patterns will be well-balanced, can efficiently cache its responses.
-
-Lastly, the Autocomplete table is a candidate for row-level compression; enable that option only once you can prove its benefit under a production-sized workload.
-
-=== Wikipedia: Graph and Corpus ===
-
-
-[[hbase_schema_server_logs]]
-.Wikipedia HBase schema
-|=======
-|table             | row key		   | column families | column qualifiers | versions  | value
-| articles         | `page_id`             |                 | `-`               | none	  |
-| article_versions | `page_id-revision_id` |                 | `-`               | none	  |
-| page_page        | `..`                  |                 | `-`               | none	  |
-| categories       | `..`                  |                 | `-`               | none	  |      
-| redirects        | `..`                  |                 | `-`               | none	  |
-| site_stats       | `..`                  |                 | `-`               | none	  |
-|=======
-
-
+A timestamped metric table like this _writes by the column_ but _reads by the row_.
 
 === Row Locality ===
 
-Row keys determine data locality. You must balance two concerns:
+Row keys determine data locality. When activity is focused on a set of similar and thus adjacent rows, it can be very efficient or very problematic.
 
-* *adjacency is good*, most of the time (hooray locality!). When common data is stored together, it enables
+==== adjacency is good ====
+
+Most of the time, adjacency is good (hooray locality!). When common data is stored together, it enables
   - range scans: retrieve all pageviews having the same path prefix, or a continuous map region.
   - sorted retrieval: ask for the earliest entry, or the top-`k` rated entries
   - space-efficient caching: map cells for New York City will be much more commonly referenced than those for Montana. Storing records for New York City together means fewer HDFS blocks are hot, which means the opeerating system is better able to cache those blocks.
   - time-efficient caching: if I retrieve the map cell for Minneapolis, I'm much more likely to next retrieve the adjacent cell for nearby St. Paul. Adjacency means that cell will probably be hot in the cache.
-* *adjacency is bad*, if _everyone_ targets a narrow range of keyspace, as we find with highly-skewed webserver paths or high-speed timestamped logs. For a skew problem, see if file:///data/docs/hbase.apache.org/book.html#important_configurations[managed splitting] (pre-assigning a rough partition of the keyspace to different regions) can help. That won't help for http://ikaisays.com/2011/01/25/app-engine-datastore-tip-monotonically-increasing-values-are-bad/[timestamp keys and other monotonically increasing values] though, because the focal point moves constantly. If you want rows to be mostly local, add some kind of low-cardinality prefix: a metric name, a server or shard id, or even the least-significant four bits. To retrieve whole rows, issue a batch request against each prefix at query time.
 
+==== adjacency is bad ====
 
-=== Constraints ===
+If _everyone_ targets a narrow range of keyspace, all that activity will hit a single regionserver and your wonderful massively-distributed database will limp along at the speed of one abused machine.
+
+This could happen because of high skew: for example, if your row keys were URL paths, the pages in the `/product` namespace would see far more activity than pages under `laborday_2009_party/photos` (unless they were particularly exciting photos). Similarly, a phenomenon known as Benford's law means that addresses beginning with '1' are far more frequent than addresses beginning with '9' footnote:[A visit to the hardware store will bear this out; see if you can figure out why. (Hint: on a street with 200 addresses, how many start with the numeral '1'?)]. In this case, file:///data/docs/hbase.apache.org/book.html#important_configurations[managed splitting] (pre-assigning a rough partition of the keyspace to different regions) is likely to help.
+
+Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datastore-tip-monotonically-increasing-values-are-bad/[timestamp keys and other monotonically increasing values] though, because the focal point moves constantly. You'd often like to spread the load out a little, but still keep similar rows together. Options include:
+
+* swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
+* add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
+
+=== "Design for Reads" ===
+
+You should design your HBase schema for reads: preferably one read per customer request (or as low as possible). HBase will deliver extraordinary performance, on the order of 1ms response time for a cache hit and 10ms for a cache miss from a well-tuned cluster. footnote:[Thanks to Lars George for these guidelines and the "Design for Reads" motto.]
+
+* Avoid having more than a handful of column families on any high-performance table, especially if their patterns of write access are distinct.
+* Avoid having more than a few million columns per row.
 
 * Column families
   - always specify the `versions`: by default it's 3, and you almost always want 1 or a value you've thought very carefully about
@@ -231,24 +275,23 @@ Row keys determine data locality. You must balance two concerns:
 * Use short row and column names. _Every_ cell is stored with its row, column, timestamp and value, every time. (trust the HBase folks: this is the Right Thing).
   - even still, fat row names (larger than their contents) often make sense. If so, increase the block size so that table indexes don't eat all your RAM.
 
+* Keys should be space-efficient. Use _very_ short names for column families ('u', not 'url'). Don't be profligate with size of column keys and row keys on huge tables: a binary-packed SHA digest of a URL is more efficient than its hex-encoded representation, which is likely more efficient than the URL itself. However, if that bare URL will let you efficiently index on sub-paths, use a bare URL. For another example, we gladly waste 6 bits of every byte in a quadkey, because it lets us do multi-scale queries.
+* Keys should be properly encoded and sanitized
+  - HBase stores and returns arbitrary binary data, unmolested.
+
 * All sorting is _lexicographic_: beware the "derp sort". Given row keys 1, 2, 7, 12, and 119, HBase stores them in the order 1, 119, 12, 2, 7: it sorts by the most significant (leftmost) byte first.
   - zero-pad decimal numbers, and null-pad binary packet numbers. Suppose a certain key ranged from 0 to 60,000; you would zero-pad the number 69 as `00069` (5 bytes); the null-padded version would have bytes `00 45` (2 bytes).
   - annoyingly, `+` sorts less than `-`, so `+45` precedes `-45`. However, `
   - reverse timestamp
 
 * Timestamps let HBase skip HStores
-  
-* Keys should be space-efficient. Use _very_ short names for column families ('u', not 'url'). Don't be profligate with size of column keys and row keys on huge tables: a binary-packed SHA digest of a URL is more efficient than its hex-encoded representation, which is likely more efficient than the URL itself. However, if that bare URL will let you efficiently index on sub-paths, use a bare URL. For another example, we gladly waste 6 bits of every byte in a quadkey, because it lets us do multi-scale queries.
-* Keys should be properly encoded and sanitized
-  - HBase stores and returns arbitrary binary data, unmolested. 
 
 * Always set timestamps on fundamental objects. Server log lines, tweets, blog posts, and airline flight departures all have an intrinsic timestamp of occurrence, and they are all "fundamental" objects, not assertions derived from something else.  In such cases, always set a timestamp.  In contrast, the "May 2012 Archive" page of a blog, containing many posts, is not fundamental; neither is an hourly cached count of server errors. These are _observations_, correct at the time they're made -- so that observation time, not the intrinsic timestamp
-
 
 * make sure you set the VERSIONS when you create the table+column family
 * Once you know your access patterns and can test the response under load, consider enabling compression. RECORD compression works best when you have fat rows (lots of columns) and you typically access the full row. There are so many tradeoffs at play, however, that you really need to just try it. Luckily, Hadoop is sitting right there ready to cross-load your tables.
 
-  
+
 
 === References ===
 
@@ -256,3 +299,7 @@ Row keys determine data locality. You must balance two concerns:
 
 
 * http://helpmetocode.blogspot.in/2012/04/commands-available-on-hbase-shell.html[HBase Shell Commands]
+
+* http://www.slideshare.net/larsgeorge/hbase-advanced-schema-design-berlin-buzzwords-june-2012[HBase Advanced Schema Design] by Lars George
+
+* http://www.quora.com/What-are-the-best-tutorials-on-HBase-schema
