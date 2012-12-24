@@ -53,12 +53,13 @@ The  is a _dense table_: pretty much every row has a value for every column.
 
 The "airports" table is so small that our choices don't affect performance. If it were many many times larger, there would be three plausible choices:
 
-* each row is its
-* each field is its own column family
-* one column family, each field is its own key name
-* one column key, each
+* each field is its own column family, with a null qualifier
+* there is one column family, and the field name is the column qualifier
+* there one column, and the entire record is serialized into its value. 
 
-Read access: if you always reqest the full
+The answer comes down to the pattern of access from your application. If you only access a subset of rows, 
+
+Since the HBase data model may well change as you learn what constraints the production workload imposes -- and since the data model may not look much like your application's data model anyway -- it's a very good idea to put an abstraction layer, no matter how thin, between your application and the datastore.
 
 ==== Airport Timezone ====
 

@@ -34,6 +34,8 @@ include::ha2c-use_method_checklist.asciidoc[]
 
 include::ba7a-data_formats.asciidoc[]
 
+include::ha4a-hbase_schema.asciidoc[]
+
 include::ba6a-semi_structured_data.asciidoc[]
 
 include::ba6b-semi_structured_data-wikipedia_other.asciidoc[]
