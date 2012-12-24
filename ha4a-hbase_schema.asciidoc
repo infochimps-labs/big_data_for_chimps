@@ -304,3 +304,8 @@ You should design your HBase schema for reads: preferably one read per customer 
 * http://www.slideshare.net/larsgeorge/hbase-advanced-schema-design-berlin-buzzwords-june-2012[HBase Advanced Schema Design] by Lars George
 
 * http://www.quora.com/What-are-the-best-tutorials-on-HBase-schema
+
+
+* encoding numbers for lexicographic sorting:
+  - an insane but interesting scheme: http://www.zanopha.com/docs/elen.pdf
+  - a Java library for 
