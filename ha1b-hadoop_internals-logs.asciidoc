@@ -53,6 +53,8 @@ default[:hadoop][:reduce_heap_frac]                  = 0.00
 	2012-12-17 02:12:00,758 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 0 outputs (0 slow hosts and0 dup hosts)
 	2012-12-17 02:12:00,767 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Thread started: Thread for polling Map Completion Events
 
+The reducer has fully started, and is ready to receive data from each mapper.
+
 	...
 	2012-12-17 02:12:05,759 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 7 outputs (0 slow hosts and0 dup hosts)
 	...
@@ -61,27 +63,19 @@ default[:hadoop][:reduce_heap_frac]                  = 0.00
 These roll in as each map task finishes
 	
 	2012-12-17 02:15:53,686 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000132_1'
-
-
-	
-
-	2012-12-17 02:15:57,168 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 3 outputs (0 slow hosts and0 dup hosts)
-	2012-12-17 02:15:57,245 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 1 outputs (0 slow hosts and1 dup hosts)
-	2012-12-17 02:15:57,252 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 1 outputs (0 slow hosts and0 dup hosts)
-	2012-12-17 02:16:00,694 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000125_1'
-	2012-12-17 02:16:01,695 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000129_1'
-	2012-12-17 02:16:02,297 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 4 outputs (0 slow hosts and0 dup hosts)
-	2012-12-17 02:16:05,699 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000126_1'
-	2012-12-17 02:16:06,700 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000120_1'
-	2012-12-17 02:16:07,501 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 2 outputs (0 slow hosts and0 dup hosts)
-	2012-12-17 02:16:12,626 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Need another 2 map output(s) where 0 is already in progress
-	2012-12-17 02:16:12,626 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 0 outputs (0 slow hosts and0 dup hosts)
-	2012-12-17 02:16:15,709 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000123_1'
-	2012-12-17 02:16:17,626 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 1 outputs (0 slow hosts and0 dup hosts)
+	...
 	2012-12-17 02:16:20,713 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000128_1'
 	2012-12-17 02:16:22,696 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 1 outputs (0 slow hosts and0 dup hosts)
+
+The `obsolete output of KILLED map-task` lines may look dire, but they're harmless. The jobtracker specified several map tasks for speculative execution (TODO: ref), and then killed the attempts that didn't finish first. The reducers are smart enough to ignore the output of failed an killed jobs, and only proceed to the reduce when exactly one copy of the data has arrived.	
+	
+TODO: get a job that has multiple spills
+	
 	2012-12-17 02:16:23,715 INFO org.apache.hadoop.mapred.ReduceTask: GetMapEventsThread exiting
 	2012-12-17 02:16:23,715 INFO org.apache.hadoop.mapred.ReduceTask: getMapsEventsThread joined.
+
+The map tasks have all arrived, and so the final merge passes may begin.
+	
 	2012-12-17 02:16:23,717 INFO org.apache.hadoop.mapred.ReduceTask: Closed ram manager
 	2012-12-17 02:16:23,742 INFO org.apache.hadoop.mapred.ReduceTask: Interleaved on-disk merge complete: 0 files left.
 	2012-12-17 02:16:23,743 INFO org.apache.hadoop.mapred.ReduceTask: In-memory merge complete: 161 files left.
@@ -99,177 +93,5 @@ These roll in as each map task finishes
 	2012-12-17 02:16:34,232 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=82322/4975
 	2012-12-17 02:16:36,151 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=100000/5472/0 in:8333=100000/12 [rec/s] out:456=5472/12 [rec/s]
 	2012-12-17 02:16:44,241 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=154675/6964
-	2012-12-17 02:16:50,606 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=200000/7898/0 in:7692=200000/26 [rec/s] out:303=7898/26 [rec/s]
-	2012-12-17 02:16:54,266 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=230757/8453
-	2012-12-17 02:17:04,636 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=294512/9580
-	2012-12-17 02:17:06,207 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=300000/9660/0 in:7142=300000/42 [rec/s] out:230=9660/42 [rec/s]
-	2012-12-17 02:17:14,649 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=361522/11074
-	2012-12-17 02:17:20,590 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=400000/12157/0 in:7142=400000/56 [rec/s] out:217=12157/56 [rec/s]
-	2012-12-17 02:17:24,683 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=429882/12654
-	2012-12-17 02:17:34,702 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=499990/14167
-	2012-12-17 02:17:34,808 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=500000/14183/0 in:7042=500000/71 [rec/s] out:199=14183/71 [rec/s]
-	2012-12-17 02:17:44,738 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=564949/15223
-	2012-12-17 02:17:49,485 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=600000/15812/0 in:7058=600000/85 [rec/s] out:186=15812/85 [rec/s]
-	2012-12-17 02:17:54,755 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=635520/16487
-	2012-12-17 02:18:04,896 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=698808/17585
-	2012-12-17 02:18:04,987 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=700000/17608/0 in:6930=700000/101 [rec/s] out:174=17608/101 [rec/s]
-	2012-12-17 02:18:14,904 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=777681/20008
-	2012-12-17 02:18:18,007 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=800000/20867/0 in:7017=800000/114 [rec/s] out:183=20867/114 [rec/s]
-	2012-12-17 02:18:24,922 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=844831/22836
-	2012-12-17 02:18:31,969 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=900000/26134/0 in:7031=900000/128 [rec/s] out:204=26134/128 [rec/s]
-	2012-12-17 02:18:35,206 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=922944/27218
-	2012-12-17 02:18:44,519 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1000000/30658/0 in:7142=1000000/140 [rec/s] out:218=30658/140 [rec/s]
-	2012-12-17 02:18:45,212 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1007248/30919
-	2012-12-17 02:18:55,220 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1087072/34397
-	2012-12-17 02:18:56,808 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1100000/34920/0 in:7189=1100000/153 [rec/s] out:228=34920/153 [rec/s]
-	2012-12-17 02:19:05,228 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1170381/37487
-	2012-12-17 02:19:08,650 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1200000/38835/0 in:7317=1200000/164 [rec/s] out:236=38835/164 [rec/s]
-	2012-12-17 02:19:15,230 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1253104/41104
-	2012-12-17 02:19:20,663 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1300000/42765/0 in:7386=1300000/176 [rec/s] out:242=42765/176 [rec/s]
-	2012-12-17 02:19:25,233 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1339347/44377
-	2012-12-17 02:19:32,565 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1400000/47244/0 in:7446=1400000/188 [rec/s] out:251=47244/188 [rec/s]
-	2012-12-17 02:19:35,243 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1419942/48080
-	2012-12-17 02:19:45,242 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1500000/51435/0 in:7462=1500000/201 [rec/s] out:255=51435/201 [rec/s]
-	2012-12-17 02:19:45,260 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1500574/51446
-	2012-12-17 02:19:55,266 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1570317/54337
-	2012-12-17 02:19:58,660 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1600000/55822/0 in:7476=1600000/214 [rec/s] out:260=55822/214 [rec/s]
-	2012-12-17 02:20:05,279 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1652054/58505
-	2012-12-17 02:20:11,108 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1700000/60916/0 in:7488=1700000/227 [rec/s] out:268=60916/227 [rec/s]
-	2012-12-17 02:20:15,295 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1734552/62037
-	2012-12-17 02:20:23,434 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1800000/64934/0 in:7531=1800000/239 [rec/s] out:271=64934/239 [rec/s]
-	2012-12-17 02:20:25,301 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1814478/65575
-	2012-12-17 02:20:35,310 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1899226/68971
-	2012-12-17 02:20:35,315 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1900000/68982/0 in:7569=1900000/251 [rec/s] out:274=68982/251 [rec/s]
-	2012-12-17 02:20:45,311 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1982498/72457
-	2012-12-17 02:20:47,622 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2000000/73374/0 in:7604=2000000/263 [rec/s] out:278=73374/263 [rec/s]
-	2012-12-17 02:20:55,329 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2065705/76436
-	2012-12-17 02:20:59,786 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2100000/77580/0 in:7608=2100000/276 [rec/s] out:281=77580/276 [rec/s]
-	2012-12-17 02:21:05,333 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2144422/79568
-	2012-12-17 02:21:12,188 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2200000/82206/0 in:7638=2200000/288 [rec/s] out:285=82206/288 [rec/s]
-	2012-12-17 02:21:15,340 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2223463/83861
-	2012-12-17 02:21:25,007 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2300000/87384/0 in:7641=2300000/301 [rec/s] out:290=87384/301 [rec/s]
-	2012-12-17 02:21:25,351 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2302384/87568
-	2012-12-17 02:21:35,364 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2384100/91830
-	2012-12-17 02:21:38,416 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2400000/95484/0 in:7643=2400000/314 [rec/s] out:304=95484/314 [rec/s]
-	2012-12-17 02:21:45,379 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2440994/103276
-	2012-12-17 02:21:55,381 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2499690/114621
-	2012-12-17 02:21:55,497 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2500000/114765/0 in:7552=2500000/331 [rec/s] out:346=114765/331 [rec/s]
-	2012-12-17 02:22:05,388 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2557850/125657
-	2012-12-17 02:22:12,098 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2600000/132533/0 in:7471=2600000/348 [rec/s] out:380=132533/348 [rec/s]
-	2012-12-17 02:22:15,451 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2626981/133720
-	2012-12-17 02:22:24,012 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2700000/136880/0 in:7500=2700000/360 [rec/s] out:380=136880/360 [rec/s]
-	2012-12-17 02:22:25,460 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2711117/137320
-	2012-12-17 02:22:35,474 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2782835/140707
-	2012-12-17 02:22:37,734 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2800000/141224/0 in:7506=2800000/373 [rec/s] out:378=141224/373 [rec/s]
-	2012-12-17 02:22:45,496 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2851385/143373
-	2012-12-17 02:22:51,494 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=2900000/145515/0 in:7493=2900000/387 [rec/s] out:376=145515/387 [rec/s]
-	2012-12-17 02:22:55,527 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=2931571/147154
-	2012-12-17 02:23:04,958 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3000000/150364/0 in:7481=3000000/401 [rec/s] out:374=150364/401 [rec/s]
-	2012-12-17 02:23:05,547 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3003700/150514
-	2012-12-17 02:23:15,550 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3082769/154438
-	2012-12-17 02:23:17,884 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3100000/155227/0 in:7487=3100000/414 [rec/s] out:374=155227/414 [rec/s]
-	2012-12-17 02:23:25,560 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3160980/158021
-	2012-12-17 02:23:30,056 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3200000/160065/0 in:7511=3200000/426 [rec/s] out:375=160065/426 [rec/s]
-	2012-12-17 02:23:35,580 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3246224/161544
-	2012-12-17 02:23:41,799 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3300000/163232/0 in:7534=3300000/438 [rec/s] out:372=163232/438 [rec/s]
-	2012-12-17 02:23:46,270 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3332571/164442
-	2012-12-17 02:23:56,285 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3392441/166597
-	2012-12-17 02:23:57,148 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3400000/166908/0 in:7505=3400000/453 [rec/s] out:368=166908/453 [rec/s]
-	2012-12-17 02:24:06,306 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3470278/170133
-	2012-12-17 02:24:10,024 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3500000/171420/0 in:7510=3500000/466 [rec/s] out:367=171420/466 [rec/s]
-	2012-12-17 02:24:16,322 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3552284/173475
-	2012-12-17 02:24:22,146 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3600000/175887/0 in:7531=3600000/478 [rec/s] out:367=175887/478 [rec/s]
-	2012-12-17 02:24:26,324 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3632223/177376
-	2012-12-17 02:24:34,674 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3700000/180645/0 in:7551=3700000/490 [rec/s] out:368=180645/490 [rec/s]
-	2012-12-17 02:24:36,326 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3713958/181184
-	2012-12-17 02:24:46,335 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3797056/184541
-	2012-12-17 02:24:46,770 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3800000/184686/0 in:7569=3800000/502 [rec/s] out:367=184686/502 [rec/s]
-	2012-12-17 02:24:56,384 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3873073/187818
-	2012-12-17 02:24:59,297 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=3900000/188730/0 in:7572=3900000/515 [rec/s] out:366=188730/515 [rec/s]
-	2012-12-17 02:25:06,397 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=3956051/191140
-	2012-12-17 02:25:11,898 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4000000/193019/0 in:7575=4000000/528 [rec/s] out:365=193019/528 [rec/s]
-	2012-12-17 02:25:16,402 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4034732/195468
-	2012-12-17 02:25:24,815 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4100000/198461/0 in:7578=4100000/541 [rec/s] out:366=198461/541 [rec/s]
-	2012-12-17 02:25:26,412 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4112637/199070
-	2012-12-17 02:25:36,425 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4146782/226060
-	2012-12-17 02:25:45,864 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4200000/239824/0 in:7473=4200000/562 [rec/s] out:426=239824/562 [rec/s]
-	2012-12-17 02:25:46,438 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4203755/240024
-	2012-12-17 02:25:56,439 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4279517/243025
-	2012-12-17 02:25:58,993 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4300000/243761/0 in:7478=4300000/575 [rec/s] out:423=243761/575 [rec/s]
-	2012-12-17 02:26:06,457 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4362641/246105
-	2012-12-17 02:26:11,084 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4400000/247929/0 in:7495=4400000/587 [rec/s] out:422=247929/587 [rec/s]
-	2012-12-17 02:26:16,464 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4445843/250045
-	2012-12-17 02:26:23,188 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4500000/252507/0 in:7512=4500000/599 [rec/s] out:421=252507/599 [rec/s]
-	2012-12-17 02:26:26,482 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4527738/253370
-	2012-12-17 02:26:35,522 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4600000/255904/0 in:7528=4600000/611 [rec/s] out:418=255904/611 [rec/s]
-	2012-12-17 02:26:36,496 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4607470/256259
-	2012-12-17 02:26:46,579 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4682409/259279
-	2012-12-17 02:26:48,496 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4700000/259984/0 in:7532=4700000/624 [rec/s] out:416=259984/624 [rec/s]
-	2012-12-17 02:26:56,581 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4760284/262275
-	2012-12-17 02:27:01,381 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4800000/263909/0 in:7535=4800000/637 [rec/s] out:414=263909/637 [rec/s]
-	2012-12-17 02:27:06,594 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4842954/266058
-	2012-12-17 02:27:13,562 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=4900000/269507/0 in:7550=4900000/649 [rec/s] out:415=269507/649 [rec/s]
-	2012-12-17 02:27:16,625 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=4926325/270458
-	2012-12-17 02:27:25,550 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5000000/273408/0 in:7564=5000000/661 [rec/s] out:413=273408/661 [rec/s]
-	2012-12-17 02:27:26,634 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5008708/273823
-	2012-12-17 02:27:36,642 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5094533/277177
-	2012-12-17 02:27:37,458 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5100000/277579/0 in:7578=5100000/673 [rec/s] out:412=277579/673 [rec/s]
-	2012-12-17 02:27:46,646 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5160264/279321
-	2012-12-17 02:27:51,560 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5200000/281142/0 in:7569=5200000/687 [rec/s] out:409=281142/687 [rec/s]
-	2012-12-17 02:27:56,658 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5241160/283043
-	2012-12-17 02:28:05,174 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5300000/286262/0 in:7560=5300000/701 [rec/s] out:408=286262/701 [rec/s]
-	2012-12-17 02:28:10,946 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5302404/286263
-	2012-12-17 02:28:21,152 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5383194/289534
-	2012-12-17 02:28:24,133 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5400000/289989/0 in:7500=5400000/720 [rec/s] out:402=289989/720 [rec/s]
-	2012-12-17 02:28:31,161 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5466768/292962
-	2012-12-17 02:28:34,733 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5500000/294307/0 in:7534=5500000/730 [rec/s] out:403=294307/730 [rec/s]
-	2012-12-17 02:28:41,176 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5558060/296872
-	2012-12-17 02:28:45,379 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5600000/298389/0 in:7557=5600000/741 [rec/s] out:402=298389/741 [rec/s]
-	2012-12-17 02:28:51,182 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5657632/300269
-	2012-12-17 02:28:57,262 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5700000/301494/0 in:7569=5700000/753 [rec/s] out:400=301494/753 [rec/s]
-	2012-12-17 02:29:01,248 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5738198/302824
-	2012-12-17 02:29:07,458 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5800000/304772/0 in:7601=5800000/763 [rec/s] out:399=304772/763 [rec/s]
-	2012-12-17 02:29:11,250 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5839964/306019
-	2012-12-17 02:29:17,263 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=5900000/307838/0 in:7632=5900000/773 [rec/s] out:398=307838/773 [rec/s]
-	2012-12-17 02:29:21,254 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=5940935/309183
-	2012-12-17 02:29:27,098 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6000000/311558/0 in:7662=6000000/783 [rec/s] out:397=311558/783 [rec/s]
-	2012-12-17 02:29:31,805 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6036727/312556
-	2012-12-17 02:29:38,214 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6100000/315434/0 in:7682=6100000/794 [rec/s] out:397=315434/794 [rec/s]
-	2012-12-17 02:29:41,814 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6133910/316981
-	2012-12-17 02:29:48,355 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6200000/319463/0 in:7711=6200000/804 [rec/s] out:397=319463/804 [rec/s]
-	2012-12-17 02:29:51,822 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6234181/320873
-	2012-12-17 02:29:58,300 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6300000/324063/0 in:7739=6300000/814 [rec/s] out:398=324063/814 [rec/s]
-	2012-12-17 02:30:01,832 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6333370/325985
-	2012-12-17 02:30:08,569 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6400000/329682/0 in:7766=6400000/824 [rec/s] out:400=329682/824 [rec/s]
-	2012-12-17 02:30:11,946 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6429592/331268
-	2012-12-17 02:30:19,097 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6500000/334224/0 in:7784=6500000/835 [rec/s] out:400=334224/835 [rec/s]
-	2012-12-17 02:30:21,953 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6529132/335441
-	2012-12-17 02:30:29,144 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6600000/338603/0 in:7810=6600000/845 [rec/s] out:400=338603/845 [rec/s]
-	2012-12-17 02:30:31,975 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6625596/339629
-	2012-12-17 02:30:42,060 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6657559/340096
-	2012-12-17 02:30:51,936 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6700000/340837/0 in:7718=6700000/868 [rec/s] out:392=340837/868 [rec/s]
-	2012-12-17 02:30:52,232 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6701055/340891
-	2012-12-17 02:31:03,607 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6755269/341878
-	2012-12-17 02:31:11,536 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6800000/342718/0 in:7666=6800000/887 [rec/s] out:386=342718/887 [rec/s]
-	2012-12-17 02:31:13,756 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6813458/342987
-	2012-12-17 02:31:24,377 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6862558/343527
-	2012-12-17 02:31:32,108 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=6900000/344265/0 in:7599=6900000/908 [rec/s] out:379=344265/908 [rec/s]
-	2012-12-17 02:31:34,429 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6913488/344496
-	2012-12-17 02:31:44,470 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6958322/345055
-	2012-12-17 02:31:54,481 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=6992207/345560
-	2012-12-17 02:31:56,456 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7000000/345676/0 in:7510=7000000/932 [rec/s] out:370=345676/932 [rec/s]
-	2012-12-17 02:32:04,487 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7027344/345823
-	2012-12-17 02:32:15,476 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7070757/346229
-	2012-12-17 02:32:20,594 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7100000/346573/0 in:7426=7100000/956 [rec/s] out:362=346573/956 [rec/s]
-	2012-12-17 02:32:25,479 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7123375/346822
-	2012-12-17 02:32:38,454 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7172802/347479
-	2012-12-17 02:32:49,238 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7190841/347580
-	2012-12-17 02:32:50,972 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7200000/347630/0 in:7294=7200000/987 [rec/s] out:352=347630/987 [rec/s]
-	2012-12-17 02:32:59,445 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7235927/347991
-	2012-12-17 02:33:09,547 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7271856/348306
-	2012-12-17 02:33:14,792 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7300000/348600/0 in:7220=7300000/1011 [rec/s] out:344=348600/1011 [rec/s]
-	2012-12-17 02:33:20,438 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7325918/348798
-	2012-12-17 02:33:30,530 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7367478/349189
-	2012-12-17 02:33:34,258 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7400000/350348/0 in:7184=7400000/1030 [rec/s] out:340=350348/1030 [rec/s]
 	2012-12-17 02:33:40,532 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7456136/352941
 	2012-12-17 02:33:44,878 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7500000/354750/0 in:7204=7500000/1041 [rec/s] out:340=354750/1041 [rec/s]
