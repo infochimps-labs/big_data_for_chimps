@@ -50,7 +50,7 @@ What will we store into HBase? Your first instinct might be to store each of the
 [[hbase_schema_autocomplete]]
 .Autocomplete HBase schema
 |=======
-|table             | row key    	  | column family  | column qualifiers | value                 | options
+|table             | row key    	  | column family  | column qualifier | value                 | options
 | title_autocomp   | `prefix`             | 'j'             | `-`                | JSON-encoded response | `VERSIONS => 1, BLOOMFILTER => 'ROW', COMPRESSION => 'SNAPPY'`
 |=======
 
@@ -66,15 +66,28 @@ That also makes the autocomplete table a candidate for block-level compression. 
 
 === Geographic Data ===
 
+For our next example, let's look at geographic data:
+
+* boundaries and metadata for countries, states and counties ("admin 1"/"admin 2") and postal codes.
+* the Geonames dataset of places
+
+To retrieve information about each region, no magic is called for: the row key is a compound of the region type and region id, and store the full serialized record as the value. It's important to keep row keys _short_ and _sortable_, so map the region types to single-byte ids (say, `0` for country, `1` for admin 1, etc) and use standard ISO identifiers for the region id (`us` for the USA, `dj` for Djibouti, etc).
+
+The tile-boundaries table is more interesting.
+We want to serve boundaries out in tiles:
+
+The tile-places table is most interesting of all.
+
+
 [[hbase_schema_geographic_data]]
 .Server logs HBase schema
 |=======
-|table             | row key    	  | column families    | column qualifiers | versions  | value
-| tile_regions     | `quadkey`   	  | (region type)      | `region_name`     | none      | Geo-JSON encoded path
-| regions          | `region_name`   	  | (region type)      | (field name)      | none      | Value of field
+|table       	| row key       	    | column family	| column qualifier  | value               	| options
+| region_info  	| `region_type-region_name` | 'r'          	| (none)            | serialized record    	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'`
+| geonames_info | `geonames_id`             | 'i'                | (none)           | serialized record    	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'` 
+| tile_bounds  	| `quadkey`      	    | (region type)	| `region_id`       | Geo-JSON encoded path	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'` 
+| tile_places   | `quadkey`      	    | (feature class)	| `geonames_id`     | name                  	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'` 
 |=======
-
-Given an arbitrary spatial extent, we want to retrieve all regions, all regions of a given type (country, census block, ...), or the parts of a specific region.
 
 ==== Column Families enable Vertical Partitioning ====
 
@@ -286,6 +299,18 @@ First, be sure to set the VERSIONS option to a very large number when you create
 Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
 When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
 TODO: local time? utc time? which way must we go.
+
+
+=== Review of HBase options ===
+
+* column families -- use only one, unless you need both full-row _and_ partial-row access. Even still, high-performance tables shouldn't use more than a few colum families.
+* `BLOOMFILTER`	-- `false` except for a high-impact table with many misses. Monitor the memory usage and performance with and without, and take some time to understand the interaction with the blocksize.
+* `VERSIONS`	-- set to 1 unless you know why you need more. You must always specify, because the default is 3.
+* `COMPRESSION`	-- set to "snappy" until you can test performance with/without compression
+* `TTL`   	-- `-1`, unless you need expiration
+* `BLOCKCACHE`   -- `true` (the default)
+* `IN_MEMORY`	-- `false` (the default)
+* `BLOCKSIZE`	-- `65536` (the default)
 
 
 DRAFT
