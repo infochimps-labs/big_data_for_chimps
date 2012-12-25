@@ -24,7 +24,7 @@ Conventions:
 | `<<double angles>>`			| `<xref>`      	| <<style_notes>>
 | footnote:[This is a footnote.]`	| footnotes      	| footnotefootnote:[This is a footnote.]. Put them belly-up against text and following the punctuation -- `Hello.footnote:[hi!]` (note: this effs with emacs' markup, so during the early phases I will instead _always_ use a space; will strip them later)
 | `.I am a Title!`			| figure titles 	| Titles for figures, tables, examples, and sidebars, but not sections.
-| 
+|
 |=======
 
 
@@ -32,12 +32,12 @@ Conventions:
 .Block Table
 [options="header"]
 |======
-| `.Image    \n image::path/image.jpg`    	| image    	| 
-| `[quote]   \n ___`                       	| `<quote>` 	| underbars
-| `.Code blk \n ==== ---- \n [source,ruby]`	| code block 	|
-| `.Sidebar  \n ****`                        	| sidebar 	|
-| `.Table    \n [options="header"] \n |==== \n`	| table  	|
-|               `++++ \n <remark>`       	| secret message | plus
+| `.Image    \n image::path/image.jpg`    	| image    	              |
+| `[quote]   \n ___`                       	| `<quote>` 	 	      | underbars
+| `.Code blk \n ==== ---- \n [source,ruby]`	| code block 	 	      |
+| `.Sidebar  \n ****`                        	| sidebar 	 	      |
+| `.Table    \n [options="header"] \n |==== \n`	| table   	 	      |
+|               `++++ \n <remark>`       	| secret message 	      | plus
 | `[WARNING] \n =====`                     	| NOTE, TIP, WARNING, CAUTION |
 |======
 
@@ -53,7 +53,7 @@ Conventions:
 
 ==== Lists ====
 
-===== Definition Lists ===== 
+===== Definition Lists =====
 
 ----
 Term 1::
@@ -70,11 +70,11 @@ Term 2::
 ** teapotted
 * bears
 
-===== Ordered (aka Numbered) Lists ===== 
+===== Ordered (aka Numbered) Lists =====
 
 . Preparation
 . Assembly
-.. Measure 
+.. Measure
 .. Combine
 .. Bake
 . Applause

@@ -4,31 +4,64 @@ Space doesn't allow treating HBase in any depth, but it's worth equipping you wi
 
 === Row Key, Column Family, Column Qualifier, Timestamp, Value ===
 
-HBase stores data in cells, scoped like this:
+You're probably familiar with some database or another: MySQL, MongoDB, Oracle and so forth. These are passenger vehicles of various sorts, with a range of capabilities and designed for the convenience of the humans that use them. HBase is not a passenger vehicle -- it is a big, powerful dump truck. It has no A/C, no query optimizer and it cannot perform joins or groups. You don't drive this dump truck for its ergonomics or its frills; you drive it because you need to carry a ton of raw data-mining ore to the refinery. Once you learn to play to its strengths, though, you'll find it remarkably powerful.
 
-* Table -- a hard partition of data. Tables are stored, partitioned and optimized in isolation.
-* Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
-* Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
-  - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) <remark>TODO: check</remark> you can set independently per column family.
-  - Column Qualifier -- the arbitrary remainder of a column key;
-* Value -- the contents you'd like to store, anything or nothing.
+Here is most of what you can ask HBase to do (roughly in order of efficiency):
 
-Table names and column familty names must be defined in advance, and their names may only contain printable characters (I recommend only using `[a-z_][a-z0-9_]*`). Everything else is bytes in / bytes out, exactly as issued.
+1. Given a row key: get, put or delete a single value into which you've serialized a whole record.
+2. Given a row key: get, put or delete a hash of column/value pairs, sorted by column key.
+3. Given a key: find the first row whose key is equal or larger, and read a hash of column/value pairs (sorted by column key).
+4. Given a row key: atomically increment one or several counters and receive their updated values.
+5. Given a range of row keys: get a hash of column/value pairs (sorted by column key) from each row in the range. The lowest value in the range is examined, but the highest is not.
+6. Feed a map/reduce job by scanning an arbitrarily large range of values.
 
-That's pretty much it. HBase is not a passenger car like MongoDB, ElasticSearch, or MySQL -- it's a big, powerful dump truck, with no A/C, no joins, no secondary indexes, and minimal transactions. You don't drive a dump truck for its ergonomics or its frills: you drive it because you need to carry a ton of raw data-mining ore to the refinery. Once you learn to play to its strengths, though, you'll find it remarkably powerful.
+That's pretty much it! There are some conveniences (versioning by timestamp, time-expirable values, and a type of vertical partitioning known as column families); some tunables (read caching, fast rejection of missing rows, and compression); and some advanced features, not covered here (query filters, and a kind of stored procedures/stored triggers called coprocessors). For the most part, however, those just help optimize the access patterns listed above.
 
-.Composite Keys
-NOTE notation -- HBase makes heavy use of composite keys (several values combined into a single string). We'll describe them using
-* quote marks (`"literal"`) to mean "that literal string"
-* braces `{field}` mean "substitute value of that field, removing the braces"
-* and separators, commonly `:`, `|` or `-`, to mean "that character, and make damn sure it's not used anywhere in the field value".
+A good HBase data model is "designed for reads". Your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns.
 
-HBase is a database for storing "billions of rows and millions of columns"
+[[hbase_no_yuo]]
+[NOTE]
+===============================
+Here's a partial list of features you do _not_ get in HBase:
 
-Even more than most engineering tools, it's essential to play to HBase's strengths; in general, the simpler your schema the better it will serve you. Somehow the sparsity of its feature set amplifies the siren call of its few advanced features; you must resist their call until you've proven their need. I find I still must fight the urge.
+* efficient querying or sorting by cell value
+* group by, join or secondary indexes 
+* text indexing or string matching (apart from row-key prefixes)
+* arbitrary server-side calculations on query
+* any notion of a datatype apart from counters; everything is bytes in/bytes out
+* auto-generated serial keys
 
-* Atomic counters: accumulate a numeric value, guaranteed consistent even if multiple clients simultaneously update it
-* TTL ("Time to Live"): an optional amount of time, after which values are expired.
+Sometimes you can partially recreate those features, and often you can accomplish the same _tasks_ you'd use those features for, but only with significant constraints or tradeoffs. (You _can_ pick up the kids from daycare in a dump truck, but only an idiot picks up their prom date in a dump truck, and in neither case is it the right choice). 
+
+More than most engineering tools, it's essential to play to HBase's strengths, and in general the simpler your schema the better HBase will serve you. Somehow, though, the sparsity of its feature set amplifies the siren call of even those few features. Resist, Resist. The more stoicly you treat HBase's small _feature_ set, the better you will realize how surprisingly large HBase's _solution_ set is.
+==================================
+
+=== Keep it Stupidly Simple ===
+
+Let's sketch the implementation of an autocomplete API on Wikipedia page titles, an example that truly plays to HBase's strengths. As a visitor types characters into a search bar, the browser will request a JSON-encoded list of the top 10 most likely completions for that prefix. Responsiveness is essential: at most 50 milliseconds end-to-end response time. Several approaches might spring to mind, like a range query on titles; a prefix query against a text search engine; or a specialized "trie" datastructure. HBase provides a much stupider, far superior solution.
+
+Instead, we'll enumerate every possible completion footnote:[First, join on the pagerank table (see TODO: ref) to attach a "prominence" to each page; we'll keep only the top 10 by rank for each prefix. Next, write a map-reduce job: the mapper takes each title and emits the first three, four, five, up to say twelve characters along with the pagerank. Have hadoop use the prefix as partition key, and the prefix-rank as a descending sort key. Now on each new prefix group, capture up to ten completions -- that's the return value.]. This blows the dataset into the billion-row range, but it makes each request a highly cache-efficient key/value lookup. Given an average title length of (TODO: insert numbers), the full completion set weighs in at "only" (TODO: numbers) rows and XXX raw data size -- a walk in the park for HBase. 
+
+What will we store into HBase? Your first instinct might be to store each of the ten titles, each in its own cell. Reasonable, but still too clever. Instead, serialize the full JSON-encoded response as a single value. This minimizes the cell count (memory- and disk-efficient), lets the API front end put the value straight onto the wire (speed and lines-of-code efficient), and puts us in the most efficient access pattern: single row, single value.
+
+[[hbase_schema_autocomplete]]
+.Autocomplete HBase schema
+|=======
+|table             | row key    	  | column family  | column qualifiers | value                 | options
+| title_autocomp   | `prefix`             | 'j'             | `-`                | JSON-encoded response | `VERSIONS => 1, BLOOMFILTER => 'ROW', COMPRESSION => 'SNAPPY'`
+|=======
+
+==== Help HBase be Lazy ====
+
+In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). These will of course be cache misses (there's nothing to cache), making the queries not just useless but also costly. Luckily, there's a specialized data structure known as a "Bloom Filter" that lets you very efficiently test set membership. If you explicitly enable it footnote:[A bug in the HBase shell may interfere with your ability to specify a bloom filter in a schema -- the https://issues.apache.org/jira/browse/HBASE-3086[HBASE-3086 bug report] has a one-line patch that fixes it.], HBase will capture all row keys into a Bloom Filter; on each request, it will quickly make sure it's worth trying to retrieve a value before doing so. 
+
+==== Row Locality and Compression ====
+
+There's another reason HBase is a great match for
+
+HBase stores all rows in sorted order on disk. This means that when the user has typed *+chim+*, the rows for `chime` and `chimp` are so forth nearby on disk -- the operating system is likely to have the right block hot in its 
+
+The Autocomplete table is a candidate for block-level compression. HBase stores 
 
 === Simple Table ===
 
@@ -69,22 +102,6 @@ Next, we will store the TZ offset at the exact timestamp marking the beginning o
 When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
 TODO: local time? utc time? which way must we go.
 
-
-=== Keep it Stupidly Simple ===
-
-For an example that truly plays to HBase's strengths, let's sketch the implementation of an autocomplete API on Wikipedia page titles. As a visitor types characters into a search bar, the browser will request a JSON-encoded list of the top 10 most likely completions for that prefix. Speed is essential: 50 or fewer milliseconds end-to-end. Several approaches might spring to mind, like a range query on titles, a prefix query against a text search engine, or a specialized "trie" datastructure. HBase provides a much stupider, far superior solution.
-
-Instead, we'll enumerate every possible completion footnote:[First, join on the pagerank table (see TODO: ref) to attach a "prominence" to each page; we'll keep only the top 10 by rank for each prefix. Next, write a map-reduce job: the mapper takes each title and emits the first three, four, five, up to say twelve characters along with the pagerank. Have hadoop use the prefix as partition key, and the prefix-rank as a descending sort key. Now on each new prefix group, capture up to ten completions -- that's the return value.]. This blows the dataset into the billion-row range, but it makes each request a highly cache-efficient key/value lookup. Given an average title length of (TODO: insert numbers), the full completion set weighs in at "only" (TODO: numbers) rows and XXX raw data size -- a walk in the park for HBase.
-
-What will we store into HBase? Your first instinct might be to store each of the ten titles as cells -- that's far too clever. Instead, serialize the exact JSON-encoded response -- the API front end simply makes the database request and puts the response value straight onto the wire. There's one minor feature ([[bloom_filter,see below]]) that will help improve performance even more, but this simplest possible implementation leads to trivial code on the front and and ultra low latency.
-
-[[hbase_schema_autocomplete]]
-.Autocomplete HBase schema
-|=======
-|table             | row key    	  | column families  | column qualifiers | versions  | value
-| title_autocomp   | `prefix`             | 'j'              | `-`               | none	  | JSON-encoded response
-|=======
-
 === Range Lookup ===
 
 If you recall from (TODO ref server logs chapter), the Geo-IP dataset stores information about IP addresses a block at a time.
@@ -122,18 +139,6 @@ Given an arbitrary spatial extent, we want to retrieve all regions, all regions 
 
 At some point of zoom out, there will simply be too much data
 Compute a summary, and store it under the truncate key -- i.e. store the rollup of '012312000' to '012312333' under '012312'.
-
-=== Help HBase be Lazy ===
-
-There's a few ways to help HBase intelligently skip data or lighten its burden.
-
-HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. The pattern with which HBase compacts its store files makes this especially convenient.
-
-In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). HBase will construct a "Bloom filter" on any column family that explicitly enables the feature. A Bloom filter is a specialized data structure to very efficiently test set membership.
-
-Continuing with the autocomplete example, suppose a sizeable minority of developers want to consume pre-baked HTML rather than the existing (and still-popular) JSON response. You could load the HTML responses in a separate table, but in this case all factors point to using a second column family in the autocomplete table. HBase will only have to load one set of Bloom filters and indexes, and since the access patterns will be well-balanced, can efficiently cache its responses.
-
-Lastly, the Autocomplete table is a candidate for row-level compression; enable that option only once you can prove its benefit under a production-sized workload.
 
 === Wikipedia: Corpus and Graph ===
 
@@ -234,6 +239,10 @@ We'd like to track, for each visitor, the five most recently-viewed products. In
 
 If you can't tolerate
 
+There's a few ways to help HBase intelligently skip data or lighten its burden.
+
+HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. The pattern with which HBase compacts its store files makes this especially convenient.
+
 ==== Rollup columns ====
 
 HBase is a database for "billions of rows and millions of columns".
@@ -263,9 +272,53 @@ Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datas
 * swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
 * add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
 
+..........................................................................
+
+DRAFT
+
+DRAFT -- ignore below
+
+DRAFT
+
+
+==== Vertical Partitioning (Column Families) ====
+
+Suppose that after releasing the autocomplete API, we find that a sizeable minority of developers want to consume pre-baked HTML rather than the existing (and still-popular) JSON response. No request returns both HTML and JSON, Instead, we'll store each response type in its own _column family_ in the autocomplete table. 
+The pattern of access and data size are similar for each, but 
+It might even be reasonable to put them in different tables. 
+
+=== Feature Set review ===
+
+* **TTL
+
+* Atomic counters: accumulate a numeric value, guaranteed consistent even if multiple clients simultaneously update it
+* TTL ("Time to Live"): an optional amount of time, after which values are expired.
+
+* Versioning by timestamp
+* Column Families
+
+* read caching
+* Bloom filters fast rejection of missing rows
+* Block-level compression
+* Row-level compression
+
+* query filters: impose server load, 
+* and a kind of stored procedures/stored triggers called coprocessors). Here's a partial list of things you do _not_ get:
+
+
 === "Design for Reads" ===
 
-You should design your HBase schema for reads: preferably one read per customer request (or as low as possible). HBase will deliver extraordinary performance, on the order of 1ms response time for a cache hit and 10ms for a cache miss from a well-tuned cluster. footnote:[Thanks to Lars George for these guidelines and the "Design for Reads" motto.]
+HBase stores data in cells, scoped like this:
+
+* Table -- a hard partition of data. Tables are stored, partitioned and optimized in isolation.
+* Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
+* Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
+  - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) <remark>TODO: check</remark> you can set independently per column family.
+  - Column Qualifier -- the arbitrary remainder of a column key;
+* Value -- the contents you'd like to store, anything or nothing.
+
+Table names and column familty names must be defined in advance, and their names may only contain printable characters (I recommend only using `[a-z_][a-z0-9_]*`). Everything else is bytes in / bytes out, exactly as issued.
+
 
 * Avoid having more than a handful of column families on any high-performance table, especially if their patterns of write access are distinct.
 * Avoid having more than a few million columns per row.
@@ -294,10 +347,19 @@ You should design your HBase schema for reads: preferably one read per customer 
 
 
 
+.Composite Keys
+NOTE notation -- HBase makes heavy use of composite keys (several values combined into a single string). We'll describe them using
+* quote marks (`"literal"`) to mean "that literal string"
+* braces `{field}` mean "substitute value of that field, removing the braces"
+* and separators, commonly `:`, `|` or `-`, to mean "that character, and make damn sure it's not used anywhere in the field value".
+
+HBase is a database for storing "billions of rows and millions of columns"
+
 === References ===
 
 * I've drawn heavily on the wisdom of http://hbase.apache.org/book.html[HBase Book]
 
+* Thanks to Lars George for many of these design guidelines, and the "Design for Reads" motto.
 
 * http://helpmetocode.blogspot.in/2012/04/commands-available-on-hbase-shell.html[HBase Shell Commands]
 
@@ -308,4 +370,4 @@ You should design your HBase schema for reads: preferably one read per customer 
 
 * encoding numbers for lexicographic sorting:
   - an insane but interesting scheme: http://www.zanopha.com/docs/elen.pdf
-  - a Java library for 
+  - a Java library for wire-efficient encoding of many datatypes: https://github.com/mrflip/orderly

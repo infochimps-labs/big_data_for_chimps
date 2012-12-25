@@ -1,12 +1,15 @@
 [[TODO]]
 == TODO / Errata ==
 
-* Hello, reviewers
-
 * The chapter on tuning requires *heavy* technical review. It is largely synthesized from recommendations by others, but needs to be buttoned up and fact-checked.
 
 * The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
 
+
+* check for consistent usage:
+  - "hash" (always means "dictionary"), vs "digest" (always means "MD5 or whatever")
+  - whatever replaces merge/shuffle/sort in reduce steps
+  - "pivot", not "reshape"
 
 ===== First exploration
 
