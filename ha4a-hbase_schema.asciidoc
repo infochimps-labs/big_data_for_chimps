@@ -12,12 +12,15 @@ Here is most of what you can ask HBase to do (roughly in order of efficiency):
 2. Given a row key: get, put or delete a hash of column/value pairs, sorted by column key.
 3. Given a key: find the first row whose key is equal or larger, and read a hash of column/value pairs (sorted by column key).
 4. Given a row key: atomically increment one or several counters and receive their updated values.
-5. Given a range of row keys: get a hash of column/value pairs (sorted by column key) from each row in the range. The lowest value in the range is examined, but the highest is not.
+5. Given a range of row keys: get a hash of column/value pairs (sorted by column key) from each row in the range. The lowest value in the range is examined, but the highest is not. (If the amount of data is small and uniform for each row, the performance this type of query isn't too different from case (3). If there are potentially many rows or more data than would reasonably fit in one RPC call, this becomes far less performant.)
 6. Feed a map/reduce job by scanning an arbitrarily large range of values.
 
 That's pretty much it! There are some conveniences (versioning by timestamp, time-expirable values, custom filters, and a type of vertical partitioning known as column families); some tunables (read caching, fast rejection of missing rows, and compression); and some advanced features, not covered here (transactions, and a kind of stored procedures/stored triggers called coprocessors). For the most part, however, those features just ameliorate the access patterns listed above.
 
 A good HBase data model is "designed for reads", and your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns.
+
+// All of the first 5 access patterns above are fairly performant; when rows start getting
+// cumbersome, or you
 
 [[hbase_no_yuo]]
 [NOTE]
@@ -82,7 +85,7 @@ on others, want many region types for a given country.
 This suggests we put each region type in its own "column family"
 
 The HBase API unfortunately makes column families seem far more interesting than they are.
-Only want a few.
+Only want a few; not such a problem on reads, def. a problem on writes.
 Want them to have similar size and pattern of write access.
 
 for given country and tile, retrieve all region types
