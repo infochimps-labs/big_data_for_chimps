@@ -15,9 +15,9 @@ Here is most of what you can ask HBase to do (roughly in order of efficiency):
 5. Given a range of row keys: get a hash of column/value pairs (sorted by column key) from each row in the range. The lowest value in the range is examined, but the highest is not.
 6. Feed a map/reduce job by scanning an arbitrarily large range of values.
 
-That's pretty much it! There are some conveniences (versioning by timestamp, time-expirable values, and a type of vertical partitioning known as column families); some tunables (read caching, fast rejection of missing rows, and compression); and some advanced features, not covered here (query filters, and a kind of stored procedures/stored triggers called coprocessors). For the most part, however, those just help optimize the access patterns listed above.
+That's pretty much it! There are some conveniences (versioning by timestamp, time-expirable values, custom filters, and a type of vertical partitioning known as column families); some tunables (read caching, fast rejection of missing rows, and compression); and some advanced features, not covered here (transactions, and a kind of stored procedures/stored triggers called coprocessors). For the most part, however, those features just ameliorate the access patterns listed above.
 
-A good HBase data model is "designed for reads". Your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns.
+A good HBase data model is "designed for reads", and your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns.
 
 [[hbase_no_yuo]]
 [NOTE]
@@ -61,6 +61,38 @@ There's another reason HBase is a great match for this problem: row locality. HB
 
 That also makes the autocomplete table a candidate for block-level compression. Compression drives down the data size, which of course economizes disk capacity -- more importantly, though, it means that the drive head has less data to seek past, and the IO bus has less data to stream off disk. Row locality often means nearby data elements are highly repetitive (definitely true here), so you realize a great compression ratio. There are two tradeoffs: first, a minor CPU hit to decompress the data; worse though, that you must decompress blocks at a time even if you only want one cell. In the case of autocomplete, row locality means you're quite likely to use some of those other cells. 
 
+=== Geographic Data ===
+
+[[hbase_schema_geographic_data]]
+.Server logs HBase schema
+|=======
+|table             | row key    	  | column families    | column qualifiers | versions  | value
+| tile_regions     | `quadkey`   	  | (region type)      | `region_name`     | none      | Geo-JSON encoded path
+| regions          | `region_name`   	  | (region type)      | (field name)      | none      | Value of field
+|=======
+
+Given an arbitrary spatial extent, we want to retrieve all regions, all regions of a given type (country, census block, ...), or the parts of a specific region.
+
+==== Column Families enable Vertical Partitioning ====
+
+Retrieval from the tile store is always by row, but
+on some reads only want a few region types (eg country and state; or state, county and census block)
+on others, want many region types for a given country.
+
+This suggests we put each region type in its own "column family"
+
+The HBase API unfortunately makes column families seem far more interesting than they are.
+Only want a few.
+Want them to have similar size and pattern of write access.
+
+for given country and tile, retrieve all region types
+for given tile, retrieve country and state region types 
+
+==== Multi-scale indexing ====
+
+At some point of zoom out, there will simply be too much data
+Compute a summary, and store it under the truncate key -- i.e. store the rollup of '012312000' to '012312333' under '012312'.
+
 === Range Lookup ===
 
 If you recall from (TODO ref server logs chapter), the Geo-IP dataset stores information about IP addresses a block at a time.
@@ -80,63 +112,6 @@ Store the _upper_ range of each IP address block in hexadecimal as the row key. 
 Since row keys are sorted, the first value equal-or-larger than your key is the end of the block it lies on. For example, say we had block "A" covering `50.60.a0.00` to `50.60.a1.08`, "B" covering `50.60.a1.09` to `50.60.a1.d0`, and "C" covering `50.60.a1.d1` to `50.60.a1.ff`. We would store `50.60.a1.08 => {...A...}`, `50.60.a1.d0 => {...B...}`, and `50.60.a1.ff => {...C...}`. Looking up `50.60.a1.09` would get block B, because `50.60.a1.d0` is lexicographically after it. So would `50.60.a1.d0`; range queries are inclusive on the lower and exclusive on the upper bound, so the row key for block B matches as it should.
 
 As for column keys, it's a tossup based on your access pattern. If you always request full rows, store a single value holding the serialized IP block metadata. If you often want only a subset of fields, store each field into its own column.
-
-=== Geographic Data ===
-
-[[hbase_schema_geographic_data]]
-.Server logs HBase schema
-|=======
-|table             | row key    	  | column families    | column qualifiers | versions  | value
-| tile_regions     | `quadkey`   	  | (region type)      | `region_name`     | none      | Geo-JSON encoded path
-| regions          | `region_name`   	  | (region type)      | (field name)      | none      | Value of field
-|=======
-
-Given an arbitrary spatial extent, we want to retrieve all regions, all regions of a given type (country, census block, ...), or the parts of a specific region.
-
-==== Multi-scale indexing ====
-
-At some point of zoom out, there will simply be too much data
-Compute a summary, and store it under the truncate key -- i.e. store the rollup of '012312000' to '012312333' under '012312'.
-
-
-=== Simple Table ===
-
-Now let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and for small tables there's no harm in making them ergonomic.
-
-==== Airport Metadata ====
-
-The airport info table is dense: pretty much every row has a value for every column.
-
-* _Fields_: three primary identifiers (IATA, ICAO, FAA),
-* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)
-* _You cannot_: look up an airport by anything but its identifiers or location.
-
-[[hbase_schema_airport_metadata]]
-.Airport Metadata
-[width="100%"]
-|=======
-| table  	| row key       	  | column families  | column qualifiers | versions  | value
-| airports	| `{id_type}{identifier}` | each field name  |		      |		  |
-| geo_airports	| `quadkey-airport_id`	  |		     |		      |		  |
-|=======
-
-The "airports" table is so small that our choices don't affect performance. If it were many many times larger, there would be three plausible choices:
-
-* each field is its own column family, with a null qualifier
-* there is one column family, and the field name is the column qualifier
-* there one column, and the entire record is serialized into its value. 
-
-The answer comes down to the pattern of access from your application. If you only access a subset of rows, 
-
-Since the HBase data model may well change as you learn what constraints the production workload imposes -- and since the data model may not look much like your application's data model anyway -- it's a very good idea to put an abstraction layer, no matter how thin, between your application and the datastore.
-
-==== Airport Timezone ====
-
-Here's a great excuse to use HBase's version feature.
-First, be sure to set the VERSIONS option to a very large number when you create the `tzoff` column family.
-Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
-When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
-TODO: local time? utc time? which way must we go.
 
 === Wikipedia: Corpus and Graph ===
 
@@ -269,6 +244,45 @@ Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datas
 
 * swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
 * add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
+
+=== Simple Table ===
+
+Now let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and for small tables there's no harm in making them ergonomic.
+
+==== Airport Metadata ====
+
+The airport info table is dense: pretty much every row has a value for every column.
+
+* _Fields_: three primary identifiers (IATA, ICAO, FAA),
+* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)
+* _You cannot_: look up an airport by anything but its identifiers or location.
+
+[[hbase_schema_airport_metadata]]
+.Airport Metadata
+[width="100%"]
+|=======
+| table  	| row key       	  | column families  | column qualifiers | versions  | value
+| airports	| `{id_type}{identifier}` | each field name  |		      |		  |
+| geo_airports	| `quadkey-airport_id`	  |		     |		      |		  |
+|=======
+
+The "airports" table is so small that our choices don't affect performance. If it were many many times larger, there would be three plausible choices:
+
+* each field is its own column family, with a null qualifier
+* there is one column family, and the field name is the column qualifier
+* there one column, and the entire record is serialized into its value. 
+
+The answer comes down to the pattern of access from your application. If you only access a subset of rows, 
+
+Since the HBase data model may well change as you learn what constraints the production workload imposes -- and since the data model may not look much like your application's data model anyway -- it's a very good idea to put an abstraction layer, no matter how thin, between your application and the datastore.
+
+==== Airport Timezone ====
+
+Here's a great excuse to use HBase's version feature.
+First, be sure to set the VERSIONS option to a very large number when you create the `tzoff` column family.
+Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
+When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
+TODO: local time? utc time? which way must we go.
 
 
 DRAFT
