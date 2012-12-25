@@ -53,15 +53,13 @@ What will we store into HBase? Your first instinct might be to store each of the
 
 ==== Help HBase be Lazy ====
 
-In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). These will of course be cache misses (there's nothing to cache), making the queries not just useless but also costly. Luckily, there's a specialized data structure known as a "Bloom Filter" that lets you very efficiently test set membership. If you explicitly enable it footnote:[A bug in the HBase shell may interfere with your ability to specify a bloom filter in a schema -- the https://issues.apache.org/jira/browse/HBASE-3086[HBASE-3086 bug report] has a one-line patch that fixes it.], HBase will capture all row keys into a Bloom Filter; on each request, it will quickly make sure it's worth trying to retrieve a value before doing so. 
+In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). These will of course be cache misses (there's nothing to cache), making the queries not just useless but also costly. Luckily, there's a specialized data structure known as a "Bloom Filter" that lets you very efficiently test set membership. If you explicitly enable it footnote:[A bug in the HBase shell may interfere with your ability to specify a bloom filter in a schema -- the https://issues.apache.org/jira/browse/HBASE-3086[HBASE-3086 bug report] has a one-line patch that fixes it.], HBase will capture all row keys into a Bloom Filter; on each request, it will quickly make sure it's worth trying to retrieve a value before doing so.
 
 ==== Row Locality and Compression ====
 
-There's another reason HBase is a great match for
+There's another reason HBase is a great match for this problem: row locality. HBase stores all rows in sorted order on disk, so when a visitor has typed *+chim+*, the rows for `chime` and `chimp` and so forth are nearby on disk. Whatever next character the visitor types, the operating system is likely to have the right block hot in cache. 
 
-HBase stores all rows in sorted order on disk. This means that when the user has typed *+chim+*, the rows for `chime` and `chimp` are so forth nearby on disk -- the operating system is likely to have the right block hot in its 
-
-The Autocomplete table is a candidate for block-level compression. HBase stores 
+That also makes the autocomplete table a candidate for block-level compression. 
 
 === Simple Table ===
 
@@ -272,7 +270,6 @@ Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datas
 * swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
 * add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
 
-..........................................................................
 
 DRAFT
 
