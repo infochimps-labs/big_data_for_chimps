@@ -59,46 +59,7 @@ In the autocomplete example, many requests will be for non-existent rows (eg "hd
 
 There's another reason HBase is a great match for this problem: row locality. HBase stores all rows in sorted order on disk, so when a visitor has typed *+chim+*, the rows for `chime` and `chimp` and so forth are nearby on disk. Whatever next character the visitor types, the operating system is likely to have the right block hot in cache. 
 
-That also makes the autocomplete table a candidate for block-level compression. 
-
-=== Simple Table ===
-
-First, let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and you'll benefit from knowing what accessories are available in the rare case they're called for. For small tables there's no harm in making them ergonomic.
-
-==== Airport Metadata ====
-
-The  is a _dense table_: pretty much every row has a value for every column.
-
-* _Fields_: three primary identifiers (IATA, ICAO, FAA),
-* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)
-* _You cannot_: look up an airport by anything but its identifiers or location.
-
-[[hbase_schema_airport_metadata]]
-.Airport Metadata
-[width="100%"]
-|=======
-| table  	| row key       	  | column families  | column qualifiers | versions  | value
-| airports	| `{id_type}{identifier}` | each field name  |		      |		  |
-| geo_airports	| `quadkey-airport_id`	  |		     |		      |		  |
-|=======
-
-The "airports" table is so small that our choices don't affect performance. If it were many many times larger, there would be three plausible choices:
-
-* each field is its own column family, with a null qualifier
-* there is one column family, and the field name is the column qualifier
-* there one column, and the entire record is serialized into its value. 
-
-The answer comes down to the pattern of access from your application. If you only access a subset of rows, 
-
-Since the HBase data model may well change as you learn what constraints the production workload imposes -- and since the data model may not look much like your application's data model anyway -- it's a very good idea to put an abstraction layer, no matter how thin, between your application and the datastore.
-
-==== Airport Timezone ====
-
-Here's a great excuse to use HBase's version feature.
-First, be sure to set the VERSIONS option to a very large number when you create the `tzoff` column family.
-Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
-When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
-TODO: local time? utc time? which way must we go.
+That also makes the autocomplete table a candidate for block-level compression. Compression drives down the data size, which of course economizes disk capacity -- more importantly, though, it means that the drive head has less data to seek past, and the IO bus has less data to stream off disk. Row locality often means nearby data elements are highly repetitive (definitely true here), so you realize a great compression ratio. There are two tradeoffs: first, a minor CPU hit to decompress the data; worse though, that you must decompress blocks at a time even if you only want one cell. In the case of autocomplete, row locality means you're quite likely to use some of those other cells. 
 
 === Range Lookup ===
 
@@ -132,11 +93,50 @@ As for column keys, it's a tossup based on your access pattern. If you always re
 
 Given an arbitrary spatial extent, we want to retrieve all regions, all regions of a given type (country, census block, ...), or the parts of a specific region.
 
-
 ==== Multi-scale indexing ====
 
 At some point of zoom out, there will simply be too much data
 Compute a summary, and store it under the truncate key -- i.e. store the rollup of '012312000' to '012312333' under '012312'.
+
+
+=== Simple Table ===
+
+Now let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and for small tables there's no harm in making them ergonomic.
+
+==== Airport Metadata ====
+
+The airport info table is dense: pretty much every row has a value for every column.
+
+* _Fields_: three primary identifiers (IATA, ICAO, FAA),
+* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)
+* _You cannot_: look up an airport by anything but its identifiers or location.
+
+[[hbase_schema_airport_metadata]]
+.Airport Metadata
+[width="100%"]
+|=======
+| table  	| row key       	  | column families  | column qualifiers | versions  | value
+| airports	| `{id_type}{identifier}` | each field name  |		      |		  |
+| geo_airports	| `quadkey-airport_id`	  |		     |		      |		  |
+|=======
+
+The "airports" table is so small that our choices don't affect performance. If it were many many times larger, there would be three plausible choices:
+
+* each field is its own column family, with a null qualifier
+* there is one column family, and the field name is the column qualifier
+* there one column, and the entire record is serialized into its value. 
+
+The answer comes down to the pattern of access from your application. If you only access a subset of rows, 
+
+Since the HBase data model may well change as you learn what constraints the production workload imposes -- and since the data model may not look much like your application's data model anyway -- it's a very good idea to put an abstraction layer, no matter how thin, between your application and the datastore.
+
+==== Airport Timezone ====
+
+Here's a great excuse to use HBase's version feature.
+First, be sure to set the VERSIONS option to a very large number when you create the `tzoff` column family.
+Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
+When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
+TODO: local time? utc time? which way must we go.
 
 === Wikipedia: Corpus and Graph ===
 
