@@ -56,27 +56,153 @@ What will we store into HBase? Your first instinct might be to store each of the
 
 ==== Help HBase be Lazy ====
 
-In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). These will of course be cache misses (there's nothing to cache), making the queries not just useless but also costly. Luckily, there's a specialized data structure known as a "Bloom Filter" that lets you very efficiently test set membership. If you explicitly enable it footnote:[A bug in the HBase shell may interfere with your ability to specify a bloom filter in a schema -- the https://issues.apache.org/jira/browse/HBASE-3086[HBASE-3086 bug report] has a one-line patch that fixes it.], HBase will capture all row keys into a Bloom Filter; on each request, it will quickly make sure it's worth trying to retrieve a value before doing so.
+In the autocomplete example, many requests will be for non-existent rows (eg "hdaoop"). These will of course be cache misses (there's nothing to cache), making the queries not just useless but also costly. Luckily, there's a spec	ialized data structure known as a "Bloom Filter" that lets you very efficiently test set membership. If you explicitly enable it footnote:[A bug in the HBase shell may interfere with your ability to specify a bloom filter in a schema -- the https://issues.apache.org/jira/browse/HBASE-3086[HBASE-3086 bug report] has a one-line patch that fixes it.], HBase will capture all row keys into a Bloom Filter. On each request, it will quickly make sure it's worth trying to retrieve a value before doing so. Data blocks for lame prefixes (`hda...`) will be left unread, so that blocks for fecund prefixes (`had...`) can be kept in RAM.
 
 ==== Row Locality and Compression ====
 
 There's another reason HBase is a great match for this problem: row locality. HBase stores all rows in sorted order on disk, so when a visitor has typed *+chim+*, the rows for `chime` and `chimp` and so forth are nearby on disk. Whatever next character the visitor types, the operating system is likely to have the right block hot in cache. 
 
-That also makes the autocomplete table a candidate for block-level compression. Compression drives down the data size, which of course economizes disk capacity -- more importantly, though, it means that the drive head has less data to seek past, and the IO bus has less data to stream off disk. Row locality often means nearby data elements are highly repetitive (definitely true here), so you realize a great compression ratio. There are two tradeoffs: first, a minor CPU hit to decompress the data; worse though, that you must decompress blocks at a time even if you only want one cell. In the case of autocomplete, row locality means you're quite likely to use some of those other cells. 
+That also makes the autocomplete table especially well-suited for compression. Compression drives down the data size, which of course economizes disk capacity -- more importantly, though, it means that the drive head has less data to seek past, and the IO bus has less data to stream off disk. Row locality often means nearby data elements are highly repetitive (definitely true here), so you realize a great compression ratio. There are two tradeoffs: first, a minor CPU hit to decompress the data; worse though, that you must decompress blocks at a time even if you only want one cell. In the case of autocomplete, row locality means you're quite likely to use some of those other cells.
 
 === Geographic Data ===
 
-For our next example, let's look at geographic data:
+For our next example, let's look at geographic data: the Geonames dataset of places, the Natural Earth dataset of region boundaries, and our Voronoi-spatialized version of the NCDC weather observations (TODO: ref).
 
-* boundaries and metadata for countries, states and counties ("admin 1"/"admin 2") and postal codes.
-* the Geonames dataset of places
+We require two things. First, direct information about each feature. Here no magic is called for: compose a row key from the feature type and id, and store the full serialized record as the value. It's important to keep row keys _short_ and _sortable_, so map the region types to single-byte ids (say, `a` for country, `b` for admin 1, etc) and use standard ISO identifiers for the region id (`us` for the USA, `dj` for Djibouti, etc).
 
-To retrieve information about each region, no magic is called for: the row key is a compound of the region type and region id, and store the full serialized record as the value. It's important to keep row keys _short_ and _sortable_, so map the region types to single-byte ids (say, `0` for country, `1` for admin 1, etc) and use standard ISO identifiers for the region id (`us` for the USA, `dj` for Djibouti, etc).
+More interestingly, we would like a "slippy map" (eg Google Maps or Leaflet) API: given the set of quadtiles in view, return partial records (coordinates and names) for each feature. To ensure a responsive user experience, we need low latency, concurrent access and intelligent caching -- HBase is a great fit.
 
-The tile-boundaries table is more interesting.
-We want to serve boundaries out in tiles:
+==== Quadtile Rendering ====
 
-The tile-places table is most interesting of all.
+The boundaries dataset gives coordinates for continents, countries, states ("admin1"), and so forth. In (TODO: ref the Geographic Data chapter), we fractured those boundaries into quadtiles for geospatial analysis, which is the first thing we need.
+
+We need to choose a base zoom level: fine-grained enough that the records are of manageable size to send back to the browser, but coarse-grained enough that we don't flood the database with trivial tiles ("In Russia". "Still in Russia". "Russia, next 400,000 tiles"...). Consulting the (TODO: ref "How big is a Quadtile") table, zoom level 13 means 67 million quadtiles, each about 4km per side; this is a reasonable balance based on our boundary resoluion.
+
+	   ZL	recs	@64kB/qk	reference size
+	   12	  17 M	    1 TB	Manhattan
+	   13	  67 M	    4 TB
+	   14	 260 M	   18 TB	about 2 km per side 
+	   15	1024 M	   70 TB	about 1 km per side
+
+For API requests at finer zoom levels, we'll just return the ZL 13 tile and crop it (at the API or browser stage). You'll need to run a separate job (not described here, but see the references (TODO: ref migurski boundary thingy)) to create simplified boundaries for each of the coarser zoom levels. Store these in HBase with three-byte row keys built from the zoom level (byte 1) and the quadtile id (bytes 2 and 3); the value should be the serialized GeoJSON record we'll serve back.
+
+==== Column Families ====
+
+We want to serve several kinds of regions: countries, states, metropolitan areas, counties, voting districts and so forth.  It's reasonable for a request to specify one, some combination or all of the region types, and so given our goal of "one read per client request" we should store the popular region types in the same table. The most frequent requests will be for one or two region types, though.
+
+HBase lets you partition values within a row into "Column Families". Each column family has its own set of store files and bloom filters and block cache (TODO verify caching details), and so if only a couple column families are requested, HBase can skip loading the rest footnote:[many relational databases accomplish the same end wtih "vertical partitioning".].
+
+We'll store each region type (using the scheme above) as the column family, and the feature ID (`us`, `jp`, etc) as the column qualifier. This means I can
+
+* request all region boundaries on a quadtile by specifying no column constraints
+* request country, state and voting district boundaries by specifying those three column families
+* request only Japan's boundary on the quadtile by specifying the column key `a:jp`
+
+Most client libraries will return the result as a hash mapping column keys (combined family and qualifier) to cell values; it's easy to reassemble this into a valid GeoJSON feature collection without even parsing the field values.
+
+
+[[hbase_colfam_suxors]]
+[NOTE]
+===============================
+HBase tutorials generally have to introduce column families early, as they're present in every request and when you define your tables. This unfortunately makes them seem far more prominent and useful than they really are. They should be used only when clearly required: they incur some overhead, and they cause some internal processes to become governed by the worst-case pattern of access among all the column families in a row. So consider first whether separate tables, a scan of adjacent rows, or just plain column qualifiers in one family would work. Tables with a high write impact shouldn't use more than two or three column families, and no table should use more than a handful.
+===============================
+
+==== Access pattern: "Rows as Columns" ====
+
+The Geonames dataset has 7 million points of interest spread about the globe.
+
+Rendering these each onto quadtiles at some resolution, as we did above, is fine for slippy-map rendering. But if we could somehow index points at a finer resolution, developers would have a simple effective way to do "nearby" calculations. 
+
+At zoom level 16, each quadtile covers about four blocks, and its packed quadkey exactly fills a 32-bit integer; this seems like a good choice.  We're not going to rendering all the ZL16 quadtiles though -- that would require 4 billion rows.
+
+Instead, we'll render each _point_ as its own row, indexed by the row key `quadtile_id16-feature_id`.  To see the points on any given quadtile, I just need to do a row scan from the quadkey index of its top left corner to that of its bottom right corner (both left-aligned). 
+
+    012100-a
+    012100-b
+    012101-c
+    012102-d
+    012102-e
+    012110-f
+    012121-g
+    012121-h
+    012121-i
+    012123-j
+    012200-k
+
+To find all the points in quadtile `0121`, scan from `012100` to `012200` (returning `a` through `j`). Scans ignore the last index in their range, so `k` is excluded as it should be.  To find all the points in quadtile `012 121`, scan from `012121` to  `012122` (returning `g`, `h` and `i`)
+
+use packed integer quadkeys -- space efficient
+
+When you are using this "Rows as Columns" technique, make sure you set "scanner caching" on. Scanner caching footnote:[confusing name: it's "Caching of rows found by scanner", not "Caching of scanner objects"] creates a read buffer allowing may rows of data to be sent per network call.
+
+
+Typically with a keyspace this sparse you'd use a bloom filter, but we won't be doing direct gets
+and so it's not called for here (http://comments.gmane.org/gmane.comp.java.hadoop.hbase.user/24493[Bloom Filters are not consulted in a scan]).
+
+Use column families to hold high, medium and low importance points; at coarse zoom levels only return the few high-prominence points, while at fine zoom levels they would return points from all the column families
+
+==== Filters ====
+
+There are many kinds of features, and some of them are distinctly more populous and interesting.
+Roughly speaking, geonames features
+
+* `A` (XXX million): Political features (states, counties, etc)
+* `H` (XXX million): Water-related features (rivers, wells, swamps,...)
+* `P` (XXX million): Populated places (city, county seat, capitol, ...)
+* ...
+* `R` (): road, railroad, ...
+* `S` (): Spot, building, farm
+* ...
+
+Very frequently, we only want one feature type: only cities, or only roads
+common to want one, several or all at a time.
+
+You could further nest the feature codes.
+To do a scan of columns in a single get, need to use a ColumnPrefixFilter
+
+http://hbase.apache.org/apidocs/org/apache/hadoop/hbase/filter/ColumnPrefixFilter.html
+
+
+==== Access pattern: "Next Interesting Record" ====
+
+The weatherstation regions table is most interesting of all.
+
+map from weather station to quadkeys, pre-calculated
+map from observation to quadkeys, accumulate on tile
+
+We want to serve boundaries out in tiles, but records are heavyweight.
+
+if we store whole globe at ZL 14 (2 km blocks), 1kb record size becomes 275 GB data.
+Multiply by the hours in 50 years (50 * 365.25 * 24 = 438,000 hours =  PB.
+
+
+20,000 weather stations
+1 M records = 50x data size; 10 TB becomes 0.5 PB.
+
+    0111230~~
+    011123100
+    011123101
+    011123102
+    011123103
+    01112311~
+    011123120
+    011123121
+    011123122
+    011123123
+    01112313~
+    ...
+    011130~~~
+
+Retrieve the _next existing tile_. It's a one-row operation, but we specify a range
+from specific tile to max tile ID.
+
+The next tile is either the speific one with that key, or the first parent.
+
+Note: next interesting record doesn't use bloom filter
+
+To do a range on zoomed-out, do a range from
+
+want to scan all cells in `011 123`. this means `011 123 000` to  `011 123 ~~~`.
 
 
 [[hbase_schema_geographic_data]]
@@ -86,7 +212,7 @@ The tile-places table is most interesting of all.
 | region_info  	| `region_type-region_name` | 'r'          	| (none)            | serialized record    	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'`
 | geonames_info | `geonames_id`             | 'i'                | (none)           | serialized record    	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'` 
 | tile_bounds  	| `quadkey`      	    | (region type)	| `region_id`       | Geo-JSON encoded path	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'` 
-| tile_places   | `quadkey`      	    | (feature class)	| `geonames_id`     | name                  	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'` 
+| tile_places   | `quadkey`      	    | (feature class)	| `geonames_id`     | name                  	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'`  (TODO: scanner caching)
 |=======
 
 ==== Column Families enable Vertical Partitioning ====
@@ -339,11 +465,18 @@ It might even be reasonable to put them in different tables.
 * read caching
 * Bloom filters fast rejection of missing rows
 * Block-level compression
-* Row-level compression
+
+The "Snappy" algorithm gives a great balance of compression factor vs speed, and is easy to install.
+
 
 * query filters: impose server load, 
 * and a kind of stored procedures/stored triggers called coprocessors). Here's a partial list of things you do _not_ get:
 
+
+
+From Hbase Def Guide:
+
+> Optimal loading of row keys: When performing a table scan where only the row keys are needed (no families, qualifiers, values, or timestamps), add a FilterList with a MUST_PASS_ALL operator to the scanner using setFilter(). The filter list should include both a First KeyOnlyFilter and a KeyOnlyFilter instance, as explained in “Dedicated Fil- ters” on page 147. Using this filter combination will cause the region server to only load the row key of the first KeyValue (i.e., from the first column) found and return it to the client, resulting in minimized network traffic.
 
 === "Design for Reads" ===
 
@@ -382,7 +515,6 @@ Table names and column familty names must be defined in advance, and their names
 * Always set timestamps on fundamental objects. Server log lines, tweets, blog posts, and airline flight departures all have an intrinsic timestamp of occurrence, and they are all "fundamental" objects, not assertions derived from something else.  In such cases, always set a timestamp.  In contrast, the "May 2012 Archive" page of a blog, containing many posts, is not fundamental; neither is an hourly cached count of server errors. These are _observations_, correct at the time they're made -- so that observation time, not the intrinsic timestamp
 
 * make sure you set the VERSIONS when you create the table+column family
-* Once you know your access patterns and can test the response under load, consider enabling compression. RECORD compression works best when you have fat rows (lots of columns) and you typically access the full row. There are so many tradeoffs at play, however, that you really need to just try it. Luckily, Hadoop is sitting right there ready to cross-load your tables.
 
 
 
@@ -410,3 +542,4 @@ HBase is a database for storing "billions of rows and millions of columns"
 * encoding numbers for lexicographic sorting:
   - an insane but interesting scheme: http://www.zanopha.com/docs/elen.pdf
   - a Java library for wire-efficient encoding of many datatypes: https://github.com/mrflip/orderly
+* http://www.quora.com/How-are-bloom-filters-used-in-HBase
