@@ -100,7 +100,6 @@ We'll store each region type (using the scheme above) as the column family, and 
 
 Most client libraries will return the result as a hash mapping column keys (combined family and qualifier) to cell values; it's easy to reassemble this into a valid GeoJSON feature collection without even parsing the field values.
 
-
 [[hbase_colfam_suxors]]
 [NOTE]
 ===============================
@@ -215,83 +214,16 @@ want to scan all cells in `011 123`. this means `011 123 000` to  `011 123 ~~~`.
 | tile_places   | `quadkey`      	    | (feature class)	| `geonames_id`     | name                  	| `VERSIONS => 1, COMPRESSION => 'SNAPPY'`  (TODO: scanner caching)
 |=======
 
-==== Column Families enable Vertical Partitioning ====
-
-Retrieval from the tile store is always by row, but
-on some reads only want a few region types (eg country and state; or state, county and census block)
-on others, want many region types for a given country.
-
-This suggests we put each region type in its own "column family"
-
-The HBase API unfortunately makes column families seem far more interesting than they are.
-Only want a few; not such a problem on reads, def. a problem on writes.
-Want them to have similar size and pattern of write access.
-
-for given country and tile, retrieve all region types
-for given tile, retrieve country and state region types 
-
-==== Multi-scale indexing ====
-
-At some point of zoom out, there will simply be too much data
-Compute a summary, and store it under the truncate key -- i.e. store the rollup of '012312000' to '012312333' under '012312'.
-
-=== Range Lookup ===
-
-If you recall from (TODO ref server logs chapter), the Geo-IP dataset stores information about IP addresses a block at a time.
-
-* _Fields_: IP address, ISP, latitude, longitude, quadkey
-* _query_: given IP address, retrieve geolocation and metadata with very low latency
-
-[[hbase_schema_ip_geo]]
-.IP-Geolocation lookup
-|=======
-|table  	| row key       	  | column families  | column qualifiers | versions  | value
-| ip    	| `ip_upper_in_hex`       | field name       | `-`               | none	  |
-|=======
-
-Store the _upper_ range of each IP address block in hexadecimal as the row key. To look up an IP address, do a scan query, max 1 result, on the range from the given ip_address to a value larger than the largest 32-bit IP address. A get is simply a scan-with-equality-max-1, so there's no loss of efficiency here.
-
-Since row keys are sorted, the first value equal-or-larger than your key is the end of the block it lies on. For example, say we had block "A" covering `50.60.a0.00` to `50.60.a1.08`, "B" covering `50.60.a1.09` to `50.60.a1.d0`, and "C" covering `50.60.a1.d1` to `50.60.a1.ff`. We would store `50.60.a1.08 => {...A...}`, `50.60.a1.d0 => {...B...}`, and `50.60.a1.ff => {...C...}`. Looking up `50.60.a1.09` would get block B, because `50.60.a1.d0` is lexicographically after it. So would `50.60.a1.d0`; range queries are inclusive on the lower and exclusive on the upper bound, so the row key for block B matches as it should.
-
-As for column keys, it's a tossup based on your access pattern. If you always request full rows, store a single value holding the serialized IP block metadata. If you often want only a subset of fields, store each field into its own column.
-
-=== Wikipedia: Corpus and Graph ===
-
-[[hbase_schema_corpus]]
-.Wikipedia HBase schema
-|=======
-|table              | row key		   | family | qualifier | value    | 
-| articles          | `page_id`             | `t`   |            | text    | 
-| article_versions  | `page_id`             | `t`   |            | text    | timestamp: updated_time
-| article_revisions | `page_id-revision_id` | `v`   |            | text, user_id, comment
-| categories        | `category-page_id`    | `c`   |            | 
-| redirects         | `bad_page_id`         | `r`   |            | `proper_page_id`
-|=======
-
-==== Graph Data ====
-
-Just as we saw with Hadoop, there are two sound choices for storing a graph: as an edge list of `from,into` pairs, or as an adjacency list of all `into` nodes for each `from` node.
-
-[[hbase_schema_wikipedia_pagelinks]]
-.HBase schema for Wikipedia pagelink graph: three reasonable implementations
-|=======
-|table             | row key		   | column families | column qualifiers | value   | options
-| page_page        | `from_page-into_page` | `l` (link)       | (none)            | (none)  | `bloom_filter: true`
-| page_links       | `from_page`           | `l` (links)      | `into_page`       | (none)
-| page_links_ro    | `from_page`           | `a` (adj. list)  | (none)            | serialized adjacency list
-|=======
-
-If we were serving a live wikipedia site, every time a page was updated I'd calculate its adjacency list and store it as a static, serialized value. 
-
-For a general graph in HBase, here are some tradeoffs to consider:
-
-* The pagelink graph never has more than a few hundred links for each page, so there are no concerns about having too many columns per row. On the other hand, there are many celebrities on the Twitter "follower" graph with millions of followers or followees. You can shard those cases across multiple rows, or use an edge list instead.
-* An edge list gives you fast "are these two nodes connected" lookups, using the bloom filter on misses and read cache for frequent hits.
-* If the graph is read-only (eg a product-product similarity graph prepared from server logs), it may make sense to serialize the adjacency list for each node into a single cell. You could also run a regular map/reduce job to roll up the adjacency list into its own column family, and store deltas to that list between rollups.
-
 === Web Logs: Rows-As-Columns ===
 
-Assume a high-volume eCommerce website: 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak) from 20-40 servers, and about 600 bytes per log line. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Show that to most databases and they will crumble. Show it to HBase and it will ask you to store it multiple times over (and we will).
+[[real_time_streaming_roxors]]
+[NOTE]
+===============================
+Hadoop was developed largely to process and analyze high-scale server logs for Nutch and Yahoo!. The recent addition of real-time streaming data tools like Storm+Kafka to the Hadoop/HBase ecosystem unlocks transformative new ways to see your data. It's not just that it's _real-time_; it's that its _multi-latency_. As long as you provision enough capacity, you can make multiple writes to the database (letting you "optimize for reads"); execute transactional requests against legacy datastores; ping YouTube or Twitter or other only-mostly-dependable external APIs; and much more. All of a sudden some of your most cumbersome or impractical batch jobs become simple, reliable stream decorators. From where we stand, a best-of-class big data stack has _three_ legs: Hadoop, one or more scalable databases, and multi-latency streaming analytics.
+// Just as for data at rest, HBase enables _both_ ultra-low-latency RPC requests and high-throughput // map/reduce jobs, Storm/Kafka enables 
+===============================
+
+A high-volume eCommerce website might have 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak), and say 600 bytes per log line from 20-40 servers. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Feed that to most databases and they will crumble. Feed it to HBase and it will smile, belch and ask for seconds and thirds (which, as you'll see, we will).
 
 * Queries:
   - Visitor paths: the pages visited on the way to a purchase, including external _referer_ sites, _search terms_ entered, items _added to cart_, and finally _conclusion of purchase_.
@@ -364,6 +296,60 @@ HBase is a database for "billions of rows and millions of columns".
 
 A timestamped metric table like this _writes by the column_ but _reads by the row_.
 
+=== IP Address Geolocation ===
+
+If you recall from (TODO ref server logs chapter), the Geo-IP dataset stores information about IP addresses a block at a time.
+
+* _Fields_: IP address, ISP, latitude, longitude, quadkey
+* _query_: given IP address, retrieve geolocation and metadata with very low latency
+
+[[hbase_schema_ip_geo]]
+.IP-Geolocation lookup
+|=======
+|table  	| row key       	  | column families  | column qualifiers | versions  | value
+| ip    	| `ip_upper_in_hex`       | field name       | `-`               | none	  |
+|=======
+
+Store the _upper_ range of each IP address block in hexadecimal as the row key. To look up an IP address, do a scan query, max 1 result, on the range from the given ip_address to a value larger than the largest 32-bit IP address. A get is simply a scan-with-equality-max-1, so there's no loss of efficiency here.
+
+Since row keys are sorted, the first value equal-or-larger than your key is the end of the block it lies on. For example, say we had block "A" covering `50.60.a0.00` to `50.60.a1.08`, "B" covering `50.60.a1.09` to `50.60.a1.d0`, and "C" covering `50.60.a1.d1` to `50.60.a1.ff`. We would store `50.60.a1.08 => {...A...}`, `50.60.a1.d0 => {...B...}`, and `50.60.a1.ff => {...C...}`. Looking up `50.60.a1.09` would get block B, because `50.60.a1.d0` is lexicographically after it. So would `50.60.a1.d0`; range queries are inclusive on the lower and exclusive on the upper bound, so the row key for block B matches as it should.
+
+As for column keys, it's a tossup based on your access pattern. If you always request full rows, store a single value holding the serialized IP block metadata. If you often want only a subset of fields, store each field into its own column.
+
+=== Wikipedia: Corpus and Graph ===
+
+[[hbase_schema_corpus]]
+.Wikipedia HBase schema
+|=======
+|table              | row key		   | family | qualifier | value    | 
+| articles          | `page_id`             | `t`   |            | text    | 
+| article_versions  | `page_id`             | `t`   |            | text    | timestamp: updated_time
+| article_revisions | `page_id-revision_id` | `v`   |            | text, user_id, comment
+| categories        | `category-page_id`    | `c`   |            | 
+| redirects         | `bad_page_id`         | `r`   |            | `proper_page_id`
+|=======
+
+==== Graph Data ====
+
+Just as we saw with Hadoop, there are two sound choices for storing a graph: as an edge list of `from,into` pairs, or as an adjacency list of all `into` nodes for each `from` node.
+
+[[hbase_schema_wikipedia_pagelinks]]
+.HBase schema for Wikipedia pagelink graph: three reasonable implementations
+|=======
+|table             | row key		   | column families | column qualifiers | value   | options
+| page_page        | `from_page-into_page` | `l` (link)       | (none)            | (none)  | `bloom_filter: true`
+| page_links       | `from_page`           | `l` (links)      | `into_page`       | (none)
+| page_links_ro    | `from_page`           | `a` (adj. list)  | (none)            | serialized adjacency list
+|=======
+
+If we were serving a live wikipedia site, every time a page was updated I'd calculate its adjacency list and store it as a static, serialized value. 
+
+For a general graph in HBase, here are some tradeoffs to consider:
+
+* The pagelink graph never has more than a few hundred links for each page, so there are no concerns about having too many columns per row. On the other hand, there are many celebrities on the Twitter "follower" graph with millions of followers or followees. You can shard those cases across multiple rows, or use an edge list instead.
+* An edge list gives you fast "are these two nodes connected" lookups, using the bloom filter on misses and read cache for frequent hits.
+* If the graph is read-only (eg a product-product similarity graph prepared from server logs), it may make sense to serialize the adjacency list for each node into a single cell. You could also run a regular map/reduce job to roll up the adjacency list into its own column family, and store deltas to that list between rollups.
+
 === Row Locality ===
 
 Row keys determine data locality. When activity is focused on a set of similar and thus adjacent rows, it can be very efficient or very problematic.
@@ -386,46 +372,6 @@ Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datas
 
 * swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
 * add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
-
-=== Simple Table ===
-
-Now let's visit the gift shop and see a table with all the options. The urge to kit out your dump truck with fuzzy dice and a spoiler is inescapable, and for small tables there's no harm in making them ergonomic.
-
-==== Airport Metadata ====
-
-The airport info table is dense: pretty much every row has a value for every column.
-
-* _Fields_: three primary identifiers (IATA, ICAO, FAA),
-* _Queries_: given airport identifier, get record; get airports contained in a geo region (quadtile)
-* _You cannot_: look up an airport by anything but its identifiers or location.
-
-[[hbase_schema_airport_metadata]]
-.Airport Metadata
-[width="100%"]
-|=======
-| table  	| row key       	  | column families  | column qualifiers | versions  | value
-| airports	| `{id_type}{identifier}` | each field name  |		      |		  |
-| geo_airports	| `quadkey-airport_id`	  |		     |		      |		  |
-|=======
-
-The "airports" table is so small that our choices don't affect performance. If it were many many times larger, there would be three plausible choices:
-
-* each field is its own column family, with a null qualifier
-* there is one column family, and the field name is the column qualifier
-* there one column, and the entire record is serialized into its value. 
-
-The answer comes down to the pattern of access from your application. If you only access a subset of rows, 
-
-Since the HBase data model may well change as you learn what constraints the production workload imposes -- and since the data model may not look much like your application's data model anyway -- it's a very good idea to put an abstraction layer, no matter how thin, between your application and the datastore.
-
-==== Airport Timezone ====
-
-Here's a great excuse to use HBase's version feature.
-First, be sure to set the VERSIONS option to a very large number when you create the `tzoff` column family.
-Next, we will store the TZ offset at the exact timestamp marking the beginning of its rule.
-When you do a query, specify that you want one value, with the max timestamp set to the time of the event at that airport.
-TODO: local time? utc time? which way must we go.
-
 
 === Review of HBase options ===
 
@@ -515,8 +461,6 @@ Table names and column familty names must be defined in advance, and their names
 * Always set timestamps on fundamental objects. Server log lines, tweets, blog posts, and airline flight departures all have an intrinsic timestamp of occurrence, and they are all "fundamental" objects, not assertions derived from something else.  In such cases, always set a timestamp.  In contrast, the "May 2012 Archive" page of a blog, containing many posts, is not fundamental; neither is an hourly cached count of server errors. These are _observations_, correct at the time they're made -- so that observation time, not the intrinsic timestamp
 
 * make sure you set the VERSIONS when you create the table+column family
-
-
 
 .Composite Keys
 NOTE notation -- HBase makes heavy use of composite keys (several values combined into a single string). We'll describe them using
