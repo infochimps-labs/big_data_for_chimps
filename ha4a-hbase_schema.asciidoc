@@ -223,33 +223,9 @@ Hadoop was developed largely to process and analyze high-scale server logs for N
 // Just as for data at rest, HBase enables _both_ ultra-low-latency RPC requests and high-throughput // map/reduce jobs, Storm/Kafka enables 
 ===============================
 
-A high-volume eCommerce website might have 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak), and say 600 bytes per log line from 20-40 servers. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Feed that to most databases and they will crumble. Feed it to HBase and it will smile, belch and ask for seconds and thirds (which, as you'll see, we will).
+A high-volume eCommerce website might have 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak), and say 600 bytes per log line from 20-40 servers. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Feed that to most databases and they will crumble. Feed it to HBase and it will smile, belch and ask for seconds and thirds -- which in fact we will. Designing for reads means aggressively denormalizing data, to an extent that turns the stomach and tests the will of traditional database experts. Use a streaming data pipeline such as Storm+Kafka or Flume, or a scheduled batch job, to denormalize the data.
 
-* Queries:
-  - Visitor paths: the pages visited on the way to a purchase, including external _referer_ sites, _search terms_ entered, items _added to cart_, and finally _conclusion of purchase_.
-  - Abuse: anomalously large numbers of requests coming from single IP addresses
-  - Product similarity: pages visited in common during a session.
-
-* Fields: `ip_address`, `cookie` (a unique ID assigned to each visitor),
-  - `path`
-  - `referer_url`, and `referer_int` showing if the referer was internal (1) or external (0).
-  - `status_code` (success or failure of request) `duration` (time taken to render page)
-
-We'll further augment with these fields:
-
-* `timestamp_rev`, a "reverse timestamp" -- INT_MAX - time.to_i. This means that the most recent visit for that site sorts first in column order. http://hbase.apache.org/book.html#reverse.timestamp
-
-[[hbase_schema_server_logs]]
-.Server logs HBase schema
-|=======
-|table             | row key    	  | family         | qualifier | value           | options
-| visits           | `cookie-timebucket`  | 'r' (referer)   | `referer`     | - 		 |
-| visits           | `cookie-timebucket`  | 's' (search)    | `term`        | - 		 |
-| visits           | `cookie-timebucket`  | 'p' (product)   | `product_id`  | - 		 |
-| visits           | `cookie-timebucket`  | 'z' (checkout)  | `cart_id`     | `{product_ids}` |
-| cookie_urls      | `cookie`             | 'u' (url)       | `-`           |		 |
-| ip_tbs           | `ip-timebucket`   	  |        	    |              |		 |
-|=======
+Webserver log lines contain these fields: `ip_address`, `cookie` (a unique ID assigned to each visitor), `url` (the page viewed), and `referer_url` (the page they arrived from), `status_code` (success or failure of request) and `duration` (time taken to render page). We'll add a couple more fields as we go along.
 
 ==== Column Families ====
 
@@ -290,11 +266,54 @@ There's a few ways to help HBase intelligently skip data or lighten its burden.
 
 HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. The pattern with which HBase compacts its store files makes this especially convenient.
 
+
 ==== Rollup columns ====
 
-HBase is a database for "billions of rows and millions of columns".
-
 A timestamped metric table like this _writes by the column_ but _reads by the row_.
+
+* Queries:
+  - Visitor paths: the pages visited on the way to a purchase, including external _referer_ sites, _search terms_ entered, items _added to cart_, and finally _conclusion of purchase_.
+  - Abuse: anomalously large numbers of requests coming from single IP addresses
+  - Product similarity: pages visited in common during a session.
+
+[[row_locality]]
+[NOTE]
+===============================
+Row keys determine data locality. When activity is focused on a set of similar and thus adjacent rows, it can be very efficient or very problematic.
+
+**Adjacency is good**: Most of the time, adjacency is good (hooray locality!). When common data is stored together, it enables
+  - range scans: retrieve all pageviews having the same path prefix, or a continuous map region.
+  - sorted retrieval: ask for the earliest entry, or the top-`k` rated entries
+  - space-efficient caching: map cells for New York City will be much more commonly referenced than those for Montana. Storing records for New York City together means fewer HDFS blocks are hot, which means the opeerating system is better able to cache those blocks.
+  - time-efficient caching: if I retrieve the map cell for Minneapolis, I'm much more likely to next retrieve the adjacent cell for nearby St. Paul. Adjacency means that cell will probably be hot in the cache.
+
+**Adjacency is bad**: if _everyone_ targets a narrow range of keyspace, all that activity will hit a single regionserver and your wonderful massively-distributed database will limp along at the speed of one abused machine.
+
+This could happen because of high skew: for example, if your row keys were URL paths, the pages in the `/product` namespace would see far more activity than pages under `laborday_2009_party/photos` (unless they were particularly exciting photos). Similarly, a phenomenon known as Benford's law means that addresses beginning with '1' are far more frequent than addresses beginning with '9' footnote:[A visit to the hardware store will bear this out; see if you can figure out why. (Hint: on a street with 200 addresses, how many start with the numeral '1'?)]. In this case, file:///data/docs/hbase.apache.org/book.html#important_configurations[managed splitting] (pre-assigning a rough partition of the keyspace to different regions) is likely to help.
+
+Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datastore-tip-monotonically-increasing-values-are-bad/[timestamp keys and other monotonically increasing values] though, because the focal point moves constantly. You'd often like to spread the load out a little, but still keep similar rows together. Options include:
+
+* swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
+* add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
+============================
+
+// We'll further augment with these fields:
+// 
+// * `timestamp_rev`, a "reverse timestamp" -- INT_MAX - time.to_i. This means that the most recent // visit for that site sorts first in column order. http://hbase.apache.org/book.html#reverse.timestamp
+// `is_internal` showing if the referer was internal (1) or external (0).  
+
+
+[[hbase_schema_server_logs]]
+.Server logs HBase schema
+|=======
+|table             | row key    	  | family         | qualifier | value           | options
+| visits           | `cookie-timebucket`  | 'r' (referer)   | `referer`     | - 		 |
+| visits           | `cookie-timebucket`  | 's' (search)    | `term`        | - 		 |
+| visits           | `cookie-timebucket`  | 'p' (product)   | `product_id`  | - 		 |
+| visits           | `cookie-timebucket`  | 'z' (checkout)  | `cart_id`     | `{product_ids}` |
+| cookie_urls      | `cookie`             | 'u' (url)       | `-`           |		 |
+| ip_tbs           | `ip-timebucket`   	  |        	    |              |		 |
+|=======
 
 === IP Address Geolocation ===
 
@@ -350,29 +369,6 @@ For a general graph in HBase, here are some tradeoffs to consider:
 * An edge list gives you fast "are these two nodes connected" lookups, using the bloom filter on misses and read cache for frequent hits.
 * If the graph is read-only (eg a product-product similarity graph prepared from server logs), it may make sense to serialize the adjacency list for each node into a single cell. You could also run a regular map/reduce job to roll up the adjacency list into its own column family, and store deltas to that list between rollups.
 
-=== Row Locality ===
-
-Row keys determine data locality. When activity is focused on a set of similar and thus adjacent rows, it can be very efficient or very problematic.
-
-==== adjacency is good ====
-
-Most of the time, adjacency is good (hooray locality!). When common data is stored together, it enables
-  - range scans: retrieve all pageviews having the same path prefix, or a continuous map region.
-  - sorted retrieval: ask for the earliest entry, or the top-`k` rated entries
-  - space-efficient caching: map cells for New York City will be much more commonly referenced than those for Montana. Storing records for New York City together means fewer HDFS blocks are hot, which means the opeerating system is better able to cache those blocks.
-  - time-efficient caching: if I retrieve the map cell for Minneapolis, I'm much more likely to next retrieve the adjacent cell for nearby St. Paul. Adjacency means that cell will probably be hot in the cache.
-
-==== adjacency is bad ====
-
-If _everyone_ targets a narrow range of keyspace, all that activity will hit a single regionserver and your wonderful massively-distributed database will limp along at the speed of one abused machine.
-
-This could happen because of high skew: for example, if your row keys were URL paths, the pages in the `/product` namespace would see far more activity than pages under `laborday_2009_party/photos` (unless they were particularly exciting photos). Similarly, a phenomenon known as Benford's law means that addresses beginning with '1' are far more frequent than addresses beginning with '9' footnote:[A visit to the hardware store will bear this out; see if you can figure out why. (Hint: on a street with 200 addresses, how many start with the numeral '1'?)]. In this case, file:///data/docs/hbase.apache.org/book.html#important_configurations[managed splitting] (pre-assigning a rough partition of the keyspace to different regions) is likely to help.
-
-Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datastore-tip-monotonically-increasing-values-are-bad/[timestamp keys and other monotonically increasing values] though, because the focal point moves constantly. You'd often like to spread the load out a little, but still keep similar rows together. Options include:
-
-* swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
-* add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
-
 === Review of HBase options ===
 
 * column families -- use only one, unless you need both full-row _and_ partial-row access. Even still, high-performance tables shouldn't use more than a few colum families.
@@ -422,7 +418,7 @@ The "Snappy" algorithm gives a great balance of compression factor vs speed, and
 
 From Hbase Def Guide:
 
-> Optimal loading of row keys: When performing a table scan where only the row keys are needed (no families, qualifiers, values, or timestamps), add a FilterList with a MUST_PASS_ALL operator to the scanner using setFilter(). The filter list should include both a First KeyOnlyFilter and a KeyOnlyFilter instance, as explained in “Dedicated Fil- ters” on page 147. Using this filter combination will cause the region server to only load the row key of the first KeyValue (i.e., from the first column) found and return it to the client, resulting in minimized network traffic.
+> Optimal loading of row keys: When performing a table scan where only the row keys are needed (no families, qualifiers, values, or timestamps), add a FilterList with a MUST_PASS_ALL operator to the scanner using setFilter(). The filter list should include both a First KeyOnlyFilter and a KeyOnlyFilter instance, as explained in Dedicated Fil- ters on page 147. Using this filter combination will cause the region server to only load the row key of the first KeyValue (i.e., from the first column) found and return it to the client, resulting in minimized network traffic.
 
 === "Design for Reads" ===
 
