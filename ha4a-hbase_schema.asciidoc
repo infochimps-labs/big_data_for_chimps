@@ -223,58 +223,29 @@ Hadoop was developed largely to process and analyze high-scale server logs for N
 // Just as for data at rest, HBase enables _both_ ultra-low-latency RPC requests and high-throughput // map/reduce jobs, Storm/Kafka enables 
 ===============================
 
-A high-volume eCommerce website might have 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak), and say 600 bytes per log line from 20-40 servers. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Feed that to most databases and they will crumble. Feed it to HBase and it will smile, belch and ask for seconds and thirds -- which in fact we will. Designing for reads means aggressively denormalizing data, to an extent that turns the stomach and tests the will of traditional database experts. Use a streaming data pipeline such as Storm+Kafka or Flume, or a scheduled batch job, to denormalize the data.
+A high-volume website might have 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak), and say 600 bytes per log line from 20-40 servers. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Feed that to most databases and they will crumble. Feed it to HBase and it will smile, belch and ask for seconds and thirds -- which in fact we will. Designing for reads means aggressively denormalizing data, to an extent that turns the stomach and tests the will of traditional database experts. Use a streaming data pipeline such as Storm+Kafka or Flume, or a scheduled batch job, to denormalize the data.
 
 Webserver log lines contain these fields: `ip_address`, `cookie` (a unique ID assigned to each visitor), `url` (the page viewed), and `referer_url` (the page they arrived from), `status_code` (success or failure of request) and `duration` (time taken to render page). We'll add a couple more fields as we go along.
 
-==== Column Families ====
+==== Timestamped Records ====
 
-To understand users' path through the site, 
+We'd like to understand user journeys through the site:
 
-External referer, Search term, cart action
+(Here's what you should not do: use a row key of `timebucket-cookie`; see <<adjacency_bad_good>>
 
-===== External Referer =====
+The
+To sort the values in descending timestamp order, instead use a http://hbase.apache.org/book.html#reverse.timestamp[reverse timestamp]: `LONG_MAX - timestamp`.
+(You can't simply use the negative of `timestamp` -- since sorts are always lexicographic, `-1000` sorts _before_ `-9999`.)
 
-When storing URLs, it's common to use the "domain-reversed" url (eg "org.apache.hbase/book/quickstart.html"), where the hostname segments are placed in reverse order. This means that pages served from different hosts within the same organization ("org.apache.hbase" and "org.apache.kafka" and so forth) are ordered adjacently.
+By using a row key of `cookie-rev_time`
 
-==== Atomic Counters ====
+* we can scan with a prefix of just the cookie to get all pageviews per visitor ever.
+* we can scan with a prefix of the cookie, limit one row, to get only the most recent session.
+* if all you want are the distinct pages (not each page _view_), specify versions = 1 in your request.
+* In a map-reduce job, using the column key and the referring page url gives a graph view of the journey; using the column key and the timestamp gives a timeseries view of the journey.
 
-We'd like to track, for each visitor, the URLs they view with the number of times viewed. HBase offers _atomic counters_, an exceptionally important feature.
+// If you only want the column keys (and not the values) TODO: point to hack
 
-In a distributed system, it does not work to read a value from the database, add one to it, and write it back -- some other agent elsewhere may be busy doing the same, or your write may not make it to the server until it's well out of date. Without native support for counters, this simple process requires locking, retries, or other complicated/expensive machinery.  Hbase lets you issue a single 'incr' command, with the guarantee that it will be applied consistently and that you will receive the new value in response.
-
-That makes the visitor-URL tracking trivial. Build a table called `cookie_url`, with a column family `"u"`. On each page view, simply increment the number of times the url has been seen: `count = incr(table: "cookie_url", row: cookie, col: "u:#{url}")`. You don't have to initialize the cell; if it was NULL, HBase will treat it as having a count of zero. 
-
-==== Most-Frequent URLs ====
-
-We'd also like to track, for each visitor, the most _frequent_ URLs they visit. Locality issues typically make queries like this impractical: you need to know the counts for all the URLs to know which is largest. In this case, however, there's a filthy hack that will let you track the single most frequent element.
-
-What we're going to do is abuse HBase's timestamp feature. Add a column family `c` having `VERSIONS: 1` to the `cookie_stats` table. On each view, we'll do two writes:
-
-1. As before, increment the counter for that URL: `count = incr(table: "cookie_url", row: cookie, col: "u:#{url}")`. The return value of the call has the updated count.
-2. Store the URL in the `cookie_stats` table, but use a _timestamp equal to that URL's count_ (not the current time) --  `put("cookie_stats", row: cookie, col: "c", timestamp: count, value: url)`.
-
-To find the value of the most-frequent URL for a given cookie, do a `get(table: "cookie_stats", row: cookie, col: 'c')`. HBase will return the "most recent" value, namely the one with the highest timestamp, which means the value with the highest count. Although we're constantly writing in values with lower counts, HBase ignores them on queries and eventually compacts them away.
-
-==== Most-Recent URLs ====
-
-We'd like to track, for each visitor, the five most recently-viewed products. In the `cookie_stats` table, add a column family `r` having `VERSIONS: 5`. Now each time the visitor loads a product page,
-
-If you can't tolerate
-
-There's a few ways to help HBase intelligently skip data or lighten its burden.
-
-HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. The pattern with which HBase compacts its store files makes this especially convenient.
-
-
-==== Rollup columns ====
-
-A timestamped metric table like this _writes by the column_ but _reads by the row_.
-
-* Queries:
-  - Visitor paths: the pages visited on the way to a purchase, including external _referer_ sites, _search terms_ entered, items _added to cart_, and finally _conclusion of purchase_.
-  - Abuse: anomalously large numbers of requests coming from single IP addresses
-  - Product similarity: pages visited in common during a session.
 
 [[row_locality]]
 [NOTE]
@@ -297,11 +268,47 @@ Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datas
 * add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
 ============================
 
-// We'll further augment with these fields:
-// 
-// * `timestamp_rev`, a "reverse timestamp" -- INT_MAX - time.to_i. This means that the most recent // visit for that site sorts first in column order. http://hbase.apache.org/book.html#reverse.timestamp
-// `is_internal` showing if the referer was internal (1) or external (0).  
+==== Timestamps ====
 
+You could also track the most recently-viewed pages directly. In the `cookie_stats` table, add a column family `r` having `VERSIONS: 5`. Now each time the visitor loads a page, write to that exact value;
+
+HBase store files record the timestamp range of their contained records. If your request is limited to values less than one hour old, HBase can ignore all store files older than that. 
+
+==== Domain-reversed values ====
+
+It's often best to store URLs in "domain-reversed" form, where the hostname segments are placed in reverse order: eg "org.apache.hbase/book.html" for "hbase.apache.org/book.html". The domain-reversed URL orders pages served from different hosts within the same organization ("org.apache.hbase" and "org.apache.kafka" and so forth) adjacently.
+
+To get a picture of inbound traffic 
+
+==== Atomic Counters ====
+
+Second, for each visitor we want to keep a live count of times they've viewed each distinct URL. In principle, you could use the `cookie_url` table,  [[consistency_ftl]] Maintaining a consistent count is harder than it looks: for example, it does not work to read a value from the database, add one to it, and write the new value back. Some other client may be busy doing the same, and so one of the counts will be off. Without native support for counters, this simple process requires locking, retries, or other complicated machinery.
+
+HBase offers _atomic counters_: a single `incr` command that adds or subtracts a given value, responding with the new value. From the client perspective it's done in a single action (hence, "atomic") with guaranteed consistence. That makes the visitor-URL tracking trivial. Build a table called `cookie_url`, with a column family `u`. On each page view:
+
+1. Increment the counter for that URL: `count = incr(table: "cookie_url_count", row: cookie, col: "u:#{url}")`.
+
+The return value of the call has the updated count. You don't have to initialize the cell; if it was missing, HBase will treat it as having had a count of zero. 
+
+==== Abusing Timestamps for Great Justice ====
+
+We'd also like to track, for each visitor, the _most frequent_ ("top-k") URLs they visit. This might sound like the previous table, but it's very different -- locality issues typically make such queries impractical. In the previous table, all the information we need (visitor, url, increment) to read or write is close at hand. But you can't query that table by "most viewed" without doing a full scan; HBase doesn't and won't directly support requests indexed by value. You might also think "I'll keep a top-k leaderboard, and update it if the currently-viewed URL is on it" -- but this exposes the consistency problem you were <<consistency_ftl,just warned about>> above.
+
+[[most_frequent_urls]]
+There is, however, a filthy hack that will let you track the _single_ most frequent element, by abusing HBase's timestamp feature. In a table `cookie_stats` with column family `c` having `VERSIONS: 1`. Then on each pageview,
+
+1. As before, increment the counter for that URL: `count = incr(table: "cookie_url_count", row: cookie, col: "u:#{url}")`. The return value of the call has the updated count.
+2. Store the URL in the `cookie_stats` table, but use a _timestamp equal to that URL's count_ -- not the current time -- in your request: `put("cookie_stats", row: cookie, col: "c", timestamp: count, value: url)`.
+
+To find the value of the most-frequent URL for a given cookie, do a `get(table: "cookie_stats", row: cookie, col: 'c')`. HBase will return the "most recent" value, namely the one with the highest timestamp, which means the value with the highest count. Although we're constantly writing in values with lower "timestamps" (counts), HBase ignores them on queries and eventually compacts them away.
+
+==== TTL (Time-to-Live) expiring values ====
+
+These high-volume tables consume significant space and memory; it might make sense to discard data older than say 60 days. HBase lets you set a "TTL" (time-to-live) on any column family; records whose timestamp is farther in the past than that TTL won't be returned in gets or scans, and they'll be removed at the next compaction (TODO: major or minor?) footnote:[The TTL will only work if you're playing honest with the timestamps -- you can't use it with the <<most_frequent_urls,most-frequent URL>> table].
+
+==== Exercises ====
+
+1. Besides the pedestrian janitorial work of keeping table sizes in check, TTLs are another feature to joyfully abuse. Describe how you would use TTLs to track time-based rolling aggregates, like "average air-speed velocity over last 10 minutes".
 
 [[hbase_schema_server_logs]]
 .Server logs HBase schema
@@ -414,8 +421,6 @@ The "Snappy" algorithm gives a great balance of compression factor vs speed, and
 * query filters: impose server load, 
 * and a kind of stored procedures/stored triggers called coprocessors). Here's a partial list of things you do _not_ get:
 
-
-
 From Hbase Def Guide:
 
 > Optimal loading of row keys: When performing a table scan where only the row keys are needed (no families, qualifiers, values, or timestamps), add a FilterList with a MUST_PASS_ALL operator to the scanner using setFilter(). The filter list should include both a First KeyOnlyFilter and a KeyOnlyFilter instance, as explained in Dedicated Fil- ters on page 147. Using this filter combination will cause the region server to only load the row key of the first KeyValue (i.e., from the first column) found and return it to the client, resulting in minimized network traffic.
@@ -427,7 +432,7 @@ HBase stores data in cells, scoped like this:
 * Table -- a hard partition of data. Tables are stored, partitioned and optimized in isolation.
 * Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
 * Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
-  - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) <remark>TODO: check</remark> you can set independently per column family.
+  - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) you can set independently per column family.
   - Column Qualifier -- the arbitrary remainder of a column key;
 * Value -- the contents you'd like to store, anything or nothing.
 
