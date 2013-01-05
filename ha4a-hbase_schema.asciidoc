@@ -22,6 +22,11 @@ A good HBase data model is "designed for reads", and your goal is to make _one r
 // All of the first 5 access patterns above are fairly performant; when rows start getting
 // cumbersome, or you
 
+* What question do you want to ask that _must_ happen in less than 30 milliseconds?
+* There are a set of related questions -- which would you like to be fast?
+* Given that -- here's the rest of the questions you can ask?
+
+
 [[hbase_no_yuo]]
 [NOTE]
 ===============================
@@ -251,6 +256,7 @@ By using a row key of `cookie-rev_time`
 [NOTE]
 ===============================
 Row keys determine data locality. When activity is focused on a set of similar and thus adjacent rows, it can be very efficient or very problematic.
+
 
 **Adjacency is good**: Most of the time, adjacency is good (hooray locality!). When common data is stored together, it enables
   - range scans: retrieve all pageviews having the same path prefix, or a continuous map region.
