@@ -2,7 +2,7 @@
 
 === Terminal Commands ===
 
-[[hadoop_filesyste_commands]]
+[[hadoop_filesystem_commands]]
 .Hadoop Filesystem Commands
 [options="header"]
 |=======
@@ -50,6 +50,26 @@
 |				|
 |				|
 |======
+
+[[commandline_tricks]
+.UNIX commandline tricks
+[options="header"]
+|=======
+| action			| command             		| Flags
+| Sort data                     | `sort`              		| reverse the sort: `-r`; sort numerically: `-n`; sort on a field: `-t [delimiter] -k [index]` 
+| Sort large amount of data     | `sort --parallel=4 -S 500M` 	| use four cores and a 500 megabyte sort buffer
+| Cut delimited field           | `cut -f 1,3-7 -d ','`   	| emit comma-separated fields one and three through seven
+| Cut range of characters       | `cut -c 1,3-7`          	| emit characters one and three through seven
+| Split on spaces               | `| ruby -ne 'puts $_.split(/\\s+/).join("\t")'` | split on continuous runs of whitespace, re-emit as tab-separated
+| Distinct fields               | `| sort | uniq`      		| only dupes: `-d`
+| Quickie histogram             | `| sort | uniq -c`   		| TODO: check the rendering for backslash
+| Per-process usage             | `htop`                        | Installed 
+| Running system usage          | `dstat -drnycmf -t 5`  	| 5-second rolling system stats. You likely will have to http://dag.wieers.com/home-made/dstat/[install dstat] yourself. If that's not an option, use `iostat -x 5 & sleep 3 ; ifstat 5` for an interleaved 5-second running average.
+|======
+
+For example: `cat * | cut -c 1-4 | sort | uniq -c` cuts the first 4-character
+
+Not all commands available on all platforms; OSX users should use Homebrew, Windows users should use Cygwin.
 
 === Regular Expressions ===
 

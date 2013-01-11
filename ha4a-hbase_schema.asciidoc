@@ -284,7 +284,38 @@ HBase store files record the timestamp range of their contained records. If your
 
 It's often best to store URLs in "domain-reversed" form, where the hostname segments are placed in reverse order: eg "org.apache.hbase/book.html" for "hbase.apache.org/book.html". The domain-reversed URL orders pages served from different hosts within the same organization ("org.apache.hbase" and "org.apache.kafka" and so forth) adjacently.
 
-To get a picture of inbound traffic 
+To get a picture of inbound traffic
+
+==== ID Generation Counting ====
+
+One of the elephants recounts this tale:
+
+In my land it's essential that every person's prayer be recorded.
+
+One is to have diligent monks add a a grain of rice to a bowl on each event, then in daily ritual recount them from beginning to end. You and I might instead use a threadsafe [UUID](http://en.wikipedia.org/wiki/Universally_unique_identifier) library to create a guaranteed-unique ID.
+
+However, neither grains of rice nor time-based UUIDs can easily be put in time order.  Since monks may neither converse (it's incommensurate with mindfulness) nor own fancy wristwatches (vow of poverty and all that), a strict ordering is impossible. Instead, a monk writes on each grain of rice the date and hour, his name, and the index of that grain of rice this hour. You can read a great writeup of distributed UUID generation in Boundary's [Flake project announcement](http://boundary.com/blog/2012/01/12/flake-a-decentralized-k-ordered-unique-id-generator-in-erlang/) (see also Twitter's [Snowflake](https://github.com/twitter/snowflake)).
+
+You can also "block grant" counters: a central server gives me a lease on 
+
+==== ID Generation Counting ====
+
+HBase actually provides atomic counters
+
+Another is to have an enlightened Bodhisattva hold the single running value in mindfulness. 
+
+http://stackoverflow.com/questions/9585887/pig-hbase-atomic-increment-column-values
+
+From http://www.slideshare.net/larsgeorge/realtime-analytics-with-hadoop-and-hbase --
+
+1 million counter updates per second on 100 nodes (10k ops per node)
+Use a different column family for month, day, hour, etc (with different ttl) for increment
+
+
+counters and TTLs -- http://grokbase.com/t/hbase/user/119x0yjg9b/settimerange-for-hbase-increment
+
+http://cloudfront.blogspot.com/2012/06/hbase-counters-part-i.html#.UOwUHInjnGs[HBASE COUNTERS PART I]
+
 
 ==== Atomic Counters ====
 
@@ -307,6 +338,8 @@ There is, however, a filthy hack that will let you track the _single_ most frequ
 2. Store the URL in the `cookie_stats` table, but use a _timestamp equal to that URL's count_ -- not the current time -- in your request: `put("cookie_stats", row: cookie, col: "c", timestamp: count, value: url)`.
 
 To find the value of the most-frequent URL for a given cookie, do a `get(table: "cookie_stats", row: cookie, col: 'c')`. HBase will return the "most recent" value, namely the one with the highest timestamp, which means the value with the highest count. Although we're constantly writing in values with lower "timestamps" (counts), HBase ignores them on queries and eventually compacts them away.
+
+For this hack to work, the value _must_ be forever monotonically increasing (that is, never decrease). The value "total lifetime pageviews" can only go up; "pageviews in last 30 days" will go up or down over time
 
 ==== TTL (Time-to-Live) expiring values ====
 
@@ -392,6 +425,11 @@ For a general graph in HBase, here are some tradeoffs to consider:
 * `BLOCKCACHE`   -- `true` (the default)
 * `IN_MEMORY`	-- `false` (the default)
 * `BLOCKSIZE`	-- `65536` (the default)
+
+
+definition of a table for incrementers (http://palominodb.com/blog/2012/08/24/distributed-counter-performance-hbase-part-1[from])
+    
+    {NAME => 'timelesstest', DEFERRED_LOG_FLUSH => 'true', FAMILIES => [{NAME => 'family', BLOOMFILTER => 'NONE', REPLICATION_SCOPE => '0', COMPRESSION => 'NONE', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}]}
 
 
 DRAFT

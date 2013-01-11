@@ -69,8 +69,13 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
 * 1998 World Cup access logs (`access_logs/ita_world_cup_apachelogs`; 123 GB, 1.3 billion records): every request made to the 1998 World Cup Web site between April 30, 1998 and July 26, 1998, in apache log format.
 
 ===  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD) ===
+
+
   - 20 GB
   - geo, stats
+
+  - http://blog.oldweather.org/results/[Old Weather project] --
+    - http://philip.brohan.org.transfer.s3.amazonaws.com/oW_imma_20120801.tgz
 
 === Retrosheet
 

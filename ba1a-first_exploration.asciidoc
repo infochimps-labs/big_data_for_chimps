@@ -17,13 +17,11 @@ Let's walk through an example. For the moment, I'll omit code samples and simpli
 
 === Where is Barbecue?
 
-I'm from Austin, TX, home of great live music, BBQ,
+// I'm from Austin, TX, home of great live music, BBQ,
 
 The Wikipedia community has geolocated a great number of its articles. Not just defined places like Austin, TX, but one million deep: landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World") have computer-readable locations. What's more, since the connections among pages are robot-legible, links within topics can be read to imply a geolocation -- the movie "Dazed and Confused" (which took place in austin) and the artist Janis Joplin (who got her start in Austin) can be identifiably paired with the loose geolocation of Austin, TX.
 
 Using only "nearby" the page for Austin, we can train a robot to tell you those things, same as any person on the street could.
-
-
 
 Among all these first-and-second level connections, there's so much structure that it should be possible to invert the question: rather than find the topics that describe a region's flavor, can we identify the regional flavor of various topics? Jason Baldrige and (TODO: rest of authors) did an exploration showing that you can; here's a simplified version.
 
