@@ -42,28 +42,24 @@ It's this kind of challenge -- data that is massive, highly-dimensional, imperfe
 
 Here's how Hadoop makes answering a deep question like that simple.
 
+=== Preparation
+
+
 I hope that question is interesting enough to stand on its own. But it also touches on the type of practical explorations we'll perform in the rest of the book.
 
-* _Text Analysis_ -- extract meaning from free text; here, it's the geographic context of words, but it could be 
-* _Geographic Analysis_ -- spatial relationships among objects: word 
-uncovering an epidemic from disease reports, or visitors to your website
-* Statistics	   -- we find average
-  Determing something as simple as the count of records becomes challenging
-  Measures that require any global knowledge, like the median, become fiendish. 
-* Raw data munging -- Well, I'll hide the details of this for now, but preliminary to the below was a mass of work just to prepare the data for analysis. 
+* _Geographic Analysis_ to find spatial relationships among objects: here, words from a corpus, but it could be signs of an epidemic from disease reports, or common browsing behavior among visitors to your website.
+* _Linguistic Analysis_, to extract meaning from text: here, attaching geographic locations to terms, but it could be authorship analysis for legal discovery, or the baseline for real-time "trending topic" detection.
+* _Statistical Analysis_, to simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
+* _Raw data munging_ -- We'll hide the details of this for now, but too often preparing the data takes longer than analyzing it.
 
-We'll explore each of these topics, along with time series, graph processing and log analysis. 
-
-==== Section
+We'll explore each of these topics, along with anaysis of time series, graphs and server logs. 
 
 We will jointly discover two things
 taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc)
 
-
 Terms like "beach" or "mountain" will clearly 
 
 Common words like "couch" or "hair" 
-
 
 Words like 'town' or 'street' will be 
 
@@ -75,7 +71,6 @@ Next, we'll choose some _exemplars_: familiar records to trace through
 ==== Data and features
 
 === Summarize every page on Wikipedia
-
 
 [[baldridge_bbq_wine]]
 .Not the actual output, but gives you the picture; TODO insert actual results
