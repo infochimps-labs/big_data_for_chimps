@@ -1,13 +1,4 @@
 
-
-class Gorillib::Field
-  field :units,     :symbol
-  field :hadoop_1,  :string
-  field :min,       Whatever
-  field :max,       Whatever
-  field :recommend, Whatever
-end
-
 module Tooner
   class TuneSet
     include Gorillib::Model
@@ -24,79 +15,6 @@ module Tooner
     def self.estimate(name, *args)
       field(name, *args)
     end
-  end
-
-  class Cluster < TuneSet
-    field   :machine_count, :integer, doc: "number of machines in cluster", units: :machine
-    derived :mappers_mem     do machines_count * machine.mappers_mem  ; end
-    derived :reducers_mem    do machines_count * machine.reducers_mem ; end
-    derived :dfs_cap_gb      do machines_count * machine.dfs_cap_gb   ; end
-    derived :disk_cap_gb     do machines_count * machine.disk_cap_gb  ; end
-    derived :dfs_block_count do (1024 * dfs_cap_gb) / fs_block_mb     ; end
-  end
-
-  class Machine < TuneSet
-    field :mem_mb,           :integer, doc: "total ram on machine",                 units: :mb
-    field :cores,            :integer, doc: "number of cores on the machine",       units: :core
-    field :v_disk,           :float,   doc: "measured throughput of disk, MB/s",    units: :mb_per_s
-    field :v_ntwk,           :float,   doc: "measured throughput of network, MB/s", units: :mb_per_s
-    field :data_vol_count,   :integer
-    field :data_vol
-    field :root_vol
-    #
-    derived :daemons_mem     do dn_mem_mb + tt_mem_mb            ; end
-    derived :mappers_mem     do mapper_slots  * mapper_mem_mb    ; end
-    derived :reducers_mem    do reducer_slots * reducer_mem_mb   ; end
-
-    derived :disk_cap_gb     do data_vol_count * data_vol.cap_gb ; end
-    derived :dfs_cap_gb      do disk_cap_gb / fs_replication     ; end
-  end
-
-  class Phase < TuneSet
-    estimate :in_mb,        :integer, units: :mb
-    estimate :in_recs,      :integer, units: :rec
-    estimate :expansion,    :float,   units: :mult
-    derived  :out_mb,       :float   do (in_mb   * expansion) end
-    derived  :out_recs,     :float   do (in_recs * expansion) end
-    #
-    estimate :tp,           :float,  units: :mb_per_s, doc: "throughput, MB/s"
-
-    estimate :compress_frac, :float, units: :mult, default: 0.3
-    #
-    derived  :runtime,      :float, units: :second
-  end
-
-  class MapperPhase < Phase
-  end
-
-  class MidflightPhase < Phase
-    tunable  :compress_codec,  :string,  hadoop_1: 'mapred.map.output.compression.codec'
-    tunable  :compress_on,     :boolean, hadoop_1: 'mapred.compress.map.output'
-  end
-
-  class ReducerPhase < Phase
-    derived(:in_mb){   mapper.out_mb   * mapper_tasks / reducer_tasks }
-    derived(:in_recs){ mapper.out_recs * mapper_tasks / reducer_tasks }
-    #
-    tunable :heap_mem_mb
-    tunable :sort_pt1_mem_frac,      hadoop_1: 'mapred.job.shuffle.input.buffer.percent'
-    tunable :sort_pt1_spill_segs,    hadoop_1: 'mapred.inmem.merge.threshold', default: 1000, recommend: 0
-    tunable :sort_pt1_wtf_frac,      hadoop_1: 'mapred.job.shuffle.merge.percent'
-    tunable :sort_pt2_mem_frac,      hadoop_1: 'mapred.job.reduce.input.buffer.percent', default: 0.0
-    #
-    tunable :sort_pt1_seg_count,     hadoop_1: 'io.sort.factor'
-    tunable :sort_pt1_parl,          hadoop_1: 'mapred.reduce.parallel.copies'
-    #
-    derived :sort_pt1_mem_mb do
-      sort_pt1_mem_frac * [2048, heap_mem_mb].min
-    end
-    #
-  end
-
-  class OutputPhase < Phase
-    tunable  :compress_codec,  :string,  hadoop_1: 'mapred.output.compression.codec'
-    tunable  :compress_type,   :string,  hadoop_1: 'mapred.output.compression.type'
-    tunable  :compress_on,     :boolean, hadoop_1: 'mapred.output.compress'
   end
 
   class Filesystem < TuneSet
@@ -133,17 +51,6 @@ module Tooner
       recommend{ Math.log(machine_count.to_f) * 20 }
     end
 
-    tunable :mapper_min_split_mb, hadoop_1: 'mapred.min.split.size', cat: :mapper_mem
-    #
-    tunable :mapper_sortbuf_acct_mem,   cat: :mapper_mem
-    tunable :mapper_sortbuf_data_mem,   cat: :mapper_mem
-    tunable :mapper_sortbuf_total_mem,  hadoop_1: 'io.sort.mb', cat: :mapper_mem
-    tunable :mapper_sortbuf_acct_frac,  hadoop_1: 'io.sort.record.percent', default: 0.05 do
-      mapper_sortbuf_acct_mem / mapper_sortbuf_total_mem
-    end
-    tunable :mapper_sortbuf_spill_frac, hadoop_1: 'io.sort.spill.percent', default: 0.8
-    #
-    derived :mapper_overhead_mem, todo: true
 
     tunable :file_buffer_bytes, default: 4096, recommend: 65536, hadoop_1: 'io.file.buffer.size'
 
@@ -162,17 +69,17 @@ module Tooner
     tunable :nn_heap_mem_mb
     tunable :jt_heap_mem_mb
 
-    tunable :balancer_tp_frac
-    tunable :balancer_tp,    hadoop_1: 'dfs.balance.bandwidthPerSec'
+    tunable :balancer_thru_frac
+    tunable :balancer_thru,    hadoop_1: 'dfs.balance.bandwidthPerSec'
 
     derived :mapper_spills       do mapper.out_mb / mapper_sortbuf_data_mem end
-    derived :midflight_runtime   do mapper.out_mb  * mapper.compress_frac * network.tp ; end
-    derived :mapper_runtime      do mapper.in_mb   * mapper.tp  ; end
-    derived :reducer_runtime     do reducer.in_mb  * reducer.tp ; end
-    derived :commit_disk_runtime do reducer.out_mb * disk_write.tp ; end
-    derived :commit_disk_runtime do reducer.out_mb * network.tp * 2 ; end
+    derived :midflight_runtime   do mapper.out_mb  * mapper.compress_frac * network.thru ; end
+    derived :mapper_runtime      do mapper.in_mb   * mapper.thru  ; end
+    derived :reducer_runtime     do reducer.in_mb  * reducer.thru ; end
+    derived :commit_disk_runtime do reducer.out_mb * disk_write.thru ; end
+    derived :commit_disk_runtime do reducer.out_mb * network.thru * 2 ; end
 
-    derived :balancer_tp do balancer_tp_frac * network.tp ;  end
+    derived :balancer_thru do balancer_thru_frac * network.thru ;  end
 
     constraint("Machine has sufficient ram") do
       daemons_mem + mappers_mem + reducers_mem < machine_mem_mb
@@ -185,8 +92,8 @@ module Tooner
 
     constraint("File buffer size must be a multiple of the system page size")
 
-    constraint("Balancing should not be slow"){           balancer_tp_frac >= 0.05 }
-    constraint("Balancing should not compete with work"){ balancer_tp_frac <= 0.1 }
+    constraint("Balancing should not be slow"){           balancer_thru_frac >= 0.05 }
+    constraint("Balancing should not compete with work"){ balancer_thru_frac <= 0.1 }
 
     constraint("sufficient mapper heap"){  mapper_sort_buffer_mem + mapper_overhead_mem }
     constraint("only spill once"){ mapper_spills < mapper_sortbuf_spill_frac }
