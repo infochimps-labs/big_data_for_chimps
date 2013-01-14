@@ -17,28 +17,36 @@ Let's walk through an example. For the moment, I'll omit code samples and simpli
 
 === Where is Barbecue?
 
-// I'm from Austin, TX, home of great live music, BBQ,
+The Wikipedia community has geolocated a great number of its articles. Not just traditional places like Austin, TX, but a million deep of landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World"). 
 
-The Wikipedia community has geolocated a great number of its articles. Not just defined places like Austin, TX, but one million deep: landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World") have computer-readable locations. What's more, since the connections among pages are robot-legible, links within topics can be read to imply a geolocation -- the movie "Dazed and Confused" (which took place in austin) and the artist Janis Joplin (who got her start in Austin) can be identifiably paired with the loose geolocation of Austin, TX.
+This is the kind of data -- huge, unruly, highly-dimensional, deeply connected -- that Hadooop eats for lunch <remark>TODO cliche</remark>
+gives us a long wished-for ability to make aspects of the human condition legible to computers.
 
-Using only "nearby" the page for Austin, we can train a robot to tell you those things, same as any person on the street could.
+For example, it's reasonable to say that examining the words
 
-Among all these first-and-second level connections, there's so much structure that it should be possible to invert the question: rather than find the topics that describe a region's flavor, can we identify the regional flavor of various topics? Jason Baldrige and (TODO: rest of authors) did an exploration showing that you can; here's a simplified version.
+We've made the robots smarter, which is fine, but already a human could easily find out what's unique about any given place by clicking through to each page its article links to. In any natural database structure, everything you need to know is one or a few hops away. 
+
+By contrast, let's invert the question. For every word in the English language, which have a strong geographic flavor, and if so, what is that flavor?
+
+You can probably think of a few such words: terms like "beach" (the coasts), "barbeque" (Texas and Southeastern US) or "wine" (France, Napa Valley) will show strong place affinity; terms like "hat" or "couch" will not.
+But it's hard to go beyond that, and there's certainly no way
+
+Insight comes from data in context: places in the context of associated topics, or topics in the context of associated locations. When your data is far too large to fit on a single machine,
+
+This gives a sense of what we mean by 'locality', the most important concept in the bookfootnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]. In the first case, putting places in the context of their associated pages requires only simple mouse clicks or database calls. In the second case, putting every word in context of all associated locations requires that you dismantle and reassemble the whole dataset in stages.
+
+Hadoop simultaneously unlocks the ability to extract meaning from data that is
+massive, deeply connected, imperfect and non-local
+
+It's this kind of challenge -- data that is massive, highly-dimensional, imperfect, 
 
 Here's how Hadoop makes answering a deep question like that simple.
 
-=== First Steps
+I hope that question is interesting enough to stand on its own. But it also touches on the type of practical explorations we'll perform in the rest of the book.
 
-There are a few steps at the start.
-
-==== Why?
-
-Need to say what questions trying to answer
-
-I chose this example first because it touches 
-
-* Text Analysis	   -- the first 
-* Spatial Analysis -- get nearby articles together. We turn pointwise data (attaching the page's topics to its geolocated point); but it could be mining indicators drawn from disease reports looking for an epidemic, or social media chatter about a politician
+* _Text Analysis_ -- extract meaning from free text; here, it's the geographic context of words, but it could be 
+* _Geographic Analysis_ -- spatial relationships among objects: word 
+uncovering an epidemic from disease reports, or visitors to your website
 * Statistics	   -- we find average
   Determing something as simple as the count of records becomes challenging
   Measures that require any global knowledge, like the median, become fiendish. 
@@ -46,43 +54,25 @@ I chose this example first because it touches
 
 We'll explore each of these topics, along with time series, graph processing and log analysis. 
 
-==== Plot of this story
-
-1. article -> wordbag  
-2. join on page data to get geolocation
-3. use pagelinks to get larger pool of implied geolocations
-4. turn geolocations into quadtile keys
-5. aggregate topics by quadtile
-6. take summary statistics aggregated over term and quadkey
-7. combine those statistics to identify terms that occur more frequently than the base rate would predict
-8. explore and validate the results                              
-9. filter to find strongly-flavored words, and other reductions of the data for visualization
-
-==== Exemplars and Touchstones
-
-There are three touchstones to hit in every data exploration:
-
-* Confirm the things you know:
-* Confirm or refute the things you suspect.
-* Uncover at least one thing you never suspected.
-
-Things we know: First, common words should show no geographic flavor. 
-Geographic features -- "beach", "mountain", etc -- should be intensely localised.
+==== Section
 
 We will jointly discover two things
 taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc)
 
-<remark>* compared to other color words, there will be a larger regional variation for the terms "white" and "black" (as they describe ra</remark>
+
+Terms like "beach" or "mountain" will clearly 
+
+Common words like "couch" or "hair" 
+
+
+Words like 'town' or 'street' will be 
 
 You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
-
 
 Next, we'll choose some _exemplars_: familiar records to trace through
  "Barbeque" should cover ;
 
 ==== Data and features
-
-
 
 === Summarize every page on Wikipedia
 
@@ -179,11 +169,9 @@ Rather than step through each operation, I'll wave my hands and pull its output 
 
 As expected, in <<baldridge_bbq_wine>> you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
 
+footnote:[This is a simplified version of work by Jason Baldrige, Ben Wing (TODO: rest of authors), who go farther and show how to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. See: Baldridge et al (TODO: reference)]
 
-
-footnote:[You can use a fancier version of the approach used here to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. (see Baldridge et al TODO: reference)]
-
-==== Takeaways
+==== Takeaway #1: Simplicity
 
 We accomplished an elaborate data exploration, yet at no point did we do anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data.
 
