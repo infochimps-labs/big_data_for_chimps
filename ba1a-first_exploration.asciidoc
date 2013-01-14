@@ -22,9 +22,10 @@ The Wikipedia community has geolocated a great number of its articles. Not just 
 This is the kind of data -- huge, unruly, highly-dimensional, deeply connected -- that Hadooop eats for lunch <remark>TODO cliche</remark>
 gives us a long wished-for ability to make aspects of the human condition legible to computers.
 
-For example, it's reasonable to say that examining the words
+Consider every page that represents a town or city. By combining and analyzing the text of articles each city's page either links to or is geographically near to,
 
-We've made the robots smarter, which is fine, but already a human could easily find out what's unique about any given place by clicking through to each page its article links to. In any natural database structure, everything you need to know is one or a few hops away. 
+
+That's fine, but all that does is the robots smarter, which -- a human can easily find out what's unique about any given place by clicking through to each page its article links to.
 
 By contrast, let's invert the question. For every word in the English language, which have a strong geographic flavor, and if so, what is that flavor?
 
@@ -32,6 +33,8 @@ You can probably think of a few such words: terms like "beach" (the coasts), "ba
 But it's hard to go beyond that, and there's certainly no way
 
 Insight comes from data in context: places in the context of associated topics, or topics in the context of associated locations. When your data is far too large to fit on a single machine,
+
+In any natural database structure, everything you need to know is one or a few hops away.
 
 This gives a sense of what we mean by 'locality', the most important concept in the bookfootnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]. In the first case, putting places in the context of their associated pages requires only simple mouse clicks or database calls. In the second case, putting every word in context of all associated locations requires that you dismantle and reassemble the whole dataset in stages.
 
