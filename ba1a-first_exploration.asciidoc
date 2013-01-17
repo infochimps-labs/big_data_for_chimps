@@ -59,7 +59,7 @@ You can do this to each article separately, in any order, and with no reference 
 
 ==== Bin by Location
 
-Next we will annotate each wordbag with the geolocation of its article, which is kept in a different data file:
+The article geolocations are kept in a different data file:
 
 [[wp_coords]]
 ._Article coordinates_
@@ -67,18 +67,9 @@ Next we will annotate each wordbag with the geolocation of its article, which is
 Lexington,_Texas -97.01 30.41 023130130
 ------
 
-Instead of using the precise latitude and longitude, we 
+We don't actually need the precise latitude and longitude, because rather than treating article as a point, we want to aggregate by area. Instead, we'll lay a set of grid lines down covering the entire world and assign each article to the grid cell it sits on. That funny-looking number in the fourth column is a 'quadkey' footnote:[you will learn all about quadkeys in the <<quadkey,"Geographic Data">> chapter], a very cleverly-chosen label for the grid cell containing this article's location. 
 
-we're going to draw a set of grid lines covering the earth and aggregate 
-
-That funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that
-footnote:[a "quadkey", described later in <<quadkey,"Geographic Data">>]
-
-
-but we can join the two files by pairing each wordbag and geolocation record having the same page ID.
-
-Here's its output:
-
+To annotate each wordbag with its grid cell location, we can do a 'join' of the two files on the wikipedia ID (the first column). Picture for a moment a tennis meetup, where you'd like to randomly assign the attendees to mixed-doubles (one man and one woman) teams. You can do this by giving each person a team number when they arrive (one pool of numbers for the men, an identical but separate pool of numbers for the women). Have everyone stand in numerical order on the court -- men on one side, women on the other -- and walk forward to meet in the middle; people with the same team number will naturally arrive at the same place and form a single team. That is effectively how Hadoop joins the two files: it puts them both in order by page ID, making records with the same page ID arrive at the same locality, and then outputs the combined record:
 
 [[wp_lexington_wordbag_and_coords]]
 ._Wordbag with coordinates_
@@ -86,28 +77,37 @@ Here's its output:
 Lexington,_Texas -97.01 30.41 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-
 [[quadkey_central_texas]]
 .Grid Tiles for Central Texas
 image::images/Quadtree-google_maps_screenshot.png[Grid tiles for Central Texas]
 
-Next, combine the individual word bags to find each grid cell's word bag:
+==== Gridcell statistics
 
+We have wordbag records labeled by quadkey for each article, but we want combined wordbags for each grid cell. So we'll <<wp_grouped_wordbags,group the wordbags by quadkey>>:
+
+[[wp_grouped_wordbags]]
+------
+023130130 {(Lexington,_Texas,(("many", X),...,("texas",X),...,("town",X)...("longhorns",X),...("bbq",X),...)),(Texas_Memorial_Stadium,((...)),...),...}
+------
+
+them turn the individual word bags into a <<wp_combined_wordbags,combined word bag>>:
+
+[[wp_combined_wordbags]]
 ------
 023130130 {(("many", X),...,("texas",X),...,("town",X)...("longhorns",X),...("bbq",X),...}
 ------
 
 ==== A pause, to think
 
-Let's pause, take a breath, and examine the fundamental pattern that got us here. We
+Let's look at the fundamental pattern that we're using. Our steps:
 
-. transformed articles into wordbags
-. augmented each wordbag with coordinates, using a join
-. converted each article's precise point into the coarse-grained tile it sits on
-. brought all wordbags for each tile together;
-. merging each tile's word counts into a single combined wordbag.
+. transform each article individually into its wordbag
+// . convert each article's precise point into the coarse-grained tile it sits on
+. augment the wordbags with their geo coordinates by joining on page ID
+. organize the wordbags into groups having the same grid cell;
+. form a single combined wordbag for each grid cell.
 
-It's a simple sequence of _transforms_ (operations on each record in isolation: steps 1, 3 and 5) and _reshapes_ -- operations that combine multiple rows, from different tables (the join in step 2) or in the same dataset (the group in step 4).
+It's a sequence of _transforms_ (operations on each record in isolation: steps 1 and 4) and _pivots_ -- operations that combine records, whether from different tables (the join in step 2) or the same dataset (the group in step 3).
 
 In doing so, we've turned articles that have a geolocation into coarse-grained regions that have implied frequencies for words. The particular frequencies arise from this combination of forces:
 
@@ -115,7 +115,7 @@ In doing so, we've turned articles that have a geolocation into coarse-grained r
 * _background_: The natural frequency of each term -- "second" is used more often than "syzygy" -- slanted by its frequency in geo-locatable texts (the word "town" occurs far more frequently than its natural rate, simply because towns are geolocatable).
 * _noise_: Deviations introduced by the fact that we have a limited sample of text to draw inferences from.
 
-Our next task -- the sprint home -- is to separate the signal from the background and (as much as possible) from the noise.
+Our next task -- the sprint home -- is to use a few more transforms and pivots to separate the signal from the background and, as far as possible, from the noise.
 
 ==== Pulling signal from noise
 
@@ -125,7 +125,7 @@ To isolate the signal, we'll pull out a trick called <<pmi,"Pointwise Mutual Inf
 * the rate that terms are used on grid cell 023130130
 * the rate the term 'barbecue' is used on grid cell 023130130
 
-Just as above, we can transform and reshape to get those figures:
+Just as above, we can transform and pivot to get those figures:
 
 * group the data by term; count occurrences
 * group the data by tile; count occurrences
@@ -139,23 +139,21 @@ Rather than step through each operation, I'll wave my hands and pull its output 
 023130130 {(("texas",X),...,("longhorns",X),...("bbq",X),...,...}
 ------
 
-As expected, in <<baldridge_bbq_wine>> you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valley.
-
-footnote:[This is a simplified version of work by Jason Baldrige, Ben Wing (TODO: rest of authors), who go farther and show how to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. See: Baldridge et al (TODO: reference)]
+As expected, in <<baldridge_bbq_wine>> you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valleyfootnote:[This is a simplified version of work by Jason Baldrige, Ben Wing (TODO: rest of authors), who go farther and show how to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. See: Baldridge et al (TODO: reference)].
 
 ==== Takeaway #1: Simplicity
 
-We accomplished an elaborate data exploration, yet at no point did we do anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _reshaped_ the data.
+We accomplished an elaborate data exploration, yet at no point did we do anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _pivoted_ the data.
 
 As you'll see later, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
 
-That's the approach we'll follow through this book: develop simple, maintainable transform/reshape scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
+That's the approach we'll follow through this book: develop simple, maintainable transform/pivot scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 
 The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to think at scale, to choose a workable series of chess moves connecting the data you have to the insight you need. In the first part of the book, after briefly becoming familiar with the basic framework, we'll proceed through a series of examples to help you identify the key locality and thus the transformation each step calls for. In the second part of that book, we'll apply this to a range of interesting problems and so build up a set of reusable tools for asking deep questions in actual practice.
 
-==== Takeaway #2: Locality
-
-
-Insight comes from data in context: places in the context of associated topics, or topics in the context of associated locations. When your data is far too large to fit on a single machine,
-
-In the second case, putting every word in context of all associated locations requires that 
+// ==== Takeaway #2: Locality
+// 
+// 
+// Insight comes from data in context: places in the context of associated topics, or topics in the // context of associated locations. When your data is far too large to fit on a single machine,
+// 
+// In the second case, putting every word in context of all associated locations requires that 
