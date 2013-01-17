@@ -1,87 +1,45 @@
 == First Exploration (ch. A) ==
 [[first_exploration]]
 
-Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this sentence.
+Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this paragraph.
 
-What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing; and in doing so, exposes a core simplicity that makes programming it exceptionally fun.
+What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing. This exposes a core simplicity that makes programming it exceptionally fun.
 
-Hadoop's bargain is thus: you must agree to write all your programs according to single certain form, which we'll call the "Map / Reduce Haiku":
+Hadoop's bargain is this. You must give up fine-grained control over how data is read and sent over the network. Instead, you write a series of short, constrained transformations, a sort of programming Haiku:
 
     Data flutters by
     Elephants make sturdy piles
-    Number becomes thought
+    Insight from context
 
-For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
-
-Let's walk through an example. For the moment, I'll omit code samples and simplify slightly so we can concentrate on the step-by-step transformation of the data. (You'll see these details later in the book.)
+For any such program, Hadoop's diligent elephants intelligently schedule the tasks across ones or dozens or thousands of machines. They attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and attend to myriad other details that otherwise stand between you and insight. Putting these constraints on how you ask your _question_ releases constraints that traditional database technology placed on your _data_. Unlocking access to data that is huge, unruly, organic, highly-dimensional and deeply connected unlocks answers to a new deeper set of questions about the large-scale behavior of humanity and our universe. <remark>too much?? pk4</remark>
 
 === Where is Barbecue?
 
-The Wikipedia community has geolocated a great number of its articles. Not just traditional places like Austin, TX, but a million deep of landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays) and Snow's BBQ (proclaimed "The Best Texas BBQ in the World"). 
+There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
-This is the kind of data -- huge, unruly, highly-dimensional, deeply connected -- that Hadooop eats for lunch <remark>TODO cliche</remark>
-gives us a long wished-for ability to make aspects of the human condition legible to computers.
+The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays), Snow's BBQ (proclaimed "The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, the largest academic supercomputer to date).
 
-Consider every page that represents a town or city. By combining and analyzing the text of articles each city's page either links to or is geographically near to,
+Since the birth of Artificial Intelligence we've wished we could quantify organic concepts like the "regional flavor" of a place -- wished we could help a computer understand that Austinites are passionate about Barbeque, Football and Technology -- and now we can, by say combining and analyzing the text of every article each city's page either links to or is geographically near.
 
+"That's fine for the robots," says the skeptic, "but I can just phone my cousin Bubba and ask him what people in Austin like. And though I have no friend in Timbuktu, I could learn what's unique about it from the Timbuktu article and all those it links to, using my mouse or my favorite relational database." True, true. This question has what we'll call "easy locality"footnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]: the pieces of context we need (the linked-to articles) are a simple mouse click or database JOIN away. But if we turn the question sideways that stops being true. 
 
-That's fine, but all that does is the robots smarter, which -- a human can easily find out what's unique about any given place by clicking through to each page its article links to.
+Instead of the places, let's look at the words. Barbeque is popular all through Texas and the Southeastern US, and as you'll soon be able to prove, the term "Barbeque" is overrepresented in articles from that region. You and cousin Bubba would be able to brainstorm a few more terms with strong place affinity, like "beach" (the coasts) or "wine" (France, Napa Valley), and you would guess that terms like "hat" or "couch" will not. But there's certainly no simple way you could do so comprehensively or quantifiably. That's because this question has no easy locality: we'll have to dismantle and reassemble in stages the entire dataset to answer it. This understanding of 'locality' is the most important concept in the book, so let's dive in and start to grok it. We'll just look at the step-by-step transformations of the data for now, and leave the actual code for <<geographic_words,a later chapter>>.
 
-By contrast, let's invert the question. For every word in the English language, which have a strong geographic flavor, and if so, what is that flavor?
+=== Where is Barbecue?
 
-You can probably think of a few such words: terms like "beach" (the coasts), "barbeque" (Texas and Southeastern US) or "wine" (France, Napa Valley) will show strong place affinity; terms like "hat" or "couch" will not.
-But it's hard to go beyond that, and there's certainly no way
+So here's our first exploration:
 
-Insight comes from data in context: places in the context of associated topics, or topics in the context of associated locations. When your data is far too large to fit on a single machine,
+    For every word in the English language, which of them have a strong geographic flavor, and what are the places they attach to?
 
-In any natural database structure, everything you need to know is one or a few hops away.
-
-This gives a sense of what we mean by 'locality', the most important concept in the bookfootnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]. In the first case, putting places in the context of their associated pages requires only simple mouse clicks or database calls. In the second case, putting every word in context of all associated locations requires that you dismantle and reassemble the whole dataset in stages.
-
-Hadoop simultaneously unlocks the ability to extract meaning from data that is
-massive, deeply connected, imperfect and non-local
-
-It's this kind of challenge -- data that is massive, highly-dimensional, imperfect, 
-
-Here's how Hadoop makes answering a deep question like that simple.
-
-=== Preparation
-
-
-I hope that question is interesting enough to stand on its own. But it also touches on the type of practical explorations we'll perform in the rest of the book.
-
-* _Geographic Analysis_ to find spatial relationships among objects: here, words from a corpus, but it could be signs of an epidemic from disease reports, or common browsing behavior among visitors to your website.
-* _Linguistic Analysis_, to extract meaning from text: here, attaching geographic locations to terms, but it could be authorship analysis for legal discovery, or the baseline for real-time "trending topic" detection.
-* _Statistical Analysis_, to simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
-* _Raw data munging_ -- We'll hide the details of this for now, but too often preparing the data takes longer than analyzing it.
-
-We'll explore each of these topics, along with anaysis of time series, graphs and server logs. 
-
-We will jointly discover two things
-taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc)
-
-Terms like "beach" or "mountain" will clearly 
-
-Common words like "couch" or "hair" 
-
-Words like 'town' or 'street' will be 
-
-You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
-
-Next, we'll choose some _exemplars_: familiar records to trace through
- "Barbeque" should cover ;
-
-==== Data and features
-
-=== Summarize every page on Wikipedia
+This may not be a practical question (though I hope you agree it's a fascinating one), but it is a template for a wealth of practical questions. It's a _geospatial analysis_ showing how patterns of term usage vary over space; the same approach can instead uncover signs of an epidemic from disease reports, or common browsing behavior among visitors to a website. It's a _linguistic analysis_ attaching estimated location to each term; the same approach term can instead quantify document authorship for legal discovery, letting you prove the CEO did authorize his nogoodnik stepson to destroy that orphanage. It's a _statistical analysis_ requiring us to summarize and remove noise from a massive pile of term counts; we'll use those methods in almost every exploration we do. It isn't itself a _time-series analysis_, but you'd use this data to form a baseline to detect trending topics on a social network or the anomalous presence of drug-trade related terms on a communication channel.
 
 [[baldridge_bbq_wine]]
 .Not the actual output, but gives you the picture; TODO insert actual results
 image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
 
-==== Summarize every page on Wikipedia
+=== Summarize every page on Wikipedia
 
-First, we will summarize each topic by preparing its "word bag" -- a simple count of the words on its wikipedia page. This snippet of the <<wp_lexington_article>> text:
+First, we will summarize each article by preparing its "word bag" -- a simple count of the words on its wikipedia page. From the raw <<wp_lexington_article,article>> text:
 
 [[wp_lexington_article]]
 ._Wikipedia article on "Lexington, Texas"_
@@ -89,7 +47,7 @@ ______
 Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
 ______
 
-turns into <<wp_lexington_wordbag,this wordbag>>:
+we get the <<wp_lexington_wordbag,following wordbag>>:
 
 [[wp_lexington_wordbag]]
 ._Wordbag for "Lexington, Texas"_
@@ -97,20 +55,36 @@ turns into <<wp_lexington_wordbag,this wordbag>>:
 Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
 
-You can carry out this process on each article separately, in any order, and without reference to information from elsewhere. That's important! Among other things, it lets us parallelize the process across as many machines as we care to afford. We'll call this type of step a "transform": it's independent, non-order-dependent, and isolated.
+You can do this to each article separately, in any order, and with no reference to any other article. That's important! Among other things, it lets us parallelize the process across as many machines as we care to afford. We'll call this type of step a "transform": it's independent, non-order-dependent, and isolated.
 
 ==== Bin by Location
 
-Next we will annotate each wordbag with the geolocation of its article. Those are kept in a different data file, but we can merge the two files by joining each article metadata record with the wordbag having the same id. Here's its output:
+Next we will annotate each wordbag with the geolocation of its article, which is kept in a different data file:
+
+[[wp_coords]]
+._Article coordinates_
+------
+Lexington,_Texas -97.01 30.41 023130130
+------
+
+Instead of using the precise latitude and longitude, we 
+
+we're going to draw a set of grid lines covering the earth and aggregate 
+
+That funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that
+footnote:[a "quadkey", described later in <<quadkey,"Geographic Data">>]
+
+
+but we can join the two files by pairing each wordbag and geolocation record having the same page ID.
+
+Here's its output:
+
 
 [[wp_lexington_wordbag_and_coords]]
 ._Wordbag with coordinates_
 ------
 Lexington,_Texas -97.01 30.41 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
 ------
-
-The funny-looking number in the fourth column is the label of one cell in a <<geographic grid,quadkey_central_texas>> that
-footnote:[a "quadkey", described later in <<quadkey,"Geographic Data">>]
 
 
 [[quadkey_central_texas]]
@@ -178,3 +152,10 @@ As you'll see later, the scripts are readable and short (none exceed a few dozen
 That's the approach we'll follow through this book: develop simple, maintainable transform/reshape scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 
 The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to think at scale, to choose a workable series of chess moves connecting the data you have to the insight you need. In the first part of the book, after briefly becoming familiar with the basic framework, we'll proceed through a series of examples to help you identify the key locality and thus the transformation each step calls for. In the second part of that book, we'll apply this to a range of interesting problems and so build up a set of reusable tools for asking deep questions in actual practice.
+
+==== Takeaway #2: Locality
+
+
+Insight comes from data in context: places in the context of associated topics, or topics in the context of associated locations. When your data is far too large to fit on a single machine,
+
+In the second case, putting every word in context of all associated locations requires that 

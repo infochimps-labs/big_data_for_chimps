@@ -1,3 +1,4 @@
+[[overview_of_datasets]]
 == Overview of Datasets ==
 
 The examples in this book use the "Chimpmark" datasets: a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. They are the same datasets as used in the upcoming Chimpmark Challenge big-data benchmark. The datasets are:

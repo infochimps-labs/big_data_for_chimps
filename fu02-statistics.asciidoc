@@ -1,5 +1,6 @@
 == Statistics ==
 
+ simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
 
 Describe long-tail and normal distribution
 

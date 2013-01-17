@@ -1,8 +1,25 @@
 == Processing Text ==
 
 
+[[geographic_words]]
+=== Words with Geographic Flavor
+
 Let's return to the first example from the book -- identifying the geographic flavor of words using wikipedia -- with actual code and more detail.
 
+
+taking as a whole the terms that have a strong geographic flavor, we should largely see cultural
+terms (foods, sports, etc)
+
+Terms like "beach" or "mountain" will clearly 
+
+Common words like "couch" or "hair" 
+
+Words like 'town' or 'street' will be 
+
+You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
+
+Next, we'll choose some _exemplars_: familiar records to trace through
+ "Barbeque" should cover ;
 
 The Wikipedia corpus is large, unruly -- thirty million human-edited article
 
@@ -176,6 +193,21 @@ We then make the following adjustments:
 // 	n_cells_for_all(cell)	# sum counts for cell across all words
 // 	f_wds   		# frequencies of word across all cells/docs
 // 	f_wds_for_doc(doc)	# frequencies of word in given doc
+
+=== Exercises ===
+
+==== Document Authorship ====
+
+The approach we use here can be a baseline for the practical art of authorship detection in legal discovery, where a 
+
+
+
+==== Locate Documents by Content ====
+
+The "regional flavor" question comes from a paper by Jason Baldridge and Ben Wing (TODO ref), who go one step further and show you can actually locate articles by their text alone.
+
+Implement a model
+that quantifies the probability 
 
 === Notes ===
 
