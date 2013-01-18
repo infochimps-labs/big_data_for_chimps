@@ -55,7 +55,9 @@ We're hardly as clever as one of these multilingual chimpanzees, but even we can
 
 .Ruby helper
 ****
-* The first few lines define "regular expressions" selecting the initial characters (if any) to move. Since the names are in ALL CAPS, Ruby will bind each as a constant.
+There's a brief ruby cheatsheet at the end of the book, but 
+
+* The first few lines define "regular expressions" selecting the initial characters (if any) to move. Writing their names in ALL CAPS makes them be constants.
 * Wukong calls the `each_line do ... end` block with each line; the `|line|` part puts it in the `line` variable.
 * the `gsub` ("globally substitute") statement calls its `do ... end` block with each matched word, and replaces that word with the last line of the block.
 * the `yield latinized` line hands the translated string to wukong to output
@@ -87,9 +89,9 @@ Nanette and J.T. exercise a bunch more savvy optimizations (like handing out the
 
 ==== Running a Hadoop Job ====
 
-_Note: this assumes you have a working Hadoop cluster, however large or small; if not, see appendix._
+_Note: this assumes you have a working Hadoop cluster, however large or small._
 
-As you have guessed, Hadoop is organized very much like the Chimpanzee&Elephant team. Let's dive in and see it in action.
+As you've surely guessed, Hadoop is organized very much like the Chimpanzee & Elephant team. Let's dive in and see it in action.
 
 First, copy the data onto the cluster:
 
@@ -126,6 +128,8 @@ When you run `hadoop fs -put ...`, the putter process does the following for eac
 4. As soon as each HDFS block fills, even if it is mid-record, it is closed; steps 2 and 3 are repeated for the next block.
 
 ===== Running on the cluster =====
+
+
 
 * Sent the job and its assets (code files, etc) to the jobtracker
 * 
