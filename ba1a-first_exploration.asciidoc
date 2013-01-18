@@ -29,7 +29,9 @@ Instead of the places, let's look at the words. Barbeque is popular all through 
 
 So here's our first exploration:
 
-    For every word in the English language, which of them have a strong geographic flavor, and what are the places they attach to?
+    For every word in the English language,
+    which of them have a strong geographic flavor,
+    and what are the places they attach to?
 
 This may not be a practical question (though I hope you agree it's a fascinating one), but it is a template for a wealth of practical questions. It's a _geospatial analysis_ showing how patterns of term usage vary over space; the same approach can instead uncover signs of an epidemic from disease reports, or common browsing behavior among visitors to a website. It's a _linguistic analysis_ attaching estimated location to each term; the same approach term can instead quantify document authorship for legal discovery, letting you prove the CEO did authorize his nogoodnik stepson to destroy that orphanage. It's a _statistical analysis_ requiring us to summarize and remove noise from a massive pile of term counts; we'll use those methods in almost every exploration we do. It isn't itself a _time-series analysis_, but you'd use this data to form a baseline to detect trending topics on a social network or the anomalous presence of drug-trade related terms on a communication channel.
 
