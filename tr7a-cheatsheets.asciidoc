@@ -51,7 +51,7 @@
 |				|
 |======
 
-[[commandline_tricks]
+[[commandline_tricks]]
 .UNIX commandline tricks
 [options="header"]
 |=======
