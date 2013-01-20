@@ -9,7 +9,7 @@ Hadoop's bargain is this. You must give up fine-grained control over how data is
 
     Data flutters by
     Elephants make sturdy piles
-    Insight from context
+    Insight shuffles forth
 
 For any such program, Hadoop's diligent elephants intelligently schedule the tasks across ones or dozens or thousands of machines. They attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and attend to myriad other details that otherwise stand between you and insight. Putting these constraints on how you ask your _question_ releases constraints that traditional database technology placed on your _data_. Unlocking access to data that is huge, unruly, organic, highly-dimensional and deeply connected unlocks answers to a new deeper set of questions about the large-scale behavior of humanity and our universe. <remark>too much?? pk4</remark>
 

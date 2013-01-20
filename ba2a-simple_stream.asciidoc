@@ -35,7 +35,7 @@ We're hardly as clever as one of these multilingual chimpanzees, but even we can
         tail.capitalize! if head =~ UPPERCASE_RE
         "#{tail}-#{head.downcase}ay"
       end
-      yield latinized
+      yield(latinized)
     end
 ----
 
@@ -55,12 +55,10 @@ We're hardly as clever as one of these multilingual chimpanzees, but even we can
 
 .Ruby helper
 ****
-There's a brief ruby cheatsheet at the end of the book, but 
-
 * The first few lines define "regular expressions" selecting the initial characters (if any) to move. Writing their names in ALL CAPS makes them be constants.
 * Wukong calls the `each_line do ... end` block with each line; the `|line|` part puts it in the `line` variable.
 * the `gsub` ("globally substitute") statement calls its `do ... end` block with each matched word, and replaces that word with the last line of the block.
-* the `yield latinized` line hands the translated string to wukong to output
+* `yield(latinized)` hands off the `latinized` string for wukong to output
 ****
 
 To test the program on the commandline, run
@@ -75,7 +73,7 @@ So that's what it looks like when a `cat` is feeding the program data; let's see
 
 ==== Chimpanzee and Elephant: A Day at Work ====
 
-Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands the day's translation manual to chimps as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
+Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands each chimp the day's translation manual and a passage to translate as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
 
 Some passages are harder than others, so it's important that any elephant can deliver page blocks to any chimpanzee -- otherwise you'd have some chimps goofing off while others are stuck translating _King Lear_ into Kinyarwanda. On the other hand, sending page blocks around arbitrarily will clog the hallways and exhaust the elephants.
 
@@ -129,11 +127,21 @@ When you run `hadoop fs -put ...`, the putter process does the following for eac
 
 ===== Running on the cluster =====
 
+Now let's look at what happens when you run your job.
 
+(TODO: verify this is true in detail. @esammer?)
 
-* Sent the job and its assets (code files, etc) to the jobtracker
-* 
+* _Runner_: The program you launch sends the job and its assets (code files, etc) to the jobtracker. The jobtracker hands a `job_id` back (something like `job_201204010203_0002` -- the datetime the jobtracker started and the count of jobs launched so far); you'll use this to monitor and if necessary kill the job.
+* _Jobtracker_: As tasktrackers "heartbeat" in, the jobtracker hands them a set of 'task's -- the code to run and the data segment to process (the "split", typically an HDFS block). 
+* _Tasktracker_: each tasktracker launches a set of 'mapper child processes', each one an 'attempt' of the tasks it received. (TODO verify:) It periodically reassures the jobtracker with progress and in-app metrics.
+* _Jobtracker_: the Jobtracker continually updates the job progress and app metrics. As each tasktracker reports a complete attempt, it receives a new one from the jobtracker.
+* _Tasktracker_: after some progress, the tasktrackers also fire off a set of reducer attempts, similar to the mapper step.
+* _Runner_: stays alive, reporting progress, for the full duration of the job. As soon as the job_id is delivered, though, the Hadoop job itself doesn't depend on the runner -- even if you stop the process or disconnect your terminal the job will continue to run.
 
+[WARNING]
+===============================
+Please keep in mind that the tasktracker does _not_ run your code directly -- it forks a separate process in a separate JVM with its own memory demands. The tasktracker rarely needs more than a few hundred megabytes of heap, and you should not see it consuming significant I/O or CPU.
+===============================
 
 ==== Chimpanzee and Elephant: Splits ====
 

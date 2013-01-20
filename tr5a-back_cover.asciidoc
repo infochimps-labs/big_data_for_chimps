@@ -21,9 +21,9 @@ What you might not yet know is that Hadoop's power comes from _embracing_, not c
 
 Hadoop's bargain is thus: you must agree to write all your programs according to single certain form, which we'll call the "Map / Reduce Haiku":
 
-    Data flutters by
-    Elephants make sturdy piles
-    Number becomes thought
+    data flutters by
+    elephants make sturdy piles
+    insight shuffles forth
 
 For any such program, Hadoop's diligent elephants will intelligently schedule the tasks across ones or dozens or thousands of machines; attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and a myriad other details that would otherwise stand between you and insight.
 
