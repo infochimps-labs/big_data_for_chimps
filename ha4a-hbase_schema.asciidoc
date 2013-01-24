@@ -18,19 +18,9 @@ Here is most of what you can ask HBase to do (roughly in order of efficiency):
 
 That's pretty much it! There are some conveniences (versioning by timestamp, time-expirable values, custom filters, and a type of vertical partitioning known as column families); some tunables (read caching, fast rejection of missing rows, and compression); and some advanced features, not covered here (transactions, and a kind of stored procedures/stored triggers called coprocessors). For the most part, however, those features just ameliorate the access patterns listed above.
 
-A good HBase data model is "designed for reads", and your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns.
-
-// All of the first 5 access patterns above are fairly performant; when rows start getting
-// cumbersome, or you
-
-* What question do you want to ask that _must_ happen in less than 30 milliseconds?
-* There are a set of related questions -- which would you like to be fast?
-* Given that -- here's the rest of the questions you can ask?
-
-
 [[hbase_no_yuo]]
-[NOTE]
-===============================
+.Features you don't get with HBase
+****
 Here's a partial list of features you do _not_ get in HBase:
 
 * efficient querying or sorting by cell value
@@ -43,9 +33,21 @@ Here's a partial list of features you do _not_ get in HBase:
 Sometimes you can partially recreate those features, and often you can accomplish the same _tasks_ you'd use those features for, but only with significant constraints or tradeoffs. (You _can_ pick up the kids from daycare in a dump truck, but only an idiot picks up their prom date in a dump truck, and in neither case is it the right choice). 
 
 More than most engineering tools, it's essential to play to HBase's strengths, and in general the simpler your schema the better HBase will serve you. Somehow, though, the sparsity of its feature set amplifies the siren call of even those few features. Resist, Resist. The more stoicly you treat HBase's small _feature_ set, the better you will realize how surprisingly large HBase's _solution_ set is.
-==================================
+****
 
-=== Keep it Stupidly Simple ===
+=== Schema Design Process: Keep it Stupidly Simple
+
+A good HBase data model is "designed for reads", and your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns. 
+
+An HBase data mode is typically designed around multiple tables, each serving one or a small number of online queries or batch jobs. These are the three questions to ask:
+
+1. What question do you want to ask that _must_ happen in less than 30 milliseconds?
+2. There are a set of related questions -- which would you like to be fast?
+3. Given that -- here's the rest of the questions you can ask.
+
+Let's walk through several examples, each illuminating on
+
+=== Autocomplete API (Key-Value lookup) ===
 
 Let's sketch the implementation of an autocomplete API on Wikipedia page titles, an example that truly plays to HBase's strengths. As a visitor types characters into a search bar, the browser will request a JSON-encoded list of the top 10 most likely completions for that prefix. Responsiveness is essential: at most 50 milliseconds end-to-end response time. Several approaches might spring to mind, like a range query on titles; a prefix query against a text search engine; or a specialized "trie" datastructure. HBase provides a much stupider, far superior solution.
 
