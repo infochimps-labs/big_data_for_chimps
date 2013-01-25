@@ -1,3 +1,5 @@
+== Preface
+
 // :author:        Philip (flip) Kromer
 // :doctype: 	book
 // :toc:
@@ -7,17 +9,17 @@
 
 image::images/front_cover.jpg[Front Cover]
 
-== Hello, Early Releasers ==
+=== Hello, Early Releasers ===
 
 Hello and Thanks, Courageous and Farsighted Early Released-To'er! I want to make sure the book delivers value to you now, and rewards your early confidence by becoming the book you're proud to own.
 
-=== My Questions for You ===
+==== My Questions for You ====
 
 * The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". I hate it when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
 
 * Analogies: We'll be accompanied on part of our journey by Chimpanzee and Elephant, whose adventures are surprisingly relevant to understanding the internals of Hadoop. I don't want to waste your time laboriously remapping those adventures back to the problem at hand, but I definitely don't want to get too cute with the analogy. Again, please let me know if I err on either side.
 
-=== Probable Contents ===
+==== Probable Contents ====
 
 This is the plan. We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
@@ -84,7 +86,7 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Sizes of the Universe
   - Hadoop Tuning & Configuration Variables
 
-=== Not Contents ===
+==== Not Contents ====
   
 I'm not currently planning to cover Hive -- I believe the pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
 
@@ -96,7 +98,7 @@ Other things I don't plan to include:
 * Stream processing with Trident. (A likely sequel should this go well?)
 * At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
 
-=== Feedback ===
+==== Feedback ====
 
 * The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`. 
 * Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
@@ -104,10 +106,10 @@ Other things I don't plan to include:
 OK! On to the book. Or, on to the introductory parts of the book and then the book.
 
 [[about]]
-== About  ==
+=== About  ===
 
 [[about_coverage]]
-=== What this book covers ===
+==== What this book covers ====
 
 'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools. 
 
@@ -131,7 +133,7 @@ Most of the chapters have exercises included. If you're a beginning user, I high
 Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters.
 
 [[about_is_for]]
-=== Who this book is for ===
+==== Who this book is for ====
 
 You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala. Familiarity with SQL will help a bit, but isn't essential. 
 
@@ -142,7 +144,7 @@ All of the code in this book will run unmodified on your laptop computer and on 
 Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
 
 [[about_is_not_for]]
-=== Who this book is not for ===
+==== Who this book is not for ====
 
 This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
 
@@ -151,7 +153,7 @@ That is because for almost everyone, the cost of the cluster is far less than th
 The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 
 [[about_how_written]]
-=== How this book is being written ===
+==== How this book is being written ====
 
 I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[Infochimps blog] after minor cleanup.
 

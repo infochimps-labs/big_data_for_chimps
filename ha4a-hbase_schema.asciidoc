@@ -7,7 +7,7 @@ Space doesn't allow treating HBase in any depth, but it's worth equipping you wi
 
 You're probably familiar with some database or another: MySQL, MongoDB, Oracle and so forth. These are passenger vehicles of various sorts, with a range of capabilities and designed for the convenience of the humans that use them. HBase is not a passenger vehicle -- it is a big, powerful dump truck. It has no A/C, no query optimizer and it cannot perform joins or groups. You don't drive this dump truck for its ergonomics or its frills; you drive it because you need to carry a ton of raw data-mining ore to the refinery. Once you learn to play to its strengths, though, you'll find it remarkably powerful.
 
-Here is most of what you can ask HBase to do (roughly in order of efficiency):
+Here is most of what you can ask HBase to do, roughly in order of efficiency:
 
 1. Given a row key: get, put or delete a single value into which you've serialized a whole record.
 2. Given a row key: get, put or delete a hash of column/value pairs, sorted by column key.
@@ -39,13 +39,13 @@ More than most engineering tools, it's essential to play to HBase's strengths, a
 
 A good HBase data model is "designed for reads", and your goal is to make _one read per customer request_ (or as close as possible). If you do so, HBase will yield response times on the order of 1ms for a cache hit and 10ms for a cache miss, even with billions of rows and millions of columns. 
 
-An HBase data mode is typically designed around multiple tables, each serving one or a small number of online queries or batch jobs. These are the three questions to ask:
+An HBase data mode is typically designed around multiple tables, each serving one or a small number of online queries or batch jobs. There are the questions to ask:
 
-1. What question do you want to ask that _must_ happen in less than 30 milliseconds?
-2. There are a set of related questions -- which would you like to be fast?
-3. Given that -- here's the rest of the questions you can ask.
+1. What query do you want to make that _must_ happen at milliseconds speed?
+2. There are a set of related queries or batch jobs -- which would you like to be efficient?
 
-Let's walk through several examples, each illuminating on
+1. What is the batch job you are most interested in simplifying?
+2. There are a set of related queries or batch jobs -- which would you like to be efficient?
 
 === Autocomplete API (Key-Value lookup) ===
 

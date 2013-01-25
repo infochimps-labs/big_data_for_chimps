@@ -2,6 +2,9 @@
 
 === Locality of Reference ===
 
+(Note to early readers: the following
+
+
     Ever since there were 
 
         [] [] [] [] 
