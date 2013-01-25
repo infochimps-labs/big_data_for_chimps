@@ -23,9 +23,9 @@ Hello and Thanks, Courageous and Farsighted Early Released-To'er! I want to make
 
 This is the plan. We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
-* *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
-  
-* *Transform-only Job*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+1. *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
+
+2. *Transform-only Job*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
   - Chimpanzee and Elephant start a business
   - Pig Latin translation
   - Your first job: test at commandline
@@ -34,60 +34,84 @@ This is the plan. We'll roll material out over the next few months. Should we fi
 
   - Why Hadoop I: Simple Parallelism
 
-* *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
+3. *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
   - Locality: the central challenge of distributed computing
   - The Hadoop Haiku
-   
-* *Server Log Processing*:
+
+4. *Server Log Processing*:
   - Parsing logs and using regular expressions
   - Histograms and time series of pageviews
   - Geolocate visitors based on IP
   - (Ab)Using Hadoop to stress-test your web server
-* *Semi-Structured Data*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
+
+5. *Using Hadoop and herding `cats`*:
+
+6. *Semi-Structured Data*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
   - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
   - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
   - US Commercial Airline Flights: every commercial airline flight since 1987
   - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
   - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
-* *Data Models & Data Formats*: How to design your data models, transmit their contents, and organize their whole.
-* *How to Think*: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
-* *Geographic Data*:
+
+7. *Data Models & Data Formats*: How to design your data models, transmit their contents, and organize their whole.
+
+8. *How to Think*: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+
+9. *Geographic Data*:
   - C&E
-* *Why Hadoop*: Why and when is Hadoop called for? What changed about the world that we weren'talways doing it this way?
-* *Statistics*:
+
+10. *Why Hadoop*: Why and when is Hadoop called for? What changed about the world that we weren'talways doing it this way?
+
+11. *Statistics*:
   - Sampling responsibly: it's harder and more important than you think
   - Statistical aggregates and the danger of large numbers
   - Histograms and Percentiles
-* *Graph Processing*:
+
+12. *Graph Processing*:
   - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
   - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
-  - _(bubble)_ 
-* *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
-  - Indexing documents 
+  - _(bubble)_
+
+13. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
+  - Indexing documents
   - Tokenizing documents using Lucene
   - Pointwise Mutual Information
   - _(bubble)_ Minhashing to combat a massive feature space
   - _(bubble)_ How to cheat with Bloom filters
   - _(bubble)_ Topic extraction using (to be determined)
-* *Machine Learning for Busy Folks with Things to Do*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
+
+14. *Time Series*
+
+15. *Machine Learning for Busy Folks with Things to Do*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
   - Naive Bayes
   - Logistic Regression
   - Random Forest (using Mahout)
   We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
-* *Hadoop Internals*:
+
+16. *Hadoop Internals*
+
+17. *Hadoop Tuning*:
   - Tuning for the Wise and Lazy
   - Tuning for the Brave and Foolish
   - The USE Method for understanding performance and diagnosing problems
-* *Advanced Pig*:
+
+18. *Hadoop Java API*
+
+20. *Advanced Pig*:
   - Specialized joins that can dramatically speed up (or make feasible) your data transformations
   - Pig UDFs (User-Defined Functions) to extend Pig's capabilities
-* *Cheatsheets*:
+
+21. *HBase Data Model*
+
+22. *Misc*
+
+23. *Cheatsheets*:
   - Regular Expressions
   - Sizes of the Universe
   - Hadoop Tuning & Configuration Variables
 
 ==== Not Contents ====
-  
+
 I'm not currently planning to cover Hive -- I believe the pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
 
 Other things I don't plan to include:
@@ -100,7 +124,7 @@ Other things I don't plan to include:
 
 ==== Feedback ====
 
-* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`. 
+* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`.
 * Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
 
 OK! On to the book. Or, on to the introductory parts of the book and then the book.
@@ -111,7 +135,7 @@ OK! On to the book. Or, on to the introductory parts of the book and then the bo
 [[about_coverage]]
 ==== What this book covers ====
 
-'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools. 
+'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools.
 
 It contains
 
@@ -135,7 +159,7 @@ Feel free to hop around among chapters; the application chapters don't have larg
 [[about_is_for]]
 ==== Who this book is for ====
 
-You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala. Familiarity with SQL will help a bit, but isn't essential. 
+You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala. Familiarity with SQL will help a bit, but isn't essential.
 
 This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation.
 
@@ -148,7 +172,7 @@ Most importantly, you should have an actual project in mind that requires a big 
 
 This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
 
-That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production. 
+That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production.
 
 The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 

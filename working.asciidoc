@@ -1,2 +1,0 @@
-
-include::fu02-server_logs.asciidoc[]

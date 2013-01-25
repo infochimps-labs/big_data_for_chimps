@@ -1,13 +1,13 @@
 == The Stream (ch. B) ==
 
-==== Chimpanzee and Elephant Start a Business ====
+=== Chimpanzee and Elephant Start a Business ===
 
 As you know, chimpanzees love nothing more than sitting at typewriters processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of carge with great determination. The chimpanzees and the elephants realized there was a real business opportunity from combining their strengths, and so they formed the Chimpanzee and Elephant Data Shipping Corporation.
 
 They were soon hired by a publishing firm to translate the works of Shakespeare into every language.
 In the system they set up, each chimpanzee sits at a typewriter doing exactly one thing well: read a set of passages, and type out the corresponding text in a new language. Each elephant has a pile of books, which she breaks up into "blocks" (a consecutive bundle of pages, tied up with string).
 
-==== A Simple Streamer ====
+=== A Simple Streamer ===
 
 We're hardly as clever as one of these multilingual chimpanzees, but even we can translate text into Pig Latin. For the unfamiliar, you turn standard English into Pig Latin as follows:
 
@@ -71,7 +71,7 @@ The last line of its output should look like
 
 So that's what it looks like when a `cat` is feeding the program data; let's see how it works when an elephant is setting the pace.
 
-==== Chimpanzee and Elephant: A Day at Work ====
+=== Chimpanzee and Elephant: A Day at Work ===
 
 Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands each chimp the day's translation manual and a passage to translate as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
 
@@ -85,7 +85,7 @@ Second, the page blocks of each play are distributed all around the office, not 
 
 Nanette and J.T. exercise a bunch more savvy optimizations (like handing out the longest passages first, or having folks who finish early pitch in so everyone can go home at the same time, and more). There's no better demonstration of power through simplicity.
 
-==== Running a Hadoop Job ====
+=== Running a Hadoop Job ===
 
 _Note: this assumes you have a working Hadoop cluster, however large or small._
 
@@ -110,11 +110,11 @@ Now let's run it on the full Shakespeare corpus. Even this is hardly enough data
 
     wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
 
-==== Brief Anatomy of a Hadoop Job ====
+=== Brief Anatomy of a Hadoop Job ===
 
 We'll go into much more detail in (TODO: ref), but here are the essentials of what you just performed.
 
-===== Copying files to the HDFS =====
+==== Copying files to the HDFS ====
 
 When you ran the `hadoop fs -mkdir` command, the Namenode (Nanette's Hadoop counterpart) simply made a notation in its directory: no data was stored. If you're familiar with the term, think of the namenode as a 'File Allocation Table (FAT)' for the HDFS.
 
@@ -125,7 +125,7 @@ When you run `hadoop fs -put ...`, the putter process does the following for eac
 3. The putter process transfers the file over the network to the first data node in the set; that datanode transfers its contents to the next one, and so forth. The putter doesn't consider its job done until a full set of replicas have acknowledged successful receipt.
 4. As soon as each HDFS block fills, even if it is mid-record, it is closed; steps 2 and 3 are repeated for the next block.
 
-===== Running on the cluster =====
+==== Running on the cluster ====
 
 Now let's look at what happens when you run your job.
 
@@ -143,7 +143,7 @@ Now let's look at what happens when you run your job.
 Please keep in mind that the tasktracker does _not_ run your code directly -- it forks a separate process in a separate JVM with its own memory demands. The tasktracker rarely needs more than a few hundred megabytes of heap, and you should not see it consuming significant I/O or CPU.
 ===============================
 
-==== Chimpanzee and Elephant: Splits ====
+=== Chimpanzee and Elephant: Splits ===
 
 I've danced around a minor but important detail that the workers take care of. For the Chimpanzees, books are chopped up into set numbers of pages -- but the chimps translate _sentences_, not pages, and a page block boundary might happen mid-sentence.
 
@@ -182,7 +182,7 @@ Next, run each script three times, mixing up the order. Write down
 
 Most people are surprised by the result.
 
-==== Exercise 1.2: A Petabyte-scale `wc` command ====
+==== Exercise 1.2: A Petabyte-scalable `wc` command ====
 
 Create a script, `wc.rb`, that emit the length of each line, the count of bytes it occupies, and the number of words it contains.
 
