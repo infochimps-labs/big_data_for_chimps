@@ -1,4 +1,4 @@
-## Big Data for Chimps: A Seriously Fun guide to Hadoop and Terabyte-scale data processing ==
+## Big Data for Chimps: A Seriously Fun guide to Terabyte-scale data processing
 
 This is the work-in-progress version of the upcoming O'Reilly book, _Big Data for Chimps: A Seriously Fun guide to Hadoop and Terabyte-scale data processing_.
 

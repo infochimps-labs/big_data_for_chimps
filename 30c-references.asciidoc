@@ -1,7 +1,6 @@
 == References ==
 
-
-==== Other Hadoop Books ====
+**Other Hadoop Books**
 
 * Hadoop the Definitive Guide, Tom White
 * Hadoop Operations, Eric Sammer
@@ -11,7 +10,7 @@
 * http://hadoop.apache.org/docs/mapreduce/current/streaming.html[Hadoop Streaming FAQ]
 * http://hadoop.apache.org/docs/r0.20.2/mapred-default.html[Hadoop Configuration defaults -- mapred]
 
-==== Source material ====
+**Source material**
 
 * http://en.wikipedia.org/wiki/Lexington,_Texas[Wikipedia article on Lexington, Texas] (CC-BY-SA)
 
@@ -20,15 +19,10 @@
 * http://blog.markfeeney.com/2010/10/jmx-through-ssh-tunnel.html[JMX through a ssh tunnel]
 
 
-==== To Consiter ====
+**To Consider**
 
 * http://www.cse.unt.edu/~rada/downloads.html -- Texts semantically annotated with WordNet 1.6 senses (created at Princeton University), and automatically mapped to WordNet 1.7, WordNet 1.7.1, WordNet 2.0, WordNet 2.1, WordNet 3.0
 
-* 
-
-
-
-==== Code Sources ====
-
+**Code Sources**
 
 * https://github.com/yohasebe/wp2txt[wp2txt], by http://yohasebe.com[Yoichiro Hasebe]
