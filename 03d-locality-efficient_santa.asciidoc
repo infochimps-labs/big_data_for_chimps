@@ -1,4 +1,3 @@
-
 === Sorted Batches ===
 
 Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
@@ -17,7 +16,7 @@ This makes life very efficient for the elves. They just start pulling work order
 
 image::images/bchm_0210.png[Secondary sort]
 
-Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy. 
+Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy.
 
 
 === The Map-Reduce Haiku ===
@@ -28,7 +27,7 @@ As you recall, the bargain that Map/Reduce proposes is that you agree to only wr
           elephants make sturdy piles
         insight shuffles forth
 
-More prosaically, 
+More prosaically,
 
 1. *label*      -- turn each input record into any number of labelled records
 2. *group/sort* -- hadoop groups those records uniquely under each label, in a sorted order
@@ -47,13 +46,16 @@ If you notice, the only time data moves from one machine to another is when the 
 Stream steps become mapper-only jobs, but don't conflate a reshape _step_ with the reduce _phase_ of a job. A reshape step typically becomes at least one mapper phase and reducer phase.
 ===============================
 
+=== The Group/Sort Guarantee ===
 
-==== The Reducer Guarantee ====
+When Hadoop does the group/sort, it establishes the following guarantee for the data that arrives at the reducer:
 
-It's very important that you understand the guarantee Hadoop provides to each reducer, and what it unlocks. 
+* each labelled record belongs to exactly one sorted group;
+* each group is processed by exactly one reducer;
+* the records sent to each receiver are sorted lexically by the chosen key.
 
-* Each mapper-output record goes to exactly one reducer, as solely determined by its key.
-* All records for a given key go to the same reducer
-* If a reducer sees any element of a group, it sees all elements of the group. A reducer may see multiple groups.
-* Records are fed to the reducer in order by key.
+It's very important that you understand what that unlocks, so I'm going to spell it out a few different ways.
 
+First, each mapper-output record goes to exactly one reducer, as solely determined by its key. So if several records have the same key, they will all go to the same reducer. From the reducer's perspective, you know that if it sees any element of a group, it will see all elements of the group.
+
+In the typical case you should think in terms of groups and not about the whole reduce set, but it's important to know that each reducer typically sees multiple groups. (The number of reducer processes is set based on how many machines you'd like to use, and it's more efficient to process large batches.) Those groups are arbitrary: if  Records are fed to the reducer in order by key.

@@ -10,8 +10,6 @@ include::03a-locality-pivot.asciidoc[]
 
 include::03b-locality-saving_christmas.asciidoc[]
 
-include::03c-locality-simple_reshape.asciidoc[]
-
 include::03d-locality-efficient_santa.asciidoc[]
 
 include::03e-jt_and_nanette_at_work_for_you.asciidoc[]
