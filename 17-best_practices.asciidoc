@@ -1,2 +1,3 @@
-[[best_practices]]== Best Practices
+[[best_practices]]
+== Best Practices
 

@@ -1,2 +1,3 @@
-[[hbase_data_modeling]]== Hbase Data Modeling
+[[hbase_data_modeling]]
+== Hbase Data Modeling
 

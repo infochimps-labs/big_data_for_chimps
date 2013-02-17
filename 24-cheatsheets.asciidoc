@@ -1,2 +1,3 @@
-[[cheatsheets]]== Cheatsheets
+[[cheatsheets]]
+== Cheatsheets
 

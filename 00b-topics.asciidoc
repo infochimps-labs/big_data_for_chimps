@@ -86,12 +86,7 @@ INTERMEDIATE
     - (?maybe?) SVD as Principal Component Analysis
   - (?maybe?) Topic extraction using (to be determined)
 
-9. Interlude I: *Data Models, Data Formats, Data Management*:
-  - How to design your data models
-  - How to serialize their contents (orig, scratch, prod)
-  - How to organize your scripts and your data
-
-10. *Statistics*
+9. *Statistics*
   - Averages, Percentiles, and Normalization
     - sum, average, standard deviation, etc (airline_flights)
   - Percentiles / Median
@@ -107,14 +102,14 @@ INTERMEDIATE
     - consistent sampling
     - distributions
   
-11. *Time Series*
+10. *Time Series*
   - Anomaly detection
     - Wikipedia Pageviews
   - windowing and rolling statistics
   - (?maybe?) correlation of joint timeseries
     - (?even mayber?) similar wikipedia pages based on pageview time series
   
-12. *Geographic*
+11. *Geographic*
   - Spatial join (find all UFO sightings near Airports)
   - mechanics of handling geo data
   - Statistics on grid cells
@@ -130,7 +125,7 @@ INTERMEDIATE
   - Clustering
   - Pointwise mutual information
  
-13. *`cat` herding*
+12. *`cat` herding*
   - total sort
   - transformations
     - `ruby -ne`
@@ -147,21 +142,19 @@ INTERMEDIATE
     - `time`
   - advanced hadoop filesystem (chmod, setrep, fsck)
   
-14. *Data munging (Semi-structured data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book.
+13. *Data munging (Semi-structured data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book.
   - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
   - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
   - US Commercial Airline Flights: every commercial airline flight since 1987
   - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
   - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
 
-15. Interlude II: *Best Practices and Pedantic Points of style*
-  - Pedantic Points of Style 
-  - Best Practices
-  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
-  - Why Hadoop
-  - robots are cheap, people are important
+14. Interlude I: *Data Models, Data Formats, Data Management*:
+  - How to design your data models
+  - How to serialize their contents (orig, scratch, prod)
+  - How to organize your scripts and your data
 
-16. *Graph* -- some better-motivated subset of:
+15. *Graph* -- some better-motivated subset of:
   - Adjacency List / Edge List conversion
   - Undirecting a graph, Min-degree undirected graph
   - Breadth-First Search
@@ -174,7 +167,7 @@ INTERMEDIATE
   - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
   - _(bubble)_
 
-17. *Machine Learning without Grad School*
+16. *Machine Learning without Grad School*
   - weather & flight delays for prediction
     - Naive Bayes
     - Logistic Regression ("SGD")
@@ -187,6 +180,13 @@ INTERMEDIATE
       - unreasonable effectiveness
       - partition the data, recombine the models
     - pointers for the person who is going to get fancy anyway
+
+17. Interlude II: *Best Practices and Pedantic Points of style*
+  - Pedantic Points of Style 
+  - Best Practices
+  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+  - Why Hadoop
+  - robots are cheap, people are important
     
 PRACTICAL
 

@@ -1,2 +1,3 @@
-[[time_series]]== Time Series
+[[time_series]]
+== Time Series
 

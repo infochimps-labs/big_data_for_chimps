@@ -1,2 +1,3 @@
-[[hadoop_internals]]== Hadoop Internals
+[[hadoop_internals]]
+== Hadoop Internals
 
