@@ -35,4 +35,3 @@ include::30c-references.asciidoc[]
 include::30f-glossary.asciidoc[]
 
 include::30g-back_cover.asciidoc[]
-
