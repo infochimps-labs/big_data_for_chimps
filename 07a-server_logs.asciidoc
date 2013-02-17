@@ -162,8 +162,6 @@ This arrangement caters to range queries in a relational database, but isn't sui
 
 To get the right locality, take each range and break it at some block level. Instead of having `1.2.3.4` to `1.2.5.6` on one line, let's use the first three quads (first 24 bits) and emit rows for `1.2.3.4` to `1.2.3.255`, `1.2.4.0` to `1.2.4.255`, and `1.2.5.0` to `1.2.5.6`. This lets us use the first segment as the partition key, and the full ip address as the sort key.
 
-
-
           lines            bytes  description                  file            
       15_288_766   1_094_541_688  24-bit partition key         maxmind-geolite_city-20121002.tsv
        2_288_690     183_223_435  16-bit partition key         maxmind-geolite_city-20121002-16.tsv

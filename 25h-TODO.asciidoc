@@ -1,66 +1,53 @@
 [[TODO]]
-== TODO / Errata ==
+== TODO
 
-* The chapter on tuning requires *heavy* technical review. It is largely synthesized from recommendations by others, but needs to be buttoned up and fact-checked.
+=== Pick List
 
-* The technical chapters and the "Mu" chapters will be interleaved later, but they're held separate for now.
+==== Tech-review ready
 
+1. *First exploration*
+2. *Simple Transform*
+3. *Transform-Pivot Job*
+20. *Data Modeling for HBase-style Database*
 
-* check for consistent usage:
-  - "hash" (always means "dictionary"), vs "digest" (always means "MD5 or whatever")
-  - whatever replaces merge/shuffle/sort in reduce steps
-  - "pivot", not "reshape"
+==== Harden
 
-===== First exploration
+7. *Server Log Processing*  (DL jobs)
+12. *Geographic*            (DL jobs)
+21. *Hadoop Internals*
+22. *Hadoop Tuning*         (experiments)
 
-<remark>JOEMAN:Comment Consider forming this into a more clear question. The analysis that proceeds is of course interesting, but you don't stage me with a very clear question. Seeking the 'flavor' of a region doesn't immediately strike me as a problem I have or can imagine having - unless I'm trying to create a Lonely Planet guide, for example. More context for the example can encourage interest and attention.</remark>
+==== Dieterish
 
-===== E&C I
+4. *First Exploration: Regional Flavor* (code mostly, prose coming)
+6. *Filesystem Mojo*  
+13. *`cat` herding*
+17. *Machine Learning without Grad School* (code complete, mostly; needs prose)
 
-There's actually a direct version of this: early Computers, i.e. people with the job title Computer
+==== Flippish
 
-* explain more of the role of chimp and elephant, slightly tighter links
+5. *The Toolset*
+18. *Hadoop Native Java API*
+19. *Advanced Pig*
 
-===== Reshape / Locality
+==== Shambolic Content
 
-Choose a different word for "locality" -- "pivot"
+10. *Statistics*
+14. *Data munging (Semi-structured data)*
+9. Interlude I: *Organizing Data*
+15. Interlude II: *Best Practices and Pedantic Points of style*
+23. *Overview of Datasets and Scripts*
 
-Make the locality examples either longer, or shorter -- but mostly clearer.
+==== Not Yet
 
+8. *Text Processing*
+11. *Time Series*
+16. *Graph*
 
-[[todo_tasks]]
-=== Tasks for later ===
+=== Housekeeping
 
-* Link-shorten links
-* For large export images: http://zoom.it/pages/about/
+* submodule wukong (ng)
+* symlink code directory
+* get dexy going (again)
 
-[[todo_hey_editor]]
-==== Hey Editor ====
-
-* Does a bulleted list have a period at the end of the line?
-* How do I make a chapter index that is less than `1` (eg the "about this book" section)?
-* What does "replaceable" mean?
-* When introducing a _new term_ do I decorate it at all besides the emphasis?
-* Indexing hints, yes or no?
-
-==== Random Notes ====
-
-* Winston:
-  - outline
-  - promise     -- what will this talk do?
-  - heuristics
-    - cycle       -- say what you'll say/say it/say it again
-    - punctuation -- re-situate audience
-    - near-miss   -- "isn't the concept, but doesn't miss it by much." (arch vs arch w/o top; arch vs arch where legs are pushed together).
-    - ask a qn    -- rhetorical question. Frequent and answerable
-  - 
-* 
-
-
-
-==== Organization ====
-
-* Practice   -- A real question, on real data, as we'd really do it. I'll especially try to highlight where you should be disciplined, where you should be clever, and where you should keep it simple
-* Patterns   -- Reasoning forward from the practical case to show the general patterns that guide its execution
-* Principles -- Lastly, the larger philosophy that should guide your thinking
 

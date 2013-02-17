@@ -1,3 +1,5 @@
+=== Topics
+
 1. *First exploration* Pt I
   - motivation
   - walkthrough
@@ -18,7 +20,7 @@
   - Elves pt2
   - Partition key + sort key
 
-4. *First Exploration: Geographic Flavor* pt II
+4. *First Exploration: Regional Flavor* pt II
   - articles -> wordbags
   - wordbag+geolocation join (wukong)
   - wordbag+geolocation join (pig)
@@ -228,3 +230,6 @@ APPENDIX
   - Hadoop Tuning & Configuration Variables
 
 25. *Appendix*  
+ 
+
+
