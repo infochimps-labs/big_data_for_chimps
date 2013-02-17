@@ -1,219 +1,228 @@
-1. *First exploration*
-   - motivation
-   - walkthrough
-   - reflection
+1. *First exploration* Pt I
+  - motivation
+  - walkthrough
+  - reflection
 
-2. *Stream*
-   - Why Hadoop I: Simple Parallelism
-   - Chimps at typewriters
-   - Pig Latin translation
-   - Testing it at commandline
-   - Running it on cluster
-   - Input Splits
+2. *Simple Transform*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+  - Chimpanzee and Elephant start a business
+  - Pig Latin translation
+  - Your first job: test at commandline
+  - Run it on cluster
+  - Input Splits
+  - Why Hadoop I: Simple Parallelism
 
-3. *Reshape*
-   - Locality
-   - Elves pt1
-   - Simple Join
-   - Elves pt2
-   - Partition key + sort key
+3. *Transform-Pivot Job*
+  - Locality
+  - Elves pt1
+  - Simple Join
+  - Elves pt2
+  - Partition key + sort key
 
-4. *Using Hadoop and herding `cat`s*
-   - overview of wukong
-   - overview of pig
-   - toolset overview
- 
-5. *`cat` herding*
-   - Simple (!) munging
-   - total sort
-   - sampling
+4. *First Exploration: Geographic Flavor* pt II
+  - articles -> wordbags
+  - wordbag+geolocation join (wukong)
+  - wordbag+geolocation join (pig)
+  - statistics on corpus
+  - wordbag for each geotiles
+  - PMI for each geotile
+  - MI for geotile
+  - (visualize)
 
-6. *Log Processing*
-   - Sessionizing a log
-   
-7. *Data munging (Semi-structured data)*
+INTERMEDIATE
+  
+5. *The Hadoop Toolset*
+  - toolset overview
+    - pig vs hive vs impala
+    - hbase & elasticsearch (not accumulo or cassandra)
+  - launching jobs
+    - seeing the data
+    - seeing the logs
+    - simple debugging
+    - `wu-ps`, `wu-kill`
+    - globbing, and caveat about shell vs. hdfs globs
+  - overview of wukong
+    - installing it (pointer to internet)
+    - classes you inherit from
+    - options, launching
+  - overview of pig
+    - options, launching
+    - operations
+    - functions
 
-8. *Statistics*
-   - Average, StdDev, etc of a huge spreadsheet
-   - Exact Percentiles (Median) of a huge spreadsheet
-   - Approximate Percentiles (Median) of a huge spreadsheet
-   - Histogram
+6. *Filesystem Mojo*
+    - `wu-dump`
+    - `wu-lign`
+    - `wu-ls`, `wu-du`
+    - `wu-cp`, `wu-mv`, `wu-put`, `wu-get`, `wu-mkdir`
+    - `wu-rm`, `wu-rm -r`, `wu-rm -r --skip_trash`
+    - filenames, wu style
+      - s3n, s3hdfs, hdfs, file (note: 'hdfs:///~' should translate to 'hdfs:///.')
+      - templating: `{user}`, `{pid}`, `{uuid}`; `{date}`, `{time}`, `{tod}`, `{epoch}`, `{yr}`, `{mo}`, `{day}`, `{hr}`, `{min}`, `{sec}`; `{run_env}`, `{project}`)
+      - (the default time-based one in http://docs.oracle.com/javase/6/docs/api/java/util/UUID.html)
+    - `wu-distcp`
+  - sugared jobs (wu-identity, wu-grep, wu-wc, wu-bzip, wu-gzip, wu-snappify, wu-digest (md5/sha1/etc))
 
-9. *Geographic*
-   - mechanics of handling geo data
-   - Statistics on grid cells
-   - Clustering
-   - Pointwise mutual information
+7. *Server Log Processing*
+  - Parsing logs and using regular expressions
+  - Histograms and time series of pageviews
+  - Geolocate visitors based on IP
+  - Sessionizing a log
+  - (Ab)Using Hadoop to stress-test your web server
+  - (DL paste list here)
+  - (see pagerank in section on graphs)
+  
+8. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
+  - grep'ing etc for simple matches
+  - wordbags using Lucene
+  - Indexing documents
+  - Pointwise Mutual Information
+  - Minhashing to combat a massive feature space
+  - How to cheat with Bloom filters
+  - K-means Clustering (mini-batch)
+  - (?maybe?) TF-IDF 
+  - (?maybe?) Document clustering with SVD
+    - (?maybe?) SVD as Principal Component Analysis
+  - (?maybe?) Topic extraction using (to be determined)
 
-10. *Text Processing*
-   - Inverted Index (word count)
-   - Minhash
+9. Interlude I: *Data Models, Data Formats, Data Management*:
+  - How to design your data models
+  - How to serialize their contents (orig, scratch, prod)
+  - How to organize your scripts and your data
 
+10. *Statistics*
+  - Averages, Percentiles, and Normalization
+    - sum, average, standard deviation, etc (airline_flights)
+  - Percentiles / Median
+    - exact percentiles / median
+    - approximate percentiles / median
+      - fit a curve to the CDF; 
+  - construct a histogram (tie back to server logs)
+    - "Average value frequency"
+  - Sampling responsibly: it's harder and more important than you think
+  - Statistical aggregates and the danger of large numbers
+  - normalize data by mapping to percentile, by mapping to Z-score
+  - sampling
+    - consistent sampling
+    - distributions
+  
 11. *Time Series*
-   - weather & flight delays for prediction
-   - Anomaly detection
-   - Wikipedia Pageview
-   - Flight delays
-   - World Cup
+  - Anomaly detection
+    - Wikipedia Pageviews
+  - windowing and rolling statistics
+  - (?maybe?) correlation of joint timeseries
+    - (?even mayber?) similar wikipedia pages based on pageview time series
+  
+12. *Geographic*
+  - Spatial join (find all UFO sightings near Airports)
+  - mechanics of handling geo data
+  - Statistics on grid cells
+  - quadkeys and grid coordinate system
+  - `d3` -- map wikipedia 
+  - k-means clustering to produce readable summaries
+  - partial quad keys for "area" data
+  - voronoi cells to do "nearby"-ness
+  - Scripts:
+  - `calculate_voronoi_cells` -- use weather station locations to calculate voronoi polygons
+  - `voronoi_grid_assignment` -- cells that have a piece of border, or the largest grid cell that has no border on it
+  - Using polymaps to see results
+  - Clustering
+  - Pointwise mutual information
+ 
+13. *`cat` herding*
+  - total sort
+  - transformations
+    - `ruby -ne`
+    - grep, cut, seq, (reference back to `wu-lign`)
+    - wc, sha1sum, md5sum, nl
+  - pivots
+    - wu-box, head, tail, less, split
+    - uniq, sort, join, `sort| uniq -c`
+    - bzip2, gzcat
+  - commandline workflow tips
+    - `> /dev/null 2>&1`
+    - `for` loops (see if you can get agnostic btwn zsh & bash) 
+    - nohup, disown, bg and `&`
+    - `time`
+  - advanced hadoop filesystem (chmod, setrep, fsck)
+  
+14. *Data munging (Semi-structured data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book.
+  - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
+  - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
+  - US Commercial Airline Flights: every commercial airline flight since 1987
+  - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
+  - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
 
-12. *Graph*
-   - Adjacency List / Edge List conversion
-   - Minimal Spanning Tree
-   - Pagerank
-   - Undirecting a graph
-   - Assemble a min-index Adj. list 
-   - Breadth-First Search
-   - Min-degree undirected graph
+15. Interlude II: *Best Practices and Pedantic Points of style*
+  - Pedantic Points of Style 
+  - Best Practices
+  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+  - Why Hadoop
+  - robots are cheap, people are important
 
-13. *Hadoop Internals*
+16. *Graph* -- some better-motivated subset of:
+  - Adjacency List / Edge List conversion
+  - Undirecting a graph, Min-degree undirected graph
+  - Breadth-First Search
+  - subuniverse extraction
+  - (?maybe?) Pagerank on server logs?
+  - (?maybe?) identify strong links
+  - Minimum Spanning Tree
+  - clustering coefficient
+  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
+  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
+  - _(bubble)_
 
-14. *Tuning, for the wise and lazy*
+17. *Machine Learning without Grad School*
+  - weather & flight delays for prediction
+    - Naive Bayes
+    - Logistic Regression ("SGD")
+    - Random Forest
+  - (?maybe?) Collaborative Filtering
+    - (?or maybe?) SVD on documents (eg authorship)
+  - where to go from here
+    - don't get fancy
+      - better features
+      - unreasonable effectiveness
+      - partition the data, recombine the models
+    - pointers for the person who is going to get fancy anyway
+    
+PRACTICAL
 
-15. *Tuning, for the brave and foolish*
+18. *Hadoop Native Java API*
+  - don't
 
+19. *Advanced Pig*
+  - Advanced operators:
+    - map-side join, merge join, skew joins
+  - Basic UDF
+  - why algebraic UDFs are awesome and how to be algebraic
+  - Custom Loaders
+    - Wonderdog: a LoadFunc / StoreFunc for elasticsearch
+  - Performance efficiency and tunables
+    
+20.  *Data Modeling for HBase-style Database*
+  
+21. *Hadoop Internals*
+  - What happens when a job is launched
+  - A shallow dive into the HDFS
 
-1. **Chimpanzee and Elephant Save Christmas** link:<chimpanzee_and_elephant>
-  ** stream of disordered records
-  ** group/sort records by their label
-  ** process each group of records
-  
-2.  **Heraclitus and the Stream**
-  ** Simple disordered stream (map-only) in Wukong
-  ** Simple ordered-group transform (map+reduce) in Wukong
-  
-3.  **Musing: Why Hadoop Works**
-  ** the locality problem
-  ** the Hadoop haiku
-  ** robots are inexpensive, programmers are not
+22. *Hadoop Tuning*
+  - Tuning for the Wise and Lazy
+  - Tuning for the Brave and Foolish
+  - The USE Method for understanding performance and diagnosing problems
 
-4.  **Herding `cat`s: the mechanics of wrangling massive data**
-  ** getting data within Hadoop's reach
-  ** launching jobs
-  ** seeing the data
-  ** seeing the logs
-  ** clicking to 
-  ** simple debugging
-  ** wu-lign
+APPENDIX
+  
+23. *Overview of Datasets and Scripts*
+ - Datasets
+   - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
+   - Airline Flights
+   - UFO Sightings
+   - Global Hourly Weather
+   - Waxy.org "Star Wars Kid" Weblogs
+ - Scripts
 
-6. **Data Formats**
-
-7. **Semi-structured Data**
-
-  ** Wikipedia
-  ** Datasets:
-  ** Full-text of Articles (`wikipedia_articles`) -- TSV
-  ** Wikipedia Page properties (`wikipedia_pageinfos`) -- TSV
-  ** Wikipedia Pagelinks (`wikipedia_links`) -- TSV
-  ** Pageview Counts (`wikipedia_pageviews`) -- TSV
-  ** (Page Properties from DBpedia) (`wikipedia_dbpedia`) -- TSV
-  ** Munging:
-  ** `parse_raw_articles` (xml splitter, xml parser)
-  ** figure out splitter
-  ** make it be one line per file (by `&#XX;`'ing the newlines
-  ** keep any interesting metadata
-  ** `parse_raw_links` (sql dump)
-  ** `parse_pageinfos` (sql dump)
-  ** `parse_raw_pageviews` (simple tsv load)
-  ** `prepare_articles`
-  ** add minimal metadata
-  ** `prepare_links`
-  ** minimal metadata; label category pages, redirect, etc
-  ** adjacency list? labelled low-id-first edge list
-  ** `prepare_pages`
-  ** calculate degree (in, out, symmetric) & other simple stats, add to page metadata table.
-      
-  ** Airline Flights and Flight Delays
-  ** Datasets:
-  ** Airline Flights with delay information (`airline_flights/flights`)
-  ** Airlines (`airline_flights/airlines`)
-  ** Airports (`airline_flights/airports`)
-  ** Airplanes (`airline_flights/airplanes`)
-  ** Munging:
-  ** `parse_raw_wikipedia_identifiers`
-  ** `parse_raw_openflights_airports`
-  ** `parse_raw_dataexpo_airports`
-  ** `prepare_timezone_mapping`
-  ** `parse_dataexpo_flights`
-  ** `reconcile_airports`
-  ** `timezoneize_flights`
-  ** Global Weather
-  ** Datasets
-  ** Daily observations (`weather/daily_observations`)
-  ** Hourly observations (`weather/hourly_observations`) (we'll only use one of daily vs hourly)
-  ** Weather stations (`weather/weather_stations`)
-  ** Munging:
-  ** Logs
-  ** World Cup (`weblogs/worldcup_apachelogs`)
-  ** Star Wars Kid (`weblogs/starwarskid_apachelogs`)
-
-[start=7]
-* Logs
-  ** figure out apache log parser in pig
-* page links
-  ** X prepare
-
-6.  **Statistics**
-  ** sum, average, standard deviation, etc (airline_flights)
-  ** medians and percentiles
-  ** construct a histogram
-  ** normalize data by mapping to percentile
-  ** normalize data by mapping to Z-score
-  
-7.  Advanced Pig
-  ** map-side join
-  ** merge join
-  ** skew joins
-  ** Performance and efficiency
-  
-8.  Processing Text
-  ** grep'ing for simple matches
-  ** tokenize text
-  ** simple document analysis
-  ** minhash clustering
-  
-9.  Geo Data
-  ** quadkeys and grid coordinate system
-  ** `skkkkkkkkk` -- map wikipedia 
-  ** k-means clustering to produce readable summaries
-  ** partial quad keys for "area" data
-  ** voronoi cells to do "nearby"-ness
-  ** Scripts:
-  ** `calculate_voronoi_cells` -- use weather station locations to calculate voronoi polygons
-  ** `voronoi_grid_assignment` -- cells that have a piece of border, or the largest grid cell that has no border on it
-  ** `a`
-  ** Using polymaps to see results
-  
-10.  Processing Graphs
-  ** subuniverse extraction
-  ** Pagerank
-  ** identify strong links
-  ** clustering coefficient
-  
-11.  Black-Box Machine Learning
-  ** Simple Naive Bayes classification
-  ** Document clustering
-  
-12.  Flume and Stream Processing
-  ** sources, sinks and decorators
-  ** deploying a wukong script as a decorator
-  ** parse the twitter stream API feed
-  
-13.  Time Series
-  ** windowing
-  ** simple anomaly detection
-  ** rolling statistics
-  
-14.  Pig UDFs
-  ** Basic UDF
-  ** why algebraic is awesome and how to be algebraic
-  ** Wonderdog: a LoadFunc / StoreFunc for elasticsearch
-  
-15.  Installing and Operating a Cluster
-16.  Tuning
-17.  HBase and Databases
-  
-4.  How to Scale Dirty and its Influence on People
-  ** How to think at scale
-  ** Pedantic Points of Style 
-  ** Best Practices
-  
+24. *Cheatsheets*:
+  - Regular Expressions
+  - Sizes of the Universe
+  - Hadoop Tuning & Configuration Variables

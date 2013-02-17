@@ -47,6 +47,10 @@
 |				| `wc`
 |				| `uniq -c`
 |				| `sort -n -k2`
+| tuning                        | csshX, htop, dstat, ulimit
+|
+| also useful:                  | cat, echo, true, false, yes, tee, time, watch, time
+| dos-to-unix line endings	| `ruby -ne 'puts $_.gsub(/\r\n?/, "\n")'`
 |				|
 |				|
 |======

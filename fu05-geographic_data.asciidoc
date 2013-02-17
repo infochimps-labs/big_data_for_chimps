@@ -1,0 +1,803 @@
+== Geo Data ==
+
+
+Spatial data is of course one of the fundamental ways we understand the universe
+
+There are several big ideas introduced here.
+
+First of course are the actual mechanics of working with spatial data, and projecting the Earth onto a coordinate plane.
+
+The statistics and timeseries chapters dealt with their dimensions either singly or interacting weakly,
+
+**TODO**:
+
+Will be reorganizing below in this order:
+
+* do a "nearness" query example, 
+* reveal that it is such a thing known as the spatial join, and broaden your mind as to how you think about locality.
+* cover the geographic data model, GeoJSON etc.
+* Spatial concept of Quadtiles -- none of the mechanics of the projection yet
+* Something with Points and regions, using quadtiles
+* Actual mechanics of Quadtile Projection -- from lng/lat to quadkey
+* mutiscale quadkey assignment
+* (k-means will move to ML chapter)
+* complex nearness -- voronoi cells and weather data
+
+also TODO: untangle the following two paragraphs, and figure out whether to put them at beginning or end (probably as sidebar, at beginning)
+
+It's a good jumping-off point for machine learning. Take a tour through some of the sites that curate the best in data visualization, and you'll see a strong over-representation of geographic explorations. With most datasets, you need to figure out the salient features, eliminate confounding factors, and of course do all the work of transforming them to be joinable footnote:[we dive deeper in the chapter on <<machine_learning>> basics later on]. Geo Data comes out of the
+
+Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
+
+=== Spatial Data ===
+
+It not only unwinds two dimensions to one, but any system
+it to spatial analysis in more dimensions -- see <<brain_example>>, which also extends the coordinate handling to three dimensions
+
+=== Geographic Data Model ===
+
+Geographic data shows up in the form of
+
+* Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
+* Paths -- an array of points `[[longitude,latitude],[longitude,latitude],...]`
+* Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
+* "Feature" -- a generic term for "Point or Path or Region".
+* "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
+*
+
+.Features of Features
+[NOTE]
+===============================
+There's a slight muddying of the term "feature" -- to a geographer, a feature is a generic term for the _thing_ being described; later, in the chapter on machine learning, a feature
+Since I'm writing as a data scientist dabbling in geography (and because that chapter's hairy enough as it is), we'll just say "object" in place of "geographic feature"
+===============================
+
+Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
+
+=== Geospatial JOIN using quadtiles ===
+
+Doing a "what's nearby" query on a large dataset is difficult.
+No matter how you divide up the data, some features that are nearby in geographic distance will become far away in data locality. 
+
+We also need to teach our elephant a new trick
+for providing data locality
+
+Sort your places west to east, and 
+
+
+
+
+Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
+
+==== The Quadtile Grid System ====
+
+We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it.
+
+Now divide the world into four and make a Z pattern across them:
+
+Within each of those, make a <<z_path_of_quadtiles, Z again>>:
+
+[[z_path_of_quadtiles]]
+.Z-path of quadtiles
+image::images/quadkeys-nearby_points_are_nearby.png[Z-path of quadtiles]
+
+As you go along, index each tile, as shown in <<quadtile_numbering>>:
+
+[[quadtile_numbering]]
+.Quadtile Numbering
+image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
+
+This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By applying Hadoop's fundamental locality operation -- sorting -- geographic locality falls out of numerical locality.
+
+Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
+
+==== Patterns in UFO Sightings ====
+
+Let's put Hadoop into practice for something really important: understanding where a likely alien invasion will take place. The National UFO Reporting Center has compiled a dataset of 60,000+ documented UFO sightings, with metadata. We can combine that with the 7 million labelled points of interest in the Geonames dataset: airports and zoos, capes to craters, schools, churches and more.
+
+Going in to this, I predict that UFO sightings will generally follow the population distribution (because you need people around to see them) but that sightings in cities will be under-represented per capita. I also suspect UFO sightings will be more likely near airports and military bases, and in the southwestern US. We will restrict attention only to the continental US; coverage of both datasets is spotty elsewhere, which will contaminate our results.
+
+Looking through some weather reports, visibilities of ten to fifteen kilometers (6-10 miles) are a reasonable midrange value; let's use that distance to mean "nearby". Given this necessarily-fuzzy boundary, let's simplify matters further by saying two objects are nearby if one point lies within the 20-km-per-side bounding box centered on the other:
+
+
+          +---------+---------+
+	  |		    B |
+	  |		      |
+	  |		      |
+	  |		      |
+	  +	    A	      +
+	  |		      |   C
+	  |		      |
+	  |		      |
+	  |		      |           B is nearby A; C is not. Sorry, C.
+	  +---------+---------+
+	            |- 10 km -|
+
+==== Mapper: dispatch objects to rendezvous at quadtiles ====
+
+What we will do is partition the world by quadtile, and ensure that each candidate pair of points arrives at the same quadtile.
+
+Our mappers will send the highly-numerous geonames points directly to their quadtile, where they will wait individually. But we can't send each UFO sighting only to the quadtile it sits on: it might be nearby a place on a neighboring tile.
+
+If the quadtiles are always larger than our nearbyness bounding box, then it's enough to just look at each of the four corners of our bounding box; all candidate points for nearbyness must live on the 1-4 quadtiles those corners touch. Consulting the geodata ready reference (TODO: ref) later in the book, zoom level 11 gives a grid size of 13-20km over the continental US, so it will serve.
+
+So for UFO points, we will use the `bbox_for_radius` helper to get the left-top and right-bottom points, convert each to quadtile id's, and emit the unique 1-4 tiles the bounding box covers.
+
+Example values:
+
+        longitude  latitude    left     top     right    bottom    nw_tile_id   se_tile_id
+ 	...        ...
+ 	...        ...
+
+Data is cheap and code is expensive, so for these 60,000 points we'll just serialize out the bounding box coordinates with each record rather than recalculate them in the reducer. We'll discard most of the UFO sightings fields, but during development let's keep the location and time fields in so we can spot-check results.
+
+Mapper output:
+
+
+==== Reducer: combine objects on each quadtile ====
+
+The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
+
+	# from wukong/geo helpers
+
+        class BoundingBox
+          def contains?(obj)
+	    ( (obj.longitude >= left)  && (obj.latitude <= top) &&
+	      (obj.longitude <= right) && (obj.latitude >= btm)
+	  end
+	end
+
+	# nearby_ufos.rb
+
+	class NearbyReducer
+
+	  def process_group(group)
+	    # gather up all the sightings
+	    sightings = []
+	    group.gather(UfoSighting) do |sighting|
+              sightings << sighting
+            end
+	    # the remaining records are places
+	    group.each do |place|
+	      sighted = false
+	      sightings.each do |sighting|
+	        if sighting.contains?(place)
+		  sighted = true
+		  yield combined_record(place, sighting)
+		end
+              end
+	      yield unsighted_record(place) if not sighted
+	    end
+	  end
+
+	  def combined_record(place, sighting)
+	    (place.to_tuple + [1] + sighting.to_tuple)
+	  end
+	  def unsighted_record(place)
+	    place.to_tuple + [0]
+	  end
+	end
+
+For now I'm emitting the full place and sighting record, so we can see what's going on. In a moment we will change the `combined_record` method to output a more disciplined set of fields.
+
+Output data:
+
+        ...
+
+==== Comparing Distributions ====
+
+We now have a set of `[place, sighting]` pairs, and we want to understand how the distribution of coincidences compares to the background distribution of places.
+
+(TODO: don't like the way I'm currently handling places near multiple sightings)
+
+That is, we will compare the following quantities:
+
+    count of sightings
+    count of features
+    for each feature type, count of records
+    for each feature type, count of records near a sighting
+
+The dataset at this point is small enough to do this locally, in R or equivalent; but if you're playing along at work your dataset might not be. So let's use pig.
+
+    place_sightings = LOAD "..." AS (...);
+
+    features = GROUP place_sightings BY feature;
+
+    feature_stats = FOREACH features {
+      sighted = FILTER place_sightings BY sighted;
+      GENERATE features.feature_code,
+        COUNT(sighted)      AS sighted_count,
+	COUNT_STAR(sighted) AS total_count
+	;
+    };
+
+    STORE feature_stats INTO '...';
+
+results:
+
+    ... TODO move results over from cluster ...
+
+=== Data Model ===
+
+We'll represent geographic features in two different ways, depending on focus:
+
+* If the geography is the focus -- it's a set of features with data riding sidecar -- use GeoJSON data structures.
+* If the object is the focus -- among many interesting fields, some happen to have a position or other geographic context -- use a natural Wukong model.
+* If you're drawing on traditional GIS tools, if possible use GeoJSON; if not use the legacy format it forces, and a lot of cursewords as you go.
+
+==== GeoJSON ====
+
+GeoJSON is a new but well-thought-out geodata format; here's a brief overview. The http://www.geojson.org/geojson-spec.html[GeoJSON] spec is about as readable as I've seen, so refer to it for anything deeper.
+
+The fundamental GeoJSON data structures are:
+
+----
+    module GeoJson
+      class Base ; include Wukong::Model ; end
+
+      class FeatureCollection < Base
+        field :type,  String
+        field :features, Array, of: Feature
+	field :bbox,     BboxCoords
+      end
+      class Feature < Base
+        field :type,  String,
+	field :geometry, Geometry
+	field :properties
+	field :bbox,     BboxCoords
+      end
+      class Geometry < Base
+        field :type,  String,
+	field :coordinates, Array, doc: "for a 2-d point, the array is a single `(x,y)` pair. For a polygon, an array of such pairs."
+      end
+
+      # lowest value then highest value (left low, right high;
+      class BboxCoords < Array
+	def left  ; self[0] ; end
+	def btm   ; self[1] ; end
+	def right ; self[2] ; end
+        def top   ; self[3] ; end
+      end
+    end
+----
+
+GeoJSON specifies these orderings for features:
+
+* Point: `[longitude, latitude]`
+* Polygon: `[ [[lng1,lat1],[lng2,lat2],...,[lngN,latN],[lng1,lat1]] ]` -- you must repeat the first point. The first array is the outer ring; other paths in the array are interior rings or holes (eg South Africa/Lesotho). For regions with multiple parts (US/Alaska/Hawaii) use a MultiPolygon.
+* Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`
+
+An example hash, taken from the spec:
+
+----
+
+  {
+    "type": "FeatureCollection",
+    "features": [
+      { "type":       "Feature",
+        "properties": {"prop0": "value0"},
+        "geometry":   {"type": "Point", "coordinates": [102.0, 0.5]}
+      },
+      { "type":       "Feature",
+        "properties": {
+          "prop0":    "value0",
+          "prop1":    {"this": "that"}
+        },
+	"bbox":       [
+        "geometry": {
+          "type":     "Polygon",
+          "coordinates": [
+            [ [-10.0, 0.0], [5.0, -1.0], [101.0, 1.0],
+              [100.0, 1.0], [-10.0, 0.0] ]
+            ]
+	}
+      }
+    ]
+  }
+----
+
+
+
+
+[[quadkey]]
+=== Quadtile Practicalities ===
+
+==== Converting points to quadkeys (quadtile indexes)
+
+Each grid cell is contained in its parent
+
+image::images/quadkeys-numbering-select_down.png[Tile index for central Texas]
+
+You can also think of it as a tree:
+
+image::images/quadkeys-3d-stack.png[Z-path of quad tiles]
+
+
+The quadkey is a string of 2-bit tile selectors for a quadtile
+
+@example
+  infochimps_hq = Geo::Place.receive("Infochimps HQ", -97.759003, 30.273884)
+  infochimps_hq.quadkey(8) # => "02313012"
+
+First, some preliminaries:
+
+    EARTH_RADIUS      =  6371000 # meters
+    MIN_LONGITUDE     = -180
+    MAX_LONGITUDE     =  180
+    MIN_LATITUDE      = -85.05112878
+    MAX_LATITUDE      =  85.05112878
+    ALLOWED_LONGITUDE = (MIN_LONGITUDE..MAX_LONGITUDE)
+    ALLOWED_LATITUDE  = (MIN_LATITUDE..MAX_LATITUDE)
+    TILE_PIXEL_SIZE   =  256
+
+    # Width or height in number of tiles
+    def map_tile_size(zl)
+      1 << zl
+    end
+
+The maximum latitude this projection covers is plus/minus `85.05112878` degrees. With apologies to the elves of chapter (TODO: ref), this is still well north of Alert, Canada, the northernmost populated place in the world (latitude 82.5 degrees, 817 km from the North Pole).
+
+It's straightforward to calculate tile_x indices from the longitude (because all the brutality is taken up in the Mercator projection's severe distortion).
+
+Finding the Y tile index requires a slightly more complicated formula:
+
+
+This makes each grid cell be an increasingly better locally-flat approximation to the earth's surface, palliating the geographers anger at our clumsy map projection.
+
+In code:
+
+    # Convert longitude, latitude in degrees to _floating-point_ tile x,y coordinates at given zoom level
+    def lat_zl_to_tile_yf(longitude, latitude, zl)
+      tile_size = map_tile_size(zl)
+      xx = (longitude.to_f + 180.0) / 360.0
+      sin_lat = Math.sin(latitude.to_radians)
+      yy = Math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * Math::PI)
+      #
+      [ (map_tile_size(zl) * xx).floor,
+        (map_tile_size(zl) * (0.5 - yy)).floor ]
+    end
+
+    # Convert from tile_x, tile_y, zoom level to longitude and latitude in
+    # degrees (slight loss of precision).
+    #
+    # Tile coordinates may be floats or integer; they must lie within map range.
+    def tile_xy_zl_to_lng_lat(tile_x, tile_y, zl)
+      tile_size = map_tile_size(zl)
+      raise ArgumentError, "tile index must be within bounds ((#{tile_x},#{tile_y}) vs #{tile_size})" unless ((0..(tile_size-1)).include?(tile_x)) && ((0..(tile_size-1)).include?(tile_x))
+      xx =       (tile_x.to_f / tile_size)
+      yy = 0.5 - (tile_y.to_f / tile_size)
+      lng = 360.0 * xx - 180.0
+      lat = 90 - 360 * Math.atan(Math.exp(-yy * 2 * Math::PI)) / Math::PI
+      [lng, lat]
+    end
+
+[NOTE]
+=========================
+Take care to put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as `long` -- it's a keyword in pig and other languages. I like `lng`.
+=========================
+
+
+==== Exploration
+
+* _Exemplars_
+  - Tokyo
+  - San Francisco
+  - The Posse East Bar in Austin, TX footnote:[briefly featured in the Clash's Rock the Casbah Video and where much of this book was written]
+
+
+==== Interesting quadtile properties ====
+
+* The quadkey's length is its zoom level.
+
+* To zoom out (lower zoom level, larger quadtile), just truncate the
+  quadkey: austin at ZL=8 has quadkey "02313012"; at ZL=3, "023"
+
+* Nearby points typically have "nearby" quadkeys: up to the smallest
+  tile that contains both, their quadkeys will have a common prefix.
+  If you sort your records by quadkey,
+  - Nearby points are nearby-ish on disk. (hello, HBase/Cassandra
+    database owners!) This allows efficient lookup and caching of
+    "popular" regions or repeated queries in an area.
+  - the tiles covering a region can be covered by a limited, enumerable
+    set of range scans. For map-reduce programmers, this leads to very
+    efficient reducers
+
+* The quadkey is the bit-interleaved combination of its tile ids:
+
+      tile_x      58  binary  0  0  1  1  1  0  1  0
+      tile_y      105 binary 0  1  1  0  1  0  0  1
+      interleaved     binary 00 10 11 01 11 00 01 10
+      quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
+      packed                 11718
+
+* You can also form a "packed" quadkey -- the integer formed by interleaving the bits as shown above. At zoom level 15, the packed quadkey is a 30-bit unsigned integer -- meaning you can store it in a pig `int`; for languages with an `unsigned int` type, you can go to zoom level 16 before you have to use a less-efficient type. Zoom level 15 has a resolution of about one tile per kilometer (about 1.25 km/tile near the equator; 0.75 km/tile at London's latitude). It takes 1 billion tiles to tile the world at that scale.
+
+* a limited number of range scans suffice to cover any given area
+* each grid cell's parents are a 2-place bit shift of the grid index itself.
+
+A 64-bit quadkey -- corresponding to zoom level 32 -- has an accuracty of better than 1 cm over the entire globe. In some intensive database installs, rather than storing longitude and latitude separately as floating-point numbers, consider storing either the interleaved packed quadkey, or the individual 32-bit tile ids as your indexed value. The performance impact for Hadoop is probably not worth it, but for a database schema it may be.
+
+===== Quadkey to and from Longitude/Latitude =====
+
+    # converts from even/odd state of tile x and tile y to quadkey. NOTE: bit order means y, x
+    BIT_TO_QUADKEY = { [false, false] => "0", [false, true] => "1", [true, false] => "2", [true, true] => "3", }
+    # converts from quadkey char to bits. NOTE: bit order means y, x
+    QUADKEY_TO_BIT = { "0" => [0,0], "1" => [0,1], "2" => [1,0], "3" => [1,1]}
+
+    # Convert from tile x,y into a quadkey at a specified zoom level
+    def tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
+      quadkey_chars = []
+      tx = tile_x.to_i
+      ty = tile_y.to_i
+      zl.times do
+        quadkey_chars.push BIT_TO_QUADKEY[[ty.odd?, tx.odd?]] # bit order y,x
+        tx >>= 1 ; ty >>= 1
+      end
+      quadkey_chars.join.reverse
+    end
+
+    # Convert a quadkey into tile x,y coordinates and level
+    def quadkey_to_tile_xy_zl(quadkey)
+      raise ArgumentError, "Quadkey must contain only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
+      zl = quadkey.to_s.length
+      tx = 0 ; ty = 0
+      quadkey.chars.each do |char|
+        ybit, xbit = QUADKEY_TO_BIT[char] # bit order y, x
+        tx = (tx << 1) + xbit
+        ty = (ty << 1) + ybit
+      end
+      [tx, ty, zl]
+    end
+
+=== Quadtile Ready Reference ===
+
+image::images/quadkey_ref-zoom_levels.png[Quadtile properties and data storage sizes by zoom level]
+
+Though quadtile properties do vary, the variance is modest within most of the inhabited world:
+
+image::images/quadkey_ref-world_cities.png[Quadtile Properties for major world cities]
+
+The (ref table) gives the full coordinates at every zoom level for our exemplar set.
+
+image::images/quadkey_ref-full_props-by_zl.png[Coordinates at every zoom level for some exemplars]
+
+
+==== Working with paths ====
+
+The _smallest tile that fully encloses a set of points_ is given by the tile with the largest common quadtile prefix. For example, the University of Texas (quad `0231_3012_0331_1131`) and my office (quad `0231_3012_0331_1211`) are covered by the tile `0231_3012_0331_1`.
+
+image::images/fu05-geographic-path-hq-to-ut.png[Path from Chimp HQ to UT campus]
+
+When points cross major tile boundaries, the result is less pretty. Austin's airport (quad `0231301212221213`) shares only the zoom-level 8 tile `02313012`:
+
+image::images/fu05-geographic-path-hq-to-airport.png[Path from Chimp HQ to AUS Airport]
+
+==== Calculating Distances ====
+
+To find the distance between two points on the globe, we use the Haversine formula
+
+
+in code:
+
+    # Return the haversine distance in meters between two points
+    def haversine_distance(left, top, right, btm)
+      delta_lng = (right - left).abs.to_radians
+      delta_lat = (btm   - top ).abs.to_radians
+      top_rad = top.to_radians
+      btm_rad = btm.to_radians
+
+      aa = (Math.sin(delta_lat / 2.0))**2 + Math.cos(top_rad) * Math.cos(btm_rad) * (Math.sin(delta_lng / 2.0))**2
+      cc = 2.0 * Math.atan2(Math.sqrt(aa), Math.sqrt(1.0 - aa))
+      cc * EARTH_RADIUS
+    end
+
+    # Return the haversine midpoint in meters between two points
+    def haversine_midpoint(left, top, right, btm)
+      cos_btm   = Math.cos(btm.to_radians)
+      cos_top   = Math.cos(top.to_radians)
+      bearing_x = cos_btm * Math.cos((right - left).to_radians)
+      bearing_y = cos_btm * Math.sin((right - left).to_radians)
+      mid_lat   = Math.atan2(
+        (Math.sin(top.to_radians) + Math.sin(btm.to_radians)),
+        (Math.sqrt((cos_top + bearing_x)**2 + bearing_y**2)))
+      mid_lng   = left.to_radians + Math.atan2(bearing_y, (cos_top + bearing_x))
+      [mid_lng.to_degrees, mid_lat.to_degrees]
+    end
+
+    # From a given point, calculate the point directly north a specified distance
+    def point_north(longitude, latitude, distance)
+      north_lat = (latitude.to_radians + (distance.to_f / EARTH_RADIUS)).to_degrees
+      [longitude, north_lat]
+    end
+
+    # From a given point, calculate the change in degrees directly east a given distance
+    def point_east(longitude, latitude, distance)
+      radius = EARTH_RADIUS * Math.sin(((Math::PI / 2.0) - latitude.to_radians.abs))
+      east_lng = (longitude.to_radians + (distance.to_f / radius)).to_degrees
+      [east_lng, latitude]
+    end
+
+===== Grid Sizes and Sample Preparation =====
+
+Always include as a mountweazel some places you're familiar with. It's much easier for me to think in terms of the distance from my house to downtown, or to Dallas, or to New York than it is to think in terms of zoom level 14 or 7 or 4
+
+==== Distributing Boundaries and Regions to Grid Cells ====
+
+(TODO: Section under construction)
+
+This section will show how to
+
+* efficiently segment region polygons (county boundaries, watershed regions, etc) into grid cells
+* store data pertaining to such regions in a grid-cell form: for example, pivoting a population-by-county table into a population-of-each-overlapping-county record on each quadtile.
+
+==== Adaptive Grid Size ====
+
+The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303].
+
+Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that
+Monaco fits easily within on one zoom-level 12 quadtile; Russia spans two zoom-level 1 quadtiles.
+Without multiscaling, to cover the globe at 1-km scale and 64-kB records would take 70 terabytes -- and 1-km is not all that satisfactory. Huge parts of the world would be taken up by grid cells holding no border that simply said "Yep, still in Russia".
+
+There's a simple modification of the grid system that lets us very naturally describe multiscale data.
+
+The figures (REF: multiscale images) show the quadtiles covering Japan at ZL=7. For reasons you'll see in a bit, we will split everything up to at least that zoom level; we'll show the further decomposition down to ZL=9.
+
+image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 7]
+
+Already six of the 16 tiles shown don't have any land coverage, so you can record their values:
+
+    1330000xx  { Pacific Ocean }
+    1330011xx  { Pacific Ocean }
+    1330013xx  { Pacific Ocean }
+    1330031xx  { Pacific Ocean }
+    1330033xx  { Pacific Ocean }
+    1330032xx  { Pacific Ocean }
+
+Pad out each of the keys with `x`'s to meet our lower limit of ZL=9.
+
+The quadkey `1330011xx` means "I carry the information for grids `133001100`, `133001101`, `133001110`, `133001111`, ".
+
+image::images/fu05-quadkeys-multiscale-ZL8.png[Japan at Zoom Level 8]
+
+
+
+image::images/fu05-quadkeys-multiscale-ZL9.png[Japan at Zoom Level 9]
+
+
+You should uniformly decompose everything to some upper zoom level so that if you join on something uniformly distributed across the globe you don't have cripplingly large skew in data size sent to each partition.  A zoom level of 7 implies 16,000 tiles -- a small quantity given the exponential growth of tile sizes
+
+
+
+With the upper range as your partition key, and the whole quadkey is the sort key, you can now do joins. In the reducer,
+
+* read keys on each side until one key is equal to or a prefix of the other.
+* emit combined record using the more specific of the two keys
+* read the next record from the more-specific column,  until there's no overlap
+
+Take each grid cell; if it needs subfeatures, divide it else emit directly.
+
+You must emit high-level grid cells with the lsb filled with XX or something that sorts after a normal cell; this means that to find the value for a point,
+
+* Find the corresponding tile ID,
+* Index into the table to find the first tile whose ID is larger than the given one.
+
+     00.00.00
+     00.00.01
+     00.00.10
+     00.00.11
+     00.01.--
+     00.10.--
+     00.11.00
+     00.11.01
+     00.11.10
+     00.11.11
+     01.--.--
+     10.00.--
+     10.01.--
+     10.10.01
+     10.10.10
+     10.10.11
+     10.10.00
+     10.11.--
+
+
+==== Tree structure of Quadtile indexing ====
+
+You can look at quadtiles is as a tree structure. Each branch splits the plane exactly in half by area, and only leaf nodes hold data.
+
+The first quadtile scheme required we develop every branch of the tree to the same depth. The multiscale quadtile scheme effectively says "hey, let's only expand each branch to its required depth". Our rule to break up a quadtile if any section of it needs development preserves the "only leaf nodes hold data". Breaking tiles always exactly in two makes it easy to assign features to their quadtile and facilitates joins betweeen datasets that have never met. There are other ways to make these tradeoffs, though -- read about K-D trees in the "keep exploring" section at end of chapter.
+
+
+==== Map Polygons to Grid Tiles ====
+
+
+
+              +----------------------------+
+              |                            |
+              |              C             |
+              |      ~~+---------\         |
+              |     /  |          \       /
+              |    /   |           \     /|
+              |   /    |            \   / |
+               \ /     |     B       \ /  |
+                |      |              |   |
+                |  A   +--------------'   |
+                |      |                  |
+                |      |     D            /
+                |      |               __/
+                 \____/ \             |
+                         \____________,
+
+
+            +-+-----------+-------------+--+------
+            | |           |             |  |
+            | |           |         C   |  |
+      000x  | |   C  ~~+--+------\      |  |      0100
+            | |     / A|B |  B    \     | /
+            |_|____/___|__|________\____|/|_______
+            | | C /    |  |         \ C / |
+            |  \ /     |B |  B       \ /| |
+      001x  |   |      |  |           | |D|       0110
+            |   |  A   +--+-----------' | |
+            |   |      |D |  D          | |
+            +---+------+--+-------------+-/-------
+            |   |  A   |D |            _|/
+            |    \____/ \ |    D      | |
+      100x  |            \|___________, |         1100
+            |             |             |
+            |             |             |
+            +-------------+-------------+---------
+                ^ 1000        ^ 1001
+
+* Tile 0000: `[A, B, C   ]`
+* Tile 0001: `[   B, C   ]`
+* Tile 0010: `[A, B, C, D]`
+* Tile 0011: `[   B, C, D]`
+
+* Tile 0100: `[      C,  ]`
+* Tile 0110: `[      C, D]`
+
+* Tile 1000: `[A,       D]`
+* Tile 1001: `[         D]`
+* Tile 1100: `[         D]`
+
+For each grid, also calculate the area each polygon covers within that grid.
+
+Pivot:
+
+* A:          `[ 0000       0010                   1000          ]`
+* B:          `[ 0000 0001 0010 0011                             ]`
+* C:          `[ 0000 0001 0010 0011 0100 0110                   ]`
+* D:          `[             0010 0011       0110 1000 1001 1100 ]`
+
+
+
+=== Weather Near You ===
+
+The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
+
+So weather data is gathered at a _point_, but imputes information about a _region_. You can't just slap each point down on coarse-grained tiles -- the closest weather station might lie just over on the next quad, and you're writing a check for very difficult calculations at run time.
+
+We also have a severe version of the multiscale problem.  The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean. It also varies wildly over time: in the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone.
+
+
+==== Find the Voronoi Polygon for each Weather Station ====
+
+These factors rule out any naïve approach to locality, but there's an elegant solution known as a Voronoi diagram footnote:[see http://en.wikipedia.org/wiki/Voronoi_diagram[Wikipedia entry] or (with a Java-enabled browser) this http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet]].
+
+The Voronoi diagram covers the plane with polygons, one per point -- I'll call that the "centerish" of the polygon. Within each polygon, you are closer to its centerish than any other. By extension, locations on the boundary of each Voronoi polygon are equidistant from the centerish on either side; polygon corners are equidistant from centerishes of all touching polygons footnote:[John Snow, the father of epidemiology, mapped cholera cases from an 1854 outbreak against the voronoi regions defined by each neighborhood's closest water pump. The resulting infographic made plain to contemporary physicians and officials that bad drinking water, not "miasma" (bad air), transmitted cholera. http://johnsnow.matrix.msu.edu/book_images12.php].
+
+If you'd like to skip the details, just admire the diagram (REF) and agree that it's the "right" picture. As you would in practice, we're going to use vetted code from someone with a PhD and not write it ourselves.
+
+The details: Connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally. If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other.
+
+<remark>TODO: above paragraph not very clear, may not be necessary.</remark>
+
+
+==== Break polygons on quadtiles ====
+
+Now let's put Mr. Voronoi to work. Use the weather station locations to define a set of Voronoi polygons, treating each weather station's observations as applying uniformly to the whole of that polygon.
+
+Break the Voronoi polygons up by quadtile as we did above -- quadtiles will either contain a piece of boundary (and so are at the lower-bound zoom level), or are entirely contained within a boundary. You should choose a lower-bound zoom level that avoids skew but doesn't balloon the dataset's size.
+
+Also produce the reverse mapping, from weather station to the quadtile IDs its polygon covers.
+
+==== Map Observations to Grid Cells ====
+
+Now join observations to grid cells and reduce each grid cell.
+
+// === GeoJSON ===
+// Using polymaps to view results
+
+=== K-means clustering to summarize ===
+
+(TODO: section under construction)
+
+we will describe how to use clustering to form a progressive summary of point-level detail.
+
+there are X million wikipedia topics
+
+at distant zoom levels, storing them in a single record would be foolish
+
+what we can do is summarize their contents -- coalesce records into groups based on their natural spatial arrangement. If the points represented foursquare checkins, those clusters would match the population distribution. If they were wind turbine generators, they would cluster near shores and praries.
+
+K-Means Clustering is an effective way to form that summarization.
+
+=== Keep Exploring ===
+
+===== Balanced Quadtiles =====
+
+Earlier, we described how quadtiles define a tree structure, where each branch of the tree divides the plane exactly in half and leaf nodes hold features. The multiscale scheme handles skewed distributions by developing each branch only to a certain depth. Splits are even, but the tree is lopsided (the many finer zoom levels you needed for New York City than for Irkutsk).
+
+K-D trees are another approach. The rough idea: rather than blindly splitting in half by area, split the plane to have each half hold the same-ish number of points. It's more complicated, but it leads to a balanced tree while still accommodating highly-skew distributions. Jacob Perkins (`@thedatachef`) has a http://thedatachef.blogspot.com/2012/10/k-d-tree-generation-with-apache-pig.html[great post about K-D trees] with further links.
+
+===== It's not just for Geo =====
+
+=== Exercises ===
+
+[[brain_example]]
+**Exercise 1**: Extend quadtile mapping to three dimensions
+
+To jointly model network and spatial relationship of neurons in the brain, you will need to use not two but three spatial dimensions. Write code to map positions within a 200mm-per-side cube to an "octcube" index analogous to the quadtile scheme. How large (in mm) is each cube using 30-bit keys? using 63-bit keys?
+
+For even higher dimensions of fun, extend the http://en.wikipedia.org/wiki/Voronoi_diagram#Higher-order_Voronoi_diagrams[Voronoi diagram to three dimensions].
+
+**Exercise 2**: Locality
+
+We've seen a few ways to map feature data to joinable datasets. Describe how you'd join each possible pair of datasets from this list (along with the story it would tell):
+
+* Census data: dozens of variables, each attached to a census tract ID, along with a region polygon for each census tract.
+* Cell phone antenna locations: cell towers are spread unevenly, and have a maximum range that varies by type of antenna.
+  - case 1: you want to match locations to the single nearest antenna, if any is within range.
+  - case 2: you want to match locations to all antennae within range.
+* Wikipedia pages having geolocations.
+* Disease reporting: 60,000 points distributed sparsely and unevenly around the country, each reporting the occurence of a disease.
+
+For example, joining disease reports against census data might expose correlations of outbreak with ethnicity or economic status. I would prepare the census regions as quadtile-split polygons. Next, map each disease report to the right quadtile and in the reducer identify the census region it lies within. Finally, join on the tract ID-to-census record table.
+
+**Exercise 3**: Write a generic utility to do multiscale smoothing
+
+Its input is a uniform sampling of values: a value for every grid cell at some zoom level.
+However, lots of those values are similar.
+Combine all grid cells whose values lie within a certain tolerance into
+
+Example: merge all cells whose contents lie within 10% of each other
+
+    00	10
+    01	11
+    02   9
+    03   8
+    10  14
+    11  15
+    12  12
+    13  14
+    20  19
+    21  20
+    22  20
+    23  21
+    30  12
+    31  14
+    32   8
+    33   3
+
+    10  11  14  18     .9.5. 14  18
+     9   8  12  14     .   . 12  14
+    19  20  12  14     . 20. 12  14
+    20  21   8   3     .   .  8   3
+
+    
+
+=== References ===
+
+* http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
+* http://msdn.microsoft.com/en-us/library/bb259689.aspx
+* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+* http://wiki.openstreetmap.org/wiki/QuadTiles
+* https://github.com/simplegeo/polymaps
+* http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
+
+* http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
+* http://bl.ocks.org/4122298[US County borders in GeoJSON]
+
+
+

@@ -1,6 +1,0 @@
-== Thinking on Locality
-
-
-
-=== High Skew ===
-

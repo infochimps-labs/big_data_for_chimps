@@ -1,0 +1,48 @@
+
+=== Explorations and Scripts
+
+* Wikipedia
+  - Datasets:
+  - Full-text of Articles (`wikipedia_articles`) -- TSV
+  - Wikipedia Page properties (`wikipedia_pageinfos`) -- TSV
+  - Wikipedia Pagelinks (`wikipedia_links`) -- TSV
+  - Pageview Counts (`wikipedia_pageviews`) -- TSV
+  - (Page Properties from DBpedia) (`wikipedia_dbpedia`) -- TSV
+  - Munging:
+  - `parse_raw_articles` (xml splitter, xml parser)
+  - figure out splitter
+  - make it be one line per file (by `&#XX;`'ing the newlines
+  - keep any interesting metadata
+  - `parse_raw_links` (sql dump)
+  - `parse_pageinfos` (sql dump)
+  - `parse_raw_pageviews` (simple tsv load)
+  - `prepare_articles`
+  - add minimal metadata
+  - `prepare_links`
+  - minimal metadata; label category pages, redirect, etc
+  - adjacency list? labelled low-id-first edge list
+  - `prepare_pages`
+  - calculate degree (in, out, symmetric) & other simple stats, add to page metadata table.
+      
+* Airline Flights and Flight Delays
+  - Datasets:
+  - Airline Flights with delay information (`airline_flights/flights`)
+  - Airlines (`airline_flights/airlines`)
+  - Airports (`airline_flights/airports`)
+  - Airplanes (`airline_flights/airplanes`)
+  - Munging:
+  - `parse_raw_wikipedia_identifiers`
+  - `parse_raw_openflights_airports`
+  - `parse_raw_dataexpo_airports`
+  - `prepare_timezone_mapping`
+  - `parse_dataexpo_flights`
+  - `reconcile_airports`
+  - `timezoneize_flights`
+* Global Weather
+  - Datasets
+  - Daily observations (`weather/daily_observations`)
+  - Hourly observations (`weather/hourly_observations`) (we'll only use one of daily vs hourly)
+  - Weather stations (`weather/weather_stations`)
+* Logs
+  - World Cup (`weblogs/worldcup_apachelogs`)
+  - Star Wars Kid (`weblogs/starwarskid_apachelogs`)
