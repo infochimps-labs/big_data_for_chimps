@@ -1,0 +1,13 @@
+=== Pig Operators ===
+
+[[pig_cheatsheet]]
+.Pig Operator Cheatsheet
+[options="header"]
+|=======
+| action			| operator
+|				|
+|				| JOIN
+|				| FILTER
+|				|
+|=======
+

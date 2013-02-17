@@ -1,5 +1,3 @@
-== Preface
-
 // :author:        Philip (flip) Kromer
 // :doctype: 	book
 // :toc:
@@ -41,7 +39,7 @@ This is the plan. We'll roll material out over the next few months. Should we fi
     
 5. *The Hadoop Toolset*
   - toolset overview
-  - launching jobs
+  - launching and debugging jobs
   - overview of wukong
   - overview of pig
 
@@ -60,52 +58,53 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Pointwise Mutual Information
   - K-means Clustering
 
-9. Interlude I: *Data Models, Data Formats, Data Management*:
-  - How to design your data models
-  - How to serialize their contents (orig, scratch, prod)
-  - How to organize your scripts and your data
-
-10. *Statistics*:
-  - Averages, Percentiles, and Normalization
+9. *Statistics*:
+  - Summarizing: Averages, Percentiles, and Normalization
   - Sampling responsibly: it's harder and more important than you think
   - Statistical aggregates and the danger of large numbers
   
-11. *Time Series*
+10. *Time Series*
 
-12. *Geographic Data*:
+11. *Geographic Data*:
   - Spatial join (find all UFO sightings near Airports)
   -
   
-13. *`cat` herding*
+12. *`cat` herding*
   - total sort
   - transformations from the commandline (grep, cut, wc, etc)
   - pivots from the commandline (head, sort, etc)
   - commandline workflow tips
   - advanced hadoop filesystem (chmod, setrep, fsck)
 
-14. *Data Munging (Semi-Structured Data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
+13. *Data Munging (Semi-Structured Data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
   - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
   - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
   - US Commercial Airline Flights: every commercial airline flight since 1987
   - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
   - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
 
-15. Interlude II: *Best Practices and Pedantic Points of style*
+14. Interlude I: *Organizing Data*:
+  - How to design your data models
+  - How to serialize their contents (orig, scratch, prod)
+  - How to organize your scripts and your data
+  
+15. *Graph Processing*:
+  - Graph Representations
+  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
+  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
+
+16. *Machine Learning without Grad School*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
+  - Naive Bayes
+  - Logistic Regression
+  - Random Forest (using Mahout)
+  We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
+
+17. Interlude II: *Best Practices and Pedantic Points of style*
   - Pedantic Points of Style 
   - Best Practices
   - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
   - Why Hadoop
   - robots are cheap, people are important
-  
-16. *Graph Processing*:
-  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
-  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
-
-17. *Machine Learning without Grad School*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
-  - Naive Bayes
-  - Logistic Regression
-  - Random Forest (using Mahout)
-  We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
 
     
 PRACTICAL
@@ -147,6 +146,8 @@ APPENDIX
   - Sizes of the Universe
   - Hadoop Tuning & Configuration Variables
 
+25. *Appendix*:
+  
 ==== Not Contents ====
 
 I'm not currently planning to cover Hive -- I believe the pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".

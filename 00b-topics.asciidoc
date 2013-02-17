@@ -29,8 +29,8 @@
   - (visualize)
 
 INTERMEDIATE
-  
-5. *The Hadoop Toolset*
+
+5. *The Toolset*
   - toolset overview
     - pig vs hive vs impala
     - hbase & elasticsearch (not accumulo or cassandra)
@@ -226,3 +226,5 @@ APPENDIX
   - Regular Expressions
   - Sizes of the Universe
   - Hadoop Tuning & Configuration Variables
+
+25. *Appendix*  
