@@ -28,9 +28,14 @@ include::03e-jt_and_nanette_at_work_for_you.asciidoc[]
 
 include::03f-partition_and_sort_keys.asciidoc[]
 
-include::07-server_logs.asciidoc[]
-
-include::07a-server_logs.asciidoc[]
+include::07-event_streams.asciidoc[]
+include::07a-serverlog_parsing.asciidoc[]
+include::07b-pageview_histograms.asciidoc[]
+include::07c-sessionizing.asciidoc[]
+include::07d-page_page_similarity.asciidoc[]
+include::07e-geo_ip_matching.asciidoc[]
+include::07f-benign_ddos.asciidoc[]
+include::07g-end_of_event_streams.asciidoc[]
 
 include::11-geographic.asciidoc[]
 
