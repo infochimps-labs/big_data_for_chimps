@@ -64,7 +64,7 @@ INTERMEDIATE
     - `wu-distcp`
   - sugared jobs (wu-identity, wu-grep, wu-wc, wu-bzip, wu-gzip, wu-snappify, wu-digest (md5/sha1/etc))
 
-7. *Server Log Processing*
+7. *Event Streams*
   - Parsing logs and using regular expressions
   - Histograms and time series of pageviews
   - Geolocate visitors based on IP
