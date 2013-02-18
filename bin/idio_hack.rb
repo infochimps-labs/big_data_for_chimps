@@ -29,9 +29,11 @@ module Idiopidae
       super{|hh,kk| hh[kk] = [] }
     end
 
-    def add(section, snippet)
-      return unless section.present?
-      self[section] << snippet.join("\n")
+    def add(sections, snippet)
+      return unless sections.present?
+      sections.each do |section|
+        self[section] << snippet.join("\n")
+      end
     end
   end
 
@@ -41,12 +43,12 @@ module Idiopidae
     field :path,     Pathname, position: 0
     field :snippets, Hash
 
-    EXPORT_BEG_RE = %r{^[\ \t]*\#\#\# \@export (?<name>\w+)[\ \t]*$}
+    EXPORT_BEG_RE = %r{^[\ \t]*\#\#\# \@export (?<sections>\w+(?:,\ ?\w+)*)[\ \t]*$}
     EXPORT_END_RE = %r{^[\ \t]*\#\#\# \@/export[\ \t]*$}
 
     def scan!
       self.snippets = SnippetCollection.new
-      section = nil
+      sections = []
       snippet = []
       # def add_and_reset!
       # end
@@ -54,20 +56,22 @@ module Idiopidae
       path.open.each do |line|
         line.chomp!
         if (mm = EXPORT_BEG_RE.match(line))
-          snippets.add(section, snippet)
-          section = nil
-          snippet = []
-          section = mm[:name].to_sym
+          snippets.add(sections, snippet)
+          sections = []
+          snippet  = []
+          sections  = mm[:sections].split(/,\s*/).map(&:to_sym)
         elsif EXPORT_END_RE.match(line)
-          snippets.add(section, snippet)
-          section = nil
-          snippet = []
-        elsif section.present?
+          snippets.add(sections, snippet)
+          sections = []
+          snippet  = []
+        elsif sections.present?
           snippet << line
         else
           # nothing
         end
       end
+      snippets.add(sections, snippet) # if still in a snippet at end of file
+      nil
     end
 
     def dump_file(output_dir)

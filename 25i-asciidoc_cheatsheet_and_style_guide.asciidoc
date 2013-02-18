@@ -124,6 +124,7 @@ Inline code block. You can use `include::code/HelloWorld.rb[]` to pull it in fro
 
 Prefix each with `[[ref_name]]`
 
+[[code_block_example]]
 ----
 [source,java]
 CODE_BLOCK_NOTE = Standard line length for code is 85 in an "Animal" book:"
@@ -134,9 +135,9 @@ STANDARD LINE_FORMAT = <<-EOF
 EOF
 ----
 
-Contrast the code block above with <<style_code_example>>, which is a _formal_ code example (titled and cross-referenced).
+Contrast the code block above with <<formal_code_example>>, which is a _formal_ code example (titled and cross-referenced).
 
-[[style_code_example]]
+[[formal_code_example]]
 .An Example
 ====
 ----

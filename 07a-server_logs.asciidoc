@@ -25,72 +25,88 @@ Hadoop cut its teeth at Yahoo, where it was primarily used for processing intern
 Quite likely, server log processing either a) is the reason you got this book or b) seems utterly boring. For the latter folks, stick with it; hidden in this chapter are basic problems of statistics (finding histogram of pageviews), text processing (regular expressions for parsing), and graphs (constructing the tree of paths that users take through a website).
 
 
-=== Data Mode for Webserver Logs ===
+=== Webserver Log Parsing ===
 
-Webserver logs typically follow some variant of the "Apache Common Log" format.
+We'll represent loglines with the following <<serverlog_logline_fields,model definition>>:
 
+[[serverlog_logline_fields]]
 ----
-216.239.32.18 - - [30/Apr/2003:13:17:02 -0700] "GET /archive/2003/04/29/star_war.shtml HTTP/1.0" 200 13810 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
-----
-
-----
-include::code/server_logs/server_logs-00-model-base.rb[]
+include::code/serverlogs/model/logline--fields.rb[]
 ----
 
-We should also add a method to the model to parse each line. It just breaks up each line into fields and passes them in order to the `Logline` model:
+Since most of our questions are about what visitors do, we'll mainly use `visitor_id` (to identify common requests for a visitor), `uri_str` (what they requested), `requested_at` (when they requested it) and `referer` (the page they clicked on).  Don't worry if you're not deeply familiar with the rest of the fields in our model -- they'll become clear in context.
 
-----
-include::code/server_logs/server_logs-01-parse-script.rb[]
-----
+Two notes, though. In these explorations, we're going to use the `ip_address` field for the `visitor_id`. That's good enough if you don't mind artifacts, like every visitor from the same coffee shop being treated identically. For serious use, though, many web applications assign an identifying "cookie" to each visitor and add it as a custom logline field. Following good practice, we've built this model with a `visitor_id` method that decouples the _semantics_ ("visitor") from the _data_ ("the IP address they happen to have visited from"). Also please note that, though the dictionary blesses the term 'referrer', the early authors of the web used the spelling 'referer' and we're now stuck with it in this context. 
 
 === Simple Log Parsing ===
 
-Now the parse script is simple as can be: take each line, hand it to `Logline` to parse, and emit the model object that returns. We don't need to do anything more, so there's no reducer:
+Webserver logs typically follow some variant of the <<serverlog_example_line,"Apache Common Log" format>> -- a series of lines describing each web request:
 
+[[serverlog_example_line]]
 ----
-include::code/server_logs/server_logs-01-parse-script.rb[]
-----
-
-There's a couple more gory details of parsing each log line, but trust me on them for a moment, and let's run this script. First, in local map mode; here's lines 5000-5010 of the logs:
-
-----
-include::code/server_logs/server_logs-00-parse-00-mapper.log[]
+154.5.248.92 - - [30/Apr/2003:13:17:04 -0700] "GET /random/video/Star_Wars_Kid.wmv HTTP/1.0" 206 176250 "-" "Mozilla/4.77 (Macintosh; U; PPC)"
 ----
 
-=== Parser script === 
+Our first task is to leave that arcane format behind and extract healthy structured models. Since every line stands alone, the <<serverlog_parser_processor,parse script>> is simple as can be: a transform-only script that passes each line to the `Logline.parse` method and emits the model object it returns.
 
-I've used the `//x` form of regular expression -- this ignores the whitespace and treats `#` as introducing a comment. So at the cost of having to explicitly use `\s` for "space", we get a very readable program:
-
+[[serverlog_parser_processor]]
 ----
-include::code/server_logs/server_logs-00-model-regexp.rb[]
-----
-
-The second important detail concerns parsing the time. 
-
-----
-include::code/server_logs/server_logs-00-model-detail.rb[]
+include::code/serverlogs/parser--processor.rb[]
 ----
 
-* Don't try to be a hero and get everything done in one regexp. You've gone from gallant to goofus for sure if you start using backreferences. Here, we use the first regexp to just separate the date-time string from the herd, then finish it in a clean, quiet place.
-* See ((wire receiver pattern)) for why we use `receive_visit_time` rather than override the setter (`visit_time=`) method
-  ** A receive method must either call `super(val)` to save the value, or call `write_attribute` directly.
-* Generic parsing of times can be shockingly slow. The version you see above came after profiling the script verified it was better to
-* The main regexp and the one in `receive_visit_time` are ((good brittle)).
-  ** spells out HTTP, specifies digits `\d`  etc
-  ** anchored at the beginning and end, using multi-line anchors (`^` and `$` match on a newline; `\A` and `\z` match strictly at the beginning and end of a string).
+.Star Wars Kid serverlogs
+****
+For sample data, we'll use the http://waxy.org/2008/05/star_wars_kid_the_data_dump/[webserver logs released] by blogger Andy Baio. In 2003, he posted the famous http://j.mp/vidswkid["Star Wars Kid"] video, which for several years ranked as the biggest viral video of all time. (It augments a teenager's awkward Jedi-style fighting moves with the special effects of a real lightsaber.) Here's his description:
+
+[quote]
+____
+I've decided to release the first six months of server logs from the meme's spread into the public domain -- with dates, times, IP addresses, user agents, and referer information. ... On April 29 at 4:49pm, I posted the video, renamed to "Star_Wars_Kid.wmv" -- inadvertently giving the meme its permanent name. (Yes, I coined the term "Star Wars Kid." It's strange to think it would've been "Star Wars Guy" if I was any lazier.) From there, for the first week, it spread quickly through news site, blogs and message boards, mostly oriented around technology, gaming, and movies. ...
+
+This file is a subset of the Apache server logs from April 10 to November 26, 2003. It contains every request for my homepage, the original video, the remix video, the mirror redirector script, the donations spreadsheet, and the seven blog entries I made related to Star Wars Kid. I included a couple weeks of activity before I posted the videos so you can determine the baseline traffic I normally received to my homepage. The data is public domain. If you use it for anything, please drop me a note!
+____
+****
+
+The details of parsing are mostly straightforward -- we use a regular expression to pick apart the fields in each line. That regular expression, however, is another story:
+
+----
+include::code/serverlogs/logline-00-model-regexp.rb[]
+----
+
+It may look terrifying, but taken piece-by-piece it's not actually that bad.  Regexp-fu is an essential skill for data science in practice -- you're well advised to walk through it. Let's do so.
+
+* The meat of each line describe the contents to match -- `\S+` for "a sequence of non-whitespace", `\d+` for "a sequence of digits", and so forth. If you're not already familiar with regular expressions at that level, consult the excellent http://j.mp/regexpinfo[tutorial at regular-expressions.info].
+* This is an 'extended-form' regular expression, as requested by the `x` at the end of it. An extended-form regexp ignores whitespace and treats `#` as a comment delimiter -- constructing a regexp this complicated would be madness otherwise. Be careful to backslash-escape spaces and hash marks.
+* The `\A` and `\z` anchor the regexp to the absolute start and end of the string respectively.
+* Fields are selected using 'named capture group' syntax: `(?<ip_address>\S+)`. You can retrieve its contents using `match[:ip_address]`, or get all of them at once using `captures_hash` as we do in the `parse` method.
+* Build your regular expressions to be 'good brittle'. If you only expect IP addresses to be numbers with dots, make your program reject records that 
+
+That regular expression does almost all the heavy lifting, but isn't sufficient to properly extract the `requested_at` time. Wukong models provide a "security gate" for each field in the form of the `receive_(field name)` method. The setter method (`requested_at=`) applies a new value directly, but the `receive_requested_at` method is expected to appropriately validate and transform the given value. The default method performs simple 'do the right thing'-level type conversion, sufficient to (for example) faithfully load an object from a plain JSON hash. But for complicated cases you're invited to override it as we do here.
+
+----
+include::/Users/flip/ics/book/big_data_for_chimps/code/serverlogs/models/logline--requested_at.rb[]
+----
+
+There's a general lesson here for data-parsing scripts. Don't try to be a hero and get everything done in one giant method. The giant regexp just coarsely separates the values; any further special handling happens in isolated methods.
+
+Here's the <<serverlogs_output_parser_map,output of this script>> in local mode:
+
+[[serverlogs_output_parser_map]]
+----
+include::code/serverlogs/output-parser-map.log[]
+----
 
 === Histograms === 
 
 When do people visit the site?
 
 ----
-include::code/server_logs/server_logs-02-histograms-mapper.rb[]
+include::code/serverlogs/logline-02-histograms-mapper.rb[]
 ----
 
 We want to group on `day_hr`, so just add a method implementing (and documenting!) that domain knowledge. 
 
 ----
-include::code/server_logs/server_logs-00-model-day_hr.rb[]
+include::code/serverlogs/logline-00-model-day_hr.rb[]
 ----
 
 This is the advantage of having a model and not just a passive sack of data.
@@ -98,7 +114,7 @@ This is the advantage of having a model and not just a passive sack of data.
 Run it in map mode:
 
 ----
-include::code/server_logs/server_logs-02-histograms-02-mapper-wu-lign-sort.log[]
+include::code/serverlogs/logline-02-histograms-02-mapper-wu-lign-sort.log[]
 ----
 
 TODO: digression about `wu-lign`.
@@ -106,19 +122,19 @@ TODO: digression about `wu-lign`.
 Sort and save the map output; then write and debug your reducer.
 
 ----
-include::code/server_logs/server_logs-02-histograms-full.rb[]
+include::code/serverlogs/logline-02-histograms-full.rb[]
 ----
 
 When things are working, this is what you'll see. Notice that the `.../Star_Wars_Kid.wmv` file already have five times the pageviews as the site root (`/`).
 
 ----
-include::code/server_logs/server_logs-02-histograms-03-reduce.log[]
+include::code/serverlogs/logline-02-histograms-03-reduce.log[]
 ----
 
 You're ready to run the script in the cloud! Fire it off and you'll see dozens of workers start processing the data.
 
 ----
-include::code/server_logs/server_logs-02-histograms-04-freals.log[]
+include::code/serverlogs/logline-02-histograms-04-freals.log[]
 ----
 
 === User Paths through the site ("Sessionizing")
@@ -130,23 +146,23 @@ NOTE:[What are the important locality feature(s) to group on?]
 spit out `[ip, day_hr, visit_time, path]`.
 
 ----
-include::code/server_logs/server_logs-03-breadcrumbs-full.rb[]
+include::code/serverlogs/logline-03-breadcrumbs-full.rb[]
 ----
 
 run it in map mode:
 
 ----
-include::code/server_logs/server_logs-02-histograms-01-mapper.log[]
+include::code/serverlogs/logline-02-histograms-01-mapper.log[]
 ----
 
 ----
-include::code/server_logs/server_logs-03-breadcrumbs-02-mapper.log[]
+include::code/serverlogs/logline-03-breadcrumbs-02-mapper.log[]
 ----
 
 group on user
 
 ----
-include::code/server_logs/server_logs-03-breadcrumbs-03-reducer.log[]
+include::code/serverlogs/logline-03-breadcrumbs-03-reducer.log[]
 ----
 
 We use the secondary sort so that each visit is in strict order of time within a session.
@@ -166,12 +182,12 @@ What can you do with the sessionized logs? Well, each row lists a user on the le
 We've been thinking about that as a table, but it's also a graph! 
 
 ----
-include::code/server_logs/server_logs-04-page_page_edges-full.rb[]
+include::code/serverlogs/logline-04-page_page_edges-full.rb[]
 ----
 
 
 ----
-include::code/server_logs/server_logs-04-page_page_edges-03-reducer.log[]
+include::code/serverlogs/logline-04-page_page_edges-03-reducer.log[]
 ----
 
 You'll learn more about this in the chapter on ((Processing Graphs)), but 

@@ -1,0 +1,6 @@
+~/code/wukong$ head -n 5 data/serverlogs/star_wars_kid/star_wars_kid-raw-sample.log | examples/serverlogs/parser.rb --map | wu-lign 
+170.20.11.59   	2003-04-30T20:17:02Z	GET	/archive/2003/04/29/star_war.shtml	HTTP/1.0	200	 13810	-                                                    	Mozilla/4.0 (compatible; MSIE 6.0; Windows 98; Hotbar 4.1.8.0) 	logline
+154.5.248.92   	2003-04-30T20:17:04Z	GET	/random/video/Star_Wars_Kid.wmv   	HTTP/1.0	206	176250	-                                                    	Mozilla/4.77 (Macintosh; U; PPC)                               	logline
+199.91.33.254  	2003-04-30T20:17:09Z	GET	/random/video/Star_Wars_Kid.wmv   	HTTP/1.0	200	100388	http://www.waxy.org/archive/2003/04/29/star_war.shtml	Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0; H010818)    	logline
+131.229.113.229	2003-04-30T20:17:09Z	GET	/random/video/Star_Wars_Kid.wmv   	HTTP/1.1	200	171928	-                                                    	Mozilla/4.0 (compatible; MSIE 5.0; Windows 98) Opera 5.12  [en]	logline
+64.173.152.130 	2003-04-30T20:17:18Z	GET	/archive/2003/02/19/coachell.shtml	HTTP/1.1	200	 12850	http://search.yahoo.com/search?p=coachella+2003      	Mozilla/4.0 (compatible; MSIE 5.5; Windows 98)                 	logline
