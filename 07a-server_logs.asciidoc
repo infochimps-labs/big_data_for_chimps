@@ -78,7 +78,7 @@ It may look terrifying, but taken piece-by-piece it's not actually that bad.  Re
 * This is an 'extended-form' regular expression, as requested by the `x` at the end of it. An extended-form regexp ignores whitespace and treats `#` as a comment delimiter -- constructing a regexp this complicated would be madness otherwise. Be careful to backslash-escape spaces and hash marks.
 * The `\A` and `\z` anchor the regexp to the absolute start and end of the string respectively.
 * Fields are selected using 'named capture group' syntax: `(?<ip_address>\S+)`. You can retrieve its contents using `match[:ip_address]`, or get all of them at once using `captures_hash` as we do in the `parse` method.
-* Build your regular expressions to be 'good brittle'. If you only expect IP addresses to be numbers with dots, make your program reject records that 
+* Build your regular expressions to be 'good brittle'. If you only expect HTTP request methods to be uppercase strings, make your program reject records that are otherwise. When you're processing billions of events, those one-in-a-million deviants start occurring thousands of times.
 
 That regular expression does almost all the heavy lifting, but isn't sufficient to properly extract the `requested_at` time. Wukong models provide a "security gate" for each field in the form of the `receive_(field name)` method. The setter method (`requested_at=`) applies a new value directly, but the `receive_requested_at` method is expected to appropriately validate and transform the given value. The default method performs simple 'do the right thing'-level type conversion, sufficient to (for example) faithfully load an object from a plain JSON hash. But for complicated cases you're invited to override it as we do here.
 
@@ -88,25 +88,32 @@ include::/Users/flip/ics/book/big_data_for_chimps/code/serverlogs/models/logline
 
 There's a general lesson here for data-parsing scripts. Don't try to be a hero and get everything done in one giant method. The giant regexp just coarsely separates the values; any further special handling happens in isolated methods.
 
-Here's the <<serverlogs_output_parser_map,output of this script>> in local mode:
+Test the <<serverlogs_output_parser_map,script in local mode>>:
 
 [[serverlogs_output_parser_map]]
 ----
 include::code/serverlogs/output-parser-map.log[]
 ----
 
+Then <<serverlogs_output_parser_freals,run it on the full dataset>> to produce the starting point for the rest of our work:
+
+[[serverlogs_output_parser_freals]]
+----
+TODO
+----
+
 === Histograms === 
 
-When do people visit the site?
+Let's start exploring the dataset. Andy Baio 
 
 ----
 include::code/serverlogs/logline-02-histograms-mapper.rb[]
 ----
 
-We want to group on `day_hr`, so just add a method implementing (and documenting!) that domain knowledge. 
+We want to group on `date_hr`, so just add a 'virtual accessor' -- a method that behaves like an attribute but derives its value from another field: 
 
 ----
-include::code/serverlogs/logline-00-model-day_hr.rb[]
+include::code/serverlogs/logline-00-model-date_hr.rb[]
 ----
 
 This is the advantage of having a model and not just a passive sack of data.
@@ -139,15 +146,18 @@ include::code/serverlogs/logline-02-histograms-04-freals.log[]
 
 === User Paths through the site ("Sessionizing")
 
-Now let's do some stuff more challenging that you'd try in a normal relational DB.
+We can use the user logs to assemble a picture of how users navigate the site -- 'sessionizing' their pageviews. Marketing and e-commerce sites have a great deal of interest in optimizing their "conversion funnel", the sequence of pages that visitors follow before filling out a contact form, or buying those shoes, or whatever it is the site exists to serve. Visitor sessions are also useful for defining groups of related pages, in a manner far more robust than what simple page-to-page links would define. A recommendation algorithm using those relations would for example help an e-commerce site recommend teflon paste to a visitor buying plumbing fittings, or help a news site recommend an article about Marilyn Monroe to a visitor who has just finished reading an article about John F Kennedy. Many commercial web analytics tools don't offer a view into user sessions -- assembling them is extremely challenging for a traditional datastore. It's a piece of cake for Hadoop, as you're about to see.
 
-NOTE:[What are the important locality feature(s) to group on?]
+NOTE:[Take a moment and think about the locality: what feature(s) do we need to group on? What additional feature(s) should we sort with?]
 
-spit out `[ip, day_hr, visit_time, path]`.
+
+spit out `[ip, date_hr, visit_time, path]`.
 
 ----
 include::code/serverlogs/logline-03-breadcrumbs-full.rb[]
 ----
+
+You might ask why we don't partition directly on say both `visitor_id` and date (or other time bucket). Partitioning by date would break the locality of any visitor session that crossed midnight: some of the requests would be in one day, the rest would be in the next day.
 
 run it in map mode:
 
