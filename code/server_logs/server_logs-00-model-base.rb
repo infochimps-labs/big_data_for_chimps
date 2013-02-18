@@ -2,17 +2,16 @@ class Logline
   include Gorillib::Model
   include Gorillib::Model::PositionalFields
 
-  field :ip,            String
-  field :junk1,         String
-  field :junk2,         String
+  field :ip_address,    String
+  field :rfc_1413,      String
+  field :userid,        String
   #
-  field :visit_time,    Time
+  field :requested_at,  Time
   field :http_method,   String
   field :path,          String
   field :protocol,      String
   field :response_code, Integer
-  field :size,          Integer, blankish: ['', nil, '-']
+  field :bytesize,      Integer, blankish: ['', nil, '-']
   field :referer,       String
-  field :ua,            String
-  field :cruft,         String
+  field :user_agent,    String
 end
