@@ -1,12 +1,10 @@
-== Event Streams ==
+Much of Hadoop's adoption is driven by organizations realizing they the opportunity to measure every aspect of their operation, unify those data sources, and act on the patterns that Hadoop and other Big Data tools uncover.
 
-Much of Hadoop's adoption is driven by organizations realizing they the opportunity to measure every aspect of their operation, unify those data sources, and act on the patterns that Hadoop and other Big Data tools uncover. 
-
-For 
+For
 
 e-commerce site, an advertising broker, or a hosting provider, there's no wonder inherent in being able to measure every customer interaction, no controversy that it's enormously valuable to uncovering patterns in those interactions, and no lack of tools to act on those patterns in real time.
 
-can use the clickstream of interactions with each email 
+can use the clickstream of interactions with each email
 ; this was one of the cardinal advantages cited in the success of Barack Obama's 2012 campaign.
 
 
@@ -17,7 +15,7 @@ the response to
 each email batch and advertising placement.
 
 
-Hadoop cut its teeth at Yahoo, where it was primarily used for processing internet-sized web crawls(see next chapter on text processing) and 
+Hadoop cut its teeth at Yahoo, where it was primarily used for processing internet-sized web crawls(see next chapter on text processing) and
 
 // ?? maybe this should just be 'data streams' or something
 
@@ -36,7 +34,7 @@ include::code/serverlogs/model/logline--fields.rb[]
 
 Since most of our questions are about what visitors do, we'll mainly use `visitor_id` (to identify common requests for a visitor), `uri_str` (what they requested), `requested_at` (when they requested it) and `referer` (the page they clicked on).  Don't worry if you're not deeply familiar with the rest of the fields in our model -- they'll become clear in context.
 
-Two notes, though. In these explorations, we're going to use the `ip_address` field for the `visitor_id`. That's good enough if you don't mind artifacts, like every visitor from the same coffee shop being treated identically. For serious use, though, many web applications assign an identifying "cookie" to each visitor and add it as a custom logline field. Following good practice, we've built this model with a `visitor_id` method that decouples the _semantics_ ("visitor") from the _data_ ("the IP address they happen to have visited from"). Also please note that, though the dictionary blesses the term 'referrer', the early authors of the web used the spelling 'referer' and we're now stuck with it in this context. 
+Two notes, though. In these explorations, we're going to use the `ip_address` field for the `visitor_id`. That's good enough if you don't mind artifacts, like every visitor from the same coffee shop being treated identically. For serious use, though, many web applications assign an identifying "cookie" to each visitor and add it as a custom logline field. Following good practice, we've built this model with a `visitor_id` method that decouples the _semantics_ ("visitor") from the _data_ ("the IP address they happen to have visited from"). Also please note that, though the dictionary blesses the term 'referrer', the early authors of the web used the spelling 'referer' and we're now stuck with it in this context.
 
 === Simple Log Parsing ===
 
@@ -102,15 +100,15 @@ Then <<serverlogs_output_parser_freals,run it on the full dataset>> to produce t
 TODO
 ----
 
-=== Histograms === 
+=== Histograms ===
 
-Let's start exploring the dataset. Andy Baio 
+Let's start exploring the dataset. Andy Baio
 
 ----
 include::code/serverlogs/logline-02-histograms-mapper.rb[]
 ----
 
-We want to group on `date_hr`, so just add a 'virtual accessor' -- a method that behaves like an attribute but derives its value from another field: 
+We want to group on `date_hr`, so just add a 'virtual accessor' -- a method that behaves like an attribute but derives its value from another field:
 
 ----
 include::code/serverlogs/logline-00-model-date_hr.rb[]
@@ -179,28 +177,40 @@ We use the secondary sort so that each visit is in strict order of time within a
 
 You might ask why that is necessary -- surely each mapper reads the lines in order? Yes, but you have no control over what order the mappers run, or where their input begins and ends.
 
-This script _will_ accumulate multiple visits of a page.
-
+This script will accumulate multiple visits of a page.
 
 TODO: say more about the secondary sort.
+
+==== Web-crawlers and the Skew Problem ====
+
+In a
+
+It's important to use real data when you're testing algorithms:
+a skew problem like this
 
 
 === Page-Page similarity
 
-What can you do with the sessionized logs? Well, each row lists a user on the left and a bunch of pages on the right.
-
-We've been thinking about that as a table, but it's also a graph! 
+What can you do with the sessionized logs? Well, each row lists a visitor-session on the left and a bunch of pages on the right.  We've been thinking about that as a table, but it's also a graph -- actually, a bunch of graphs! The <<sidebar,serverlogs_affinity_graph>> describes an _affinity graph_, but we can build a simpler graph that just connects pages to pages by counting the number of times a pair of pages were visited by the same session. Every time a person requests the `/archive/2003/04/03/typo_pop.shtml` page _and_ the `/archive/2003/04/29/star_war.shtml` page in the same visit, that's one point towards their similarity. The chapter on <<graph_processing>> has lots of fun things to do with a graph like this, so for now we'll just lay the groundwork by computing the page-page similarity graph defined by visitor sessions.
 
 ----
 include::code/serverlogs/logline-04-page_page_edges-full.rb[]
 ----
 
-
 ----
 include::code/serverlogs/logline-04-page_page_edges-03-reducer.log[]
 ----
 
-You'll learn more about this in the chapter on ((Processing Graphs)), but 
+[[serverlogs_affinity_graph]]
+.Affinity Graph
+****
+First, you can think of it as an _affinity graph_ pairing visitor sessions with pages. The Netflix prize motivated a lot of work to help us understand affinity graphs -- in that case, a pairing of Netflix users with movies. Affinity graph-based recommendation engines simultaneously group similar users with similar movies (or similar sessions with similar pages). Imagine the following device. Set up two long straight lengths of wire, with beads that can slide along it. Beads on the left represent visitor sessions, ones on the right represent pages. These are magic beads, in that they can slide through each other, and they can clamp themselves to the wire. They are also slightly magnetic, so with no other tension they would not clump together but instead arrange themselves at some separated interval along the wire. Clamp all the beads in place for a moment and tie a small elastic string between each session bead and each page in that session. (These elastic bands also magically don't interfere with each other). To combat the crawler-robot effect, choose tighter strings when there are few pages in the session, and weaker strings when there are lots of pages in the session. Once you've finished stringing this up, unclamp one of the session beads. It will snap to a position opposit the middle of all the pages it is tied to. If you now unclamp each of those page beads, they'll move to sit opposite that first session bead. As you continue to unclamp all the beads, you'll find that they organize into clumps along the wire: when a bunch of sessions link to a common set of pages, their mutal forces combine to drag them opposite each other. That's the intuitive view; there are proper mathematical treatments, of course, for kind of co-clustering.
+
+----
+TODO: figure showing bipartite session-page graph
+----
+****
+
 
 
 === Geo-IP Matching ===
@@ -216,23 +226,23 @@ This arrangement caters to range queries in a relational database, but isn't sui
 
 To get the right locality, take each range and break it at some block level. Instead of having `1.2.3.4` to `1.2.5.6` on one line, let's use the first three quads (first 24 bits) and emit rows for `1.2.3.4` to `1.2.3.255`, `1.2.4.0` to `1.2.4.255`, and `1.2.5.0` to `1.2.5.6`. This lets us use the first segment as the partition key, and the full ip address as the sort key.
 
-          lines            bytes  description                  file            
+          lines            bytes  description                  file
       15_288_766   1_094_541_688  24-bit partition key         maxmind-geolite_city-20121002.tsv
        2_288_690     183_223_435  16-bit partition key         maxmind-geolite_city-20121002-16.tsv
        2_256_627      75_729_432  original (not denormalized)  GeoLiteCity-Blocks.csv
 
-       
-=== Range Queries ===       
+
+=== Range Queries ===
 
 This is a generally-applicable approach for doing range queries.
 
 * Choose a regular interval, fine enough to avoid skew but coarse enough to avoid ballooning the dataset size.
 * Whereever a range crosses an interval boundary, split it into multiple records, each filling or lying within a single interval.
 * Emit a compound key of `[interval, join_handle, beg, end]`, where
-  - `interval` is 
-  - `join_handle` identifies the originating table, so that records are grouped for a join (this is what ensures 
+  - `interval` is
+  - `join_handle` identifies the originating table, so that records are grouped for a join (this is what ensures
   If the interval is transparently a prefix of the index (as it is here), you can instead just ship the remainder: `[interval, join_handle, beg_suffix, end_suffix]`.
-* Use the 
+* Use the
 
 
 In the geodata section, the "quadtile" scheme is (if you bend your brain right) something of an extension on this idea -- instead of splitting ranges on regular intervals, we'll split regions on a regular grid scheme.
@@ -246,9 +256,8 @@ Unless of course you are trying to test a service for resilience against an adve
 
 .elephant_stampede
 ----
-
         require 'faraday'
-	
+
         processor :elephant_stampede do
 
 	  def process(logline)
@@ -269,11 +278,13 @@ Unless of course you are trying to test a service for resilience against an adve
 	end
 
 	flow(:mapper){ input > parse_loglines > elephant_stampede }
-----	
+----
 
-	
+
 You must use Wukong's eventmachine bindings to make more than one simultaneous request per mapper.
 
 === References
 
 * http://www.botsvsbrowsers.com/[Database of Robot User Agent strings]
+
+* http://research.microsoft.com/apps/pubs/default.aspx?id=67818[Improving Web Search Results Using Affinity Graph]
