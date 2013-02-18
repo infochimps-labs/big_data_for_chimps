@@ -1,40 +1,65 @@
 = Big Data for Chimps
 
 include::00-preface.asciidoc[]
+
 include::00a-about.asciidoc[]
+
 include::00c-hello_reviewers.asciidoc[]
 
 include::01-first_exploration.asciidoc[]
+
 include::01a-first_exploration.asciidoc[]
 
 include::02-simple_transform.asciidoc[]
+
 include::02a-simple_transform.asciidoc[]
 
 include::03-transform_pivot.asciidoc[]
+
 include::03a-locality.asciidoc[]
+
 include::03b-saving_christmas.asciidoc[]
+
 include::03c-simple_reshape.asciidoc[]
+
 include::03d-efficient_santa.asciidoc[]
+
 include::03e-jt_and_nanette_at_work_for_you.asciidoc[]
+
 include::03f-partition_and_sort_keys.asciidoc[]
 
+include::07-server_logs.asciidoc[]
+
+include::07a-server_logs.asciidoc[]
+
 include::11-geographic.asciidoc[]
+
 include::11a-spatial_join.asciidoc[]
+
 include::11b-multiscale_join.asciidoc[]
 
 include::20-hbase_data_modeling.asciidoc[]
+
 include::20a-hbase_schema.asciidoc[]
+
 include::20b-hbase_and_databases.asciidoc[]
 
 include::22d-use_method_checklist.asciidoc[]
 
 include::24-cheatsheets.asciidoc[]
+
 include::24a-unix_cheatsheet.asciidoc[]
+
 include::24b-regular_expression_cheatsheet.asciidoc[]
+
 include::24c-pig_cheatsheet.asciidoc[]
+
 include::24d-hadoop_tunables_cheatsheet.asciidoc[]
 
 include::25-appendix.asciidoc[]
+
 include::25a-authors.asciidoc[]
+
 include::25b-colophon.asciidoc[]
+
 include::25g-back_cover.asciidoc[]
