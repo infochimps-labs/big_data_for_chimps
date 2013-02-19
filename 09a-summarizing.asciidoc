@@ -22,7 +22,7 @@ Libraries:
 Line numbering is _astonishingly_ hard. Each reducer needs to know how many records came before it -- but that information is non-local. It's a total sort with a degree of difficulty.
 
 
-===== Mapper
+==== Mapper
 
 Choose how you're going to partition and order the data.
 

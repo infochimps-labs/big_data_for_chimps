@@ -1,9 +1,9 @@
-=== Graph propogation
+=== Graph propogation ===
 
 Since the connections among pages are robot-legible, links within topics can be read to imply a geolocation -- the movie "Dazed and Confused" (which took place in austin) and the artist Janis Joplin (who got her start in Austin) can be identifiably paired with the loose geolocation of Austin, TX.
 
 
-=== Basic pagerank
+=== Basic pagerank ===
 
 ----
 include::page_counts.pig[]

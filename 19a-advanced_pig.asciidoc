@@ -13,7 +13,7 @@ They're also a great illustration of three key scalability patterns.
 Once you have a clear picture of how these joins work,
 you can be confident you understand the map/reduce paradigm deeply.
 
-[[map_side_join]]
+[[advanced_pig_map_side_join]]
 === Map-side Join ===
 
 A map-side (aka 'fragment replicate') join
@@ -24,7 +24,7 @@ The Pig manual calls this a "fragment replicate" join, because that is how Pig t
 Throughout the book, I'll refer to it as a map-side join, because that's how you should think about it when you're using it.
 The other common name for it is a Hash join -- and if you want to think about what's going on inside it, that's the name you should use.
 
-===== How a Map-side (Hash) join works =====
+==== How a Map-side (Hash) join works =====
 
 If you've been to enough large conferences you've seen at least one registration-day debacle. Everyone leaves their hotel to wait in a long line at the convention center, where they have set up different queues for some fine-grained partition of attendees by last name and conference track. Registration is a direct join of the set of attendees on the set of badges; those check-in debacles are basically the stuck reducer problem come to life.
 
@@ -58,7 +58,7 @@ One map-side only pass through the data is enough to do the join.
 See ((distribution of weather measurements)) for an example.
 
 
-===== Example: map-side join of wikipedia page metadata with wikipedia pageview stats =====
+==== Example: map-side join of wikipedia page metadata with wikipedia pageview stats =====
 
 
 
@@ -66,7 +66,7 @@ See ((distribution of weather measurements)) for an example.
 [[merge_join]]
 === Merge Join ===
 
-===== How a merge join works =====
+==== How a merge join works =====
 
 (explanation) 
 
@@ -78,17 +78,17 @@ You will also see better performance if the data in the left table is partitione
 ____________________________________________________________________
 
 
-=== Example: merge join of user graph with page rank iteration ===
+==== Example: merge join of user graph with page rank iteration ====
 
-==== Skew Join ====
+=== Skew Join ===
 
 (explanation of when needed)
 
-===== How a skew join works =====
+==== How a skew join works ====
 
 (explanation how)
 
-===== Example: ? counting triangles in wikipedia page graph ? OR ? Pageview counts ? =====
+==== Example: ? counting triangles in wikipedia page graph ? OR ? Pageview counts ? ====
 
 TBD 
 
@@ -170,5 +170,7 @@ TBD
 === Pig and JSON ===
 
 TBD
-''''
 
+=== References ===
+
+* http://pig.apache.org/docs/r0.10.0/perf.html#replicated-joins:[map-side join]

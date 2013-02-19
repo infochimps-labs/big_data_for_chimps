@@ -106,9 +106,6 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Why Hadoop
   - robots are cheap, people are important
 
-    
-PRACTICAL
-
 18. *Hadoop Native Java API*
   - don't
 
@@ -129,8 +126,6 @@ PRACTICAL
   - Tuning for the Wise and Lazy
   - Tuning for the Brave and Foolish
   - The USE Method for understanding performance and diagnosing problems
-
-APPENDIX
   
 23. *Overview of Datasets and Scripts*
  - Datasets

@@ -1,12 +1,12 @@
 === Histograms and Distributions ===
 
-In the section on <<munging_truth_and_error,Inconsistent Truth and Error>>,
-we made the point that
-the tools and patterns of though for dealing with numerical error and uncertainty are
+In the section on <<munging_truth_and_error,Inconsistent Truth and Error>>, we made the point that the tools and patterns of though for dealing with numerical error and uncertainty are
 
 ==== Distribution of temperatures ====
 
-===== Filter weather of interest
+Find how temperature is distributed
+
+===== Filter weather of interest =====
 
 The chapter on geodata will show general techniques for doing spatial aggregates. For now, we'll just choose the best-match weather station for each stadium and use that. (I did use my ability to skip ahead in the book to pull out those weather stations of interest.)
 
@@ -76,9 +76,7 @@ TODO: show math
 
 ===== Map-side JOIN
 
-We can do even better, though. The `stadium_wstns` table is tiny; we can do a ((map-side join)) footnote:[aka fragment replicate or hash-map join]. 
-TODO: reference forward to pig chapter
-http://pig.apache.org/docs/r0.10.0/perf.html#replicated-joins:[map-side join]
+We can do even better, though. The `stadium_wstns` table is tiny; we can do a <<advanced_pig_map_side_join,map-side join>>
 
 NOTE: if the observations were stored sorted by weather station ID, you could even do a merge join. When we get to the geographic data chapter you'll see why we made a different choice.
 

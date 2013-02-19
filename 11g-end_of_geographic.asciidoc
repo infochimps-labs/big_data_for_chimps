@@ -1,13 +1,13 @@
 
 === Keep Exploring ===
 
-===== Balanced Quadtiles =====
+==== Balanced Quadtiles =====
 
 Earlier, we described how quadtiles define a tree structure, where each branch of the tree divides the plane exactly in half and leaf nodes hold features. The multiscale scheme handles skewed distributions by developing each branch only to a certain depth. Splits are even, but the tree is lopsided (the many finer zoom levels you needed for New York City than for Irkutsk).
 
 K-D trees are another approach. The rough idea: rather than blindly splitting in half by area, split the plane to have each half hold the same-ish number of points. It's more complicated, but it leads to a balanced tree while still accommodating highly-skew distributions. Jacob Perkins (`@thedatachef`) has a http://thedatachef.blogspot.com/2012/10/k-d-tree-generation-with-apache-pig.html[great post about K-D trees] with further links.
 
-===== It's not just for Geo =====
+==== It's not just for Geo =====
 
 === Exercises ===
 

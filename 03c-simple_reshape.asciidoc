@@ -1,6 +1,5 @@
 
 
-
 Chimpanzee, Elephant and Elf worked in harmony according to the following workflow:
 
 * Chimpanzee:

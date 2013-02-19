@@ -75,7 +75,7 @@ Raw ingredients:
   - oneline	-- mapred	-- identity	-- identity
   - oneline	-- mapred	-- identity	-- swallow
 
-===== Variation =====
+==== Variation ====
 
 * non-local map tasks
 * EBS volumes

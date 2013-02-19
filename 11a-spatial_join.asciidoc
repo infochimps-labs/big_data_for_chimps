@@ -23,8 +23,6 @@ it to spatial analysis in more dimensions -- see <<brain_example>>, which also e
 
 === Geographic Data Model ===
 
-
-
 Geographic data shows up in the form of
 
 * Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
@@ -38,7 +36,7 @@ Geographic data shows up in the form of
 [NOTE]
 ===============================
 There's a slight muddying of the term "feature" -- to a geographer, a feature is a generic term for the _thing_ being described; later, in the chapter on machine learning, a feature
-Since I'm writing as a data scientist dabbling in geography (and because that chapter's hairy enough as it is), we'll just say "object" in place of "geographic feature"
+Since we're data scientists dabbling in geography, we'll just say "object" in place of "geographic feature" (and reserve the term "feature" for its machine learning sense).
 ===============================
 
 Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]

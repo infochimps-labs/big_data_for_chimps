@@ -47,9 +47,7 @@ Exercises:
 
 === Mappers ===
 
-
-
-===== Hadoop Streaming (Wukong, MrJob, etc) =====
+==== Hadoop Streaming (Wukong, MrJob, etc) ====
 
 If it's a Hadoop "streaming" job (Wukong, MrJob, etc), the child process is a Java jar that itself hosts your script file:
 
@@ -72,7 +70,7 @@ Once the maps start, it's normal for them to seemingly sit at 0% progress for a 
   - the mapper sortbuf data threshold
   - the mapper sortbuf total threshold
 
-===== Speculative Execution ======
+==== Speculative Execution ====
 
 For exploratory work, it's worth 
   

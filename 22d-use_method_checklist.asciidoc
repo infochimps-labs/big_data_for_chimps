@@ -43,7 +43,7 @@ There are further benefits:
 
 The USE metrics described below help you to identify the limiting resource of a job; to diagnose a faulty or misconfigured system; or to guide tuning and provisioning of the base system.
 
-===== Improve / Understand Job Performance =====
+==== Improve / Understand Job Performance ====
 
 Hadoop is designed to drive max utilization for its _bounding resource_ by coordinating manageable saturation_ of the resources in front of it.
 
@@ -57,9 +57,9 @@ The "bounding resource" is the fundamental limit on performance -- you can't pro
 
 At each step of a job, what you'd like to see is very high utilization of exactly _one_ bounding resource from that list, with reasonable headroom and managed saturation for everything else. What's "reasonable"? As a rule of thumb, utilization above 70% in a non-bounding resource deserves a closer look.
 
-===== Diagnose Flaws =====
+==== Diagnose Flaws ====
 
-===== Balanced Configuration/Provisioning of base system =====
+==== Balanced Configuration/Provisioning of base system ====
 
 === Resource List ===
 
@@ -236,8 +236,7 @@ Exchanges:
 
 If at all possible, use a remote monitoring framework like Ganglia, Zabbix or Nagios. However http://sourceforge.net/projects/clusterssh[clusterssh] or http://code.google.com/p/csshx[its OSX port] along with the following commands will help
 
-
-===== Exercises =====
+=== Exercises ===
 
 **Exercise 1**: start an intensive job (eg <remark>TODO: name one of the example jobs</remark>) that will saturate but not overload the cluster. Record all of the above metrics during each of the following lifecycle steps:
 

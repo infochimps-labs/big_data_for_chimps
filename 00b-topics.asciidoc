@@ -30,8 +30,6 @@
   - MI for geotile
   - (visualize)
 
-INTERMEDIATE
-
 5. *The Toolset*
   - toolset overview
     - pig vs hive vs impala
@@ -187,8 +185,6 @@ INTERMEDIATE
   - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
   - Why Hadoop
   - robots are cheap, people are important
-    
-PRACTICAL
 
 18. *Hadoop Native Java API*
   - don't
@@ -212,8 +208,6 @@ PRACTICAL
   - Tuning for the Wise and Lazy
   - Tuning for the Brave and Foolish
   - The USE Method for understanding performance and diagnosing problems
-
-APPENDIX
   
 23. *Overview of Datasets and Scripts*
  - Datasets

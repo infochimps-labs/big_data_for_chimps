@@ -1,27 +1,27 @@
 == Sampling ==
 
 * Random sample:
-  ** fixed size of final sample
-  ** fixed probability (binomial) for each element
-  ** spatial sampling
-  ** with/without replacement
-  ** weighted
-  ** by interestingness
-  ** stratified: partition important features into bins, and sample tastefully to achieve a smooth selection across bins. Think of density of phase space
-  ** consistent sample: the same sampling parameters on the same population will always return the same sample.
+  - fixed size of final sample
+  - fixed probability (binomial) for each element
+  - spatial sampling
+  - with/without replacement
+  - weighted
+  - by interestingness
+  - stratified: partition important features into bins, and sample tastefully to achieve a smooth selection across bins. Think of density of phase space
+  - consistent sample: the same sampling parameters on the same population will always return the same sample.
 * Algorithms:
-  ** iterative
-  ** batch
-  ** scan
-  ** reservoir
+  - iterative
+  - batch
+  - scan
+  - reservoir
 
 * graph:
-  ** sample to preserve connectivity
-  ** sample to preserve local structure
-  ** sample to preserve global representation
+  - sample to preserve connectivity
+  - sample to preserve local structure
+  - sample to preserve global representation
 
 * random variates
-  ** http://en.wikipedia.org/wiki/Ziggurat_algorithm[Ziggurat Algorithm] to use a simple lookup table to accelerate generation of complex distributions
+  - http://en.wikipedia.org/wiki/Ziggurat_algorithm[Ziggurat Algorithm] to use a simple lookup table to accelerate generation of complex distributions
 
 We're not going to worry about extracting samples larger than fit on one reducer.
 
@@ -86,7 +86,6 @@ A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby e
 	Script.new( Mapper, nil ).run
 
 
-References:
 * See this http://blog.rapleaf.com/dev/?p=187[rapleaf blog post] for why randomness is considered harmful.
 	
 === Random Sampling using strides ===
@@ -116,12 +115,9 @@ Each mapper outputs the sampling index of each preserved row as the key, and the
 
 It's essential that you keep the sampling index given by the first pass.
 
-=== References ===
+=== Refs ===
 
 * http://db.cs.berkeley.edu/papers/UCB-PhD-olken.pdf[Random Sampling from Databases], Frank Olken, 1993
-
-* containers:
-  ** https://github.com/skade/rbtree[RBTree] for ruby
-  ** https://github.com/rubyworks/pqueue[Priority Queue]
-
-* http://stackoverflow.com/a/2584770/41857[Stack Overflow: How to pick random (small) data samples using Map/Reduce? answer by Bkkbrad]
+* https://github.com/skade/rbtree[RBTree] for ruby
+* https://github.com/rubyworks/pqueue[Priority Queue]
+* http://stackoverflow.com/a/2584770/41857[Stack Overflow: How to pick random (small) data samples using Map/Reduce?] answer by Bkkbrad

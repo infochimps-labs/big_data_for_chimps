@@ -1,5 +1,5 @@
 [[hadoop_cluster_howto]]
-== Acquiring a Hadoop Cluster
+=== Acquiring a Hadoop Cluster ===
 
 This book picks up where the internet leaves off,
 and this stuff changes so fast

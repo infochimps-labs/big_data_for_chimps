@@ -42,6 +42,8 @@ An HBase data mode is typically designed around multiple tables, each serving on
 1. What query do you want to make that _must_ happen at milliseconds speed?
 2. There are a set of related queries or batch jobs -- which would you like to be efficient?
 
+If you are using it primarily for batch use,
+
 1. What is the batch job you are most interested in simplifying?
 2. There are a set of related queries or batch jobs -- which would you like to be efficient?
 
