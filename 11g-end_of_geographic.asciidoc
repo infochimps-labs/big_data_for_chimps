@@ -1,0 +1,76 @@
+
+=== Keep Exploring ===
+
+===== Balanced Quadtiles =====
+
+Earlier, we described how quadtiles define a tree structure, where each branch of the tree divides the plane exactly in half and leaf nodes hold features. The multiscale scheme handles skewed distributions by developing each branch only to a certain depth. Splits are even, but the tree is lopsided (the many finer zoom levels you needed for New York City than for Irkutsk).
+
+K-D trees are another approach. The rough idea: rather than blindly splitting in half by area, split the plane to have each half hold the same-ish number of points. It's more complicated, but it leads to a balanced tree while still accommodating highly-skew distributions. Jacob Perkins (`@thedatachef`) has a http://thedatachef.blogspot.com/2012/10/k-d-tree-generation-with-apache-pig.html[great post about K-D trees] with further links.
+
+===== It's not just for Geo =====
+
+=== Exercises ===
+
+[[brain_example]]
+**Exercise 1**: Extend quadtile mapping to three dimensions
+
+To jointly model network and spatial relationship of neurons in the brain, you will need to use not two but three spatial dimensions. Write code to map positions within a 200mm-per-side cube to an "octcube" index analogous to the quadtile scheme. How large (in mm) is each cube using 30-bit keys? using 63-bit keys?
+
+For even higher dimensions of fun, extend the http://en.wikipedia.org/wiki/Voronoi_diagram#Higher-order_Voronoi_diagrams[Voronoi diagram to three dimensions].
+
+**Exercise 2**: Locality
+
+We've seen a few ways to map feature data to joinable datasets. Describe how you'd join each possible pair of datasets from this list (along with the story it would tell):
+
+* Census data: dozens of variables, each attached to a census tract ID, along with a region polygon for each census tract.
+* Cell phone antenna locations: cell towers are spread unevenly, and have a maximum range that varies by type of antenna.
+  - case 1: you want to match locations to the single nearest antenna, if any is within range.
+  - case 2: you want to match locations to all antennae within range.
+* Wikipedia pages having geolocations.
+* Disease reporting: 60,000 points distributed sparsely and unevenly around the country, each reporting the occurence of a disease.
+
+For example, joining disease reports against census data might expose correlations of outbreak with ethnicity or economic status. I would prepare the census regions as quadtile-split polygons. Next, map each disease report to the right quadtile and in the reducer identify the census region it lies within. Finally, join on the tract ID-to-census record table.
+
+**Exercise 3**: Write a generic utility to do multiscale smoothing
+
+Its input is a uniform sampling of values: a value for every grid cell at some zoom level.
+However, lots of those values are similar.
+Combine all grid cells whose values lie within a certain tolerance into
+
+Example: merge all cells whose contents lie within 10% of each other
+
+    00	10
+    01	11
+    02   9
+    03   8
+    10  14
+    11  15
+    12  12
+    13  14
+    20  19
+    21  20
+    22  20
+    23  21
+    30  12
+    31  14
+    32   8
+    33   3
+
+    10  11  14  18     .9.5. 14  18
+     9   8  12  14     .   . 12  14
+    19  20  12  14     . 20. 12  14
+    20  21   8   3     .   .  8   3
+
+    
+
+=== References ===
+
+* http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
+* http://msdn.microsoft.com/en-us/library/bb259689.aspx
+* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+* http://wiki.openstreetmap.org/wiki/QuadTiles
+* https://github.com/simplegeo/polymaps
+* http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
+
+* http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
+* http://bl.ocks.org/4122298[US County borders in GeoJSON]

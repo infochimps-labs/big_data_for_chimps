@@ -61,10 +61,12 @@ include::09-statistics.asciidoc[]
 include::10-time_series.asciidoc[]
 
 include::11-geographic.asciidoc[]
-
 include::11a-spatial_join.asciidoc[]
-
 include::11b-multiscale_join.asciidoc[]
+include::11c-regions_to_quadtiles.asciidoc[]
+include::11e-weather_near_you.asciidoc[]
+include::11f-spatial_clustering.asciidoc[]
+include::11g-end_of_geographic.asciidoc[]
 
 include::12-cat_herding.asciidoc[]
 
