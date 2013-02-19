@@ -1,4 +1,4 @@
-=== Where is Barbecue?
+=== Regional Flavor
 
 There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
