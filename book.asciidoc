@@ -29,6 +29,10 @@ include::03e-jt_and_nanette_at_work_for_you.asciidoc[]
 
 include::03f-partition_and_sort_keys.asciidoc[]
 
+include::04-regional_flavor.asciidoc[]
+include::05-toolset.asciidoc[]
+include::06-filesystem_mojo.asciidoc[]
+
 include::07-event_streams.asciidoc[]
 include::07a-serverlog_parsing.asciidoc[]
 include::07b-pageview_histograms.asciidoc[]
@@ -38,11 +42,26 @@ include::07e-geo_ip_matching.asciidoc[]
 include::07f-benign_ddos.asciidoc[]
 include::07g-end_of_event_streams.asciidoc[]
 
+
+include::08-text_processing.asciidoc[]
+include::09-statistics.asciidoc[]
+include::10-time_series.asciidoc[]
+
 include::11-geographic.asciidoc[]
 
 include::11a-spatial_join.asciidoc[]
 
 include::11b-multiscale_join.asciidoc[]
+
+include::11-geographic.asciidoc[]
+include::12-cat_herding.asciidoc[]
+include::13-data_munging.asciidoc[]
+include::14-organizing_data.asciidoc[]
+include::15-graphs.asciidoc[]
+include::16-machine_learning.asciidoc[]
+include::17-best_practices.asciidoc[]
+include::18-java_api.asciidoc[]
+include::19-advanced_pig.asciidoc[]
 
 include::20-hbase_data_modeling.asciidoc[]
 
@@ -50,7 +69,12 @@ include::20a-hbase_schema.asciidoc[]
 
 include::20b-hbase_and_databases.asciidoc[]
 
+include::21-hadoop_internals.asciidoc[]
+include::22-hadoop_tuning.asciidoc[]
+
 include::22d-use_method_checklist.asciidoc[]
+
+include::23-datasets_and_scripts.asciidoc[]
 
 include::24-cheatsheets.asciidoc[]
 
@@ -69,3 +93,4 @@ include::25a-authors.asciidoc[]
 include::25b-colophon.asciidoc[]
 
 include::25g-back_cover.asciidoc[]
+

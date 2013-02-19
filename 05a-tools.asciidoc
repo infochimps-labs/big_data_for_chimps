@@ -1,5 +1,3 @@
-== Toolset ==
-
 === Your cluster ===
 
 Designed for a "write and debug it on your laptop, run it in the cloud"

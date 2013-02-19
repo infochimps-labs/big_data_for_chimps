@@ -1,3 +1,3 @@
 [[transform_pivot]]
-== Transform Pivot
+== Locality and Pivots ==
 

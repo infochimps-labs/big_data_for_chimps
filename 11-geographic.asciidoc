@@ -1,3 +1,14 @@
 [[geographic]]
-== Geographic
+== Geographic Data Processing
 
+Spatial data is of course one of the fundamental ways we understand the universe
+
+There are several big ideas introduced here.
+
+Spatial data is of course one of the fundamental ways we understand the universe
+
+There are several big ideas introduced here.
+
+First of course are the actual mechanics of working with spatial data, and projecting the Earth onto a coordinate plane.
+
+The statistics and timeseries chapters dealt with their dimensions either singly or interacting weakly,

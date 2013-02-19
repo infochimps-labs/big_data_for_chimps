@@ -1,5 +1,3 @@
-== Processing Text ==
-
 === Exercises ===
 
 ==== Document Authorship ====

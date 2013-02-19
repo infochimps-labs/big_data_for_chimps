@@ -1,5 +1,3 @@
-== Locality and Pivots ==
-
 === Locality of Reference ===
 
 (Note to early readers: the following
