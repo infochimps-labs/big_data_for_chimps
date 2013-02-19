@@ -1,6 +1,6 @@
-== Hadoop Execution in Detail  ==
+=== Hadoop Execution in Detail  ===
 
-=== Launch ===
+==== Launch ====
 
 When you launch a job (with `pig`, `wukong run`, or `hadoop jar`), it starts a local process that
 
@@ -24,7 +24,7 @@ Run `tail -f /tmp/my_job-*.log` to keep watching the job's progress.
 The job draws its default configuration from the _launch_ machine's config file. Make sure those defaults doesn't conflict with appropriate values for the workers that will actually execute the job! One great way to screw this up is to launch a job from your dev machine, go to dinner and come back to find it using one reducer and a tiny heap size. Another is to start your job from a master that is provisioned differently from the workers.
 ======
 
-=== Split ===
+==== Split ====
 
 Input files are split and assigned to mappers.
 
@@ -45,9 +45,9 @@ Exercises:
 
 * Create a 2GB file having a 128MB block size on the HDFS. Run `wu-stream cat cat --min_split_mb=1900` on it. How many map tasks will launch? What will the "non-local" cell on the jobtracker report? Try it out for 1900, and also for values of 128, 120, 130, 900 and 1100.
 
-=== Mappers ===
+==== Mappers ====
 
-==== Hadoop Streaming (Wukong, MrJob, etc) ====
+===== Hadoop Streaming (Wukong, MrJob, etc) =====
 
 If it's a Hadoop "streaming" job (Wukong, MrJob, etc), the child process is a Java jar that itself hosts your script file:
 
@@ -70,14 +70,13 @@ Once the maps start, it's normal for them to seemingly sit at 0% progress for a 
   - the mapper sortbuf data threshold
   - the mapper sortbuf total threshold
 
-==== Speculative Execution ====
+===== Speculative Execution =====
 
 For exploratory work, it's worth 
   
+==== Choosing a file size ====
 
-=== Choosing a file size ===
-
-==== Jobs with Map and Reduce ====
+===== Jobs with Map and Reduce =====
 
 For jobs that have a reducer, the total size of the output dataset divided by the number of reducers implies the size of your output files footnote:[Large variance in counts of reduce keys not only drives up reducer run times, it causes variance in output sizes; but that's just insult added to injury. Worry about that before you worry about the target file size.].
 Of course your working dataset is less than a few hundred MB this doesn't matter.
@@ -99,7 +98,7 @@ Even if you don't find any of those compelling enough to hang your hat on, I'll 
 
 If your dataset is
 
-==== Mapper-only jobs ====
+===== Mapper-only jobs =====
 
 
 There's a tradeoff:

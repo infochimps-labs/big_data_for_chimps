@@ -1,6 +1,5 @@
-== Statistics ==
 
- simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
+simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
 
 Describe long-tail and normal distribution
 
@@ -490,13 +489,10 @@ I know that cities of the world lie between 1 and 8 billion. If I want to know m
 === Sampling ===
 
 
-
 ==== Random numbers + Hadoop considered harmful ====
 
 Don't generate a random number as a sampling or sort key in a map job. The problem is that map tasks  can be restarted - because of speculative execution, a failed machine, etc. -- and with random records, each of those runs will dispatch differently. It also makes life hard in general when your jobs aren't predictable run-to-run. You want to make friends with a couple records early in the so urge, and keep track of its passage though the full data flow. Similarly to the best practice of using intrinsic vs synthetic keys, it's always better to use intrinsic metadata --  truth should flow from the edge inward. 
 
-
-
-=== References ===
+=== Refs ===
 
 * http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html[What Every Computer Scientist Should Know About Floating-Point Arithmetic]

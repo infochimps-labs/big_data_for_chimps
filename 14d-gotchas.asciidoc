@@ -1,4 +1,4 @@
-== Gotchas ==
+=== Gotchas ===
 
 
 * Hadoop commandline tools use the trash to delete items; programs using the hadoop API do not. <remark>verify Pig uses the trash</remark>
@@ -11,7 +11,6 @@
 
 
 * Don't hit external services -- see <<server_logs_ddos>>.
-
 
 == Tips ==
 

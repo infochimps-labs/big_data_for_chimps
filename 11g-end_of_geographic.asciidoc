@@ -63,7 +63,7 @@ Example: merge all cells whose contents lie within 10% of each other
 
     
 
-=== References ===
+=== Refs ===
 
 * http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
 * http://msdn.microsoft.com/en-us/library/bb259689.aspx

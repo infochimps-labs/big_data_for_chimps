@@ -1,4 +1,4 @@
-== Hadoop Tuning for the wise and lazy
+=== Hadoop Tuning for the wise and lazy ===
 
 There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747. Many of them interact surprisingly, and many settings improve some types of jobs while impeding others. This chapter will help you determin
 
@@ -217,7 +217,7 @@ an m2.2xlarge:
 
 In pre-2.0 Hadoop (the version most commonly found at time of writing in 2012), there's a hard limit of 2 GB in the buffers used for merge sorting of mapper outputs footnote[it's even worse than that, actually; see `mapred.job.shuffle.input.buffer.percent` in the tuning-for-the-foolish chapter.]. You want to make good use of those buffers, but 
 
-== Hadoop Tuning for the foolish and brave
+=== Hadoop Tuning for the foolish and brave ===
 
 === Measuring your system: theoretical limits ===
 
@@ -269,7 +269,7 @@ That is, however, from intra-cluster traffic. By contrast, flume connections are
 see `-Dpig.exec.nocombiner=true` if using combiners badly. (You'll want to use this for a rollup job).
 
 
-== Tuning pt 2 ==
+=== Tuning pt 2 ===
 
 * Lots of files:
   - Namenode and 2NN heap size

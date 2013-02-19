@@ -36,7 +36,7 @@ that quantifies the probability
 * http://cogcomp.cs.illinois.edu/page/software_view/4
 * http://opennlp.apache.org/
 	
-=== References ===
+=== Refs ===
 
 
 * http://thedatachef.blogspot.com/2011/04/tf-idf-with-apache-pig.html

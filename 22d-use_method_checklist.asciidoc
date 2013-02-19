@@ -1,5 +1,3 @@
-== Hadoop Metrics ==
-
 [[use_method]]
 === The USE Method applied to Hadoop ===
 

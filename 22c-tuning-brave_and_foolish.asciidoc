@@ -1,4 +1,4 @@
-== Hadoop System configurations ==
+=== Hadoop System configurations ===
 
 
 Here first are some general themes to keep in mind:
@@ -6,8 +6,6 @@ Here first are some general themes to keep in mind:
 The default settings are those that satisfy in some mixture the constituencies of a) Yahoo, Facebook, Twitter, etc; and b) Hadoop developers, ie. peopl who *write* Hadoop but rarely *use* Hadoop. This means that many low-stakes settings (like keeping jobs stats around for more than a few hours) are at the values that make sense when you have a petabyte-scale cluster and a hundred data engineers; 
 
 * If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer) -- the 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
-
-
 
 
 **Memory**

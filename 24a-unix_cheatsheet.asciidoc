@@ -1,5 +1,3 @@
-== Cheatsheets ==
-
 === Terminal Commands ===
 
 [[hadoop_filesystem_commands]]

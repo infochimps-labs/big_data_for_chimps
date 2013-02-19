@@ -1,6 +1,4 @@
-== Data Modeling
-
-=== Datasets ===
+=== Data Modeling ===
 
 There are six and a half shapes of record-oriented datasets:
 

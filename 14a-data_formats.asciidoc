@@ -1,9 +1,4 @@
-== Data Formats and Schemata ==
-
-
-there's only three data serialization formats you should use: TSV, JSON, or Avro.
-
-TESTING
+There are only three data serialization formats you should use: TSV, JSON, or Avro.
 
 === Good Format 1: TSV (It's simple) ===
 

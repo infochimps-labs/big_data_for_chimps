@@ -1,5 +1,3 @@
-== Herding `cat`s ==
-
 === Moving things to and fro ===
 
 TIMINGS

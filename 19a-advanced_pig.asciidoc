@@ -1,5 +1,3 @@
-== Advanced Pig ==
-
 === Advanced Join Fu ===
 
 Pig has three special-purpose join strategies: the "map-side" (aka 'fragment replicate') join 
@@ -171,6 +169,6 @@ TBD
 
 TBD
 
-=== References ===
+=== Refs ===
 
 * http://pig.apache.org/docs/r0.10.0/perf.html#replicated-joins:[map-side join]

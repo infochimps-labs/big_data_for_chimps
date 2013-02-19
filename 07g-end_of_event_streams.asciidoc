@@ -1,5 +1,5 @@
 
-=== References
+=== Refs ===
 
 * http://www.botsvsbrowsers.com/[Database of Robot User Agent strings]
 

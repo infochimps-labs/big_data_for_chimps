@@ -518,7 +518,7 @@ NOTE notation -- HBase makes heavy use of composite keys (several values combine
 
 HBase is a database for storing "billions of rows and millions of columns"
 
-=== References ===
+=== Refs ===
 
 * I've drawn heavily on the wisdom of http://hbase.apache.org/book.html[HBase Book]
 
