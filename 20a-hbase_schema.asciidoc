@@ -1,5 +1,3 @@
-[[HBase]]
-== HBase Data Model ==
 
 Space doesn't allow treating HBase in any depth, but it's worth equipping you with a few killer dance moves for the most important part of using it well: data modeling. It's also good for your brain -- optimizing data at rest presents new locality constraints, dual to the ones you've by now mastered for data in motion.  So please consult other references (like "HBase: The Definitive Guide" (TODO:reference) or the free file:///data/docs/hbase.apache.org/book.html#quickstart[HBase Book] online), load a ton of data into it, play around, then come back to enjoy this chapter.
 

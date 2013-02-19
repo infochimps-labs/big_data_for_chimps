@@ -1,10 +1,10 @@
-== Hello, Reviewers ==
+=== Hello, Reviewers ===
 
 I work somehow from the inside out -- generate broad content, fill in, fill in, and asymptotically approach coherency. So you will notices sentences that stop in the
 
 I'm endeavoring to leave fewer of these in chapters that hit the preview version, and to fill in the existing ones.
 
-=== Controversials
+==== Controversials
 
 I'd love feedback on a few decisions.
 
@@ -34,5 +34,5 @@ My plan is to use vernacular ruby -- with the one exception of providing `return
 
 **output directories with extensions**: If your job outputs tsv files, it will create directory of TSV files with names like `part-00000`. Normally, we hang extensions off the file and never off the directory. However, in Hadoop you don't name those files; and you treat that directory itself as the unit of processing. I've always been on the fence, but now lean towards `/data/results/wikipedia/full/pagelinks.tsv`: you can use the same name in local or hadoop mode; it's advisory; and as mentioned it's the unit of processing.
 
-=== Style Nits
+==== Style Nits
 
