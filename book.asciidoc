@@ -11,8 +11,9 @@ include::01-first_exploration.asciidoc[]
 include::01a-first_exploration.asciidoc[]
 
 include::02-simple_transform.asciidoc[]
-
-include::02a-simple_transform.asciidoc[]
+include::02a-c_and_e_start_a_business.asciidoc[]
+include::02b-running_a_hadoop_job.asciidoc[]
+include::02c-end_of_simple_transform.asciidoc[]
 
 include::03-transform_pivot.asciidoc[]
 
