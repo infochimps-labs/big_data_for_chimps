@@ -51,6 +51,18 @@ Geospatial Information Science ("GIS") is a deep subject, treated here shallowly
 
 Doing a "what's nearby" query on a large dataset is difficult unless you can ensure the right locality. Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
 
+=== Geospatial JOIN using quadtiles ===
+
+Doing a "what's nearby" query on a large dataset is difficult.
+No matter how you divide up the data, some features that are nearby in geographic distance will become far away in data locality. 
+
+We also need to teach our elephant a new trick
+for providing data locality
+
+Sort your places west to east, and 
+
+Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
+
 ==== The Quadtile Grid System ====
 
 We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it.

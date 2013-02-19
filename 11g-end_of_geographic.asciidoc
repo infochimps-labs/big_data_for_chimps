@@ -74,3 +74,9 @@ Example: merge all cells whose contents lie within 10% of each other
 
 * http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
 * http://bl.ocks.org/4122298[US County borders in GeoJSON]
+
+* http://sharpgis.net/post/2007/05/05/Spatial-references2c-coordinate-systems2c-projections2c-datums2c-ellipsoids-e28093-confusing.aspx[Spatial references, coordinate systems, projections, datums, ellipsoids] by Morten Nielsen
+
+* https://github.com/jsongeo[Public repository of geometry boundaries into text]
+
+* http://bost.ocks.org/mike/map/[Making a map in D3] ; see also http://stackoverflow.com/questions/14565963/topojson-for-congressional-districts[Guidance on making your own geographic bounaries].
