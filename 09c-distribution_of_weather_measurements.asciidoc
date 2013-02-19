@@ -1,23 +1,16 @@
 === Histograms and Distributions ===
 
-In the section on ((Inconsistent Truth and Error)),
+In the section on <<munging_truth_and_error,Inconsistent Truth and Error>>,
 we made the point that
 the tools and patterns of though for dealing with numerical error and uncertainty are
 
-
 ==== Distribution of temperatures ====
-
-
-Approach:
-
 
 ===== Filter weather of interest
 
 The chapter on geodata will show general techniques for doing spatial aggregates. For now, we'll just choose the best-match weather station for each stadium and use that. (I did use my ability to skip ahead in the book to pull out those weather stations of interest.)
 
 Also, I'm going to ignore for a moment that weather stations go in and out of service, as do baseball stadiums.
-
-...
 
 You could jump straight in and join games on weather observations. (Can you tell that I don't think you should?) Here's what that would look like.
 

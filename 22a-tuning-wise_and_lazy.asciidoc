@@ -101,8 +101,6 @@ disk-cpu-disk only
 
 When tuning, you should engage in _active benchmarking_. Passive benchmarking would be to start a large job run, time it on the wall clock (plus some other global measures) and call that a number. Active benchmarking means that while that job is running you watch the fine-grained metrics (following the <<use_method>>) -- validate that the limiting resource is what you believe it to be, and understand how the parameters you are varying drive tradeoffs among other resources.
 
-//////////////////////////////////////////////////////////////////////////
-
 * What are the maximum practical capabilities of my system, and are they reasonable?
 * How do I determine a job's primary constraint, and whether it's worthwhile to optimize it?
 * If I must to optimize a job, what setting adjustments are relevant, and what are the tradeoffs those adjustments?

@@ -124,4 +124,4 @@ It's essential that you keep the sampling index given by the first pass.
   ** https://github.com/skade/rbtree[RBTree] for ruby
   ** https://github.com/rubyworks/pqueue[Priority Queue]
 
-* http://stackoverflow.com/a/2584770/41857[Stack Overflow: How to pick random (small) data samples using Map/Reduce?, answer by Bkkbrad]
+* http://stackoverflow.com/a/2584770/41857[Stack Overflow: How to pick random (small) data samples using Map/Reduce? answer by Bkkbrad]

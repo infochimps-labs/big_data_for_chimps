@@ -1,14 +1,24 @@
 [[geographic]]
 == Geographic Data Processing
 
-Spatial data is of course one of the fundamental ways we understand the universe
+Spatial data is fundamentally important
 
-There are several big ideas introduced here.
 
-Spatial data is of course one of the fundamental ways we understand the universe
+* 
+
+* So far we've 
+
+
+Spatial data is very easy to acquire: from smartphones and other GPS devices, from government and public sources, and from a rich ecosystem of commercial suppliers.
+It's easy to bring our physical and cultural intuition to bear on geospatial problems 
+
 
 There are several big ideas introduced here.
 
 First of course are the actual mechanics of working with spatial data, and projecting the Earth onto a coordinate plane.
 
 The statistics and timeseries chapters dealt with their dimensions either singly or interacting weakly,
+
+It's a good jumping-off point for machine learning. Take a tour through some of the sites that curate the best in data visualization, and you'll see a strong over-representation of geographic explorations. With most datasets, you need to figure out the salient features, eliminate confounding factors, and of course do all the work of transforming them to be joinable footnote:[we dive deeper in the chapter on <<machine_learning>> basics later on]. Geo Data comes out of the
+
+Taking a step back, the fundamental idea this chapter introduced is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
