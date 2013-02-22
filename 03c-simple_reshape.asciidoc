@@ -1,12 +1,50 @@
+=== Close Encounters of the Reindeer Kind (pt 1)
+
+While Santa is busy year-round, his Reindeer spend their multi-month break between holiday seasons pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center] data set: 60,000 documented UFO sightings for a sharp-nosed reindeer to investigate. They'd like to send a team to investigate each sighting based on the category of spacecraft: one team investigates multiple-craft formations, one investigates fireballs, and so on. So the first thing to do is assign each sighting to the right team. Since sixty thousand sightings is much higher than a reindeer can count (only four hooves!), let's help them organize the data. (Sixty thousand is much too small for Hadoop to be justified, but it's the perfect size to learn with.)
+
+==== UFO Sighting Data Model
+
+The data model for a UFO sighting includes the data fields taken directly from the http://www.nuforc.org/[National UFO Reporting Center] eyewitness reports: date of sighting and of report, location, duration, shape of craft and eye-witness description. Your authors have additionally run the free-text locations -- "Merrimac, WI" or "Newark,  NJ (south of Garden State Pkwy)" -- through a geolocation service to (where possible) produce structured location records with an actual longitude, latitude and so forth.
+
+	class SimpleUfoSighting
+	  include Wu::Model
+	  field :sighted_at,   Time
+	  field :reported_at,  Time
+	  field :shape,        Symbol
+	  field :duration_str, String
+	  field :location_str, String
+	  field :place,        Wu::Geo::Place
+	  field :description,  String
+	  #
+	  field :longitude,  Float
+	  field :latitude,   Float
+	  field :quadkey,    String
+	end
+	
+==== Count the UFO Shapes
+
+Our first task is to count how often each shape has been seen, so that we can assign roughly-balanced teams.
+
+In the Chimpanzee&Elephant world, a chimp had the following role:
+
+* reads and understand each letter
+* creates a new intermediate item having a label (the type of toy) and information about the toy (the work order)
+* hands it to the elephants for delivery to the elf responsible for making that toy type.
+
+We're going to write a Hadoop "mapper" that performs a similar purpose:
+
+* reads the raw data and parses it into a structured record
+* creates a new intermediate item having a label (the shape of craft) and information about the sighting (which is actually blank for this example -- that's allowed).
+* hands it to Hadoop for delivery to the reducer responsible for counting that shape.
 
 
-Chimpanzee, Elephant and Elf worked in harmony according to the following workflow:
+  	mapper(:count_sightings) do 
+	  
+	  process do |ufo_sighting|
+	  end
+	end
 
-* Chimpanzee:
-  - turns each child's letter into a set of work orders,
-  - labeled by type of toy and destination,
-  - in file folders partitioned by toy and sorted by destination
-* Elephant:
-  - marches each partition of work orders to the specific workbench for that set of toys
-* Elf:
-  - as soon as enough elephants stand ready, begins merging the file folders from 
+
+
+
+[[Note]]We only used Hadoop for part of the analysis -- that's fairly common. You should use Hadoop to make Big Data into small data, then use traditional analytics tools to turn small data into insight.

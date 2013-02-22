@@ -35,8 +35,7 @@ Geographic data shows up in the form of
 .Features of Features
 [NOTE]
 ===============================
-There's a slight muddying of the term "feature" -- to a geographer, a feature is a generic term for the _thing_ being described; later, in the chapter on machine learning, a feature
-Since we're data scientists dabbling in geography, we'll just say "object" in place of "geographic feature" (and reserve the term "feature" for its machine learning sense).
+The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for its machine learning sense only just say "object" in place of "geographic feature" (and ).
 ===============================
 
 Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
