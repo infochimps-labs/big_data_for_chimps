@@ -20,8 +20,6 @@ include::02c-end_of_simple_transform.asciidoc[]
 
 include::03-transform_pivot.asciidoc[]
 
-include::03a-locality.asciidoc[]
-
 include::03b-saving_christmas.asciidoc[]
 
 include::03c-simple_reshape.asciidoc[]
@@ -31,6 +29,8 @@ include::03d-efficient_santa.asciidoc[]
 include::03e-jt_and_nanette_at_work_for_you.asciidoc[]
 
 include::03f-partition_and_sort_keys.asciidoc[]
+
+include::03b-locality.asciidoc[]
 
 include::04-regional_flavor.asciidoc[]
 
@@ -61,11 +61,17 @@ include::09-statistics.asciidoc[]
 include::10-time_series.asciidoc[]
 
 include::11-geographic.asciidoc[]
+
 include::11a-spatial_join.asciidoc[]
+
 include::11b-multiscale_join.asciidoc[]
+
 include::11c-regions_to_quadtiles.asciidoc[]
+
 include::11e-weather_near_you.asciidoc[]
+
 include::11f-spatial_clustering.asciidoc[]
+
 include::11g-end_of_geographic.asciidoc[]
 
 include::12-cat_herding.asciidoc[]
@@ -87,8 +93,6 @@ include::19-advanced_pig.asciidoc[]
 include::20-hbase_data_modeling.asciidoc[]
 
 include::20a-hbase_schema.asciidoc[]
-
-include::20b-hbase_and_databases.asciidoc[]
 
 include::21-hadoop_internals.asciidoc[]
 
