@@ -107,10 +107,17 @@ Great! That's enough for the reindeer to start their research.
 
 The reindeer have pored over those sightings and now want to spend the summer visiting each UFO site. They've used the counts we prepared in the first stage, along with what passes for common sense among reindeer, to assign investigative teams based on craft type and the number of sightings. (For eample, Dasher handles all sightings of "angular" spacecraft; Donner and Blitzen combine on the more numberous "roundish" spacecraft). Making the script will group sightings according to this new synthetic label is easy enough.
 
-But there are thousands of places to visit, and so the reindeer want to travel efficiently. We'll use a 'secondary sort' -- a sub-ordering of records within each group -- based on the location.
-// In particular, we're going to use the 'quadkey'
+Also, the reindeer have thousands of places to visit -- not as many as their yearly trip with Santa, but enough to justify the same path-of-Z's trick to navigate. We will encode the distance along that path-of-Z's with the 'quadkey' (described <<geographic_quadkey,later>>; for now, just trust that it's a _sort-able_ encoding of the location).
 
 
+We'll use a 'secondary sort' -- a sub-ordering of records within each group based on progress along the path-of-Z's; in particular, 
+
+
+=== Partitioning, Grouping and Sorting
+
+As you've seen, the way that Hadoop forms groups is actually by sorting the records. It's time now to clearly separate the three fundamental locality operations Hadoop performs for you:
+
+* 
 
 
 
