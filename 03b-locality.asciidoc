@@ -1,42 +1,46 @@
 === Locality of Reference ===
 
-(Note to early readers: the following
-
-
-    Ever since there were 
+Ever since there were 
 
         [] [] [] [] 
         [] [] [] [] eight computers and a network,
     
-    programmers have wished that
+programmers have wished that
 
        eight computers   [] [] [] [] [] [] [] [] []
        solved problems
        twice as fast as
        four computers    [] [] [] []
 
-    The problem comes
+The problem comes
+
           when the computer over here \/ 
-       needs to talk to   [] [] [] [] [] [] [] <- the one over here
-                          [] [] [] [] [] [] [] <- or the one here
+                          [] [] [] [] [] [] []    needs data from  
+                          [] [] [] [] [] [] [] <- the one over here
+                          [] [] [] [] []<+]-+]--- or the one here
 	  and this one -> [] [] [] [] [] [] []
-            needs to talk to this one ^^
+             needs data from this one ^^
     and so forth. 
 
-If you've ever had lunch with a very large troop of chimpanzees, hollering across the room to pass the bananas, and grabbing each other's anthill-poking twigs, you can imagine how hard it is to get any work done.
+In the example of the Elves, the data was at points organized in three different ways:
+
+1. In mailbags corresponding to the post office and date each letter was mailed
+2. In pygmy-elephant batches according to toy type, sorted by toy detail.
+3. In sacks of gifts for each household, ordered by Santa's delivery path.
+
+The difficulty the elves faced wasn't in processing the records. Workforms and Gift Making, that's what they were born to do. Their problem was first, that toy requests were organized by mail route, not toy type; and next, that the gifts for each household were organized by toy type, not geography. In both cases, the job of the chimps was to transform the data and then label it by its _key locality_: in these examples, toy type and toy detail, or delivery path and household.
 
 === Locality: Examples ===
 
-This book is fundamentally about just one thing: helping you identify the key locality of a data problem. 
+This book is fundamentally about just that thing: helping you identify the key locality of a data problem. Now for folks who learn by reading, what we mean by "key locality" is starting to make sense, and so I'll give you some brief examples. For folks who learn by doing, you might want to read some more examples and then
 
-* *word count*: Count the occurrences of every word in a large body of text: gather each occurrence into groups by word, then count each group.
+* *word count*: You can count the occurrence of every word in a large body of text by a) grouping all ocurrences of each word together b) counting each group. In this case, the key locality is the word itself. // the words are initially organized by position within the text; 
 
-* *total sort*: To sort a large number of names, group each name by its first few letters (eg "Aaron" = "aa", "Zoe" = "zo"), making each group small enough to efficiently sort in memory. Reading the output of each group in the order of its label will produce the whole dataset in order.
+* *total sort*: To sort a large number of names, group each name by its first few letters (eg "Aaron" = "aa", "Zoe" = "zo"), making each group small enough to efficiently sort in memory. Reading the output of each group in the order of its label will produce the whole dataset in order. The key locality is to partition by prefix and sort by name.
 
-* *network graph statistics*: Counting the average number of Twitter messages per day in each user's timeline requires two steps. First, take every 'A follows B' link and get it into the same locality as the user record for its "B".  Next, group all those links by the user record for 'A', and sum their messages-per-day.
+* *network graph statistics*: Counting the average number of Twitter messages per day in each user's timeline requires two steps. First, take every 'A follows B' link and get it into the same locality as the user record for its "B".  Next, group all those links by the user record for 'A', and sum their messages-per-day. 
 
 * *correlation*: Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
-
 
 === The Hadoop Haiku ===
 

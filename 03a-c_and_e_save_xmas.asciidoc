@@ -1,10 +1,10 @@
-=== Chimpanzee and Elephant Save Christmas ===
+=== Chimpanzee and Elephant Save Christmas (pt 1) ===
 
-It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just couldn't keep up with the scale of requests. Luckily, their friends at the Elephant & Chimpanzee Data Shipment Company were available to simplify the process.
+It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just could not keep up with the scale of requests. Luckily, their friends at the Elephant & Chimpanzee Data Shipment Company were available to simplify the process.
 
 === A Non-scalable approach ===
 
-To meet the wishes of children from every corner of the earth, each elf is capable of making any kind of toy, from Autobot to Pony to X-box. 
+To meet the wishes of children from every corner of the earth, each elf specializes in a certain kind of toy, from Autobot to Pony to X-box. 
 
 [[elf_workstation]]
 .The elves' workbenches are meticulous and neat. 
@@ -14,15 +14,17 @@ image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 .Little boys and girls' mail is less so. 
 image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
-As bags of mail arrived from all over, they were hung from the branches of a large Tree (known as the bag tree, or B.Tree for short.) Each time an elf was ready for the next letter from her region, a big claw arm swung out to the right spot on the B.Tree to retrieve it. Without locality of access (the elf covering Novosibirsk might be in line right behind the elf covering Cucamonga), letters could't be pulled from the tree any faster than the crane arm could move.
+As bags of mail arrived from every town and city, they were hung from the branches of the Bag Tree (B-Tree for short). Each time an elf was ready for the next letter, a big claw arm swung out to the right spot on the B-Tree to retrieve it. "The locality of access is all wrong!" bellowed the chimps. "The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
 
-The hallways were clogged with frazzled elves running back and forth between their workbenches and the B.Tree. It almost seemed as if elves spent as much effort on the mechanics of retrieving letters as they did making toys.
+What's worse, all the letters were centralized, but the elves' workstations were not. The hallways were clogged with frazzled elves running back and forth between their workbenches and the B-Tree. The elves spent almost as much effort on the mechanics of retrieving letters as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
 
 === Letters to Toy Requests ===
 
-In place of this came the chimps and elephants, singing a rather bawdy version of the Map-Reduce Haiku, who built the following system.
+In marched the chimps and elephants, who (singing a rather bawdy version of the Map-Reduce Haiku) built the following system.
 
-As you might guess, they lined up a finite number of chimpanzees at typewriters to read each letter. Instead of sending the letter on directly, the chimp would fill out a work form for each requested toy, labelled prominently by the type of toy. Some examples:
+As you might guess from the last chapter, they lined up a finite number of chimpanzees at a finite number of typewriters to read each letter. The elephants mustered to distribute the bags of mail not in a centralized place, but all across the processing stations -- the same approach describe in the last chapter.
+
+The chimps' job was to take letters one-by-one from a mailbag, and fill out a work form for each requested toy. The work form had was labelled prominently by the type of toy, and contained all the information you'd expect (Name, Goodness, Location, etc.). Some simplified examples:
 
         --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister. He will get a robot and his sister will get a doll.
 
@@ -54,28 +56,29 @@ As you might guess, they lined up a finite number of chimpanzees at typewriters 
         ---------------------------------------
 
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
-image::images/chimps_and_elves/bchm_0204.png[Letters become work orders]
+image::images/chimps_and_elves/bchm_0204.png[Letters become work forms]
 
 === Order Delivery ===
 
-In the new system, each type of toy request is handled at the one workbench designated for that toy.  For example, all robots and model cars might go to workbench A, while ponies, coal and yo-yos went to workbench B. 
+In the new system, each type of toy request is handled at the single workbench designated for that toy.  For example, all robots and model cars might go to workbench A, while ponies and yo-yos went to workbench B, and coal to workbench C. 
 
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
-Next to each chimpanzee stands a line of pygmy elephants, one for each workbench.
-Once the chimp is done with a mailbag, those elephants march off, each to its addressed workbench. Behind them a new line of elephants trundle into place.
+Here's where we come to something new, that wasn't part of the simple translation project.
 
-image::images/chimps_and_elves/bchm_0206.png[Work orders go off in batches]
+Next to each chimpanzee stands a line of pygmy elephants, one for each workbench, with a file folder on its back. The chimp places each work form into the right spot within the right file folder, as fast as its dexterous fingers can file. Once the chimp is done with a mailbag, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place.
+
+image::images/chimps_and_elves/bchm_0206.png[work forms go off in batches]
 
 === Toy Assembly ===
 
-A station might handle several types of toys in a factory run, but it always sees them in a continuous batch (they will get all the robots, then all the model cars). This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for gift-wrapping Quidditch Brooms.
+Finally, the elves. Each workstation might handle several types of toys in a factory run, but always in a continuous batch: the workbench for ponies and scarves will see all the ponies first, and then all the scarves. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for hand-folding scarves.
 
-	Doll	Julia    	Anchorage	USA
-        Doll	Madison  	Zanesville	USA
-	Doll	Wei Ju		Shenzen	        China
+        Doll	Curly Hair	Royal   	Dallas  	USA
+	Doll	Green Hair	Julia    	Anchorage	USA
+	Doll	Rosy Cheeks	Wei Ju		Shenzen	        China
 	...
-	Coal	Jim		Mountain View	CA
+	Coal	Anthracite	Jim		Mountain View	CA
 
 The finished toys go into large sacks for santa to deliver.
 
@@ -83,4 +86,4 @@ The finished toys go into large sacks for santa to deliver.
 
 Now it is still true that each elf workstation has incoming mail from every letter-reader. A constant stream of elephants are constantly dropping off order batches, some light, some heavy.
 
-But the delivery isn't harum-scarum all-at-once, it's orderly and purposeful. If one workstation is slow, the elephants wait patiently -- it doesn't slow down the entire operation. And most importantly, all the work of organizing the work requests happens in parallel with reading the letters. It's pretty impressive.
+But the delivery isn't harum-scarum all-at-once, it's orderly and purposeful. If one workstation is slow, the elephants wait patiently -- the entire operation doesn't slow down. And most importantly, the task of reading each letter happens in parallel with the task of organizing the work requests. It's quite impressive.

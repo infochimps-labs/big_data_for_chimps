@@ -87,41 +87,18 @@ Similarly, the reducer receives a series of records, grouped by label, with a gu
 
 Test the full mapper-sort-reducer stack from the commandline:
 
-        $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json      |
-	    ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map    | sort |
-	    ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | wu-lign
+    $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json      |
+        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map    | sort |
+        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | wu-lign
 
-	1985-06-01T05:00:00Z	1999-01-14T06:00:00Z	North Tonawanda, NY  	chevron  	1 hr 	7 lights in a chevron shape not sure it was one object lighted or 7 s
-	1999-01-20T06:00:00Z	1999-01-31T06:00:00Z	Olney, IL            	chevron  	10 seconds        	Stargazing, saw a dimly lit V-shape coming overhaed from west t east,
-	1998-12-16T06:00:00Z	1998-12-16T06:00:00Z	Lubbock, TX          	chevron  	3 minutes         	Object southbound, displaying three white lights, slowed, hovered, qu
-	# count:	chevron	3
-	1999-01-16T06:00:00Z	1999-01-16T06:00:00Z	Deptford, NJ         	cigar    	2 Hours           	An aircraft of some type was seen in the sky with approximately five
-	# count:	cigar	1
-	1947-10-15T06:00:00Z	1999-02-25T06:00:00Z	Palmira,             	circle   	1 hour            	After a concert given in the small town of Palmira, Colombia,  a grou
-	1999-01-10T06:00:00Z	1999-01-11T06:00:00Z	Tyson's Corner, VA   	circle   	1 to 2 sec        	Bright green circularly shaped light moved downward and easterly thro
-	...
+    1985-06-01T05:00:00Z	1999-01-14T06:00:00Z	North Tonawanda, NY  	chevron  	1 hr 	7 lights in a chevron shape not sure it was one object lighted or 7 s
+    1999-01-20T06:00:00Z	1999-01-31T06:00:00Z	Olney, IL            	chevron  	10 seconds        	Stargazing, saw a dimly lit V-shape coming overhaed from west t east,
+    1998-12-16T06:00:00Z	1998-12-16T06:00:00Z	Lubbock, TX          	chevron  	3 minutes         	Object southbound, displaying three white lights, slowed, hovered, qu
+    # count:	chevron	3
+    1999-01-16T06:00:00Z	1999-01-16T06:00:00Z	Deptford, NJ         	cigar    	2 Hours           	An aircraft of some type was seen in the sky with approximately five
+    # count:	cigar	1
+    1947-10-15T06:00:00Z	1999-02-25T06:00:00Z	Palmira,             	circle   	1 hour            	After a concert given in the small town of Palmira, Colombia,  a grou
+    1999-01-10T06:00:00Z	1999-01-11T06:00:00Z	Tyson's Corner, VA   	circle   	1 to 2 sec        	Bright green circularly shaped light moved downward and easterly thro
+    ...
 
-Great! That's enough for the reindeer to start their research.
-
-=== Secondary Sort: Organize UFOs by Shape and Location
-
-The reindeer have pored over those sightings and now want to spend the summer visiting each UFO site. They've used the counts we prepared in the first stage, along with what passes for common sense among reindeer, to assign investigative teams based on craft type and the number of sightings. (For eample, Dasher handles all sightings of "angular" spacecraft; Donner and Blitzen combine on the more numberous "roundish" spacecraft). Making the script will group sightings according to this new synthetic label is easy enough.
-
-Also, the reindeer have thousands of places to visit -- not as many as their yearly trip with Santa, but enough to justify the same path-of-Z's trick to navigate. We will encode the distance along that path-of-Z's with the 'quadkey' (described <<geographic_quadkey,later>>; for now, just trust that it's a _sort-able_ encoding of the location).
-
-
-We'll use a 'secondary sort' -- a sub-ordering of records within each group based on progress along the path-of-Z's; in particular, 
-
-
-=== Partitioning, Grouping and Sorting
-
-As you've seen, the way that Hadoop forms groups is actually by sorting the records. It's time now to clearly separate the three fundamental locality operations Hadoop performs for you:
-
-* 
-
-
-
-
-// [[Note]]We only used Hadoop for part of the analysis -- that's fairly common. You should use
-// Hadoop to make Big Data into small data, then use traditional analytics tools to turn small
-// data into insight.
+Great! That's enough for the reindeer to start their research. We'll come back in a bit and help them plan their summer tour.
