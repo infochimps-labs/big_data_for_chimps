@@ -24,7 +24,7 @@ In marched the chimps and elephants, who (singing a rather bawdy version of the 
 
 As you might guess from the last chapter, they lined up a finite number of chimpanzees at a finite number of typewriters to read each letter. The elephants mustered to distribute the bags of mail not in a centralized place, but all across the processing stations -- the same approach describe in the last chapter.
 
-The chimps' job was to take letters one-by-one from a mailbag, and fill out a work form for each requested toy. The work form had was labelled prominently by the type of toy, and contained all the information you'd expect (Name, Goodness, Location, etc.). Some simplified examples:
+The chimps' job was to take letters one-by-one from a mailbag, and fill out a toyform for each requested toy. The toyform had was labelled prominently by the type of toy, and contained all the information you'd expect (Name, Goodness, Location, etc.). Some simplified examples:
 
         --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister. He will get a robot and his sister will get a doll.
 
@@ -56,9 +56,9 @@ The chimps' job was to take letters one-by-one from a mailbag, and fill out a wo
         ---------------------------------------
 
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
-image::images/chimps_and_elves/bchm_0204.png[Letters become work forms]
+image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
-=== Order Delivery ===
+=== Toyform Delivery ===
 
 In the new system, each type of toy request is handled at the single workbench designated for that toy.  For example, all robots and model cars might go to workbench A, while ponies and yo-yos went to workbench B, and coal to workbench C. 
 
@@ -66,21 +66,34 @@ image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
 Here's where we come to something new, that wasn't part of the simple translation project.
 
-Next to each chimpanzee stands a line of pygmy elephants, one for each workbench, with a file folder on its back. The chimp places each work form into the right spot within the right file folder, as fast as its dexterous fingers can file. Once the chimp is done with a mailbag, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place.
+Next to each chimpanzee stands a line of pygmy elephants, one for each workbench, with a file folder on its back. The chimp places each toyform into the right spot within the right file folder, as fast as its dexterous fingers can file. Once the chimp is done with a mailbag, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place.
 
-image::images/chimps_and_elves/bchm_0206.png[work forms go off in batches]
+image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
 === Toy Assembly ===
 
 Finally, the elves. Each workstation might handle several types of toys in a factory run, but always in a continuous batch: the workbench for ponies and scarves will see all the ponies first, and then all the scarves. This is of great help to the elves, as the set-up for tying ribbons on Ponies is very different from the set-up for hand-folding scarves.
 
-        Doll	Curly Hair	Royal   	Dallas  	USA
-	Doll	Green Hair	Julia    	Anchorage	USA
+	Doll	Purple Hair	Julia    	Anchorage	AK, USA
+        Doll	Purple Hair	Royal   	Dallas  	TX, USA
 	Doll	Rosy Cheeks	Wei Ju		Shenzen	        China
 	...
 	Coal	Anthracite	Jim		Mountain View	CA
 
 The finished toys go into large sacks for santa to deliver.
+
+=== Sorted Groups ===
+
+Earlier, I mentioned that the chimps place the toyforms into the file folders, but skipped past an important detail. You've seen that receiving all the toyforms for Dolls in a single batch make the elves more efficient. The elves requested that the toyforms be further grouped within each batch: so that all the dolls with "purple hair" arrive in a run, followed by dolls with "rosy cheeks", and so forth.
+
+What Chimpanzee and Elephant do is incredibly clever. They achieve this secondary _grouping_ by simply _sorting_ the incoming records. Take a deck of cards, sort them by number, and fan them out in a line. You'll see that to group them by number now requires only the trivial act of separating piles where one number meets the next.
+
+Chimpanzees place workforms in the file folder in sorted order by toy detail. Folders aren't very big, and are immediately adjacent to the chimp's dexterous fingers, this doesn't take amuch additional time.
+
+File folders are deposited next to each elf workstation with their toyforms
+
+
+
 
 === Why it's efficient ===
 
