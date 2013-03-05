@@ -20,7 +20,7 @@ include::02c-end_of_simple_transform.asciidoc[]
 
 include::03-transform_pivot.asciidoc[]
 
-include::03b-saving_christmas.asciidoc[]
+include::03a-c_and_e_save_xmas.asciidoc[]
 
 include::03c-simple_reshape.asciidoc[]
 
@@ -30,7 +30,7 @@ include::03e-jt_and_nanette_at_work_for_you.asciidoc[]
 
 include::03f-partition_and_sort_keys.asciidoc[]
 
-include::03b-locality.asciidoc[]
+include::03g-locality.asciidoc[]
 
 include::04-regional_flavor.asciidoc[]
 
