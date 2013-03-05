@@ -4,20 +4,6 @@ Santa delivers presents in order as the holidays arrive, racing the sun from New
 
 This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
 
-Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find at a very organized person's desk:
-
-image::images/paper_sorter.png[paper sorter]
-
-Chimpanzees file each toy request in the order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
-
-image::images/bchm_0209.png[Secondary sort]
-
-This makes life very efficient for the elves. They just start pulling work orders from their elephants, always choosing the request that's next in Santa Visit Order:
-
-image::images/bchm_0210.png[Secondary sort]
-
-Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy.
-
 
 === The Map-Reduce Haiku ===
 
@@ -41,21 +27,33 @@ As each pile of output products starts to accumulate, we can begin to group them
 
 If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
 
-[NOTE]
-===============================
-Stream steps become mapper-only jobs, but don't conflate a reshape _step_ with the reduce _phase_ of a job. A reshape step typically becomes at least one mapper phase and reducer phase.
-===============================
+=== Hadoop's Contract ===
 
-=== The Group/Sort Guarantee ===
+Hadoop imposes a few seemingly-strict constraints and provides a very few number of guarantees in return. As you're starting to see, that simplicity provides great power and is not as confining as it seems. You can gain direct control over things like partitioning, input splits and input/output formats. We'll touch on a very few of those, but for the most part this book concentrates on using Hadoop from the outside -- (TODO: ref) _Hadoop: The Definitive Guide_ covers this stuff (definitively).
+
+==== The Mapper Guarantee ====
+
+The contract Hadoop presents for a map task is simple, because there isn't much of one. Each mapper will get a continuous slice (or all) of some file, split at record boundaries, and in order within the file. You won't get lines from another input file, no matter how short any file is; you won't get partial records; and though you have no control over the processing order of chunks ("file splits"), within a file split all the records are in the same order as in the original file.
+
+For a job with no reducer -- a "mapper-only" job -- you can then output anything you like; it is written straight to disk. For a Wukong job with a reducer, your output should be tab-delimited data, one record per line. You can designate the fields to use for the partition key, the sort key and the group key. (By default, the first field is used for all three.)
+
+The typical job turns each input record into zero, one or many records in a predictable manner, but such decorum is not required by Hadoop. You can read in lines from Shakespeare and emit digits of _pi_; read in all input records, ignore them and emit nothing; or boot into an Atari 2600 emulator, publish the host and port and start playing Pac-Man. Less frivolously: you can accept URLs or filenames (local or HDFS) and emit their contents; accept a small number of simulation parameters and start a Monte Carlo simulation; or accept a database query, issue it against a datastore and emit each result.
+
+==== The Group/Sort Guarantee ====
 
 When Hadoop does the group/sort, it establishes the following guarantee for the data that arrives at the reducer:
 
 * each labelled record belongs to exactly one sorted group;
 * each group is processed by exactly one reducer;
-* the records sent to each receiver are sorted lexically by the chosen key.
+* groups are sorted lexically by the chosen group key;
+* and records are further sorted lexically by the chosen sort key.
 
-It's very important that you understand what that unlocks, so I'm going to spell it out a few different ways.
+It's very important that you understand what that unlocks, so I'm going to redundantly spell it out a few different ways:
 
-First, each mapper-output record goes to exactly one reducer, as solely determined by its key. So if several records have the same key, they will all go to the same reducer. From the reducer's perspective, you know that if it sees any element of a group, it will see all elements of the group.
+* Each mapper-output record goes to exactly one reducer, solely determined by its key.
+* If several records have the same key, they will all go to the same reducer.
+* From the reducer's perspective, if it sees any element of a group it will see all elements of the group. 
 
-In the typical case you should think in terms of groups and not about the whole reduce set, but it's important to know that each reducer typically sees multiple groups. (The number of reducer processes is set based on how many machines you'd like to use, and it's more efficient to process large batches.) Those groups are arbitrary: if  Records are fed to the reducer in order by key.
+You should typically think in terms of groups and not about the whole reduce set: imagine each partition is sent to its own reducer. It's important to know, however, that each reducer typically sees multiple partitions. (Since it's more efficient to process large batches, a certain number of reducer processes are started on each machine. This is in contrast to the mappers, who run one task per input split.) Unless you take special measures, the partitions are distributed arbitrarily among the reducers footnote:[Using a "consistent hash"; see (TODO: ref) the chapter on Sampling]. They are fed to the reducer in order by key.
+
+Similar to a mapper-only task, your reducer can output anything you like, in any format you like. It's typical to output structured records of the same or different shape, but you're free engage in any of the shenanigans listed above.

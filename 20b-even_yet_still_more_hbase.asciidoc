@@ -1,0 +1,100 @@
+
+
+DRAFT
+
+DRAFT -- ignore below
+
+DRAFT
+
+=== Review of HBase options ===
+
+* column families -- use only one, unless you need both full-row _and_ partial-row access. Even still, high-performance tables shouldn't use more than a few colum families.
+* `BLOOMFILTER`	-- `false` except for a high-impact table with many misses. Monitor the memory usage and performance with and without, and take some time to understand the interaction with the blocksize.
+* `VERSIONS`	-- set to 1 unless you know why you need more. You must always specify, because the default is 3.
+* `COMPRESSION`	-- set to "snappy" until you can test performance with/without compression
+* `TTL`   	-- `-1`, unless you need expiration
+* `BLOCKCACHE`   -- `true` (the default)
+* `IN_MEMORY`	-- `false` (the default)
+* `BLOCKSIZE`	-- `65536` (the default)
+
+
+definition of a table for incrementers (http://palominodb.com/blog/2012/08/24/distributed-counter-performance-hbase-part-1[from])
+    
+    {NAME => 'timelesstest', DEFERRED_LOG_FLUSH => 'true', FAMILIES => [{NAME => 'family', BLOOMFILTER => 'NONE', REPLICATION_SCOPE => '0', COMPRESSION => 'NONE', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}]}
+
+
+==== Vertical Partitioning (Column Families) ====
+
+Suppose that after releasing the autocomplete API, we find that a sizeable minority of developers want to consume pre-baked HTML rather than the existing (and still-popular) JSON response. No request returns both HTML and JSON, Instead, we'll store each response type in its own _column family_ in the autocomplete table. 
+The pattern of access and data size are similar for each, but 
+It might even be reasonable to put them in different tables. 
+
+=== Feature Set review ===
+
+* **TTL
+
+* Atomic counters: accumulate a numeric value, guaranteed consistent even if multiple clients simultaneously update it
+* TTL ("Time to Live"): an optional amount of time, after which values are expired.
+
+* Versioning by timestamp
+* Column Families
+
+* read caching
+* Bloom filters fast rejection of missing rows
+* Block-level compression
+
+The "Snappy" algorithm gives a great balance of compression factor vs speed, and is easy to install.
+
+
+* query filters: impose server load, 
+* and a kind of stored procedures/stored triggers called coprocessors). Here's a partial list of things you do _not_ get:
+
+From Hbase Def Guide:
+
+Optimal loading of row keys: When performing a table scan where only the row keys are needed (no families, qualifiers, values, or timestamps), add a FilterList with a MUST_PASS_ALL operator to the scanner using setFilter(). The filter list should include both a First KeyOnlyFilter and a KeyOnlyFilter instance, as explained in Dedicated Filters on page 147. Using this filter combination will cause the region server to only load the row key of the first KeyValue (i.e., from the first column) found and return it to the client, resulting in minimized network traffic. 
+
+=== "Design for Reads" ===
+
+HBase stores data in cells, scoped like this:
+
+* Table -- a hard partition of data. Tables are stored, partitioned and optimized in isolation.
+* Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
+* Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
+  - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) you can set independently per column family.
+  - Column Qualifier -- the arbitrary remainder of a column key;
+* Value -- the contents you'd like to store, anything or nothing.
+
+Table names and column familty names must be defined in advance, and their names may only contain printable characters (I recommend only using `[a-z_][a-z0-9_]*`). Everything else is bytes in / bytes out, exactly as issued.
+
+
+* Avoid having more than a handful of column families on any high-performance table, especially if their patterns of write access are distinct.
+* Avoid having more than a few million columns per row.
+
+* Column families
+  - always specify the `versions`: by default it's 3, and you almost always want 1 or a value you've thought very carefully about
+  - Don't use more than two or three column families for a high-impact table; all of them have to keep pace with the most-heavily-used one.
+* Use short row and column names. _Every_ cell is stored with its row, column, timestamp and value, every time. (trust the HBase folks: this is the Right Thing).
+  - even still, fat row names (larger than their contents) often make sense. If so, increase the block size so that table indexes don't eat all your RAM.
+
+* Keys should be space-efficient. Use _very_ short names for column families ('u', not 'url'). Don't be profligate with size of column keys and row keys on huge tables: a binary-packed SHA digest of a URL is more efficient than its hex-encoded representation, which is likely more efficient than the URL itself. However, if that bare URL will let you efficiently index on sub-paths, use a bare URL. For another example, we gladly waste 6 bits of every byte in a quadkey, because it lets us do multi-scale queries.
+* Keys should be properly encoded and sanitized
+  - HBase stores and returns arbitrary binary data, unmolested.
+
+* All sorting is _lexicographic_: beware the "derp sort". Given row keys 1, 2, 7, 12, and 119, HBase stores them in the order 1, 119, 12, 2, 7: it sorts by the most significant (leftmost) byte first.
+  - zero-pad decimal numbers, and null-pad binary packet numbers. Suppose a certain key ranged from 0 to 60,000; you would zero-pad the number 69 as `00069` (5 bytes); the null-padded version would have bytes `00 45` (2 bytes).
+  - annoyingly, `+` sorts less than `-`, so `+45` precedes `-45`. However, `
+  - reverse timestamp
+
+* Timestamps let HBase skip HStores
+
+* Always set timestamps on fundamental objects. Server log lines, tweets, blog posts, and airline flight departures all have an intrinsic timestamp of occurrence, and they are all "fundamental" objects, not assertions derived from something else.  In such cases, always set a timestamp.  In contrast, the "May 2012 Archive" page of a blog, containing many posts, is not fundamental; neither is an hourly cached count of server errors. These are _observations_, correct at the time they're made -- so that observation time, not the intrinsic timestamp
+
+* make sure you set the VERSIONS when you create the table+column family
+
+.Composite Keys
+NOTE notation -- HBase makes heavy use of composite keys (several values combined into a single string). We'll describe them using
+* quote marks (`"literal"`) to mean "that literal string"
+* braces `{field}` mean "substitute value of that field, removing the braces"
+* and separators, commonly `:`, `|` or `-`, to mean "that character, and make damn sure it's not used anywhere in the field value".
+
+HBase is a database for storing "billions of rows and millions of columns"

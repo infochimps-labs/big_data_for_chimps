@@ -1,12 +1,8 @@
-=== Close Encounters of the Reindeer Kind (pt 1)
-
-=== Partition Key and Sort Key ===
-
-
+=== Close Encounters of the Reindeer Kind (pt 2)
 
 === Secondary Sort: Organize UFOs by Shape and Location
 
-The reindeer have pored over those sightings and now want to spend the summer visiting each UFO site. They've used the counts we prepared in the first stage, along with what passes for common sense among reindeer, to assign investigative teams based on craft type and the number of sightings. (For eample, Dasher handles all sightings of "angular" spacecraft; Donner and Blitzen combine on the more numberous "roundish" spacecraft). Making the script will group sightings according to this new synthetic label is easy enough.
+The reindeer have pored over those sightings and now want to spend the summer visiting each UFO site. They've used the counts we prepared in the first stage, along with what passes for common sense among reindeer, to assign investigative teams based on craft type and the number of sightings. (For eample, Dasher handles all sightings of "angular" spacecraft; Donner and Blitzen combine on the more numberous "roundish" spacecraft). Making the script group sightings according to this new synthetic label is easy enough.
 
 Also, the reindeer have thousands of places to visit -- not as many as their yearly trip with Santa, but enough to justify the same path-of-Z's trick to navigate. We will encode the distance along that path-of-Z's with the 'quadkey' (described <<geographic_quadkey,later>>; for now, just trust that it's a _sort-able_ encoding of the location).
 
@@ -16,7 +12,11 @@ We'll use a 'secondary sort' -- a sub-ordering of records within each group base
 
 As you've seen, the way that Hadoop forms groups is actually by sorting the records. It's time now to clearly separate the three fundamental locality operations Hadoop performs for you:
 
-* 
+* 'partition':
+  - data in the same partition must go to the same machine
+* 'group':
+  - data in the same group must be in the same partition
+* 'sort':
 
 // [[Note]]We only used Hadoop for part of the analysis -- that's fairly common. You should use
 // Hadoop to make Big Data into small data, then use traditional analytics tools to turn small

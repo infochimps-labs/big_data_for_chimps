@@ -1,6 +1,11 @@
 [[TODO]]
 == TODO
 
+
+* Add some more detail to the "Running on the Cluster" section on page 27
+* Clean up the "Santa's Z-path" delivery system, and the corresponding part of the reindeer/UFO adventure.
+
+
 === Pick List
 
 ==== Tech-review ready

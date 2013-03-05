@@ -51,7 +51,7 @@ If you are using it primarily for batch use,
 
 Let's sketch the implementation of an autocomplete API on Wikipedia page titles, an example that truly plays to HBase's strengths. As a visitor types characters into a search bar, the browser will request a JSON-encoded list of the top 10 most likely completions for that prefix. Responsiveness is essential: at most 50 milliseconds end-to-end response time. Several approaches might spring to mind, like a range query on titles; a prefix query against a text search engine; or a specialized "trie" datastructure. HBase provides a much stupider, far superior solution.
 
-Instead, we'll enumerate every possible completion footnote:[First, join on the pagerank table (see TODO: ref) to attach a "prominence" to each page. Next, write a map-reduce job: the mapper takes each title and emits the first three, four, five, up to say twelve characters along with the pagerank. Use the prefix as partition key, and the prefix-rank as a descending sort key. Within each  prefix group, the first ten records will be the ten most prominent completions; store them as a JSON-ized list and ignore all following completions for that prefix.]. This blows the dataset into the billion-row range, but it makes each request a highly cache-efficient key/value lookup. Given an average title length of (TODO: insert numbers), the full completion set weighs in at "only" (TODO: numbers) rows and XXX raw data size -- a walk in the park for HBase. 
+Instead, we'll enumerate every possible completion. This blows the dataset into the billion-row range, but it makes each request a highly cache-efficient key/value lookup. Given an average title length of (TODO: insert numbers), the full completion set weighs in at "only" (TODO: numbers) rows and XXX raw data size -- a walk in the park for HBase. (A sketch of how you might do this: first, use Pig to join on the pagerank table (see TODO: ref) to attach a "prominence" to each page. Next, write a map-reduce job to group the prefixes. The mapper takes each title and emits the first three, four, five, up to say twelve characters along with the pagerank. Use the prefix as partition key, and the prefix-rank as a descending sort key. Within each prefix group, the first ten records will be the ten most prominent completions; store them as a JSON-ized list and ignore all following completions for that prefix.)
 
 What will we store into HBase? Your first instinct might be to store each of the ten titles, each in its own cell. Reasonable, but still too clever. Instead, serialize the full JSON-encoded response as a single value. This minimizes the cell count (memory- and disk-efficient), lets the API front end put the value straight onto the wire (speed and lines-of-code efficient), and puts us in the most efficient access pattern: single row, single value.
 
@@ -109,10 +109,10 @@ We'll store each region type (using the scheme above) as the column family, and 
 Most client libraries will return the result as a hash mapping column keys (combined family and qualifier) to cell values; it's easy to reassemble this into a valid GeoJSON feature collection without even parsing the field values.
 
 [[hbase_colfam_suxors]]
-[NOTE]
-===============================
+.Column Families Considered Less Awesome Than They Seem
+********
 HBase tutorials generally have to introduce column families early, as they're present in every request and when you define your tables. This unfortunately makes them seem far more prominent and useful than they really are. They should be used only when clearly required: they incur some overhead, and they cause some internal processes to become governed by the worst-case pattern of access among all the column families in a row. So consider first whether separate tables, a scan of adjacent rows, or just plain column qualifiers in one family would work. Tables with a high write impact shouldn't use more than two or three column families, and no table should use more than a handful.
-===============================
+********
 
 ==== Access pattern: "Rows as Columns" ====
 
@@ -136,12 +136,13 @@ Instead, we'll render each _point_ as its own row, indexed by the row key `quadt
     012123-j
     012200-k
 
-To find all the points in quadtile `0121`, scan from `012100` to `012200` (returning `a` through `j`). Scans ignore the last index in their range, so `k` is excluded as it should be.  To find all the points in quadtile `012 121`, scan from `012121` to  `012122` (returning `g`, `h` and `i`)
+To find all the points in quadtile `0121`, scan from `012100` to `012200` (returning `a` through `j`). Scans ignore the last index in their range, so `k` is excluded as it should be.  To find all the points in quadtile `012 121`, scan from `012121` to  `012122` (returning `g`, `h` and `i`).
+Don't store the quadkeys as the base-4 strings that we use for processing: the efficiency gained by packing them into 16- or 32-bit integers is worth the trouble. The quadkey '12301230' is eight bytes as the string "12301230", two bytes as the 16-bit integer 27756.
 
-use packed integer quadkeys -- space efficient
-
-When you are using this "Rows as Columns" technique, make sure you set "scanner caching" on. Scanner caching footnote:[confusing name: it's "Caching of rows found by scanner", not "Caching of scanner objects"] creates a read buffer allowing may rows of data to be sent per network call.
-
+[NOTE]
+===============================
+When you are using this "Rows as Columns" technique, or any time you're using a scan query, make sure you set "scanner caching" on. It's an incredibly confusing name (it does not control a "Cache of scanner objects"). Instead think of it as "Batch Size", allowing may rows of data to be sent per network call.
+===============================
 
 Typically with a keyspace this sparse you'd use a bloom filter, but we won't be doing direct gets
 and so it's not called for here (http://comments.gmane.org/gmane.comp.java.hadoop.hbase.user/24493[Bloom Filters are not consulted in a scan]).
@@ -225,11 +226,11 @@ want to scan all cells in `011 123`. this means `011 123 000` to  `011 123 ~~~`.
 === Web Logs: Rows-As-Columns ===
 
 [[real_time_streaming_roxors]]
-[NOTE]
-===============================
+.The Virtues of Real Time Streaming
+********
 Hadoop was developed largely to process and analyze high-scale server logs for Nutch and Yahoo!. The recent addition of real-time streaming data tools like Storm+Kafka to the Hadoop/HBase ecosystem unlocks transformative new ways to see your data. It's not just that it's _real-time_; it's that its _multi-latency_. As long as you provision enough capacity, you can make multiple writes to the database (letting you "optimize for reads"); execute transactional requests against legacy datastores; ping YouTube or Twitter or other only-mostly-dependable external APIs; and much more. All of a sudden some of your most cumbersome or impractical batch jobs become simple, reliable stream decorators. From where we stand, a best-of-class big data stack has _three_ legs: Hadoop, one or more scalable databases, and multi-latency streaming analytics.
 // Just as for data at rest, HBase enables _both_ ultra-low-latency RPC requests and high-throughput // map/reduce jobs, Storm/Kafka enables 
-===============================
+********
 
 A high-volume website might have 2 million unique daily visitors, causing 100 M requests/day on average (4000 requests/second peak), and say 600 bytes per log line from 20-40 servers. Over a year, that becomes about 40 billion records and north of 20 terabytes of raw data. Feed that to most databases and they will crumble. Feed it to HBase and it will smile, belch and ask for seconds and thirds -- which in fact we will. Designing for reads means aggressively denormalizing data, to an extent that turns the stomach and tests the will of traditional database experts. Use a streaming data pipeline such as Storm+Kafka or Flume, or a scheduled batch job, to denormalize the data.
 
@@ -256,10 +257,9 @@ By using a row key of `cookie-rev_time`
 
 
 [[row_locality]]
-[NOTE]
-===============================
+.Row Locality
+********
 Row keys determine data locality. When activity is focused on a set of similar and thus adjacent rows, it can be very efficient or very problematic.
-
 
 **Adjacency is good**: Most of the time, adjacency is good (hooray locality!). When common data is stored together, it enables
   - range scans: retrieve all pageviews having the same path prefix, or a continuous map region.
@@ -275,7 +275,7 @@ Managed splitting won't help for http://ikaisays.com/2011/01/25/app-engine-datas
 
 * swap your first two key levels. If you're recording time series metrics, use `metric_name-timestamp`, not `timestamp-metric_name`, as the row key.
 * add some kind of arbitrary low-cardinality prefix: a server or shard id, or even the least-significant bits of the row key. To retrieve whole rows, issue a batch request against each prefix at query time.
-============================
+********
 
 ==== Timestamps ====
 
@@ -366,6 +366,8 @@ These high-volume tables consume significant space and memory; it might make sen
 
 === IP Address Geolocation ===
 
+An increasing number of websites personalize content for each reader. Retailers find that even something as simple as saying "Free Shipping" or "No Sales Tax" (each true only for people in certain geographic areas) dramatically increases sales. HBase's speed and simplicity shine for a high-stakes low-latency task like estimating the geographic location of a visitor based on their IP address
+
 If you recall from (TODO ref server logs chapter), the Geo-IP dataset stores information about IP addresses a block at a time.
 
 * _Fields_: IP address, ISP, latitude, longitude, quadkey
@@ -417,106 +419,6 @@ For a general graph in HBase, here are some tradeoffs to consider:
 * The pagelink graph never has more than a few hundred links for each page, so there are no concerns about having too many columns per row. On the other hand, there are many celebrities on the Twitter "follower" graph with millions of followers or followees. You can shard those cases across multiple rows, or use an edge list instead.
 * An edge list gives you fast "are these two nodes connected" lookups, using the bloom filter on misses and read cache for frequent hits.
 * If the graph is read-only (eg a product-product similarity graph prepared from server logs), it may make sense to serialize the adjacency list for each node into a single cell. You could also run a regular map/reduce job to roll up the adjacency list into its own column family, and store deltas to that list between rollups.
-
-=== Review of HBase options ===
-
-* column families -- use only one, unless you need both full-row _and_ partial-row access. Even still, high-performance tables shouldn't use more than a few colum families.
-* `BLOOMFILTER`	-- `false` except for a high-impact table with many misses. Monitor the memory usage and performance with and without, and take some time to understand the interaction with the blocksize.
-* `VERSIONS`	-- set to 1 unless you know why you need more. You must always specify, because the default is 3.
-* `COMPRESSION`	-- set to "snappy" until you can test performance with/without compression
-* `TTL`   	-- `-1`, unless you need expiration
-* `BLOCKCACHE`   -- `true` (the default)
-* `IN_MEMORY`	-- `false` (the default)
-* `BLOCKSIZE`	-- `65536` (the default)
-
-
-definition of a table for incrementers (http://palominodb.com/blog/2012/08/24/distributed-counter-performance-hbase-part-1[from])
-    
-    {NAME => 'timelesstest', DEFERRED_LOG_FLUSH => 'true', FAMILIES => [{NAME => 'family', BLOOMFILTER => 'NONE', REPLICATION_SCOPE => '0', COMPRESSION => 'NONE', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}]}
-
-
-DRAFT
-
-DRAFT -- ignore below
-
-DRAFT
-
-
-==== Vertical Partitioning (Column Families) ====
-
-Suppose that after releasing the autocomplete API, we find that a sizeable minority of developers want to consume pre-baked HTML rather than the existing (and still-popular) JSON response. No request returns both HTML and JSON, Instead, we'll store each response type in its own _column family_ in the autocomplete table. 
-The pattern of access and data size are similar for each, but 
-It might even be reasonable to put them in different tables. 
-
-=== Feature Set review ===
-
-* **TTL
-
-* Atomic counters: accumulate a numeric value, guaranteed consistent even if multiple clients simultaneously update it
-* TTL ("Time to Live"): an optional amount of time, after which values are expired.
-
-* Versioning by timestamp
-* Column Families
-
-* read caching
-* Bloom filters fast rejection of missing rows
-* Block-level compression
-
-The "Snappy" algorithm gives a great balance of compression factor vs speed, and is easy to install.
-
-
-* query filters: impose server load, 
-* and a kind of stored procedures/stored triggers called coprocessors). Here's a partial list of things you do _not_ get:
-
-From Hbase Def Guide:
-
-Optimal loading of row keys: When performing a table scan where only the row keys are needed (no families, qualifiers, values, or timestamps), add a FilterList with a MUST_PASS_ALL operator to the scanner using setFilter(). The filter list should include both a First KeyOnlyFilter and a KeyOnlyFilter instance, as explained in Dedicated Filters on page 147. Using this filter combination will cause the region server to only load the row key of the first KeyValue (i.e., from the first column) found and return it to the client, resulting in minimized network traffic. 
-
-=== "Design for Reads" ===
-
-HBase stores data in cells, scoped like this:
-
-* Table -- a hard partition of data. Tables are stored, partitioned and optimized in isolation.
-* Row Key -- the primary key for a record. Row contents are stored together, sorted by row key.
-* Column Key -- indexed elements of a row, in the form `column_family:column_qualifier` (the qualifier is optional).
-  - Column Family -- coarse-grained sub-partition of a row. You must declare the column family in advance. There are several options (like number of versions) you can set independently per column family.
-  - Column Qualifier -- the arbitrary remainder of a column key;
-* Value -- the contents you'd like to store, anything or nothing.
-
-Table names and column familty names must be defined in advance, and their names may only contain printable characters (I recommend only using `[a-z_][a-z0-9_]*`). Everything else is bytes in / bytes out, exactly as issued.
-
-
-* Avoid having more than a handful of column families on any high-performance table, especially if their patterns of write access are distinct.
-* Avoid having more than a few million columns per row.
-
-* Column families
-  - always specify the `versions`: by default it's 3, and you almost always want 1 or a value you've thought very carefully about
-  - Don't use more than two or three column families for a high-impact table; all of them have to keep pace with the most-heavily-used one.
-* Use short row and column names. _Every_ cell is stored with its row, column, timestamp and value, every time. (trust the HBase folks: this is the Right Thing).
-  - even still, fat row names (larger than their contents) often make sense. If so, increase the block size so that table indexes don't eat all your RAM.
-
-* Keys should be space-efficient. Use _very_ short names for column families ('u', not 'url'). Don't be profligate with size of column keys and row keys on huge tables: a binary-packed SHA digest of a URL is more efficient than its hex-encoded representation, which is likely more efficient than the URL itself. However, if that bare URL will let you efficiently index on sub-paths, use a bare URL. For another example, we gladly waste 6 bits of every byte in a quadkey, because it lets us do multi-scale queries.
-* Keys should be properly encoded and sanitized
-  - HBase stores and returns arbitrary binary data, unmolested.
-
-* All sorting is _lexicographic_: beware the "derp sort". Given row keys 1, 2, 7, 12, and 119, HBase stores them in the order 1, 119, 12, 2, 7: it sorts by the most significant (leftmost) byte first.
-  - zero-pad decimal numbers, and null-pad binary packet numbers. Suppose a certain key ranged from 0 to 60,000; you would zero-pad the number 69 as `00069` (5 bytes); the null-padded version would have bytes `00 45` (2 bytes).
-  - annoyingly, `+` sorts less than `-`, so `+45` precedes `-45`. However, `
-  - reverse timestamp
-
-* Timestamps let HBase skip HStores
-
-* Always set timestamps on fundamental objects. Server log lines, tweets, blog posts, and airline flight departures all have an intrinsic timestamp of occurrence, and they are all "fundamental" objects, not assertions derived from something else.  In such cases, always set a timestamp.  In contrast, the "May 2012 Archive" page of a blog, containing many posts, is not fundamental; neither is an hourly cached count of server errors. These are _observations_, correct at the time they're made -- so that observation time, not the intrinsic timestamp
-
-* make sure you set the VERSIONS when you create the table+column family
-
-.Composite Keys
-NOTE notation -- HBase makes heavy use of composite keys (several values combined into a single string). We'll describe them using
-* quote marks (`"literal"`) to mean "that literal string"
-* braces `{field}` mean "substitute value of that field, removing the braces"
-* and separators, commonly `:`, `|` or `-`, to mean "that character, and make damn sure it's not used anywhere in the field value".
-
-HBase is a database for storing "billions of rows and millions of columns"
 
 === Refs ===
 

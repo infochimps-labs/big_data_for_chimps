@@ -1,0 +1,32 @@
+=== Santa's Z-Path Delivery System ===
+
+The new system is great and toys are piling up at a prodigious rate when one of the elves points out a problem: the toys are piling up at a prodigious rate. They're in piles by type of toy (dolls, robots, ponies) when they need to be organized for delivery by Santa (23 Evergreen Terrace, 24 Evergreen Terrace, ...).
+
+The elven shipping crew is a boisterous set of
+stevedore (teamster?)
+Santa's sacks are packed by the boisterous members of the elven stevedore 
+
+Santa's route was divided into dozens of segments, each with its own shipping clerk.
+Every neighborhood Santa visits
+is encoded by when along his journey Santa will visit that household: all the 20130's come before all the 20131's, etc. (By clever construction, this figure using only the house's location)
+
+The toys for each family need to be placed together in sacks, and those sacks placed together based on when they'll be delivered. 
+
+As you might guess: out come the chimps with typewriters, in march the elephants (with cargo racks in place of file folders), up spring a squadron of elven shipping clerks, and off go the presents through the following three-step flow.
+
+
+In the first phase, chimpanzees receive the presents one-by-one as they are produced, and attach a two-part label based on the destination household. The first portion of the label e. The second part of the key is the name of the family.
+
+
+      	+----+ [ _132_12 Wei ]
+	|    |
+	|    |
+	+----+
+        ...
+      	+----+ [ _311_33 Clark ]
+	|    |
+	|    |
+	+----+
+
+Each 
+	
