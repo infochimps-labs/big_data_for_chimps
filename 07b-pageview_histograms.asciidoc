@@ -3,13 +3,13 @@
 Let's start exploring the dataset. Andy Baio
 
 ----
-include::code/serverlogs/logline-02-histograms-mapper.rb[]
+include::code/serverlogs/old/logline-02-histograms-mapper.rb[]
 ----
 
 We want to group on `date_hr`, so just add a 'virtual accessor' -- a method that behaves like an attribute but derives its value from another field:
 
 ----
-include::code/serverlogs/logline-00-model-date_hr.rb[]
+include::code/serverlogs/old/logline-00-model-date_hr.rb[]
 ----
 
 This is the advantage of having a model and not just a passive sack of data.
@@ -17,7 +17,7 @@ This is the advantage of having a model and not just a passive sack of data.
 Run it in map mode:
 
 ----
-include::code/serverlogs/logline-02-histograms-02-mapper-wu-lign-sort.log[]
+include::code/serverlogs/old/logline-02-histograms-02-mapper-wu-lign-sort.log[]
 ----
 
 TODO: digression about `wu-lign`.
@@ -25,17 +25,17 @@ TODO: digression about `wu-lign`.
 Sort and save the map output; then write and debug your reducer.
 
 ----
-include::code/serverlogs/logline-02-histograms-full.rb[]
+include::code/serverlogs/old/logline-02-histograms-full.rb[]
 ----
 
 When things are working, this is what you'll see. Notice that the `.../Star_Wars_Kid.wmv` file already have five times the pageviews as the site root (`/`).
 
 ----
-include::code/serverlogs/logline-02-histograms-03-reduce.log[]
+include::code/serverlogs/old/logline-02-histograms-03-reduce.log[]
 ----
 
 You're ready to run the script in the cloud! Fire it off and you'll see dozens of workers start processing the data.
 
 ----
-include::code/serverlogs/logline-02-histograms-04-freals.log[]
+include::code/serverlogs/old/logline-02-histograms-04-freals.log[]
 ----

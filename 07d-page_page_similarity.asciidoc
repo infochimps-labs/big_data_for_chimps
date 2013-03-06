@@ -4,11 +4,11 @@
 What can you do with the sessionized logs? Well, each row lists a visitor-session on the left and a bunch of pages on the right.  We've been thinking about that as a table, but it's also a graph -- actually, a bunch of graphs! The <<sidebar,serverlogs_affinity_graph>> describes an _affinity graph_, but we can build a simpler graph that just connects pages to pages by counting the number of times a pair of pages were visited by the same session. Every time a person requests the `/archive/2003/04/03/typo_pop.shtml` page _and_ the `/archive/2003/04/29/star_war.shtml` page in the same visit, that's one point towards their similarity. The chapter on <<graph_processing>> has lots of fun things to do with a graph like this, so for now we'll just lay the groundwork by computing the page-page similarity graph defined by visitor sessions.
 
 ----
-include::code/serverlogs/logline-04-page_page_edges-full.rb[]
+include::code/serverlogs/old/logline-04-page_page_edges-full.rb[]
 ----
 
 ----
-include::code/serverlogs/logline-04-page_page_edges-03-reducer.log[]
+include::code/serverlogs/old/logline-04-page_page_edges-03-reducer.log[]
 ----
 
 [[serverlogs_affinity_graph]]

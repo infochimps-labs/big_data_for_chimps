@@ -9,7 +9,7 @@ NOTE:[Take a moment and think about the locality: what feature(s) do we need to 
 spit out `[ip, date_hr, visit_time, path]`.
 
 ----
-include::code/serverlogs/logline-03-breadcrumbs-full.rb[]
+include::code/serverlogs/old/logline-03-breadcrumbs-full.rb[]
 ----
 
 You might ask why we don't partition directly on say both `visitor_id` and date (or other time bucket). Partitioning by date would break the locality of any visitor session that crossed midnight: some of the requests would be in one day, the rest would be in the next day.
@@ -17,17 +17,17 @@ You might ask why we don't partition directly on say both `visitor_id` and date 
 run it in map mode:
 
 ----
-include::code/serverlogs/logline-02-histograms-01-mapper.log[]
+include::code/serverlogs/old/logline-02-histograms-01-mapper.log[]
 ----
 
 ----
-include::code/serverlogs/logline-03-breadcrumbs-02-mapper.log[]
+include::code/serverlogs/old/logline-03-breadcrumbs-02-mapper.log[]
 ----
 
 group on user
 
 ----
-include::code/serverlogs/logline-03-breadcrumbs-03-reducer.log[]
+include::code/serverlogs/old/logline-03-breadcrumbs-03-reducer.log[]
 ----
 
 We use the secondary sort so that each visit is in strict order of time within a session.

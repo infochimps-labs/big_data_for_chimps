@@ -5,7 +5,7 @@ We'll represent loglines with the following <<serverlog_logline_fields,model def
 
 [[serverlog_logline_fields]]
 ----
-include::code/serverlogs/model/logline--fields.rb[]
+include::code/serverlogs/models/logline--fields.rb[]
 ----
 
 Since most of our questions are about what visitors do, we'll mainly use `visitor_id` (to identify common requests for a visitor), `uri_str` (what they requested), `requested_at` (when they requested it) and `referer` (the page they clicked on).  Don't worry if you're not deeply familiar with the rest of the fields in our model -- they'll become clear in context.
@@ -43,7 +43,7 @@ ____
 The details of parsing are mostly straightforward -- we use a regular expression to pick apart the fields in each line. That regular expression, however, is another story:
 
 ----
-include::code/serverlogs/logline-00-model-regexp.rb[]
+include::code/serverlogs/models/logline--parse.rb[]
 ----
 
 It may look terrifying, but taken piece-by-piece it's not actually that bad.  Regexp-fu is an essential skill for data science in practice -- you're well advised to walk through it. Let's do so.
