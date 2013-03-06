@@ -59,5 +59,12 @@ The second part of the label (the "sort" key) gives the visit-order of that hous
 The third part of the label (the "group" key) is the name of the family.
 
 
-Elephants deliver toyys to the stevedore
+Elephants deliver toys to the stevedore
 in charge of that shipping container.
+A stevedore supervises many shipping containers;
+  this evens out the load, or otherwise you'd overwork the Frankfurt-Zurich-Tunis shipping clerk to death while the Atlantic Ocean-only ones did the crossword puzzle.
+
+
+The gifts are sorted on the back of each bull elephant
+letting the stevedores use the same "merge sort" technique:
+simply pluck the nextmost gift from among the waiting elephants.
