@@ -86,13 +86,13 @@ The finished toys go into large sacks for santa to deliver.
 
 Recall that each elephant carries the work orders destined for one workstation. What's more, on the back of each pygmy elephant is a vertical file like you find at a very organized person's desk:
 
-image::images/paper_sorter.png[paper sorter]
+image::images/paper_sorter.jpg[paper sorter]
 
 Earlier, I mentioned that the chimps place the toyforms into the file folders, but skipped past an important detail. You've seen that receiving all the toyforms for Dolls in a single batch make the elves more efficient. The elves requested that the toyforms be further grouped within each batch: so that all the dolls with "purple hair" arrive in a run, followed by dolls with "rosy cheeks", and so forth.
 
 // Chimpanzees file each toy request in the order of Santa's path through the world. This is easy, because the files never grow very large and because chimpanzees are very dextrous. So when a pygmy elephant trundles off, all the `puppy` requests are together in order from Auckland to Samoa, and the `robot` requests are together, also in order, and so on:
 
-image::images/bchm_0209.png[Secondary sort]
+image::images/chimps_and_elves/bchm_0209.png[Secondary sort]
 
 What Chimpanzee and Elephant do is incredibly clever. They achieve this secondary _grouping_ by simply _sorting_ the incoming records. Take a deck of cards, sort them by number, and fan them out in a line. You'll see that to group them by number now requires only the trivial act of separating piles where one number meets the next.
 
@@ -100,7 +100,7 @@ Chimpanzees place workforms in the file folder in sorted order by toy detail. Fo
 
 As file folders are deposited next to each elf workstation, their toyforms are in order -- but of course there is no order across all the file folders: elephant A might have "apple-cheeked", "cabbage patch" and "yellow-haired" dolls, elephant B "malibu", "raggedy", and "yellow-haired", and elephant C only a tall stack of "real Armenian" dolls. That's no problem though. Each elephant holds its topmost workform at the ready, and passes it to the elves once it's the next one in order to be processed. So in this case, workforms would come from elephant A, then A again, then B, and so on.
 
-image::images/bchm_0210.png[Secondary sort]
+image::images/chimps_and_elves/bchm_0210.png[Secondary sort]
 
 Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy.
 
