@@ -1,32 +1,63 @@
-=== Santa's Z-Path Delivery System ===
+=== Santa's Row-Path Delivery System ===
 
-The new system is great and toys are piling up at a prodigious rate when one of the elves points out a problem: the toys are piling up at a prodigious rate. They're in piles by type of toy (dolls, robots, ponies) when they need to be organized for delivery by Santa (23 Evergreen Terrace, 24 Evergreen Terrace, ...).
+The new system is great and toys are piling up at a prodigious rate when one of the elves points out a problem: the toys are piling up at a prodigious rate. They're in piles by type of toy (dolls, robots, ponies) when they need to be organized for delivery by Santa (23 Evergreen Terrace, 24 Evergreen Terrace, ...). The new toy production pipeline has to be integrated with the toy delivery operation.
 
-The elven shipping crew is a boisterous set of
-stevedore (teamster?)
-Santa's sacks are packed by the boisterous members of the elven stevedore 
+====
+
+As much consternation as Chimpanzee and Elephant felt viewing the Elves' original process flow, it was pure professional admiration they felt on visiting the elves' package staging warehouse. "This, friend, is how you build for throughput!", exclaimed JT. "Indeed", said Nanette, "and look how directly the layout of the gift sacks is aligned with the access pattern in production".
+
+As Nanette said, this process is defined by how its outputs are used, not by how they're produced, so a brief word about the delivery system. (We'll also need to know about this for a coding project with the reindeer coming shortly). Starting at sundown of the 25th on Big Diomede ("Tomorrow Island") just west of the Date Line, Santa Claus races against the sun to deliver the last presents to good little boys and girls before sunup on Little Diomede ("Yesterday Island"), just east of it. From Tomorrow Island, the reindeer race south along the Date Line towards New Zealand; once at their southern extent, they loop north again along the 179&deg; meridian, and so on, covering the entire globe in tall scan-line rows.
+
+In this manner, Santa is able to cover a large three-dimensional extend (longitude, latitude and chimney/elevator shaft) with only one-dimensional traversal. File that thought away: it's one key pattern for how we will give this one-trick elephant ("read a whole ton of records from start to end") mastery over complex spaces.
+
+The gifts are stored to match this pattern of access.
+(...)
+The gifts for a household are stored together in a sack. The sacks are stored together in shipping containers, in order front-to-back of Santa's visit time. All Mr. Claus has to do is pull the next sack off the front of the current container and dive down the next chimney.
+
+.An ASCII-art
+----
+        _
+    +m-o-O-x-q-+     +m-o-O-x-q-+     +m-o-O-x-q-+     +m-o-O-x-q-+              +m-o-O-x-q-+
+    | Tomorrow | ... | New      | ... | Austr    | ... | Japan    | ... ... ...  | Yest'day |
+    | Island   |     | Zealand  |     | alia     |     |          | 	         | Island   |
+    +----------+     +----------+     +----------+     +----------+ 	         +----------+
+----
+
+
+// footnote:[My mom invented the Hannukka Train for my brothers and I as the equivalent of a
+// Christmas Tree: gift-wrapped "box"cars, with paper plate wheels, to hold the gifts. It's an idea
+// worth popularizing.]
+
+(TODO: organize the next few paragraphs)
+
+Santa's sacks are packed by the boisterous members of the Elven Stevedore's Union
 
 Santa's route was divided into dozens of segments, each with its own shipping clerk.
 Every neighborhood Santa visits
 is encoded by when along his journey Santa will visit that household: all the 20130's come before all the 20131's, etc. (By clever construction, this figure using only the house's location)
 
-The toys for each family need to be placed together in sacks, and those sacks placed together based on when they'll be delivered. 
+The toys for each family need to be placed together in sacks, and those sacks placed together based on when they'll be delivered.
+
+There's one shipping container for each 1&deg; longitude/1&deg; latitude cell,
+but not all containers get the same number of gifts.
+Each stevedore oversees an arbitrary collection of containers:
+It's necessary that the gift sacks loaded into each container are strictly sorted by delivery order,
+but it's not important that the containers be held in any order until launch day.
+
+
+
+----
+   Drawing of a tattoo-ed Teamster-looking elf with
+   a clipboard and half-frame old man glasses
+----   
 
 As you might guess: out come the chimps with typewriters, in march the elephants (with cargo racks in place of file folders), up spring a squadron of elven shipping clerks, and off go the presents through the following three-step flow.
 
+In the first phase, chimpanzees receive the presents one-by-one as they are produced, and attach a three-part label based on the destination household.
+The first part of the label (the "partition" key) specifies the 1&deg; by 1&deg; geographic cell -- and thus the shipping container -- for the address.
+The second part of the label (the "sort" key) gives the visit-order of that household within the cell (derivable by the longitude/latitude)
+The third part of the label (the "group" key) is the name of the family.
 
-In the first phase, chimpanzees receive the presents one-by-one as they are produced, and attach a two-part label based on the destination household. The first portion of the label e. The second part of the key is the name of the family.
 
-
-      	+----+ [ _132_12 Wei ]
-	|    |
-	|    |
-	+----+
-        ...
-      	+----+ [ _311_33 Clark ]
-	|    |
-	|    |
-	+----+
-
-Each 
-	
+Elephants deliver toyys to the stevedore
+in charge of that shipping container.
