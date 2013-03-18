@@ -1,18 +1,5 @@
 === Exercises ===
 
-==== Document Authorship ====
-
-The approach we use here can be a baseline for the practical art of authorship detection in legal discovery, where a 
-
- * http://www.slaney.org/malcolm/yahoo/Slaney2008-LSHTutorial.pdf
- * http://lingpipe-blog.com/2011/01/12/scaling-jaccard-distance-deduplication-shingling-minhash-locality-sensitive-hashi/
- * http://www.scribd.com/collections/2287653/Locality-Sensitive-Hashing
- * http://infolab.stanford.edu/~ullman/mmds/ch3a.pdf
- * http://infolab.stanford.edu/~ullman/mining/2009/similarity2.pdf
- * http://infolab.stanford.edu/~ullman/mining/2009/similarity1.pdf
- * http://metaoptimize.com/qa/questions/8930/basic-questions-about-locally-sensitive-hashinglsh
- * 
-
 ==== Locate Documents by Content ====
 
 The "regional flavor" question comes from a paper by Jason Baldridge and Ben Wing (TODO ref), who go one step further and show you can actually locate articles by their text alone.

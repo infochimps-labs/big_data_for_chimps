@@ -25,6 +25,7 @@
 
 We're not going to worry about extracting samples larger than fit on one reducer.
 
+
 [[consistent_random_sampling]]
 === Consistent Random Sampling ===
 
