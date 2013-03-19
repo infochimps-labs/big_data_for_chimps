@@ -23,8 +23,46 @@ requires `n_components >= 4 log(n_samples) / (eps^2 / 2 - eps^3 / 3)` dimensions
 // The distribution of byte sequences 
 // http://en.wikipedia.org/wiki/Stochastic --
 
-A good hash function does two things: produces _uniform output_, and _disperses nearby inputs_ (the "avalanche" effect).
+
+
+
+A strong-mixing hash function does two things: produces _uniform output_, and _disperses nearby inputs_ (the "avalanche" effect).
 This mixing means that in the rare case two objects have a colliding hash, they are even-yet-more-rarely likely to be similar as well. 
+
+Suppose we say that two words are "close" when their edit distance is close (...)
+
+Take a copy of the Merriam-Webster dictionary
+
+* Number every term in the dictionary from 1 to N. The digest of a term is its order-index (if it's not present use the prior word alphabetically). This has bad mixing and bad LSHness, but does completely fill its space
+* Instead, look up the word and count, from the top of the left-hand page down each column, until you get to the word. This
+  - does a better job of mixing,
+  - bad LSHness
+  - does not fill out its space: some pages have very few terms, some have many, so there will be a lot more "2"s and "7"s than "20"s and "70"s.
+* The http://cs.mwsu.edu/~griffin/courses/2133/downloads/Spring11/p677-pearson.pdf[Pearson Hash] --
+
+    h = 0; str.chars.each{|ch| index = h xor ch.ord ; h = permuted[index] }
+    return h
+
+
+    
+[NOTE]
+===============================
+For these purposes, one good Hash function is as good as any other.
+If a library for any of the  http://blog.aggregateknowledge.com/2012/02/02/choosing-a-good-hash-function-part-3/[Murmur3, Jenkins or Spooky] hashes are close at hand, use them; but you're certain to have a built-in SHA1 or MD5 generator. Those latter are not great, but they're good enough.
+And when you see something ask for a "family of N digest functions", you don't need to hunt up N different _algorithms_, just N different _mixings_. Due to the avalanche effect (that a small perturbation of the input gives a large perturbation of the output) any trivial change will work
+ just tack that number onto the end of the string footnote:[end, not front, due to a weakness in MD5] and digest it:
+
+   `def hasher(nn) ; suffix = nn.to_s; ->(str){ your_favorite_hash_function(str+suffix) } ; end`   
+
+// (btw: MD5 and SHA1 and so on are non-reversible, making them cryptographically secure; the others are much faster, but have all the mixing properties we need.)
+
+// http://blog.smola.org/post/970128721/hashing-for-linear-functions  -- "Note that as long as the hash is good it does not matter which one you use (I have received the latter question at least twice from referees in the past. It’s about as meaningful as asking which random number generator was used for sampling)."
+
+
+===============================
+
+
+
 
 === Features ===
 
@@ -90,6 +128,30 @@ There are _two_ different hashings going on:
 * a locality-sensitive hash (eg modulo N) to fold the feature space
 
 
+==== Process ====
+
+* `m`: number of hash digests used to prepare the metri-fied measure
+* `l`: number of LSH signatures;
+* `k`: number of digests used in each min-hash signature
+
+
+* Define beforehand `m` strongly-mixing digest functions as `Murmur.digest(str + idx.to_s)`.
+  This performs a consistent "randomization" of its inputs.
+
+* For each of the `m` functions,
+  - apply it to every word in the document
+  - choose the digest with the lowest value
+
+This part estimates the Jaccard similarity; we've defined a metric on the features!
+
+Next, LSH:
+
+  Pr[ LSH(u) == LSH(v) ] == Pr[ MinHash(u) == MinHash(v) ] ** k
+
+K sharpens the   
+
+
+
 ==== accuracy
 
 even if the bucket for the term `also`  collides with the term `zephyr`,
@@ -99,28 +161,48 @@ even if the bucket for the term `also`  collides with the term `zephyr`,
 
 First, if two items are nearby, there is a high probability they hash to the same value
 
-    Pr[ h(x) = h(y) ]    >=    P_1         for x, y such that |x-y| <= R
+    Pr[ h(x) = h(y) ]    >=    P_l         for x, y such that |x-y| <= R
 
     "The probability        is above       for value within a 
     the hash functions      the chosen     radius R of each other
-    are the same            limit 'P_1'
+    are the same            limit 'P_l'
 
 Second, if two items are far apart, there is a low probability they hash to the same value:
 
-    Pr[ h(x) = h(y) ]    <=    P_2         for x, y such that |x-y| <= R
+    Pr[ h(x) = h(y) ]    <=    P_u         for x, y such that |x-y| <= R
 
     "The probability        is *below*     for values *outside* a radius
     the hash functions      the chosen     `c*R` of each other (a multiple 
-    are the same            limit 'P_2'    of the 'nearbyness' radius)
+    are the same            limit 'P_u'    of the 'nearbyness' radius)
 
 An example of an LSH is the Hamming distance using `j` arbitrary indices
   (example: fingerprint identification)
 
+    let  J be the number of bits -- say, 32
+    let  R be the "near" radius  -- say,  2  (items can differ in 0, 1 or 2 bits)
+    let cR be the "far" radius -- say,    4  (c=2; items must hash separately if 5+ bits differ)
+    Then for P_l = 1 - ( R / J) = 1 - (2/32) = 15/16
+             P_u = 1 - (cR / J) = 1 - (4/32) =  7/8
+    the hash family `h_j(x) = ((select the j'th bit of X))` is an LSH
+
+    X can 
+
+
+* Jaccard Similarity (highly-sparse feature space, or sets) -- MinHash
+* Hamming Similarity -- Hamming bits as LSH
+* Euclidean Similarity -- random cutting planes (Johnson-Lindenstrauss)
   
 
 
 * http://www.stanford.edu/~ashishg/amdm/handouts/scribed-lec8.pdf[Notes from "Algorithms for Modern Data Models"] course by Ashish Goel
   
+=== Count-Min-Sketch
+
+From http://blog.smola.org/post/970128721/hashing-for-linear-functions[Hashing for linear functions]
+
+    f(x) = (0..i-1).sum{|acc, i| acc += x_i * hsh[ digest[i] ] * dig_sgn
+
+where dig_sgn is a hash function onto 1,-1.
 
 
 
@@ -128,7 +210,34 @@ An example of an LSH is the Hamming distance using `j` arbitrary indices
 
 Even if the baseball data isn't very big at 17,000 lines, brute-force comparison of each player to each other player requires nearly 150 million pairs. A walk in the park for Hadoop, but since it will give us something to compare against, let's take that walk.
 
+=== MinHash, the Game
 
+
+So one monkey just blurts out words over and over and as soon as
+it's in either player's hand
+
+
+you have a hand, I have a hand, we want to know how similar they are
+I will take another deck, shuffle and deal out cards
+when either player has that card, they show it --
+  if only both have it, count in denominator and numerator
+  if only one has it, count in denominator
+
+this ends up approximating the Jaccard Similarity
+
+=== Dimensionality Game
+
+Another game, similar but different from previous:
+
+Dating pool
+
+"everyone who is {
+
+* age, your
+
+   age	    GPA	    Bowling-60  
+            *25     max 100
+    25	    75      
 
 
 === Dimensionality Reduction ===
@@ -145,38 +254,19 @@ it's OK to smush some of the dimensions together.
 
 But remember: if the dot product is near one, most of the coordinates of the two vectors agree.
 
-        < 0.5  0.2  0.1  0.0  0.1  0.1 >
-        < 0.3  0.1  0.4  0.1  0.1  0.1 >
 
-    Sum[  0.15 0.02 0.04 0.01 0.01 0.01 ] = 0.24
+=== Prob Production
 
-       
-       def smushed(a) [a[0]-a[1], a[2]-a[3], a[4]-a[5]] ; end ;
-       def smushed(a) normed([a[0]-a[1], a[2]-a[3], a[4]-a[5]]) ; end 
-       def smushed(a) normed([a[0]+a[1], a[2]+a[3], a[4]+a[5]]) ; end
+Family of hash functions
+A locality sensitive hash function is useful in probabilistically determining if two points are "close" to each other or not. However, we are limited by the probabilities. E.g. a probability of
+`p1 = 0.5` does not necessarily instill a reasonable confidence that the two points are close. However, if we have a family of such hash functions, then using probability theory, we can construct functions that give us arbitrarily high probabilities.
 
+Here's how the construction goes:
+if f1, f2, ..., fn are (d1, d2, p1, p2)-sensitive, then we can AND them together to construct a (d1, d2, p1n, p2n)-sensitive hash function. This has the effect of reducing the probability.
+if f1, f2, ..., fn are (d1, d2, p1, p2)-sensitive, then we can OR them together to construct a (d1, d2, 1 - (1- p1)n, 1 - (1 - p2)n)-sensitive hash function. This has the effect of increasing the probability.
+A combination of ANDs and ORs can get probabilities arbitrarily close to 1. The closer we want an LSH's p1 to 1 (and p2 to 0), the more ANDs and ORs we need to perform.
 
-       def smushed(a) normed([ a[0]-a[1], a[2]-a[3], a[4]-a[5], a[3]-a[0], a[5]-a[2] ]) ; end 
-       
-       def dot_prod(a, b) a.zip(b).map{|ael, bel| ael.to_f * bel }.sum ; end ;
-       def vec_len(a) Math.sqrt(dot_prod(a,a)) ; end ;
-       def normed(a) vl = vec_len(a) ; a.map{|ael| ael.to_f / vl } ; end
-
-
-       ## definitely no:  def smushed(a) [ (a[0]+a[1])*0.5, (a[2]+a[3])*0.5, (a[4]+a[5])*0.5 ] ; end
-
-
-       rveca = [50,  2,  1,  0, 10,   1] ; rvecb = [30, 20, -4,  -1,  1,  1] ;
-       rvecc = [40,  3,  3,  0, 15,   2] ; rvecd = [ 0,  0, 60,  20,  0,-10] ;
-       veca = normed(rveca) ; vecb = normed(rvecb) ; vecc = normed(rvecc) ; vecd = normed(rvecd)
-       all = [veca, vecb, vecc, vecd] ;
-
-
-       [ [veca, vecb], [veca, vecc], [veca, vecd], [vecb, vecc], [vecb, vecd], [vecc, vecd] ].each{|v1, v2| puts "%7.4f\t%7.4f" % [dot_prod(v1, v2), dot_prod(smushed(v1), smushed(v2))] } ;
-
-
-
-
+(from http://ravi-bhide.blogspot.com/2011/03/locality-sensitive-hashing-explored.html)
 
        
 
@@ -196,6 +286,7 @@ But remember: if the dot product is near one, most of the coordinates of the two
 
 Johnson-Lindenstrauss Transform:
 
+* http://users.soe.ucsc.edu/~optas/papers/jl.pdf[Johnson-Lindenstrauss with binary coins]
 * https://www.cs.princeton.edu/~chazelle/pubs/stoc06.pdf
 * http://ecee.colorado.edu/~fmeyer/class/ecen5322/ailon-chazelle2009.pdf[The Fast Johnson–Lindenstrauss Transform And Approximate Nearest Neighbors]
 * http://scikit-learn.org/stable/auto_examples/plot_johnson_lindenstrauss_bound.html
@@ -204,11 +295,18 @@ Counting Streams (Count-Min-Sketch and friends):
 
 * http://arxiv.org/pdf/0803.0473.pdf[Stream sampling for variance-optimal estimation of subset sums]
 
-The split-apply-combine pattern in R: 
 
+
+* http://www.r-tutor.com[Excellent collection of R tutorials]
+* The split-apply-combine pattern in R
+* http://had.co.nz/reshape/paper-dsc2005.pdf[Reshape R Package]
 * 
-* http://had.co.nz/reshape/paper-dsc2005.pdf
-* 
+
+Principal Component Analysis:
+
+* http://en.wikipedia.org/wiki/Principal_component_analysis[Principal component analysis] Wikipedia entry
+
+
 
 ==== Exercises ====
 

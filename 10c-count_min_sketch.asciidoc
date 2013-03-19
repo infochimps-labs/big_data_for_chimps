@@ -1,0 +1,13 @@
+=== Count-Min-Sketch ===
+
+
+* For each entry, calculate N hashes
+* increment each bucket
+* count cannot be more than value of smallest bucket
+
+Even if bucket for `zephyr` collides with the bucket for `also` on one of the hashes, it's exceedingly unlikely to collide with it on all 
+
+Related to Bloom Filter
+
+
+

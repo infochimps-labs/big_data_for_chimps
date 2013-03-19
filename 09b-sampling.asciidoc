@@ -116,6 +116,24 @@ Each mapper outputs the sampling index of each preserved row as the key, and the
 
 It's essential that you keep the sampling index given by the first pass.
 
+
+=== Sampling Distributions ===
+
+To make a set of uniformly distributed uncorrelated numbers,
+
+For an `n1` by `n2` matrix of numbers,
+
+    matrix = []
+    n_elems = n1 * n2
+    (0..n1).each do |ii|
+      matrix[ii] = row = []
+      (0..n2).each do |jj|
+        row[jj] = digest( ii*n2 + jj ) / n_elems
+      end	 
+    end	 
+
+
+
 === Refs ===
 
 * http://db.cs.berkeley.edu/papers/UCB-PhD-olken.pdf[Random Sampling from Databases], Frank Olken, 1993
