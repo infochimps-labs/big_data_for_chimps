@@ -4,7 +4,6 @@ Santa delivers presents in order as the holidays arrive, racing the sun from New
 
 This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
 
-
 === The Map-Reduce Haiku ===
 
 As you recall, the bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:

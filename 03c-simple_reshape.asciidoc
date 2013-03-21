@@ -1,6 +1,8 @@
 === Close Encounters of the Reindeer Kind (pt 1)
 
-While Santa is busy year-round, his Reindeer spend their multi-month break between holiday seasons pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center] data set: 60,000 documented UFO sightings for a sharp-nosed reindeer to investigate. They'd like to send a team to investigate each sighting based on the category of spacecraft: one team investigates multiple-craft formations, one investigates fireballs, and so on. So the first thing to do is assign each sighting to the right team. Since sixty thousand sightings is much higher than a reindeer can count (only four hooves!), let's help them organize the data. (Sixty thousand is much too small for Hadoop to be justified, but it's the perfect size to learn with.)
+Let's process some real data and, with Santa's modernized gift-handling system in mind, see how Hadoop orchestrates the flow of data from mappers to reducers. 
+
+While Santa is busy year-round, his Reindeer spend their multi-month break between holiday seasons pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center] data set: 60,000 documented UFO sightings for a sharp-nosed reindeer to investigate. They'd like to send a team to investigate each sighting based on the category of spacecraft: one team investigates multiple-craft formations, one investigates fireballs, and so on. So the first thing to do is assign each sighting to the right team. Since sixty thousand sightings is much higher than a reindeer can count (only four hooves!), let's help them organize the data. (Sixty thousand records is much too small for Hadoop to be justified, but it's the perfect size to learn with.)
 
 ==== UFO Sighting Data Model
 
@@ -56,12 +58,12 @@ You can test the mapper on the commandline:
         $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
 	    ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
 	    head -n25 | wu-lign
-	 disk	   1972-06-16T05:00:00Z	1999-03-02T06:00:00Z	Provo (south of), UT     	disk 	several min.   	Str...
-	 sphere	   1999-03-02T06:00:00Z	1999-03-02T06:00:00Z	Dallas, TX 	sphere  	60 seconds     	Whi
-	 triangle  1997-07-03T05:00:00Z	1999-03-09T06:00:00Z	Bochum (Germany), 	triangle	ca. 2min       	Tri
-	 light	   1998-11-19T06:00:00Z	1998-11-19T06:00:00Z	Phoenix (west valley), AZ	light   	15mim          	Whi
-	 triangle  1999-02-27T06:00:00Z	1999-02-27T06:00:00Z	San Diego, CA 	triangle	10 minutes     	cha
-	 triangle  1997-09-15T05:00:00Z	1999-02-17T06:00:00Z	Wedgefield, SC 	triangle	15 min         	Tra
+	 disk	   1972-06-16T05:00:00Z	1999-03-02T06:00:00Z	Provo (south of), UT     	disk     	several min.   	Str...
+	 sphere	   1999-03-02T06:00:00Z	1999-03-02T06:00:00Z	Dallas, TX              	sphere  	60 seconds     	Whi...
+	 triangle  1997-07-03T05:00:00Z	1999-03-09T06:00:00Z	Bochum (Germany),       	triangle	ca. 2min       	Tri...
+	 light	   1998-11-19T06:00:00Z	1998-11-19T06:00:00Z	Phoenix (west valley), AZ	light   	15mim          	Whi...
+	 triangle  1999-02-27T06:00:00Z	1999-02-27T06:00:00Z	San Diego, CA            	triangle	10 minutes     	cha...
+	 triangle  1997-09-15T05:00:00Z	1999-02-17T06:00:00Z	Wedgefield, SC             	triangle	15 min         	Tra...
 	...
 
 The output is simply the partitioning label (UFO shape), followed by the attributes of the signing, separated by tabs. The framework uses the first field to group/sort by default; the rest is cargo.
