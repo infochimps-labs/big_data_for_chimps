@@ -3,13 +3,9 @@
 A full big data application platform has three pieces: Batch processing for results that require the full dataset; Streaming Analytics to process results as they are created;
 Scalable datastore for processing as records are consumed.
 
- (almost uniformly using Hadoop or equivalent); a Scalable datastore (HBase/Cassandra-like and/or Mongo/ElasticSearch/Couchbase-like); and Stream Analytics (Storm+Trident).
-
-
+(almost uniformly using Hadoop or equivalent); a Scalable datastore (HBase/Cassandra-like and/or Mongo/ElasticSearch/Couchbase-like); and Stream Analytics (Storm+Trident).
 
 === Storm
-
-
 
 ==== Reliability
 
@@ -26,8 +22,6 @@ The XOR function is commutative: `A ^ B == B ^ A`, and the XOR of a number with 
 * If the tuple tree is not -- if some one or more tuples are incorrectly acked -- it is exceedingly unlikely the the checksum will be zero.
 
 This lets Storm process millions of tuples in very little memory or processor.
-
-
 
 === Trident
 
@@ -56,8 +50,6 @@ This lets Storm process millions of tuples in very little memory or processor.
 * _Fast data_: recorded live, updates allowed with partial locality or denormalized data
 * _Slow data_: gold data, using global data, full answer.
 
-
-
 === Example lambda architecture: online pagerank
 
 * Start with stable pagerank.
@@ -65,7 +57,6 @@ This lets Storm process millions of tuples in very little memory or processor.
 * Don't worry about any beyond immediate locality
 * Later, batch job re-settles the graph.
 * Pagerank calculation is idempotent: within reason, any perturbed input will settle out.
-* 
 
 === locality in stream
 
@@ -79,9 +70,3 @@ This lets Storm process millions of tuples in very little memory or processor.
 Storm/Trident has buffering and throttling mechanisms built in
 
 Hadoop is designed to drive all system resources to their full limit until the fundamental limiting resource is encountered. 
-
-
-
-
-
-a

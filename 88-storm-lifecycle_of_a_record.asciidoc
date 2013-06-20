@@ -1,27 +1,4 @@
-
-
-
-### References
-
-* http://www.slideshare.net/lukjanovsv/twitter-storm?from_search=1
-
-
-
-
-
-
-### Notes
-
-
-Rates:
-
-* `time head -n 100000 /data/kafka/tmp/jbro/12117633771368057114633.json | bundle exec wu-storm --t X --run=ad_activity  > /mnt/tmp/example_out-100k.log`
-  - 100_000 input records
-  - XX seconds on 1 m3.xlarge core
-  - XX output records
-
-
-
+=== Lifecycle of a Record
 
 
 For the following, assume:
@@ -34,7 +11,7 @@ For the following, assume:
 * Our goal is to get this to be purely CPU-bound, with as much of that CPU as possible dedicated to the wukong-bolt processing.
 * There is effectively no skew in the final group-by stage -- each ES+State bolt gets a uniform fraction of elements from each batch.
 
-__________________________________________________________________________
+==== Steps
 
 * **worker**
   - jvm process launched by the supervisor (the `storm_worker` process)
@@ -43,10 +20,9 @@ __________________________________________________________________________
   - figures out what kafka hosts
   - sends tuple, which influences spout to dispatch a new batch
   - each transaction ID corresponds identically to single trident batch and vice-versa
-  - 
   - Transaction IDs for a given topo_launch are serially incremented globally.
-  
   - knows about Zookeeper /transactional; so it recovers the transaction ID
+
 * **Kafka Spout** -- suppose 6 kafka spouts (3 per worker, 2 workers), reading from 24 partitions
   - each spout would ping 4 partitions assigned to it, pulling in `max_fetch_size` bytes from each: so we would get `12 * max_fetch_size` bytes on each worker, `24 * max_fetch_size` bytes in each batch
   - Each `adact` becomes one kafka message, which becomes exactly one tuple
@@ -56,9 +32,11 @@ __________________________________________________________________________
     - `spout_batch_kb     ~= max_fetch_size * kafka_machines * kpartitions_per_broker / 1024`
     - `spout_batch_tuples ~= spout_batch_kb * 1024 / bytes_per_record`
     - `record_bytes       ~= 1000 bytes`
+
 * **Executor**
   - Each executor is responsible for one bolt
   - so with 3 kafka spouts on a worker, there are three executors spouting
+
 * **Queues between Spout and Wu-Stage**: exec.send/transfer/exec.receive buffers
   - output of each spout goes to its executor send buffer
   - router batches records destined for local executors directly to their receive disruptor Queues, and records destined for _all_ remote workers in a single m-batch into this worker's transfer queue buffer.
@@ -67,19 +45,23 @@ __________________________________________________________________________
   - IMPLICATION: If you can, size the send buffer to be bigger than `(messages/trident batch)/spout` (i.e., so that each executor's portion of a batch fits in it).
   - router in this case recognizes all records are local, so just deposits each m-batch directly in wu-bolt's exec.receive buffer.
   - The contents of the various queues live in memory, as is their wont. IMPLICATION: The steady-state size of all the various buffers should fit in an amount of memory you can afford. The default worker heap size is fairly modest -- ??768 MB??.
+
 * **Wu-bolt** -- suppose 6 wu-bolts (3 per worker, 2 workers)
   - Each takes about `8ms/rec` to process a batch.
   - As long as the pipeline isn't starved, this is _always_ the limit of the flow. (In fact, let's say that's what we mean by the pipeline being starved)
   - with no shuffle, each spout's records are processed serially by single wukong doohickey
   - IMPLICATION: max spout pending must be larger than `(num of wu-bolt executors)` for our use case. (There is controversy about how _much_ larger; initially, we're going to leave this as a large multiple).
+
 * **Queues between Wu stage and State+ES stage**
   - each input tuple to wu-stage results in about 5x the number of output tuples
   - If ??each trident batch is serially processed by exactly one wukong ruby process??, each wu executor outputs `5 * adacts_per_batch`
   - IMPLICATION: size exec.send buffer to hold an wu-stage-batch's worth of output tuples.
+
 * **Group-by guard**
   - records are routed to ES+state bolts uniquely by group-by key.
   - network transfer, and load on the transfer buffer, are inevitable here
   - IMPLICATION: size transfer buffer comfortably larger than `wukong_parallelism/workers_count`
+
 * **ES+state bolt** -- Transactional state with ES-backed cache map.
   - each state batch gets a uniform fraction of aggregables
   - tuple tree for each initial tuple (kafka message) exhausts here, and the transaction is cleared.
@@ -98,201 +80,51 @@ __________________________________________________________________________
   - with opaque transactional, they might be retried in different or shared batches.
 
 
-## Variables
+==== Variables
 
+	  storm_machines               --       4 ~~ .. How fast you wanna go?
+	  kafka_machines               --       4 ~~ .. see `kpartitions_per_broker`
+	  kpartitions_per_broker       --       4 ~~ .. such that `kpartitions_per_broker * kafka_machines` is a strict multiple of `spout_parallelism`.
+	  zookeeper_machines           --       3 ~~ .. three, for reliability. These should be very lightly loaded
+	  workers_per_machine          --       1 ~~ ?? one per topology per machine -- transport between executors is more efficient when it's in-worker
+	  workers_count                --       4 ~~ .. `storm_machines * workers_per_machine`
 
-  storm_machines               --       4 ~~ .. How fast you wanna go?
-  kafka_machines               --       4 ~~ .. see `kpartitions_per_broker`
-  kpartitions_per_broker       --       4 ~~ .. such that `kpartitions_per_broker * kafka_machines` is a strict multiple of `spout_parallelism`.
-  zookeeper_machines           --       3 ~~ .. three, for reliability. These should be very lightly loaded
-  workers_per_machine          --       1 ~~ ?? one per topology per machine -- transport between executors is more efficient when it's in-worker
-  workers_count                --       4 ~~ .. `storm_machines * workers_per_machine`
+	  spouts_per_worker	       --       4 ~~ .. same as `wukongs_per_worker` to avoid shuffle
+	  wukongs_per_worker	       --       4 ~~ .. `cores_per_machine / workers_per_machine` (or use one less than cores per machine)
+	  esstates_per_worker          --       1 ~~ .. 1 per worker: large batches distill aggregates more, and large ES batch sizes are more efficient, and this stage is CPU-light.
+	  shuffle between spout and wu --   false ~~ .. avoid network transfer
 
-  spouts_per_worker	       --       4 ~~ .. same as `wukongs_per_worker` to avoid shuffle
-  wukongs_per_worker	       --       4 ~~ .. `cores_per_machine / workers_per_machine` (or use one less than cores per machine)
-  esstates_per_worker          --       1 ~~ .. 1 per worker: large batches distill aggregates more, and large ES batch sizes are more efficient, and this stage is CPU-light.
-  shuffle between spout and wu --   false ~~ .. avoid network transfer
+	  spout_parallelism	       --       4 ~~ .. `workers_count * spouts_per_worker`
+	  wukong_parallelism	       --      16 ~~ .. `workers_count * wukongs_per_worker`
+	  esstate_parallelism          --       4 ~~ .. `workers_count * esstates_per_worker`
 
-  spout_parallelism	       --       4 ~~ .. `workers_count * spouts_per_worker`
-  wukong_parallelism	       --      16 ~~ .. `workers_count * wukongs_per_worker` 
-  esstate_parallelism          --       4 ~~ .. `workers_count * esstates_per_worker`
+	  wu_batch_ms_target           --     800 ~~ .. 800ms processing time seems humane. Choose high enough to produce efficient batches, low enough to avoid timeouts, and low enough to make topology launch humane.
+	  wu_tuple_ms                  --       8 ~~ .. measured average time for wu-stage to process an adact
+	  adact_record_bytes           --    1000 ~~ .. measured average adact bytesize.
+	  aggregable_record_bytes      --     512 ~~ ?? measured average aggregable bytesize.
+	  spout_batch_tuples           --    1600 ~~ .? `(wu_batch_ms_target / wu_tuple_ms) * wukong_parallelism`
+	  spout_batch_kb               --    1600 ~~ .. `spout_batch_tuples * record_bytes / 1024`
+	  fetch_size_bytes             -- 100_000 ~~ .. `spout_batch_kb * 1024 / (kpartitions_per_broker * kafka_machines)`
 
-  wu_batch_ms_target           --     800 ~~ .. 800ms processing time seems humane. Choose high enough to produce efficient batches, low enough to avoid timeouts, and low enough to make topology launch humane.
-  wu_tuple_ms                  --       8 ~~ .. measured average time for wu-stage to process an adact
-  adact_record_bytes           --    1000 ~~ .. measured average adact bytesize.
-  aggregable_record_bytes      --     512 ~~ ?? measured average aggregable bytesize.
-  spout_batch_tuples           --    1600 ~~ .? `(wu_batch_ms_target / wu_tuple_ms) * wukong_parallelism`
-  spout_batch_kb               --    1600 ~~ .. `spout_batch_tuples * record_bytes / 1024` 
-  fetch_size_bytes             -- 100_000 ~~ .. `spout_batch_kb * 1024 / (kpartitions_per_broker * kafka_machines)`
+	  wukong_batch_tuples          --    8000 ~~ ?? about 5 output aggregables per input adact
+	  wukong_batch_kb              --      xx ~~ ?? each aggregable is about yy bytes
 
-  wukong_batch_tuples          --    8000 ~~ ?? about 5 output aggregables per input adact
-  wukong_batch_kb              --      xx ~~ ?? each aggregable is about yy bytes
+	  pending_ratio                --       2 ~~ .. ratio of pending batch slots to workers; must be comfortably above 1, but small enough that `adact_batch_kb * max_spout_pending << worker_heap_size`
+	  max_spout_pending            --      32 ~~ .. `spout_pending_ratio * wukong_parallelism`
 
-  pending_ratio                --       2 ~~ .. ratio of pending batch slots to workers; must be comfortably above 1, but small enough that `adact_batch_kb * max_spout_pending << worker_heap_size`
-  max_spout_pending            --      32 ~~ .. `spout_pending_ratio * wukong_parallelism`
+	  worker_heap_size_mb          --     768 ~~ .. enough to not see GC activity in worker JVM. Worker heap holds counting cache map, max_spout_pending batches, and so forth
+	  counting_cachemap_slots      --   65535 ~~ .. enough that ES should see very few `exists` GET requests (i.e. very few records are evicted from counting cache)
 
-  worker_heap_size_mb          --     768 ~~ .. enough to not see GC activity in worker JVM. Worker heap holds counting cache map, max_spout_pending batches, and so forth
-  counting_cachemap_slots      --   65535 ~~ .. enough that ES should see very few `exists` GET requests (i.e. very few records are evicted from counting cache)
+	  executor_send_slots	       --   16384 ~~ .. (messages)  larger than (output tuples per batch per executor). Must be a power of two.
+	  transfer_buffer_mbatches     --      32 ~~ ?? (m-batches) ?? some function of network latency/thruput and byte size of typical executor send buffer. Must be a power of two.
+	  executor_receive_mbatches    --   16384 ~~ ?? (m-batches) ??. Must be a power of two.
+	  receiver_buffer_mbatches     --       8 ~~ .. magic number, leave at 8. Must be a power of two.
 
-  executor_send_slots	       --   16384 ~~ .. (messages)  larger than (output tuples per batch per executor). Must be a power of two.
-  transfer_buffer_mbatches     --      32 ~~ ?? (m-batches) ?? some function of network latency/thruput and byte size of typical executor send buffer. Must be a power of two.
-  executor_receive_mbatches    --   16384 ~~ ?? (m-batches) ??. Must be a power of two.
-  receiver_buffer_mbatches     --       8 ~~ .. magic number, leave at 8. Must be a power of two.
+	  trident_batch_ms             --     100 ~~ .. small enough to ensure continuous processing
+	  spout_sleep_ms               --      10 ~~ .. small enough to ensure continuous processing; in development, set it large enough that you're not spammed with dummy transactions (eg 2000ms)
 
-  trident_batch_ms             --     100 ~~ .. small enough to ensure continuous processing
-  spout_sleep_ms               --      10 ~~ .. small enough to ensure continuous processing; in development, set it large enough that you're not spammed with dummy transactions (eg 2000ms)
+	  scheduler                    --    isol ~~ .. Do not run multiple topologies in production without this
 
-  scheduler                    --    isol ~~ .. Do not run multiple topologies in production without this
+==== Refs
 
-
-
-
-__________________________________________________________________________
-
-### Processing rate
-
-
-Wed May 29 21:03:34 UTC 2013
-Wed May 29 21:03:34 UTC 2013
-Wed May 29 21:03:34 UTC 2013
-Wed May 29 21:03:34 UTC 2013
-real	3m8.414s	user	2m49.599s	sys	0m3.268s	pct	91.75	Wed May 29 21:06:43 UTC 2013
-real	3m9.107s	user	2m50.151s	sys	0m3.104s	pct	91.62	Wed May 29 21:06:43 UTC 2013
-real	3m9.379s	user	2m50.863s	sys	0m3.112s	pct	91.87	Wed May 29 21:06:44 UTC 2013
-real	3m9.482s	user	2m50.879s	sys	0m3.228s	pct	91.88	Wed May 29 21:06:44 UTC 2013
-
-
-
-__________________________________________________________________________
-
-12ms/record on an m3.xlarge, 4 wu-storm processes (and all storm thingies going) for ruby part alone
-
-
-
-			bytes		recs		bytes/rec
-	wu-input	119_081_037	100_000		1191	
-	wu-output	286_225_148     703_870		 407
-	expansion	2.4		6
-
-
-Inputs:
-
-	100000 119081037 /data/kafka/tmp/jbro/sample-100k-a.json
-	100000 118273288 /data/kafka/tmp/jbro/sample-100k-b.json
-	100000 118081560 /data/kafka/tmp/jbro/sample-100k-c.json
-	100000 117187475 /data/kafka/tmp/jbro/sample-100k-d.json
-	400000 472623360 total
-
-Runs:
-
-	date ; for foo in a b c d ; do ( time cat /data/kafka/tmp/jbro/sample-100k-${foo}.json | bundle exec wu-storm --t X --run=ad_activity  > /mnt/tmp/output-100k-${foo}.log ; date ) & done
-
-
-
-	1_000:                                                                                Tue May 28 10:24:46 UTC 2013
-	real	0m18.550s	user	0m12.453s	sys	0m0.684s	pct	70.81 Tue May 28 10:25:05 UTC 2013
-	real	0m18.567s	user	0m12.413s	sys	0m0.724s	pct	70.75 Tue May 28 10:25:05 UTC 2013
-	real	0m18.612s	user	0m12.437s	sys	0m0.776s	pct	70.99 Tue May 28 10:25:05 UTC 2013
-	real	0m18.646s	user	0m12.377s	sys	0m0.736s	pct	70.32 Tue May 28 10:25:05 UTC 2013
-
-	10_000:                                                                               Tue May 28 10:27:04 UTC 2013
-	real	2m7.209s	user	1m30.598s	sys	0m3.456s	pct	73.93 Tue May 28 10:29:11 UTC 2013
-	real	2m7.639s	user	1m30.930s	sys	0m3.532s	pct	74.00 Tue May 28 10:29:12 UTC 2013
-	real	2m7.698s	user	1m31.002s	sys	0m3.488s	pct	73.99 Tue May 28 10:29:12 UTC 2013
-	real	2m8.329s	user	1m31.222s	sys	0m3.544s	pct	73.84 Tue May 28 10:29:13 UTC 2013
-
-	Output:
-	 70688  28808197 /mnt/tmp/output-100k-a.log 
-	 69761  28344156 /mnt/tmp/output-100k-b.log 
-	 70551  28734788 /mnt/tmp/output-100k-c.log 
-	 70411  28736033 /mnt/tmp/output-100k-d.log 
-	281411 114623174 total
-
-	100_000:                                                                             	Tue May 28 10:34:33 UTC 2013
-	real	20m39.650s	user	14m33.143s	sys	0m31.214s	pct	72.95	Tue May 28 10:55:12 UTC 2013
-	real	20m40.820s	user	14m36.363s	sys	0m31.354s	pct	73.15	Tue May 28 10:55:13 UTC 2013
-	real	20m43.229s	user	14m38.983s	sys	0m30.238s	pct	73.13	Tue May 28 10:55:16 UTC 2013
-	real	20m43.399s	user	14m38.811s	sys	0m30.438s	pct	73.12	Tue May 28 10:55:16 UTC 2013
-	
-
-	Tue May 28 10:34:34 UTC 2013	     0         0	      0         0	      0         0	      0         0	       0         0 total
-	Tue May 28 10:34:44 UTC 2013	  3530   1436854	   3489   1423574	   3482   1419467	   3603   1467591	   14104   5747486 total
-	Tue May 28 10:34:54 UTC 2013	  9297   3790671	   9280   3788196	   9348   3804720	   9376   3824006	   37301  15207593 total
-	Tue May 28 10:35:04 UTC 2013	 14586   5949461	  14547   5925338	  14725   6002799	  14798   6042686	   58656  23920284 total
-	Tue May 28 10:35:14 UTC 2013	 20382   8301923	  20057   8161376	  20349   8295959	  20386   8320141	   81174  33079399 total
-	Tue May 28 10:35:24 UTC 2013	 26198  10687813	  25819  10508579	  26182  10669642	  26183  10691170	  104382  42557204 total
-	Tue May 28 10:35:34 UTC 2013	 32127  13104319	  31567  12831000	  31945  13020965	  31933  13034141	  127572  51990425 total
-	Tue May 28 10:35:44 UTC 2013	 37905  15453177	  37288  15145787	  37748  15381901	  37630  15362998	  150571  61343863 total
-	Tue May 28 10:35:55 UTC 2013	 43744  17831850	  43021  17468950	  43572  17755188	  43424  17727099	  173761  70783087 total
-	Tue May 28 10:36:05 UTC 2013	 49315  20102027	  48413  19666964	  49016  19969067	  48973  19993084	  195717  79731142 total
-	Tue May 28 10:36:15 UTC 2013	 54849  22358342	  54060  21962733	  54587  22234535	  54650  22305008	  218146  88860618 total
-	Tue May 28 10:36:25 UTC 2013	 60398  24630338	  59527  24182685	  59973  24434309	  60108  24538465	  240006  97785797 total
-	Tue May 28 10:36:35 UTC 2013	 66202  26981557	  65200  26489691	  65550  26706283	  65834  26865793	  262786 107043324 total
-	Tue May 28 10:36:45 UTC 2013	 72015  29348823	  70944  28819589	  71286  29037221	  71691  29267322	  285936 116472955 total
-	Tue May 28 10:36:55 UTC 2013	 77823  31728711	  76736  31164722	  77061  31386885	  77604  31690911	  309224 125971229 total
-	Tue May 28 10:37:05 UTC 2013	 83404  34000111	  82255  33420316	  82645  33656903	  83235  33993334	  331539 135070664 total
-	Tue May 28 10:37:15 UTC 2013	 89144  36309256	  88096  35806821	  88408  36008675	  89067  36384179	  354715 144508931 total
-	Tue May 28 10:37:25 UTC 2013	 94904  38619772	  93928  38180989	  94256  38386263	  94951  38786458	  378039 153973482 total
-	Tue May 28 10:37:35 UTC 2013	100604  40896118	  99732  40553285	 100080  40758706	 100848  41194539	  401264 163402648 total
-	Tue May 28 10:37:45 UTC 2013	106360  43209593	 105546  42922618	 105832  43109183	 106629  43549223	  424367 172790617 total
-	Tue May 28 10:37:55 UTC 2013	112059  45519708	 111368  45298313	 111557  45455679	 112279  45852542	  447263 182126242 total
-	Tue May 28 10:38:05 UTC 2013	117549  47718578	 116999  47596013	 117226  47755401	 117992  48201728	  469766 191271720 total
-	Tue May 28 10:38:16 UTC 2013	123336  50064136	 122668  49901921	 122977  50061779	 123769  50559769	  492750 200587605 total
-	Tue May 28 10:38:26 UTC 2013	129167  52416895	 128487  52266351	 128635  52320147	 129542  52924115	  515831 209927508 total
-	Tue May 28 10:38:36 UTC 2013	135082  54815601	 134305  54642517	 134283  54578408	 135329  55262577	  538999 219299103 total
-	Tue May 28 10:38:46 UTC 2013	140835  57142447	 140004  56966516	 139931  56853590	 141051  57575334	  561821 228537887 total
-	Tue May 28 10:38:56 UTC 2013	146566  59466227	 145907  59371642	 145856  59254501	 146819  59903276	  585148 237995646 total
-	Tue May 28 10:39:06 UTC 2013	152288  61784667	 151560  61667362	 151623  61600351	 152547  62226261	  608018 247278641 total
-	Tue May 28 10:39:16 UTC 2013	158250  64219877	 157075  63926650	 157256  63893382	 158177  64507732	  630758 256547641 total
-	Tue May 28 10:39:26 UTC 2013	164088  66610468	 162879  66293282	 163131  66285336	 164073  66909374	  654171 266098460 total
-	Tue May 28 10:39:36 UTC 2013	169959  69017305	 168658  68642273	 168992  68672955	 169923  69288602	  677532 275621135 total
-	Tue May 28 10:39:47 UTC 2013	175828  71413818	 174372  70962196	 174678  70984183	 175816  71697345	  700694 285057542 total
-	Tue May 28 10:39:57 UTC 2013	181737  73826393	 180278  73358375	 180420  73299948	 181556  74032722	  723991 294517438 total
-	Tue May 28 10:40:07 UTC 2013	187010  75951980	 185490  75473541	 185558  75378509	 186751  76136333	  744809 302940363 total
-	Tue May 28 10:40:17 UTC 2013	192818  78305993	 191328  77842848	 191190  77655159	 192422  78446775	  767758 312250775 total
-	Tue May 28 10:40:27 UTC 2013	198662  80674893	 197152  80217184	 197024  80010793	 198219  80817722	  791057 321720592 total
-	Tue May 28 10:40:37 UTC 2013	204494  83040455	 203049  82615975	 202848  82383465	 204155  83246916	  814546 331286811 total
-	Tue May 28 10:40:47 UTC 2013	210233  85382037	 208865  84984018	 208713  84765795	 209998  85632560	  837809 340764410 total
-	Tue May 28 10:40:58 UTC 2013	216217  87824507	 214743  87372744	 214551  87141929	 215810  88006484	  861321 350345664 total
-	Tue May 28 10:41:08 UTC 2013	221934  90152584	 220349  89650862	 220181  89434347	 221397  90278025	  883861 359515818 total
-	Tue May 28 10:41:18 UTC 2013	227761  92520943	 226092  91994865	 226079  91829544	 227267  92668754	  907199 369014106 total
-	Tue May 28 10:41:28 UTC 2013	233612  94896555	 231944  94384388	 231765  94142593	 232977  94977556	  930298 378401092 total
-	Tue May 28 10:41:38 UTC 2013	239436  97281414	 237804  96782848	 237627  96530099	 238812  97351784	  953679 387946145 total
-	Tue May 28 10:41:48 UTC 2013	244931  99527035	 243432  99077896	 243274  98827251	 244482  99654737	  976119 397086919 total
-	Tue May 28 10:41:59 UTC 2013	250569 101826557	 248850 101282096	 248816 101078875	 250172 101962427	  998407 406149955 total
-	Tue May 28 10:42:09 UTC 2013	255999 104045210	 254461 103574364	 254342 103327119	 255799 104250169	 1020601 415196862 total
-	Tue May 28 10:42:19 UTC 2013	261826 106428239	 260278 105951116	 260246 105734265	 261690 106649321	 1044040 424762941 total
-	Tue May 28 10:42:29 UTC 2013	267856 108899132	 266058 108298921	 266027 108092195	 267536 109045701	 1067477 434335949 total
-	Tue May 28 10:42:39 UTC 2013	273857 111354450	 271886 110666740	 271859 110458586	 273460 111460894	 1091062 443940670 total
-	Tue May 28 10:42:50 UTC 2013	279560 113676542	 277747 113048690	 277816 112894866	 279260 113809961	 1114383 453430059 total
-	Tue May 28 10:43:00 UTC 2013	285567 116125774	 283436 115364260	 283609 115255590	 285092 116154178	 1137704 462899802 total
-	Tue May 28 10:43:10 UTC 2013	291413 118503969	 289271 117743857	 289338 117600138	 290767 118447001	 1160789 472294965 total
-	Tue May 28 10:43:20 UTC 2013	297237 120886290	 295167 120158393	 295175 119981911	 296702 120856793	 1184281 481883387 total
-	Tue May 28 10:43:30 UTC 2013	303197 123306945	 300952 122521747	 301049 122370754	 302514 123230591	 1207712 491430037 total
-	Tue May 28 10:43:41 UTC 2013	309097 125718084	 306866 124927880	 306921 124761428	 308480 125668027	 1231364 501075419 total
-	Tue May 28 10:43:51 UTC 2013	314986 128129471	 312804 127370029	 312853 127190865	 314359 128052912	 1255002 510743277 total
-	Tue May 28 10:44:01 UTC 2013	320985 130585642	 318605 129740784	 318697 129587782	 320034 130351976	 1278321 520266184 total
-	Tue May 28 10:44:11 UTC 2013	326870 132972587	 324416 132092895	 324592 131996226	 325789 132684098	 1301667 529745806 total
-	Tue May 28 10:44:21 UTC 2013	332805 135386357	 330402 134520856	 330539 134426379	 331652 135068932	 1325398 539402524 total
-	Tue May 28 10:44:32 UTC 2013	338806 137824031	 336116 136824594	 336437 136828788	 337449 137413784	 1348808 548891197 total
-	Tue May 28 10:44:42 UTC 2013	344594 140181223	 342079 139241341	 342326 139235232	 343329 139805272	 1372328 558463068 total
-	Tue May 28 10:44:52 UTC 2013	350623 142630250	 347949 141628969	 348183 141623298	 349200 142196485	 1395955 568079002 total
-	Tue May 28 10:45:02 UTC 2013	356262 144922014	 353182 143759191	 353605 143830621	 354475 144345126	 1417524 576856952 total
-	Tue May 28 10:45:13 UTC 2013	362098 147296003	 359195 146219740	 359544 146244291	 360433 146781003	 1441270 586541037 total
-	Tue May 28 10:45:23 UTC 2013	368033 149720795	 365143 148651687	 365373 148619179	 366446 149233931	 1464995 596225592 total
-
-
-
-64540	Tue May 28 06:19:37 UTC 2013
-68150	Tue May 28 06:19:41 UTC 2013
-79801	Tue May 28 06:19:53 UTC 2013
-161139	Tue May 28 06:21:20 UTC 2013
-235486	Tue May 28 06:22:39 UTC 2013
-292173	Tue May 28 06:23:38 UTC 2013
-361488	Tue May 28 06:24:53 UTC 2013
-
-teapot-att-0 ~/ics/client/spongecell-deploy$ time head -n 100000 /data/kafka/tmp/jbro/12117633771368057114633.json | bundle exec wu-storm --t X --run=ad_activity  > /mnt/tmp/example_out-100k.log
-real	12m36.988s	user	10m42.628s	sys	0m41.387s	pct	90.36
-teapot-att-0 ~/ics/client/spongecell-deploy$ time head -n 100000 /data/kafka/tmp/jbro/12117633771368057114633.json | bundle exec wu-storm --t X --run=ad_activity  > /mnt/tmp/example_out-100kb.log
-real	12m39.087s	user	10m43.864s	sys	0m42.143s	pct	90.37
-
+* http://www.slideshare.net/lukjanovsv/twitter-storm?from_search=1

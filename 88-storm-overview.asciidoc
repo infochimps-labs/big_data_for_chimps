@@ -27,8 +27,6 @@ spout emits batches; these succeed or fail as a whole. (That's because they're p
 
 ==== Group-by
 
-
-
 ==== Transactional State
 
 * the state doesn't ask the cache to fetch until it has a whole batches' worth of records to hand over. This is trident logic, not storm.
