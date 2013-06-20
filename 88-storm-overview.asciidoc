@@ -1,0 +1,151 @@
+
+
+=== Trident Lifecycle
+
+Trident:
+* exactly once processing
+* transactional db support
+* layer on the flow DSL
+* some primitive aggregators
+
+==== Coordinator
+
+* coordinator is secretly the spout
+* at trident batch delay period, will emit a transaction tuple
+* it has a serially incrementing transaction ID, kept forever even across restarts.
+* (We're only going to talk about Opaque Transactional topologies; more on that later)
+
+==== Spout
+
+spout emits batches; these succeed or fail as a whole. (That's because they're part of the Storm tuple tree of the coordinator's seed tuple).
+
+==== Processors
+
+* tuples in batches are freely processed in parallel and asynchronously unless there are barriers (eg the state after the group by)
+* In this case, Processor emits aggregable records
+
+
+==== Group-by
+
+
+
+==== Transactional State
+
+* the state doesn't ask the cache to fetch until it has a whole batches' worth of records to hand over. This is trident logic, not storm.
+* Those "aggregables" are reduced into rolled-up aggregates. So you might have 2500 inbound records that result in 900 distinct aggregates. (If you had eight aggregables [A, A, C, A, B, D, B, A] you would get four partial aggregates {A: 4, B: 2, C: 1, D: 1}. 
+* It's clever about doing partial aggregates ("algebraic" reducers).
+
+
+* It looks in the cache for the old total count. Anything that isn't there it fetches from the database. This lets you do efficient batch requests, a huge scalability boon.
+* Once the cache is fresh, it determines the next aggregated value and writes it to the cache and to the DB, then ack()s the batch (all the tuples in the batch, really).
+* If a batch had 900 aggregates, and it had prior counts for 250 of them, then it will _read_ 650 records and _write_ 900. It always does a put for every new observed count.
+
+* ¡Note!: The database writes do *not* have to be transactional. It's the whole thing -- the whole batch, end-to-end -- that has to have transactional integrity, not just the DB code.
+
+===== Ensuring Transactional reliability
+
+
+Let's say for transaction ID 69 the old aggregated values were `{A:20, B: 10, C: 1, D: 0}`, and new  aggregated values were `{A: 24, B: 12, C: 2, D: 1}`. 
+
+It stores (TODO: verify order of list):
+
+   {A: [24, 20, 69], B: [12, 10, 69], C: [2, 1, 69], D: [1, 0, 69]}
+
+If I am processing batch 
+
+Since this is a _State_, you have contractual obligation from Trident that batch 69 will *not* be processed until and unless batch 68 has succeeded. 
+
+So when I go to read from the DB, I will usually see something like
+
+   {A: [20, ??, 68], B: [10, ??, 68], C: [1, ??, 68]}
+
+I might instead however see
+
+  {A: [??, 20, 69], B: [??, 10, 69], C: [??, 1, 69], D: [??, 0, 69]}
+
+This means another attempt has been here: maybe it succeeded but was slow; maybe it failed; maybe _I_ am the one who is succeeding but slow. In any case, I don't know whether to trust the _new_ (first slot) values for this state, but I do know that I can trust the prior (second slot) values saved from batch 68. I just use those, and clobber the existing values with my new, correct counts.
+
+===== Kinds of State
+
+* non-transactional: batching behavior only
+* transactional: exactly once; batches are always processed in whole
+* opaque transactional: all records are processed, but might not be in same batches
+
+
+=== Concepts
+
+
+__Topology-level objects__
+
+
+* __Bolt__ -- topology-level object.
+
+  - contract:
+    - `execute` is called
+    - you may call `emit` zero one or many times,
+    - and then you must call either `ack` or `fail`
+    - so, execute method _must_ be synchronous (blocking calls). No fair suspending yourself and returning from execute for some later ackness or failness. That's Storm's job.
+      - TODO: verify.
+
+
+__Physical-level objects__
+
+* __Supervisor__
+  - hosts worker
+  - has many workers
+* __Worker__
+  - has many executors, belongs to supervisor
+  - role:
+    - hosts zmq sockets
+    - accepts inbound tuples from other workers (worker receive queue)
+    - dispatches outbound tuples to other workers (worker transfer queue)
+    - (other stuff)
+
+* __Executors__
+  - belongs to executor; has one bolt/spout
+  - role:
+    - accepts inbound tuples (executor receive queue)
+    - dispatches outbound tuples (executor send queue)
+  - each executor is one single thread
+   - calls tasks serially
+* __Tasks__ --
+  - belongs to executor; has one bolt/spout
+  - physical expression of the bolt or spout
+  - in Storm, can set many tasks per executor -- when you want to scale out (TODO: verify). (in Trident, left at one per; TODO: can this be changed?)
+  - 
+
+  
+* __Router__
+  
+
+From documentation:
+
+	An executor is a thread that is spawned by a worker process. It may run one or more tasks for the same component (spout or bolt).
+
+	A task performs the actual data processing — each spout or bolt that you implement in your code executes as many tasks across the cluster. The number of tasks for a component is always the same throughout the lifetime of a topology, but the number of executors (threads) for a component can change over time. This means that the following condition holds true: #threads ≤ #tasks. By default, the number of tasks is set to be the same as the number of executors, i.e. Storm will run one task per thread.
+
+==== Numerology
+
+The following should be even multiples:
+
+* `N_w` workers per machine. (one if you're only running one topology)
+* `N_spouts` per
+  - `N_partitions_per_spout` -- even number of partitions per spout
+  
+* Don't change multiplicity lightly
+  - it will route directly
+  - don't really understand how/when/why yet
+
+
+* Parallelism hint is a hint --
+  - can get more never less (TODO: verify)
+
+
+==== Tuple handling internals
+
+==== Queues
+
+* executor send buffer
+* executor receive buffer
+* worker receive buffer
+* worker transfer buffer
