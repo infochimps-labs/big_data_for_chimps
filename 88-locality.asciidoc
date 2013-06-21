@@ -1,9 +1,18 @@
 === Three legs of the big data stack
 
-A full big data application platform has three pieces: Batch processing for results that require the full dataset; Streaming Analytics to process results as they are created;
-Scalable datastore for processing as records are consumed.
+In early 2012, my company (Infochimps) began selling our big data stack to enterprise companies. At first, clients came to us with the word Hadoop on their lips and a flood of data on their hands -- yet what consistently emerged as the right solution was an initial implementation using streaming data analytics into a scalable datastore, and a follow-on installment of Hadoop once their application reached scale. From nowhere on their radar last year, we now hear requests for Storm by name. I've seen Hadoop's historically fast growth from open-source product with momentum in 2008 to foundational enterprise technology in 2013, and can attest that the rate of adoption for streaming analytics (and Storm+Trident in particular) looks to be even faster. 
 
-(almost uniformly using Hadoop or equivalent); a Scalable datastore (HBase/Cassandra-like and/or Mongo/ElasticSearch/Couchbase-like); and Stream Analytics (Storm+Trident).
+It's become clear that a big data application platform should have three legs: streaming analytics, to process records as they are created; one or more scalable databases, for processing records as they are consumed; and batch processing, for results that require the full dataset. 
+
+The workflow described in this book unifies and simplifies the streaming data and Hadoop frameworks without limiting their fundamental power. We use wukong (Ruby) for direct transformations of records, and high-level DSLs (Pig for Hadoop, Trident for streaming) to orchestrate structural transformations of datasets. This lets the data scientist focus on their data and problem domain, not on the low-level complexity of the half-dozen APIs otherwise involved.
+
+For both Storm+Trident and Hadoop, our intent is to demonstrate
+
+1. a pattern language for orchestrating the global structural changes efficiently,
+2. practical instruction and street-fighting techniques for data science as it's done
+3. real-data, real-problem case studies to demonstrate the above
+
+These overlap far more than you might expect, and the hard part reamins the same: understanding 'locality' and how to deal with data dispersed across hundreds of machines. (In fact, a map-reduce job is simply a certain type of especially bursty dataflow.) Storm+Trident introduces a second DSL for describing that process, but the hard part is what script to write, not the writing of the script. The chapter on statistics will simplify in scope but describe both global and streaming algorithms for statistical summaries. The chapter on time series algorithms will be scaled back to simply being anomaly detection ("trending topics" detection), and presented using Storm+Trident. Third, we'll repurpose material from the log processing and the machine learning chapters to demonstrate an end-to-end big data application that combines Hadoop, Storm+Trident and HBase to make efficient online recommendations for a large-scale web application. The major additions are a chapter on tuning and on the internals of Storm+Trident.
 
 === Storm
 
