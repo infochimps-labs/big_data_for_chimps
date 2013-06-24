@@ -1,3 +1,9 @@
+=== Questions
+
+* how many ackers (per worker? per topology?)
+* when is ack sent; what are parts of the ack checksummer inputs; what is checksum called
+* how does it decide batch is done yet ack is overdued
+* what happens if ack twice?
 
 
 === Trident Lifecycle
