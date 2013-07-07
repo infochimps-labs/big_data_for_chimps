@@ -66,7 +66,32 @@ At the heart
 
 Unlike the transfer and the executor queues, the worker's receive buffer is a ZeroMQ construct, not a disruptor queue
 
-===== Acking
+==== Acking In Storm
+
+* Noah is processed, produces Ham and Shem. Ack clears Noah, implicates Ham and Shem
+* Shem is processed, produces Abe. Ack clears Shem, implicates Abe
+* Ham is processed, produces non;e. Ack clears Ham
+
+
+* Alice does a favor for Bob and Charlie. Alice is now in the clear; Bob and Charlie owe
+* 
+
+
+* For every record generated, send it to the acker
+* Who keeps it in a table
+* For every record completed, send it to the acker
+* Who removes it from the table
+* Maintain tickets in a tree structure so you know what to retry
+
+Instead,
+
+* When the tuple tree is created, send an ack-init: the clan id along with its edge checksum
+* When each tuple is successfully completed, send an ack holding two sixty-four bit numbers: the tupletree id, and the XOR of its edge id and all the edge ids it generated. Do this for each of its tupletree ids.
+* The acker holds a single O(1) lookup table
+    - it's actually a set of lookup tables: current, old and dead. new tuple trees are added to the current bucket; every timeout number of seconds, current becomes old, and old becomes dead -- they are declared failed and their records retried.
+* The spout holds the original tuple until it receives notice from the acker. The spout won't fetch more than the max-pending number of tuples: this is to protect the spout against memory pressure , and the downstream system against congestion.
+
+
 
 When a tuple is born in the spout,
 
