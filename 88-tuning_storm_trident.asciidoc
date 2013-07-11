@@ -1,4 +1,4 @@
-=== Tuning Storm+Trident
+==== Tuning Storm+Trident
 
 Tuning a dataflow system is easy: 
 
@@ -36,7 +36,7 @@ Outline:
   - if possible, just transmit its metadata as the record, and transfer the blob out-of-band to the local filesystem: you want to do this at max network speed and not interfere with control flow
   - if you can't do this, you may have to attend to the zmq high-water mark. Also evaluate the new netty transport -- it's very recent, so expect bugs, but it's but much more tunable and transparent.
   
-==== Goal
+===== Goal
 
 First, identify your principal goal: latency, throughput, memory or cost. We'll just discuss latency and throughput as goals -- tuning for cost means balancing the throughput (records/hour per machine) and cost of infrastructure (amortized $/hour per machine), so once you've chosen your hardware, tuning for cost is equivalent to tuning for throughput. I'm also going to concentrate on typical latency/throughput, and not on variance or 99th percentile figures or somesuch.
 
@@ -50,7 +50,7 @@ The principal bottleneck may be:
 * _remote rate bottleneck bound_: alternatively, you may be calling an external resource that imposes a maximum throughput out of your control. A legacy datastore might only be able to serve a certain volume of requests before its performance degrades, or terms-of-service restrictions from a third-party web API (Google's Geolocation API.)
 * _memory_: large windowed joins or memory-intensive analytics algorithms may require so much RAM it defines the machine characteristics
 
-==== Initial tuning
+===== Initial tuning
 
 If you're memory-bound, use machines with lots of RAM. Otherwise, start tuning on a machine with lots of cores and over-provision the RAM, we'll optimize the hardware later.
 
@@ -65,7 +65,7 @@ For a CPU-bound flow:
 
 Once you have roughly dialed in the batch size and parallelism, check in with the First Rule. The stages upstream of your principal bottleneck should always have records ready to process. The stages downstream should always have capacity to accept and promptly deliver processed records.
 
-==== Provisioning
+===== Provisioning
 
 Use one worker per topology per machine: storm passes tuples directly from sending executor to receiving executor if they're within the same worker. Also set number of ackers equal to number of workers -- the default of one per topology never makes sense (future versions of Storm will fix this).
 
@@ -75,12 +75,12 @@ For CPU-bound stages, set one executor per core for the bounding stage (or one l
 
 For map states or persistentAggregates -- things where results are accumulated into memory structures -- allocate one stage per worker. Cache efficiency and batch request overhead typically improve with large record set sizes.
 
-===== Concurrency Bound
+====== Concurrency Bound
 
 In a concurrency bound problem, use very high parallelism
 If possible, use a QueryFunction to combine multiple queries into a batch request.
 
-===== Sidebar: Little's Law
+====== Sidebar: Little's Law
 
 * `Throughput (recs/s) = Capacity / Latency`
 * you can't have better throughput than the collective rate of your slowest stage;
@@ -91,17 +91,17 @@ If all records must pass through a stage that handles 10 records per second, the
 * with 20 parallel stages, the 95th percentile latency of your slowest stage becomes the median latency of the full set. (TODO: nail down numbers)
 
 
-==== Batch Size
+===== Batch Size
 
 Set the batch size to optimize the throughput of your most expensive batch operation -- a bulk database operation, network request, or intensive aggregation. (There might instead be a natural batch size: for example the twitter `users/lookup` API call returns information on up to 100 distinct user IDs.)
 
-===== Kafka Spout: Max-fetch-bytes
+====== Kafka Spout: Max-fetch-bytes
 
 The batch count for the Kafka spout is controlled indirectly by the max fetch bytes. The resulting total batch size is at most `(kafka partitions) * (max fetch bytes)`.
 
 For example, given a topology with six kafka spouts and four brokers with three kafka-partitions per broker, you have twelve kafka-partitions total, two per spout. When the MBCoordinator calls for a new batch, each spout produces two sub-batches (one for each kafka-partition), each into its own trident-partition. Now also say you have records of 1000 +/- 100 bytes, and that you set max-fetch-bytes to 100_000. The spout fetches the largest discrete number of records that sit within max-fetch-bytes -- so in this case, each sub-batch will have between 90 and 111 records. That means the full batch will have between 1080 and 1332 records, and 1_186_920 to 1_200_000 bytes.
 
-===== Choosing a value
+====== Choosing a value
 
 * `each()` functions should not care about batch size.
 * `partitionAggregate`, `partitionPersist`, `partitionQuery` do.
@@ -114,13 +114,13 @@ Typically, you'll find that there are three regimes:
 
 Since the execution time increases slowly in case (2), you get better and better records-per-second throughput. Choose a value that is near the top range of (2) but comfortably less than regime (3).
 
-===== Executor send buffer size
+====== Executor send buffer size
 
 Don't worry about this setting until most other things stabilize -- it's mostly important for ensuring that a burst of records doesn't clog the send queue.
 
 Set the executor send buffer to be larger than the batch record count of the spout or first couple stages. Since it applies universally, don't go crazy with this value. It has to be an even power of two (1024, 2048, 4096, 8192, 16384).
 
-==== Garbage Collection and other JVM options
+===== Garbage Collection and other JVM options
 
 Our worker JVM options:
 
@@ -168,7 +168,7 @@ notes from ES tuning:  https://gist.github.com/mrflip/5366376#file-20130416-todo
 * Useful for monitoring are -XX:+PrintCommandLineFlags and -XX:+PrintFlagsFinal.
 
 
-==== Tempo and Throttling
+===== Tempo and Throttling
 
 Max-pending (`TOPOLOGY_MAX_SPOUT_PENDING`) sets the number of tuple trees live in the system at any one time.
 
@@ -177,10 +177,10 @@ Trident-batch-delay (`topology.trident.batch.emit.interval.millis`) sets the max
 Trident-batch-delay is principally useful to prevent congestion, especially around startup. As opposed to a traditional Storm spout, a Trident spout will likely dispatch hundreds of records with each batch. If max-pending is 20, and the spout releases 500 records per batch, the spout will try to cram 10,000 records into its send queue.
 
 
-==== Machine Sizing
+===== Machine Sizing
 
 
-==== 
+===== Dump of some notes
 
 * System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
 * Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout

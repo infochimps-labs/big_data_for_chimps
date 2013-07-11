@@ -1,6 +1,6 @@
-=== Lifecycle of a Record
+==== Storm+Trident: Lifecycle of a Record
 
-==== Components
+===== Components
 
 * **supervisor**
   - JVM process launched on each storm worker machine. Does not execute your code -- supervises it.
@@ -33,15 +33,15 @@
   - so with 3 kafka spouts on a worker, there are three executors spouting
 
 
-==== Storm Transport
+===== Storm Transport
 
 Each executor (bolt or spout) has two disruptor queues: its 'send queue' (the individual tuples it emits) and its 'receive queue' (batches of tuples staged for processing)footnote:[It might seem odd that the spout has a receive queue, but much of storm's internal bookkeeping is done using tuples -- there's actually a regular amount of traffic sent to each spout].
 
-===== Disruptor Queue
+====== Disruptor Queue
 
 At the heart
 
-===== Spout Tuple Handling
+====== Spout Tuple Handling
 
 * If the spout executor's async-loop decides conditions are right, it calls the spout's `nextTuple()` method.
 * The spout can then emit zero, one or many tuples, which the emitter publishes non-blocking into the spout's executor send queue (see below for details).
@@ -52,16 +52,16 @@ At the heart
   - the router regroups the tuples by task, and publishes (blocking) each tuple-batch into that task's executor receive buffer.
   Note that the executor send queue holds individual _tuples_, where as the worker transfer queue and executor receive queues hold _collections of tuples_. An executor send queue size of 1024 slots with an executor receive queue size of 2048 slots means there won't ever be more than `2048 * 1024` tuples waiting for that executor to process. It's important also to recognize that, although the code uses the label `tuple-batch` for these collections of tuples, they have nothing to do with the higher-level concept of a 'Trident batch' you'll meet later.
 
-===== Bolt Tuple Handling
+====== Bolt Tuple Handling
 
+...
 
-
-===== Worker Transfer and Receive Handlers
+====== Worker Transfer and Receive Handlers
 
 
 Unlike the transfer and the executor queues, the worker's receive buffer is a ZeroMQ construct, not a disruptor queue
 
-==== Acking In Storm
+===== Acking In Storm
 
 * Noah is processed, produces Ham and Shem. Ack clears Noah, implicates Ham and Shem
 * Shem is processed, produces Abe. Ack clears Shem, implicates Abe
@@ -100,7 +100,7 @@ When a tuple is born in the spout,
 When a tuple is sent from a bolt, it claims one or more anchors (the tuples it came from), and one or more destination task ids.
 
 
-===== Acker Walkthrough
+====== Acker Walkthrough
 
 When a tuple is born in the spout,
 
@@ -282,7 +282,7 @@ traffic occurs to the acker in two places:
 even if there are thousands of tuples, only a very small amount of data is sent: the init_stream when the tuple tree is born, and once for each child tuple.
 When a tuple is acked, it both clears its own record and implicates its children.
 
-===== Acker
+====== Acker
 
 * Acker is just a regular bolt -- all the interesting action takes place in its execute method.
 * it knows
@@ -344,7 +344,7 @@ pseudocode
 
 
 
-===== A few details
+====== A few details
 
 There's a few details to clarify:
 
@@ -358,7 +358,7 @@ The spout's async-loop won't call `nextTuple` if overflow is present, so the ove
 
 
 
-===== Code Locations
+====== Code Locations
 
 Since the Storm+Trident code is split across multiple parent directories, it can be hard to track where its internal logic lives. Here's a guide to the code paths as of version `0.9.0-wip`.
 
@@ -381,7 +381,7 @@ Since the Storm+Trident code is split across multiple parent directories, it can
 |=======
 
 
-=== More on Transport
+==== More on Transport
 
 
 * **Queues between Spout and Wu-Stage**: exec.send/transfer/exec.receive buffers
@@ -427,7 +427,7 @@ Since the Storm+Trident code is split across multiple parent directories, it can
   - with opaque transactional, they might be retried in different or shared batches.
 
 
-==== Variables
+===== Variables
 
 	  storm_machines               --       4 ~~ .. How fast you wanna go?
 	  kafka_machines               --       4 ~~ .. see `kpartitions_per_broker`
@@ -472,12 +472,12 @@ Since the Storm+Trident code is split across multiple parent directories, it can
 
 	  scheduler                    --    isol ~~ .. Do not run multiple topologies in production without this
 
-==== Refs
+===== Refs
 
 * http://www.slideshare.net/lukjanovsv/twitter-storm?from_search=1
 
 
-==== notes for genealogy analogy
+===== notes for genealogy analogy
 
 http://www.theoi.com/Text/Apollodorus1.html [1.1.1] Sky was the first who ruled over the whole world.1  ... 
 [1.1.3] [Uranus] begat children by Earth, to wit, the Titans as they are named: Ocean, Coeus, Hyperion, Crius, Iapetus, and, youngest of all, Cronus; also daughters, the Titanides as they are called: Tethys, Rhea, Themis, Mnemosyne, Phoebe, Dione, Thia.5  ... 

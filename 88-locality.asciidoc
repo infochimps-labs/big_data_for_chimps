@@ -1,4 +1,4 @@
-=== Three legs of the big data stack
+==== Three legs of the big data stack
 
 In early 2012, my company (Infochimps) began selling our big data stack to enterprise companies. At first, clients came to us with the word Hadoop on their lips and a flood of data on their hands -- yet what consistently emerged as the right solution was an initial implementation using streaming data analytics into a scalable datastore, and a follow-on installment of Hadoop once their application reached scale. From nowhere on their radar last year, we now hear requests for Storm by name. I've seen Hadoop's historically fast growth from open-source product with momentum in 2008 to foundational enterprise technology in 2013, and can attest that the rate of adoption for streaming analytics (and Storm+Trident in particular) looks to be even faster. 
 
@@ -14,9 +14,9 @@ For both Storm+Trident and Hadoop, our intent is to demonstrate
 
 These overlap far more than you might expect, and the hard part reamins the same: understanding 'locality' and how to deal with data dispersed across hundreds of machines. (In fact, a map-reduce job is simply a certain type of especially bursty dataflow.) Storm+Trident introduces a second DSL for describing that process, but the hard part is what script to write, not the writing of the script. The chapter on statistics will simplify in scope but describe both global and streaming algorithms for statistical summaries. The chapter on time series algorithms will be scaled back to simply being anomaly detection ("trending topics" detection), and presented using Storm+Trident. Third, we'll repurpose material from the log processing and the machine learning chapters to demonstrate an end-to-end big data application that combines Hadoop, Storm+Trident and HBase to make efficient online recommendations for a large-scale web application. The major additions are a chapter on tuning and on the internals of Storm+Trident.
 
-=== Storm
+==== Storm
 
-==== Reliability
+===== Reliability
 
 Storm provides "at least once" processing of data. 
 
@@ -32,7 +32,7 @@ The XOR function is commutative: `A ^ B == B ^ A`, and the XOR of a number with 
 
 This lets Storm process millions of tuples in very little memory or processor.
 
-=== Trident
+==== Trident
 
 * Website request vs customer info
 * Tweet vs followers
@@ -40,7 +40,7 @@ This lets Storm process millions of tuples in very little memory or processor.
 * Trade request - risk analysis - hedge - verification
 * Document security - patterns of access
 
-=== Locality Models
+==== Locality Models
 
 
 Proximity - adjacency
@@ -60,12 +60,12 @@ Context - reshape - pivot
 * Access control -- security; API rate limits
 * Data model -- your web log hit (with path, response time, HTTP status code, etc) is my sales lead.
 
-=== Lambda Architecture
+==== Lambda Architecture
 
 * _Fast data_: recorded live, updates allowed with partial locality or denormalized data
 * _Slow data_: gold data, using global data, full answer.
 
-=== Example lambda architecture: online pagerank
+==== Example lambda architecture: online pagerank
 
 * Start with stable pagerank.
 * When a new node is discovered, just "borrow" a notional pagerank allocation from its neighbors
@@ -73,14 +73,14 @@ Context - reshape - pivot
 * Later, batch job re-settles the graph.
 * Pagerank calculation is idempotent: within reason, any perturbed input will settle out.
 
-=== locality in stream
+==== locality in stream
 
 * GroupBy / Partitioned aggregates
 * DRPC
 * Denormalized remote data request
 * Hash join -- hold a cached version of table and decorate
 
-==== Why can you get away with 
+===== Why can you get away with 
 
 Storm/Trident has buffering and throttling mechanisms built in
 
