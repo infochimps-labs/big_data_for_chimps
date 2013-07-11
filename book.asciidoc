@@ -38,6 +38,14 @@ include::05-toolset.asciidoc[]
 
 include::06-filesystem_mojo.asciidoc[]
 
+include::88-tuning_storm_trident.asciidoc[]
+
+include::88-storm-lifecycle_of_a_record.asciidoc[]
+
+include::88-storm-overview.asciidoc[]
+
+include::88-locality.asciidoc[]
+
 include::07-event_streams.asciidoc[]
 
 include::07a-serverlog_parsing.asciidoc[]
