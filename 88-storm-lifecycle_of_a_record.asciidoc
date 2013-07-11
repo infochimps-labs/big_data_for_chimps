@@ -1,21 +1,16 @@
 === Lifecycle of a Record
 
-
-For the following, assume:
-
-* one worker
-* an 'effectively infinite' kafka queue -- many times more messages in queue than `max_spout_pending` times record count per trident batch.
-* kafka is capable of infinite throughput if not throttled by acks or by `max_spout_pending`.
-* elasticsearch takes a small constant time to process each batch PUT or GET, no matter how much load we put on it.
-  - within reason, the time for ES to process a batch put increases very slowly as the batch size.
-* Our goal is to get this to be purely CPU-bound, with as much of that CPU as possible dedicated to the wukong-bolt processing.
-* There is effectively no skew in the final group-by stage -- each ES+State bolt gets a uniform fraction of elements from each batch.
-
 ==== Components
 
+* **supervisor**
+  - JVM process launched on each storm worker machine. Does not execute your code -- supervises it.
+  - number of workers set by number of `supervisor.slots.ports`
+
 * **worker**
-  - jvm process launched by the supervisor (the `storm_worker` process)
-  - since intra-worker transport is more efficient, run one per machine if you're only running one topology
+  - jvm process launched by the supervisor
+  - intra-worker transport is more efficient, so run one worker per topology per machine
+  - if worker dies, supervisor will rest
+  
 * **Coordinator** generates new transaction ID
   - figures out what kafka hosts
   - sends tuple, which influences spout to dispatch a new batch
@@ -480,3 +475,15 @@ Since the Storm+Trident code is split across multiple parent directories, it can
 ==== Refs
 
 * http://www.slideshare.net/lukjanovsv/twitter-storm?from_search=1
+
+
+==== notes for genealogy analogy
+
+http://www.theoi.com/Text/Apollodorus1.html [1.1.1] Sky was the first who ruled over the whole world.1  ... 
+[1.1.3] [Uranus] begat children by Earth, to wit, the Titans as they are named: Ocean, Coeus, Hyperion, Crius, Iapetus, and, youngest of all, Cronus; also daughters, the Titanides as they are called: Tethys, Rhea, Themis, Mnemosyne, Phoebe, Dione, Thia.5  ... 
+[1.3.1] Now Zeus wedded Hera and begat Hebe, Ilithyia, and Ares,32 but he had intercourse with many women, both mortals and immortals. By Themis, daughter of Sky, he had daughters, the Seasons, to wit, Peace, Order, and Justice; also the Fates, to wit, Clotho, Lachesis, and Atropus33; by Dione he had Aphrodite34; by Eurynome, daughter of Ocean, he had the Graces, to wit, Aglaia, Euphrosyne, and Thalia35; by Styx he had Persephone36; and by Memory (Mnemosyne) he had the Muses, first Calliope, then Clio, Melpomene, Euterpe, Erato, Terpsichore, Urania, Thalia, and Polymnia.37
+http://www.theoi.com/Text/HomerIliad5.html "Straightway then they came to the abode of the gods, to steep Olympus and there wind-footed, swift Iris stayed the horses and loosed them from the car, and cast before them food ambrosial; but fair Aphrodite flung herself upon the knees of her mother Dione. She clasped her daughter in her arms, and stroked her with her hand and spake to her, saying: "Who now of the sons of heaven, dear child, hath entreated thee thus wantonly, as though thou wert working some evil before the face of all?""
+http://www.maicar.com/GML/OCEANIDS.html Dione 1. Dione 1 ... daughter of Uranus & Gaia. According to some she consorted with Zeus and gave birth to Aphrodite. Apd.1.1.3, 1.3.1; Hom.Il.5.370; Hes.The.350ff
+http://www.maicar.com/GML/Aphrodite.html Aphrodite had three children by Ares: Deimos, Phobus 1 (Fear and Panic) and Harmonia 1
+http://www.theoi.com/Text/HesiodTheogony.html Hesiod [933] Also Cytherea bare to Ares the shield-piercer Panic and Fear, terrible gods who drive in disorder the close ranks of men in numbing war, with the help of Ares, sacker of towns: and Harmonia whom high-spirited Cadmus made his wife.
+

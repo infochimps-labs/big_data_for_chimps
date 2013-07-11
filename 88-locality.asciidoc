@@ -1,3 +1,10 @@
+* Option one: Parallel GC (`-XX:+UseParallelGC`) with `-XX:UseAdaptiveSizePolicy -XX:+PrintAdaptiveSizePolicy`. If too much latency, look at
+* Option two: CMS (`-XX:+UseConcMarkSweepGC`)
+* Option three: G1 (`-XX:+UseG1GC` with `-XX:MaxGCPauseMillis=` to set the target time).
+* `-XX:ParallelGCThreads` and `-XX:ParallelCMSThreads` specify the number of parallel CMS threads.
+* Other flags that affect performance include `-XX::+UseCompressedOops`, `-XX:+UseLargePages`, `-XX:LargePageSizeInBytes`, `-XX:+UseNUMA`, `-XX:+AggressiveOpts`, `-XX:AggressiveHeap`, `-XX:+UseBiasedLocking`, `-XX:+DoEscapeAnalysis`, `-XX:+AlwaysPreTouch`
+* Useful for monitoring are -XX:+PrintCommandLineFlags and -XX:+PrintFlagsFinal.
+
 Proximity - adjacency
 Context - reshape - pivot
 

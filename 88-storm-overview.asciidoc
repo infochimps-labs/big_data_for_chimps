@@ -38,20 +38,6 @@ A distributed framework can provide one of the following guarantees:
 A surprising number of tasks require only best-effort or at-least-once processing
 But exactly-once processing is essential for analytics processes: counting distinct records, 
 
-
-=== Why Storm+Trident is bigger than it looks
-
-
-*  Operational decoupling:
-* Latency Tolerance:
-* Reliability Glue:
-* Transport Agnosticism:
-* Distributed Programming without quantum mechanics
-
-How do you make a program that will run forever? Joe Armstrong, the inventor of Erlang, identifies these six key features: 
-Isolation; Concurrency; Failure Detection; Fault Identification, Live Code Upgrade; Stable Storage
-Storm+Trident provides all six, 
-
 === Trident Lifecycle
 
 ==== Coordinator
@@ -84,38 +70,6 @@ spout emits batches; these succeed or fail as a whole. (That's because they're p
 * If a batch had 900 aggregates, and it had prior counts for 250 of them, then it will _read_ 650 records and _write_ 900. It always does a put for every new observed count.
 
 * ¡Note!: The database writes do *not* have to be transactional. It's the whole thing -- the whole batch, end-to-end -- that has to have transactional integrity, not just the DB code.
-
-===== Ensuring Transactional reliability
-
-Let's say for transaction ID 69 the old aggregated values were `{A:20, B: 10, C: 1, D: 0}`, and new  aggregated values were `{A: 24, B: 12, C: 2, D: 1}`. 
-
-It stores (TODO: verify order of list):
-
-   {A: [24, 20, 69], B: [12, 10, 69], C: [2, 1, 69], D: [1, 0, 69]}
-
-If I am processing batch 
-
-Since this is a _State_, you have contractual obligation from Trident that batch 69 will *not* be processed until and unless batch 68 has succeeded. 
-
-So when I go to read from the DB, I will usually see something like
-
-   {A: [20, ??, 68], B: [10, ??, 68], C: [1, ??, 68]}
-
-I might instead however see
-
-  {A: [??, 20, 69], B: [??, 10, 69], C: [??, 1, 69], D: [??, 0, 69]}
-
-This means another attempt has been here: maybe it succeeded but was slow; maybe it failed; maybe _I_ am the one who is succeeding but slow. In any case, I don't know whether to trust the _new_ (first slot) values for this state, but I do know that I can trust the prior (second slot) values saved from batch 68. I just use those, and clobber the existing values with my new, correct counts.
-
-===== Kinds of State
-
-* non-transactional: batching behavior only
-* transactional: exactly once; batches are always processed in whole
-* opaque transactional: all records are processed, but might not be in same batches
-
-=== Concepts
-
-__Topology-level objects__
 
 * __Bolt__ -- topology-level object.
 
@@ -151,14 +105,34 @@ __Physical-level objects__
   - belongs to executor; has one bolt/spout
   - physical expression of the bolt or spout
   - in Storm, can set many tasks per executor -- when you want to scale out (TODO: verify). (in Trident, left at one per; TODO: can this be changed?)
-  
-* __Router__
 
-From documentation:
+===== Ensuring Transactional reliability
 
-	An executor is a thread that is spawned by a worker process. It may run one or more tasks for the same component (spout or bolt).
+Let's say for transaction ID 69 the old aggregated values were `{A:20, B: 10, C: 1, D: 0}`, and new  aggregated values were `{A: 24, B: 12, C: 2, D: 1}`. 
 
-	A task performs the actual data processing — each spout or bolt that you implement in your code executes as many tasks across the cluster. The number of tasks for a component is always the same throughout the lifetime of a topology, but the number of executors (threads) for a component can change over time. This means that the following condition holds true: #threads ≤ #tasks. By default, the number of tasks is set to be the same as the number of executors, i.e. Storm will run one task per thread.
+It stores (TODO: verify order of list):
+
+   {A: [24, 20, 69], B: [12, 10, 69], C: [2, 1, 69], D: [1, 0, 69]}
+
+If I am processing batch 
+
+Since this is a _State_, you have contractual obligation from Trident that batch 69 will *not* be processed until and unless batch 68 has succeeded. 
+
+So when I go to read from the DB, I will usually see something like
+
+   {A: [20, ??, 68], B: [10, ??, 68], C: [1, ??, 68]}
+
+I might instead however see
+
+  {A: [??, 20, 69], B: [??, 10, 69], C: [??, 1, 69], D: [??, 0, 69]}
+
+This means another attempt has been here: maybe it succeeded but was slow; maybe it failed; maybe _I_ am the one who is succeeding but slow. In any case, I don't know whether to trust the _new_ (first slot) values for this state, but I do know that I can trust the prior (second slot) values saved from batch 68. I just use those, and clobber the existing values with my new, correct counts.
+
+===== Kinds of State
+
+* non-transactional: batching behavior only
+* transactional: exactly once; batches are always processed in whole
+* opaque transactional: all records are processed, but might not be in same batches
 
 ==== Numerology
 
@@ -176,7 +150,6 @@ The following should be even multiples:
 * Parallelism hint is a hint --
   - can get more never less (TODO: verify)
 
-
 ==== Tuple handling internals
 
 ==== Queues
@@ -187,14 +160,15 @@ The following should be even multiples:
 * worker transfer buffer
 
 
-==== notes for genealogy analogy
-
-http://www.theoi.com/Text/Apollodorus1.html [1.1.1] Sky was the first who ruled over the whole world.1  ... 
-[1.1.3] [Uranus] begat children by Earth, to wit, the Titans as they are named: Ocean, Coeus, Hyperion, Crius, Iapetus, and, youngest of all, Cronus; also daughters, the Titanides as they are called: Tethys, Rhea, Themis, Mnemosyne, Phoebe, Dione, Thia.5  ... 
-[1.3.1] Now Zeus wedded Hera and begat Hebe, Ilithyia, and Ares,32 but he had intercourse with many women, both mortals and immortals. By Themis, daughter of Sky, he had daughters, the Seasons, to wit, Peace, Order, and Justice; also the Fates, to wit, Clotho, Lachesis, and Atropus33; by Dione he had Aphrodite34; by Eurynome, daughter of Ocean, he had the Graces, to wit, Aglaia, Euphrosyne, and Thalia35; by Styx he had Persephone36; and by Memory (Mnemosyne) he had the Muses, first Calliope, then Clio, Melpomene, Euterpe, Erato, Terpsichore, Urania, Thalia, and Polymnia.37
-http://www.theoi.com/Text/HomerIliad5.html "Straightway then they came to the abode of the gods, to steep Olympus and there wind-footed, swift Iris stayed the horses and loosed them from the car, and cast before them food ambrosial; but fair Aphrodite flung herself upon the knees of her mother Dione. She clasped her daughter in her arms, and stroked her with her hand and spake to her, saying: "Who now of the sons of heaven, dear child, hath entreated thee thus wantonly, as though thou wert working some evil before the face of all?""
-http://www.maicar.com/GML/OCEANIDS.html Dione 1. Dione 1 ... daughter of Uranus & Gaia. According to some she consorted with Zeus and gave birth to Aphrodite. Apd.1.1.3, 1.3.1; Hom.Il.5.370; Hes.The.350ff
-http://www.maicar.com/GML/Aphrodite.html Aphrodite had three children by Ares: Deimos, Phobus 1 (Fear and Panic) and Harmonia 1
-http://www.theoi.com/Text/HesiodTheogony.html Hesiod [933] Also Cytherea bare to Ares the shield-piercer Panic and Fear, terrible gods who drive in disorder the close ranks of men in numbing war, with the help of Ares, sacker of towns: and Harmonia whom high-spirited Cadmus made his wife.
+=== Why Storm+Trident is bigger than it looks
 
 
+*  Operational decoupling:
+* Latency Tolerance:
+* Reliability Glue:
+* Transport Agnosticism:
+* Distributed Programming without quantum mechanics
+
+How do you make a program that will run forever? Joe Armstrong, the inventor of Erlang, identifies these six key features: 
+Isolation; Concurrency; Failure Detection; Fault Identification, Live Code Upgrade; Stable Storage
+Storm+Trident provides all six, 
