@@ -1,6 +1,6 @@
-=== Storm+Trident
+== Storm+Trident
 
-==== Storm+Trident: Overview
+=== Storm+Trident: Overview
 
 One of the biggest changes to the practice of big data over the last year has been the rapid adoption of streaming data analytics. 
 The obvious applications are extract/transform/load ("ETL") processes -- the automated version of chapter (TODO REF) on Data Munging -- and complex event processing ("CEP") -- the kind of real-time data handling that powers Wall Street and high-scale security monitoring. 
@@ -15,7 +15,7 @@ The Storm+Trident data processing system, developed by Backtype and Twitter, is 
 
 While the raw API of Storm+Trident is quite different from that of Hadoop, the interesting parts are the same. Wukong unifies the two, letting us concentrate on data and questions. Let's dive in.
 
-==== Storm+Trident
+=== Storm+Trident
 
 Storm is the underlying framework that handles transport, messaging, process supervision and so forth. It guarantees reliable processing of each record using a brilliantly simple scheme that will scale to millions of records without requiring its own massive data flow for bookkeeping. 
 
@@ -24,12 +24,12 @@ Trident builds on Storm to provide exactly once processing and transactional
 * some primitive aggregators
 
 
-===== Orchestration and Transformation
+==== Orchestration and Transformation
 
 * Spouts and Bolts, to produce and transform records respectively;
 * Topologies, to orchestrate the grouping and combining of data streams
 
-===== Reliability and Guaranteed Processing
+==== Reliability and Guaranteed Processing
 
 The central challenge of high-scale stream analytics is this: the amount of metadata required to coordinate and process the data reliably can itself grow to such a volume that it becomes difficult to coordinate and process reliably. (TODO: wow needs rewording)
 
@@ -42,27 +42,27 @@ A distributed framework can provide one of the following guarantees:
 A surprising number of tasks require only best-effort or at-least-once processing
 But exactly-once processing is essential for analytics processes: counting distinct records, 
 
-==== Trident Lifecycle
+=== Trident Lifecycle
 
-===== Coordinator
+==== Coordinator
 
 * Master coordinator is secretly the spout
 * at trident batch delay period, will emit a transaction tuple
 * it has a serially incrementing transaction ID, kept forever even across restarts.
 * (We're only going to talk about Opaque Transactional topologies; more on that later)
 
-===== Spout
+==== Spout
 
 spout emits batches; these succeed or fail as a whole. (That's because they're part of the Storm tuple tree of the coordinator's seed tuple).
 
-===== Processors
+==== Processors
 
 * tuples in batches are freely processed in parallel and asynchronously unless there are barriers (eg the state after the group by)
 * In this case, Processor emits aggregable records
 
-===== Group-by
+==== Group-by
 
-===== Transactional State
+==== Transactional State
 
 * the state doesn't ask the cache to fetch until it has a whole batches' worth of records to hand over. This is trident logic, not storm.
 * Those "aggregables" are reduced into rolled-up aggregates. So you might have 2500 inbound records that result in 900 distinct aggregates. (If you had eight aggregables [A, A, C, A, B, D, B, A] you would get four partial aggregates {A: 4, B: 2, C: 1, D: 1}. 
@@ -110,7 +110,7 @@ __Physical-level objects__
   - physical expression of the bolt or spout
   - in Storm, can set many tasks per executor -- when you want to scale out (TODO: verify). (in Trident, left at one per; TODO: can this be changed?)
 
-====== Ensuring Transactional reliability
+===== Ensuring Transactional reliability
 
 Let's say for transaction ID 69 the old aggregated values were `{A:20, B: 10, C: 1, D: 0}`, and new  aggregated values were `{A: 24, B: 12, C: 2, D: 1}`. 
 
@@ -132,7 +132,7 @@ I might instead however see
 
 This means another attempt has been here: maybe it succeeded but was slow; maybe it failed; maybe _I_ am the one who is succeeding but slow. In any case, I don't know whether to trust the _new_ (first slot) values for this state, but I do know that I can trust the prior (second slot) values saved from batch 68. I just use those, and clobber the existing values with my new, correct counts.
 
-====== Kinds of State
+===== Kinds of State
 
 * non-transactional: batching behavior only
 * transactional: exactly once; batches are always processed in whole

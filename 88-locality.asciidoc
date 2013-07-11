@@ -1,4 +1,4 @@
-==== Three legs of the big data stack
+=== Overview Three legs of the big data stack
 
 In early 2012, my company (Infochimps) began selling our big data stack to enterprise companies. At first, clients came to us with the word Hadoop on their lips and a flood of data on their hands -- yet what consistently emerged as the right solution was an initial implementation using streaming data analytics into a scalable datastore, and a follow-on installment of Hadoop once their application reached scale. From nowhere on their radar last year, we now hear requests for Storm by name. I've seen Hadoop's historically fast growth from open-source product with momentum in 2008 to foundational enterprise technology in 2013, and can attest that the rate of adoption for streaming analytics (and Storm+Trident in particular) looks to be even faster. 
 
