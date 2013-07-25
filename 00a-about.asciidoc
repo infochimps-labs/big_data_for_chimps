@@ -8,10 +8,10 @@
 image::images/front_cover.jpg[Front Cover]
 
 === Hello, Early Releasers ===
+////Dev editor edited////
+Hello and thanks, courageous and farsighted early released-to'er! We want to make sure the book delivers value to you now, and rewards your early confidence by becoming a book you're proud to own.
 
-Hello and Thanks, Courageous and Farsighted Early Released-To'er! I want to make sure the book delivers value to you now, and rewards your early confidence by becoming the book you're proud to own.
-
-==== My Questions for You ====
+==== Our Questions for You ====
 
 * The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". It's annoying when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
 
