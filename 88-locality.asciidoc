@@ -14,8 +14,64 @@ For both Storm+Trident and Hadoop, our intent is to demonstrate
 
 These overlap far more than you might expect, and the hard part reamins the same: understanding 'locality' and how to deal with data dispersed across hundreds of machines. (In fact, a map-reduce job is simply a certain type of especially bursty dataflow.) Storm+Trident introduces a second DSL for describing that process, but the hard part is what script to write, not the writing of the script. The chapter on statistics will simplify in scope but describe both global and streaming algorithms for statistical summaries. The chapter on time series algorithms will be scaled back to simply being anomaly detection ("trending topics" detection), and presented using Storm+Trident. Third, we'll repurpose material from the log processing and the machine learning chapters to demonstrate an end-to-end big data application that combines Hadoop, Storm+Trident and HBase to make efficient online recommendations for a large-scale web application. The major additions are a chapter on tuning and on the internals of Storm+Trident.
 
-==== Locality Models
 
+==== Batch, Window, Partition and Group
+
+If Trident had a built-in notion of
+
+(since the word "partition" is so over-loaded, let's say "exclusive covering")
+
+* _partition_ -- a bounded set of tuples guaranteed to be processed by the same executors in partial order
+* _group_     -- exclusive covering of a partition by subsets having the same group key
+* _batch_     -- the unit of transactional state 
+
+To get the rest of the pig relations, you 
+
+* _subgroup_  -- an optional secondary sort within a group defining further hierarchical subgrouping. This captures ["data cube" operations](http://arnab.org/blog/introducing-cube-operator-apache-pig). An aggregator for sales data subgrouped on `(["product"], ["location", "year"], ["sales"])` would receive records with three fields (location, year, sales), each having the same value for product, and in order of location-then-year.
+
+http://web.cecs.pdx.edu/~tufte/papers/StreamSemantics.pdf
+
+* _window_    -- 
+
+* _prompt_           -- every event is received within no more than time `D` delay. 
+* _ordered_	     -- 
+  ordered doesn't imply prompt, and prompt doesn't imply ordered.
+* _partial-ordered_  -- you can depend that the sixth record from webserver-A will come after the fifth and before the seventh record from that webserver. Every partial-ordered stream is also ordered. Trident will preserve the partial-order of a stream within a partition
+* _block-disordered_ -- events will arrive out of sequence, but there is a bounded block horizon such that all events in one block will be received
+When I fold up my laundry, I process a basket of jumbled-together socks, then jumbled-together shirts, then jumbled-together towels. There is no shirt that is folded up after a towel has been, because each basket came from the dryer in a separate load.
+* _band-disordered_  -- ...
+* _punctuated_	     --
+(more generally, a punctuation is a pattern rule with the guarantee that no tuple matching the rule will occur after it in the stream. For example `m = webserver-7, t < 2013-04-26T12:00:00Z` means that all windows ending before that day noon can safely process the records from webserver-7.)
+
+* types of windows: landmark, tumbling, slide-by-tuple, partitioned, etc.
+
+Given those,
+
+
+If you then add
+
+* _arbitrarily large sorted buffers_
+* 
+
+I would set the default assumption that no changes to the core grammar are necessary: it will help enforce abstraction. For the particular examples you chose: PARALLEL should correspond directly. LOAD and STORE are perfectly reasonable verbs to use for Trident spouts and partitionPersist operations. I don't know whether a datastore-backed persistentAggregate should correspond to a STORE, or should instead be an annotation on the various relation verbs. Implement that on a memory-backed state only and see what happens in practice.
+
+           ^^
+           ||
+      group / subgroup
+           ||
+           vv
+
+      <-------------- process ordering
+      <--/\__/\_-/^-- temporal ordering
+
+
+      12 10 9 11 8 7 6 5 3 4 2 14 10
+      12 10 9 11 8 7 6 5 3 4 13 12 11
+
+
+
+
+==== Locality Models
 
 I'm using "Pivot" as a verb. You do combinations of transforms -- manipulations of data elements on their own -- and pivots -- large-scale orchestration to put data elements in context, to bring them to the same place and time.
 
