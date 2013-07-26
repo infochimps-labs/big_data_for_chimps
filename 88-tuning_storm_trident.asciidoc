@@ -189,3 +189,28 @@ Trident-batch-delay is principally useful to prevent congestion, especially arou
 * Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
 * Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
 * Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size
+
+To support large cluster, in zeromq increase `max_sockets` -- see 0MQ source code `src/config.hpp`; the default of 512 can be too small.
+
+
+__________________________________________________________________________
+
+The total number of workers is set by the supervisors -- there's some number of JVM slots each supervisor will superintend. The thing you set on the topology is how many worker slots it will try to claim.
+
+In our experience, there isn't a great reason to use more than one worker per topology per machine. With one topology running on those three nodes, and parallelism hint 24 for the critical path, you will get 8 executors per bolt per machine, i.e. one for each core. This gives you three benefits.
+
+The primary benefit is that when data is repartitioned (shuffles or group-bys) to executors in the same worker, it will not have to hit the transfer buffer -- tuples will be directly deposited from send to receive buffer. That's a big win. By contrast, if the destination executor were on the same machine in a different worker, it would have to go send -> worker transfer -> local socket -> worker recv -> exec recv buffer. It doesn't hit the network card, but it's not as big a win as when executors are in the same worker.
+
+Second, you're typically better off with three aggregators having very large backing cache than having twenty-four aggregators having small backing caches. This reduces the effect of skew, and improves LRU efficiency.
+
+Lastly, fewer workers reduces control flow chatter.
+
+In general:
+
+* number of workers a multiple of number of machines; parallelism a multiple of number of workers; number of kafka partitions a multiple of number of spout parallelism
+* Use one worker per topology per machine
+* Start with fewer, larger aggregators, one per machine with workers on it
+* Use the isolation scheduler
+* Use one acker per worker -- [pull request #377](https://github.com/nathanmarz/storm/issues/377) makes that the default.
+
+

@@ -1,4 +1,4 @@
-=== Overview Three legs of the big data stack
+=== Three legs of the big data stack
 
 In early 2012, my company (Infochimps) began selling our big data stack to enterprise companies. At first, clients came to us with the word Hadoop on their lips and a flood of data on their hands -- yet what consistently emerged as the right solution was an initial implementation using streaming data analytics into a scalable datastore, and a follow-on installment of Hadoop once their application reached scale. From nowhere on their radar last year, we now hear requests for Storm by name. I've seen Hadoop's historically fast growth from open-source product with momentum in 2008 to foundational enterprise technology in 2013, and can attest that the rate of adoption for streaming analytics (and Storm+Trident in particular) looks to be even faster. 
 
@@ -14,33 +14,32 @@ For both Storm+Trident and Hadoop, our intent is to demonstrate
 
 These overlap far more than you might expect, and the hard part reamins the same: understanding 'locality' and how to deal with data dispersed across hundreds of machines. (In fact, a map-reduce job is simply a certain type of especially bursty dataflow.) Storm+Trident introduces a second DSL for describing that process, but the hard part is what script to write, not the writing of the script. The chapter on statistics will simplify in scope but describe both global and streaming algorithms for statistical summaries. The chapter on time series algorithms will be scaled back to simply being anomaly detection ("trending topics" detection), and presented using Storm+Trident. Third, we'll repurpose material from the log processing and the machine learning chapters to demonstrate an end-to-end big data application that combines Hadoop, Storm+Trident and HBase to make efficient online recommendations for a large-scale web application. The major additions are a chapter on tuning and on the internals of Storm+Trident.
 
-==== Storm
-
-===== Reliability
-
-Storm provides "at least once" processing of data. 
-
-Storm uses an incredibly elegant strategy to track the successful completion in whole of a tuple tree.
-The acker task tracks a check 
-(TODO: verify -- attempt id combines the tuple's id (`messageId`) and task id)
-For each tuple tree. Each execute attempt id is XORed onto the checksum on execute and again on completion.
-
-The XOR function is commutative: `A ^ B == B ^ A`, and the XOR of a number with itself is zero. So if the acker got the events `A_beg, B_beg, A_end, C_beg, C_end, B_end`, the resulting checksum would be `A ^ B ^ A ^ C ^ C ^ B`, which is the same as `A ^ A ^ B ^ B ^ C ^ C` -- which collapses to zero. Without proving the second point, 
-
-* If the tuple tree is processed successfully, each attempt id will appear twice and so the sum must be zero if successful
-* If the tuple tree is not -- if some one or more tuples are incorrectly acked -- it is exceedingly unlikely the the checksum will be zero.
-
-This lets Storm process millions of tuples in very little memory or processor.
-
-==== Trident
-
-* Website request vs customer info
-* Tweet vs followers
-* Activity content vs geo context
-* Trade request - risk analysis - hedge - verification
-* Document security - patterns of access
-
 ==== Locality Models
+
+
+I'm using "Pivot" as a verb. You do combinations of transforms -- manipulations of data elements on their own -- and pivots -- large-scale orchestration to put data elements in context, to bring them to the same place and time.
+
+I may have figured out a better word, but it needs work:
+
+"relativity".
+
+You prepare data in place with transformations. Here are some transformations:
+
+* reject all voter file records that lack a zip code
+* take a set of records having (county, representative, all congressional districts in county) and emit (congressional district, county, representative)
+* take a large set of comma-separated strings; parse each one and construct a tidy data object with well-chosen names and uniform data types.
+
+...and then perform operations that relate data elements to each other. Here are relations:
+
+* "group" -- prepare sets of voter records, each holding all voters having the same zip code
+* "cogroup" -- prepare sets of (voter record, donation history, volunteer sheet card), one for each zip code, with all relevent records from each of the three sets
+* "sort" -- put all the voter records in order by last name
+* "decorate" -- for each voter file record that lacks a zip code, look up its street+city+state in a remote database
+
+("Relation" is actually the term of art for these things, though I'm abusing the name slightly)
+
+The distinction is important because Relations care whether data is "local" -- each of them requires arranging the data into a certain context. So another way I can express this concept is to say that if the data is not arranged suitably its records are non-relative; the outcome of a Relation is that related records are ready to be locally transformed.
+
 
 
 Proximity - adjacency
@@ -65,6 +64,68 @@ Context - reshape - pivot
 * _Fast data_: recorded live, updates allowed with partial locality or denormalized data
 * _Slow data_: gold data, using global data, full answer.
 
+
+Data is an _observation of a set of named facts_ taken _at a given point in time_. We will organize those within named _topics_ -- streams of records with similar structure ad meaning
+
+Change of address form example
+Why not just store and retrieve all? a) simpliity of query-side code b) efficiency c) source domain model tyranny d) locality.
+
+* Identifiers
+* Immutable Ground Truth(?)
+* Mutable Ground Truth
+* Immutable observation
+* Consistent Summary
+* Approximate Summary
+* Idempotent Synthesis
+* Identifier reconciliation
+
+Weather data: weather stations take immutable observations of atm'c vars, artificial identifier, immutable ground truth of weather location. Weather-by-hour-and-station is idempotent synthesis (when done in batch) or consistent summary (done live).
+
+==== Example lambda architecture: product rating aggregator
+
+* Products have model numbers, names, attributes and prices
+    * 
+* Vendors 
+    * some vendors: bulk upload of inventory. this is mutable ground truth, so we can update with clobber
+* Raters
+* Ratings
+* Tweets, incl sentiment
+    - count mentions by product name
+
+The core value of your product is a clear, unified exploration of different sites. If products or deals show up multiple times in searches, and inconsistent information is scattered across incomplete pages, users will derive no value from the site
+
+On the other hand, timeliness is also key. I'm writing this before the event, but I confidently predict that the release of "Big Data for Chimps" will set the whole twittersphere abuzz, with glowing reviews from Shaq and Lady Gaga. It's better to have several transiently inconsistent records 
+
+==== Architecture
+
+* Collection layer -- spouts that dispense opaque blobs
+* Parse layer -- turn blob into data structure that corresponds to source data model
+* Extraction layer -- produce activity model
+* Summary layer -- combine activity model to summarized model and persist to backing store (note: the "summary" might be a no-op)
+
+
+
+===== Why can't you just do it all in the stream?
+
+The law of small numbers holds here -- in a data stream of billions of events, there are thousands of one-in-a-million anomalies.
+
+Master data reconciliation is a classic "Neighbor's lawnmower" problem -- gee, it sure does look easy to fix from over here across the street, maybe I should ask Bill if he remembered to put gas in the tank.
+
+There are existing records A: `<name: "stapler", upc:12345| ...>`, B:`<best_buy_id:23, walmart_id:69>` and C:`<mfr_id:8675309, amz_id:42| ...>`, each with associated fields. A batch of records arrives, including ones that assert D:`<mfr_id:8675309, best_buy_id:23>` and E:`<upc:12345, walmart_id:69>`. With our global perspective in hand, it's clear all of these record pertain to the same product. In the stream, however, there's no prior way to recognize that D and E should be grouped together. One reaction is to say "well, query an indentifier reconciliation table, update it and then group." However many reconciliation stages you spackle on, as more identifiers are added to the dataflow you'll need another. It's common to have dozens, hundreds or thousands of matching keys in a real-world master data management dataflow. Now throw in the fact that these records will be infuriatingly inconsistent, even to the point of making conflicting assertions about their hard identifiers. 
+
+You can handle the problem consistently in Hadoop, because you have the whole world in your hands. Freeze time and make locality pivoting easy, and can make the reconciliation logic arbitrarily sophisticated
+
+The point is not to repair the flaws in this naïve approach. It's that there's little value in doing so.
+
+It's primarily a practical question
+It's slightly harder than you think, your code will be tangibly more complex and unpredictable than you think, and the business value of a good answer produced slowly will outweigh the value of a slightly less bad answer produced quickly.
+
+* Make a processor that accepts `<[unified profile], [{new tidbit}, {new tidbit}, ...], [{relevant prior record}, {relevant prior record}]>`
+* Given a set of ground truths or faithful summaries, idempotently synthesizes a unified consensus record. 
+
+
+IF your 
+
 ==== Example lambda architecture: online pagerank
 
 * Start with stable pagerank.
@@ -85,3 +146,16 @@ Context - reshape - pivot
 Storm/Trident has buffering and throttling mechanisms built in
 
 Hadoop is designed to drive all system resources to their full limit until the fundamental limiting resource is encountered. 
+
+==== Why Storm+Trident is bigger than it looks
+
+
+*  Operational decoupling:
+* Latency Tolerance:
+* Reliability Glue:
+* Transport Agnosticism:
+* Distributed Programming without quantum mechanics
+
+How do you make a program that will run forever? Joe Armstrong, the inventor of Erlang, identifies these six key features: 
+Isolation; Concurrency; Failure Detection; Fault Identification, Live Code Upgrade; Stable Storage
+Storm+Trident provides all six, 

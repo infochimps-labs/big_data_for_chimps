@@ -1,5 +1,16 @@
 == Storm+Trident
 
+INTRO SECTION:
+
+* what should reader learn?
+* match with the three goals
+
+* chapter completion is when the three goals are served, not when all ideas exhausted
+  -
+  - recognize the pattern
+  - advance grok
+
+
 === Storm+Trident: Overview
 
 One of the biggest changes to the practice of big data over the last year has been the rapid adoption of streaming data analytics. 
@@ -23,7 +34,6 @@ Trident builds on Storm to provide exactly once processing and transactional
 * layer on the flow DSL
 * some primitive aggregators
 
-
 ==== Orchestration and Transformation
 
 * Spouts and Bolts, to produce and transform records respectively;
@@ -42,137 +52,94 @@ A distributed framework can provide one of the following guarantees:
 A surprising number of tasks require only best-effort or at-least-once processing
 But exactly-once processing is essential for analytics processes: counting distinct records, 
 
-=== Trident Lifecycle
 
-==== Coordinator
+==== Storm
 
-* Master coordinator is secretly the spout
-* at trident batch delay period, will emit a transaction tuple
-* it has a serially incrementing transaction ID, kept forever even across restarts.
-* (We're only going to talk about Opaque Transactional topologies; more on that later)
+===== Tuple
 
-==== Spout
+It's important to know that a Tuple is not a data-level object, it is a topology-level object.
 
-spout emits batches; these succeed or fail as a whole. (That's because they're part of the Storm tuple tree of the coordinator's seed tuple).
+There's a temptation to take your 'Car' model and put its fields -- make, model, color, etc -- into fields in the tuple.
 
-==== Processors
+===== Aggregator
 
-* tuples in batches are freely processed in parallel and asynchronously unless there are barriers (eg the state after the group by)
-* In this case, Processor emits aggregable records
+A CombinerAggregator and a ReducerAggregator MUST NOT be stateful. 
 
-==== Group-by
-
-==== Transactional State
-
-* the state doesn't ask the cache to fetch until it has a whole batches' worth of records to hand over. This is trident logic, not storm.
-* Those "aggregables" are reduced into rolled-up aggregates. So you might have 2500 inbound records that result in 900 distinct aggregates. (If you had eight aggregables [A, A, C, A, B, D, B, A] you would get four partial aggregates {A: 4, B: 2, C: 1, D: 1}. 
-* It's clever about doing partial aggregates ("algebraic" reducers).
+There is also such a thing as a AccumulatorAggregator. This *does* have state, 
 
 
-* It looks in the cache for the old total count. Anything that isn't there it fetches from the database. This lets you do efficient batch requests, a huge scalability boon.
-* Once the cache is fresh, it determines the next aggregated value and writes it to the cache and to the DB, then ack()s the batch (all the tuples in the batch, really).
-* If a batch had 900 aggregates, and it had prior counts for 250 of them, then it will _read_ 650 records and _write_ 900. It always does a put for every new observed count.
+===== Reliability
 
-* ¡Note!: The database writes do *not* have to be transactional. It's the whole thing -- the whole batch, end-to-end -- that has to have transactional integrity, not just the DB code.
+Storm provides "at least once" processing of data. 
 
-* __Bolt__ -- topology-level object.
+Storm uses an incredibly elegant strategy to track the successful completion in whole of a tuple tree.
+The acker task tracks a check 
+(TODO: verify -- attempt id combines the tuple's id (`messageId`) and task id)
+For each tuple tree. Each execute attempt id is XORed onto the checksum on execute and again on completion.
 
-  - contract:
-    - `execute` is called
-    - you may call `emit` zero one or many times,
-    - and then you must call either `ack` or `fail`
-    - so, execute method _must_ be synchronous (blocking calls). No fair suspending yourself and returning from execute for some later ackness or failness. That's Storm's job.
-      - TODO: verify.
+The XOR function is commutative: `A ^ B == B ^ A`, and the XOR of a number with itself is zero. So if the acker got the events `A_beg, B_beg, A_end, C_beg, C_end, B_end`, the resulting checksum would be `A ^ B ^ A ^ C ^ C ^ B`, which is the same as `A ^ A ^ B ^ B ^ C ^ C` -- which collapses to zero. Without proving the second point, 
 
+* If the tuple tree is processed successfully, each attempt id will appear twice and so the sum must be zero if successful
+* If the tuple tree is not -- if some one or more tuples are incorrectly acked -- it is exceedingly unlikely the the checksum will be zero.
 
-__Physical-level objects__
+This lets Storm process millions of tuples in very little memory or processor.
 
-* __Supervisor__
-  - hosts worker
-  - has many workers
-* __Worker__
-  - has many executors, belongs to supervisor
-  - role:
-    - hosts zmq sockets
-    - accepts inbound tuples from other workers (worker receive queue)
-    - dispatches outbound tuples to other workers (worker transfer queue)
-    - (other stuff)
+==== Trident
 
-* __Executors__
-  - belongs to executor; has one bolt/spout
-  - role:
-    - accepts inbound tuples (executor receive queue)
-    - dispatches outbound tuples (executor send queue)
-  - each executor is one single thread
-   - calls tasks serially
-* __Tasks__ --
-  - belongs to executor; has one bolt/spout
-  - physical expression of the bolt or spout
-  - in Storm, can set many tasks per executor -- when you want to scale out (TODO: verify). (in Trident, left at one per; TODO: can this be changed?)
+In trident, a batch does indeed succeed or fail as a whole, and it will be replayed as a whole (later I'll add an important clarification about what 'replayed as a whole' means).
 
-===== Ensuring Transactional reliability
+Trident sits on Storm, which still processes records one-by-one. It's *not* the case, as many people meeting Trident for the first time think, that a general trident operator receives a full batch and than is asked to act on it. Whenever you're forced to pool records you face grave evils like synchronization and memory pressure.
 
-Let's say for transaction ID 69 the old aggregated values were `{A:20, B: 10, C: 1, D: 0}`, and new  aggregated values were `{A: 24, B: 12, C: 2, D: 1}`. 
+Think about a field trip of school kids to the museum. A school trip (batch) shows up at its chosen time slot (txid) to tour the museum. The buses all show up together, and they will all depart together; but in the meantime the kids will tour the museum as individuals organized within manageably-accounted partitions. 
 
-It stores (TODO: verify order of list):
+The school buses (trident spouts) each dispense a set of kids one by one in front of the museum, who tour the museum together as a partition. In this analogy we'll also make the kids stay in order, and tie a balloon (the $coord tuple) to the belt of the last kid in the partition. Most of the time, the kids walk at their own pace past the exhibits, and each exhibit is enjoyed individually. Some few operations (the lunchtime partitionQuery) require that everyone in a partition be in the same place and time. The chaperones can just start accumulating kids in the same partition; once it sees the baloon that trails the last kid, it knows the partition is all presend. Other operations, like the final partitionPersist back into the schoolbus, can't commit until the chaperone for every partition in the batch signals that its partition is assembled and accounted. Every time you do these batch operations, though, you have some kids sitting around bored and hungry waiting for the stragglers, and you need to ensure there's enough space for the partition to gather together without blocking the hallway. The great thing is that this loose supervision is enough to keep the kids safe while letting various partitions enjoy different wings of the museum concurrently, at their own pace, and without letting one crowded exhibit slow down the whole museum trip.
 
-   {A: [24, 20, 69], B: [12, 10, 69], C: [2, 1, 69], D: [1, 0, 69]}
-
-If I am processing batch 
-
-Since this is a _State_, you have contractual obligation from Trident that batch 69 will *not* be processed until and unless batch 68 has succeeded. 
-
-So when I go to read from the DB, I will usually see something like
-
-   {A: [20, ??, 68], B: [10, ??, 68], C: [1, ??, 68]}
-
-I might instead however see
-
-  {A: [??, 20, 69], B: [??, 10, 69], C: [??, 1, 69], D: [??, 0, 69]}
-
-This means another attempt has been here: maybe it succeeded but was slow; maybe it failed; maybe _I_ am the one who is succeeding but slow. In any case, I don't know whether to trust the _new_ (first slot) values for this state, but I do know that I can trust the prior (second slot) values saved from batch 68. I just use those, and clobber the existing values with my new, correct counts.
-
-===== Kinds of State
-
-* non-transactional: batching behavior only
-* transactional: exactly once; batches are always processed in whole
-* opaque transactional: all records are processed, but might not be in same batches
-
-===== Numerology
-
-The following should be even multiples:
-
-* `N_w` workers per machine. (one if you're only running one topology)
-* `N_spouts` per
-  - `N_partitions_per_spout` -- even number of partitions per spout
-  
-* Don't change multiplicity lightly
-  - it will route directly
-  - don't really understand how/when/why yet
+('replayed as a whole' -- an OpaqueTransactional spout might not replay each batch with the same contents, as long as it never dispenses a record into more than one successful batch.
 
 
-* Parallelism hint is a hint --
-  - can get more never less (TODO: verify)
+* Website request vs customer info
+* Tweet vs followers
+* Activity content vs geo context
+* Trade request - risk analysis - hedge - verification
+* Document security - patterns of access
+* 
 
-===== Tuple handling internals
+=== Writing to a database from a stream
 
-===== Queues
+Writing to a database with the wrong data consistency model can submarine your project when it hits production
 
-* executor send buffer
-* executor receive buffer
-* worker receive buffer
-* worker transfer buffer
+1. If you have unique immutable complete records, life is good -- use an _id.
+2. Try really, really hard to have unique immutable complete records. Usually you can, and you'll find you're thinking more clearly about the data when you do.
+3. Otherwise use a transactional write.
 
+* if you have multiple types of records -- "website profile", "pledge form", etc then they should probably be multiple types (and probably multiple indexes), combining the records at read time. If this causes chaos at read time, though, then we have to get clever
+for counters, use an ES State-backed aggregator (see spongecell for an example)
+* if scores can't be handled by an aggregator, then they should be done using an update script, understanding the efficiency hit and the consistency issues.
+* ES State-backed aggregators are straightforward, efficient and give you transactional guarantees. Your favorite type of write is the 'clobber', for records that are unique immutable and complete; your second-favorite type of write is to use an OpaqueTransactional state-based aggregator.
 
-==== Why Storm+Trident is bigger than it looks
+Regardless of the speed of refresh, doing a "query to see if it's there then a write if it isn't" will be bad juju -- race conditions WILL happen.
 
+==== Types of writes
 
-*  Operational decoupling:
-* Latency Tolerance:
-* Reliability Glue:
-* Transport Agnosticism:
-* Distributed Programming without quantum mechanics
+===== Unique records
 
-How do you make a program that will run forever? Joe Armstrong, the inventor of Erlang, identifies these six key features: 
-Isolation; Concurrency; Failure Detection; Fault Identification, Live Code Upgrade; Stable Storage
-Storm+Trident provides all six, 
+If those records are identical, immutable and complete, then the email (or email and other fields) will form an effective unique id. Use it or them to create an _id field. This is the best option, and you should do so whenever you can.
+
+* guarantees uniqueness on indexing
+* no waiting for refresh -- it's available in the index immediately
+* fetch will retrieve the record much more efficiently
+
+===== Partial records
+
+If you need to update parts of a record, you will still need to have a unique id. 
+
+===== Distinguishable Records
+
+If you are indexing distinct records with distinguishable fields, write them all and use a query restriction when you retrieve them.
+
+===== Record Timestamps
+
+Lastly, if records are not immutable, elasticsearch offers a way to do timestamps. I haven't used this, but I _believe_ you can use Time.now.utc.to_i and it won't care if it gets records out of order.
+
+One thing I don't like here is optimistic locking, where you do a "read the record, write back with a serially incremented ID" -- ie. 1,2,3,4,5 rather than as above.
+

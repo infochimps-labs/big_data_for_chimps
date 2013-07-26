@@ -1,8 +1,8 @@
-// :author:        Philip (flip) Kromer
+// :author:     Philip (flip) Kromer
 // :doctype: 	book
 // :toc:
 // :icons:
-// :lang: 		en
+// :lang: 	en
 // :encoding: 	utf-8
 
 image::images/front_cover.jpg[Front Cover]
@@ -36,7 +36,7 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - The Hadoop Haiku
 
 4. *First Exploration: Geographic Flavor* pt II
-    
+
 5. *The Hadoop Toolset*
   - toolset overview
   - launching and debugging jobs
@@ -52,23 +52,17 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Geolocate visitors based on IP
   - (Ab)Using Hadoop to stress-test your web server
 
-8. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
-  - Indexing documents
-  - Tokenizing documents using Lucene
-  - Pointwise Mutual Information
-  - K-means Clustering
-
 9. *Statistics*:
   - Summarizing: Averages, Percentiles, and Normalization
   - Sampling responsibly: it's harder and more important than you think
   - Statistical aggregates and the danger of large numbers
-  
+
 10. *Time Series*
 
 11. *Geographic Data*:
   - Spatial join (find all UFO sightings near Airports)
   -
-  
+
 12. *`cat` herding*
   - total sort
   - transformations from the commandline (grep, cut, wc, etc)
@@ -87,11 +81,6 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - How to design your data models
   - How to serialize their contents (orig, scratch, prod)
   - How to organize your scripts and your data
-  
-15. *Graph Processing*:
-  - Graph Representations
-  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
-  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
 
 16. *Machine Learning without Grad School*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
   - Naive Bayes
@@ -100,7 +89,7 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
 
 17. Interlude II: *Best Practices and Pedantic Points of style*
-  - Pedantic Points of Style 
+  - Pedantic Points of Style
   - Best Practices
   - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
   - Why Hadoop
@@ -115,9 +104,9 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - why algebraic UDFs are awesome and how to be algebraic
   - Custom Loaders
   - Performance efficiency and tunables
-    
+
 20.  *Data Modeling for HBase-style Database*
-  
+
 21. *Hadoop Internals*
   - What happens when a job is launched
   - A shallow dive into the HDFS
@@ -126,7 +115,7 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Tuning for the Wise and Lazy
   - Tuning for the Brave and Foolish
   - The USE Method for understanding performance and diagnosing problems
-  
+
 23. *Overview of Datasets and Scripts*
  - Datasets
    - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
@@ -142,7 +131,21 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Hadoop Tuning & Configuration Variables
 
 25. *Appendix*:
-  
+
+Excised:
+
+8. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
+  - Indexing documents
+  - Tokenizing documents using Lucene
+  - Pointwise Mutual Information
+  - K-means Clustering
+
+15. *Graph Processing*:
+  - Graph Representations
+  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
+  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
+
+
 ==== Not Contents ====
 
 I'm not currently planning to cover Hive -- I believe the pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
