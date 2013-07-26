@@ -7,23 +7,121 @@
 
 image::images/front_cover.jpg[Front Cover]
 
-=== Hello, Early Releasers ===
+=== Dear Early Release Reader, ===
 
-Hello and Thanks, Courageous and Farsighted Early Released-To'er! I want to make sure the book delivers value to you now, and rewards your early confidence by becoming the book you're proud to own.
+Hello and thank you, courageous and farsighted early released-to'er! We want to make sure the book delivers value to you now, and rewards your early confidence by becoming a book you'll be proud to own.
 
-==== My Questions for You ====
+==== Our Questions for You ==== 
 
-* The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". It's annoying when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
+* "If it's well-covered on the internet, leave it out" is the rule of thumb we're using for the introductory material covered in this book. We find it annoying when technology books go on (and on) as if giving a bus-tour-of-London tour of a topic ("Outside the window to your left you can see the southwest side of the British Museum!") So we will refrain from exhaustive coverage; yet you should never find yourself completely stranded in the book. Please do let us know if you notice that we're either too exhaustive or too brief in our coverage.  
 
-* Analogies: We'll be accompanied on part of our journey by Chimpanzee and Elephant, whose adventures are surprisingly relevant to understanding the internals of Hadoop. I don't want to waste your time laboriously remapping those adventures back to the problem at hand, but I definitely don't want to get too cute with the analogy. Again, please let me know if I err on either side.
+* Analogies: Two "characters" appear in the first part of the book, Chimpanzee and Elephant.  We utilize them because their activities are surprisingly relevant to understanding the internals of Hadoop; however, we don't want to waste your time, or patience, remapping those activities back to the problem at hand, so please provide feedback as to the usefulness you derive from the analogies.  
 
-==== Probable Contents ====
+* Our plan:  We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
-This is the plan. We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
+==== A Few Controversials ====
 
-1. *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
+//// Insert from later section Amy////
 
-2. *Simple Transform*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+==== We Want Your Feedback ====
+
+* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`.
+
+* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
+
+OK! On to the book. Or, on to the introductory parts of the book and then the book.
+
+
+[[about]]
+=== About  ===
+
+==== How We're Writing This Book ====
+
+I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[Infochimps blog] after minor cleanup.
+
+We really mean it about the git social-coding thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. However! We might not use your feedback, no matter how dazzlingly cogent it is; and while we are soliciting comments from readers, we are not seeking content from collaborators.
+
+[[about_is_for]]
+==== Who This Book Is For ====
+
+We'd like for you to be familiar with at least one programming language, but it doesn't have to be Ruby. Familiarity with SQL will help a bit, but isn't essential.
+
+This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation.   //// Flip I suggest cutting this note/paragraph as it's you talking about your process and readers (most) assume this is the case.  Amy////
+
+Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
+
+[[about_is_not_for]]
+==== Who This Book Is Not For ====
+
+This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
+
+That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production.
+
+The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
+
+==== A Note on Ruby ====
+//// Flip I inserted a header here, and I suggest you say a bit about why you chose Ruby.  Amy////
+Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala.
+
+==== Hadoop ====
+//// Flip, same with Hadoop - say a couple things about it here.  Amy////
+All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You do need a Hadoop installation of some sort, even if it's a single machine. While a multi-machine cluster isn't essential, you'll learn best by spending some time on a real environment with real data. Appendix (TODO: ref) describes your options for installing Hadoop.
+
+==== Wukong ==== 
+/// Flip, this one's up to you, but it might be helpful to say a couple things about Wukong for readers here.  Amy////
+
+==== Helpful Hadoop Reading ====
+//// Flip I suggest putting a 5-7 book reading list suggestion here.  Amy////
+
+[[about_coverage]]
+==== What This Book Covers ====
+
+'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools.
+
+//// Flip, throw in a few examples of "hard problems" in the line above. "By hard problems, we're referrring to...." =  Amy ////
+
+It contains
+
+* How to think at scale -- equipping you with a deep understanding of how to break a problem into efficient data transformations, and of how data must flow through the cluster to effect those transformations.
+* Detailed example programs applying Hadoop to interesting problems in context
+* Advice and best practices for efficient software development
+
+All of the examples use real data, and describe patterns found in many problem domains:
+
+* Statistical Summaries
+* Identify patterns and groups in the data
+* Searching, filtering and herding records in bulk
+* Advanced queries against spatial or time-series data sets.
+
+This is not a beginner's book. The emphasis on simplicity and fun should make it especially appealing to beginners, but this is not an approach you'll outgrow. The emphasis is on simplicity and fun because it's the most powerful approach, and generates the most value, for creative analytics: humans are important, robots are cheap. The code you see is adapted from programs we write at Infochimps. There are sections describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
+
+//// Flip clear up possible confusion readers will have about the "not beginners" reference - what do you mean by that?  Later, regarding the exercises, you make a note about "If you're a beginning user..."  Amy////
+
+==== What This Book Does Not Cover ====
+
+We are not currently planning to cover Hive.  The Pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
+
+Other things we do not plan to include:
+
+* Installing or maintaining Hadoo
+* we will cover how to design HBase schema, but not how to use HBase as _database_
+* Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
+* Stream processing with Trident. (A likely sequel should this go well?)
+* At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
+
+==== What's Covered in This Book? ====
+
+////Flip, this is where I suggest adding a header "Chimpanzee and Elephant."  State how these characters work to further the reader's understanding and to create generic, or universal, examples about how Big Data can be manipulated. This will prevent any confusion on the part of the reader when they begin to see Chimp and Elephant showing up and wondering what their roles are the book - just prevents it from being offputting.  Somethign along the lines of, "Starting with Chapter 2, you'll meet Chimpanzee and Elephant.  Chimpanzee is important to one's understanding of Big Data because....  We chose these characters in order to create "universal" examples for readers, so that a reader wouldn't be distracted by, say, a bioinformatics example, as if the lesson at hand were applicable only to medicine and bio data... "  Amy////
+
+////Flip I changed the header here to match the final book header, and to nudge you towards committing to final contents.  Amy////
+
+///Revise each chapter summary into paragraph form, as you've done for Chapter 1.  This can stay in the final book. Amy////
+
+Most of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Deep learning will come less from having the book in front of you as you _read_ it than from having the book next to you while you *write* code inspired by it.  There are sample solutions and result datasets on the book's website.  
+
+Chapter 1. *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
+
+Chapter 2. *Simple Transform*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
   - Chimpanzee and Elephant start a business
   - Pig Latin translation
   - Your first job: test at commandline
@@ -31,11 +129,11 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Input Splits
   - Why Hadoop I: Simple Parallelism
 
-3. *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
+Chapter 3. *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
   - Locality: the central challenge of distributed computing
   - The Hadoop Haiku
 
-4. *First Exploration: Geographic Flavor* pt II
+Chapter 4. *First Exploration: Geographic Flavor* pt II
 
 5. *The Hadoop Toolset*
   - toolset overview
@@ -108,7 +206,9 @@ This is the plan. We'll roll material out over the next few months. Should we fi
 20.  *Data Modeling for HBase-style Database*
 
 21. *Hadoop Internals*
-  - What happens when a job is launched
+  - What happens wte* code inspired by it. There are sample solutions and result datasets on the book's website.
+
+Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters.hen a job is launched
   - A shallow dive into the HDFS
 
 22. *Hadoop Tuning*
@@ -145,76 +245,19 @@ Excised:
   - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
   - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
 
+==== How to Contact Us ====
+////Flip feel free to add your contact information (Twitter, email)  Amy////
 
-==== Not Contents ====
+Please address comments and questions concerning this book to the publisher:
 
-I'm not currently planning to cover Hive -- I believe the pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
+O'Reilly Media, Inc.
+1005 Gravenstein Highway North
+Sebastopol, CA 95472
+(707) 829-0515 (international or local)
 
-Other things I don't plan to include:
+To comment or ask technial questions about this book, send email to bookquestions@oreilly.com
 
-* Installing or maintaining Hadoop
-* we will cover how to design HBase schema, but not how to use HBase as _database_
-* Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
-* Stream processing with Trident. (A likely sequel should this go well?)
-* At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
 
-==== Feedback ====
 
-* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`.
-* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
 
-OK! On to the book. Or, on to the introductory parts of the book and then the book.
 
-[[about]]
-=== About  ===
-
-[[about_coverage]]
-==== What this book covers ====
-
-'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools.
-
-It contains
-
-* Detailed example programs applying Hadoop to interesting problems in context
-* Advice and best practices for efficient software development
-* How to think at scale -- equipping you with a deep understanding of how to break a problem into efficient data transformations, and of how data must flow through the cluster to effect those transformations.
-
-All of the examples use real data, and describe patterns found in many problem domains:
-
-* Statistical Summaries
-* Identify patterns and groups in the data
-* Searching, filtering and herding records in bulk
-* Advanced queries against spatial or time-series data sets.
-
-This is not a beginner's book. The emphasis on simplicity and fun should make it especially appealing to beginners, but this is not an approach you'll outgrow. The emphasis is on simplicity and fun because it's the most powerful approach, and generates the most value, for creative analytics: humans are important, robots are cheap. The code you see is adapted from programs we write at Infochimps. There are sections describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
-
-Most of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Deep learning will come less from having the book in front of you as you _read_ it than from having the book next to you while you *write* code inspired by it. There are sample solutions and result datasets on the book's website.
-
-Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters.
-
-[[about_is_for]]
-==== Who this book is for ====
-
-You should be familiar with at least one programming language, but it doesn't have to be Ruby. Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala. Familiarity with SQL will help a bit, but isn't essential.
-
-This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation.
-
-All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You do need a Hadoop installation of some sort, even if it's a single machine. While a multi-machine cluster isn't essential, you'll learn best by spending some time on a real environment with real data. Appendix (TODO: ref) describes your options for installing Hadoop.
-
-Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
-
-[[about_is_not_for]]
-==== Who this book is not for ====
-
-This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
-
-That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production.
-
-The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
-
-[[about_how_written]]
-==== How this book is being written ====
-
-I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[Infochimps blog] after minor cleanup.
-
-We really mean it about the git social-coding thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. However! We might not use your feedback, no matter how dazzlingly cogent it is; and while we are soliciting comments from readers, we are not seeking content from collaborators.
