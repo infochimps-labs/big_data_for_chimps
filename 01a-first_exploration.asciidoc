@@ -1,5 +1,5 @@
-=== Regional Flavor
-
+=== Data and Locality
+////I'm concerned that even the keenest of readers will find it a challenge to parse the "regional flavor" idea from the concept of "locality."  (I realize you may choose another term for "locality" at some point, although I think locality is most apt and most used.)  Do you have anohter example that isn't geographical that you can use here?  If not, I suggest making a clearer distinction between region and place versus locality.  Making a clearer distinction will enable your reader to more quickly grasp and retain the "locality" concept, apart from your regional flavor example. Amy//// 
 There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
 The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays), Snow's BBQ (proclaimed "The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, the largest academic supercomputer to date).
