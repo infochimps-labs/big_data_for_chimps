@@ -134,11 +134,12 @@ Rather than step through each operation, I'll wave my hands and pull its output 
 
 As expected, in <<baldridge_bbq_wine>> you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valleyfootnote:[This is a simplified version of work by Jason Baldrige, Ben Wing (TODO: rest of authors), who go farther and show how to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. See: Baldridge et al (TODO: reference)].
 
-==== Takeaway #1: Simplicity
+==== Takeaway #1: Start with a Question
 
 We accomplished an elaborate data exploration, yet at no point did we do anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _pivoted_ the data.
 
 As you'll see later, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
+////This sounds hard to believe.  Consider saying more here, as it comes off as a bit over-simplified.  Amy////
 
 That's the approach we'll follow through this book: develop simple, maintainable transform/pivot scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 
