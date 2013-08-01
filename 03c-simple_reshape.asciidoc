@@ -3,6 +3,7 @@
 Let's process some real data and, with Santa's modernized gift-handling system in mind, see how Hadoop orchestrates the flow of data from mappers to reducers. 
 
 While Santa is busy year-round, his Reindeer spend their multi-month break between holiday seasons pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center] data set: 60,000 documented UFO sightings for a sharp-nosed reindeer to investigate. They'd like to send a team to investigate each sighting based on the category of spacecraft: one team investigates multiple-craft formations, one investigates fireballs, and so on. So the first thing to do is assign each sighting to the right team. Since sixty thousand sightings is much higher than a reindeer can count (only four hooves!), let's help them organize the data. (Sixty thousand records is much too small for Hadoop to be justified, but it's the perfect size to learn with.)
+//// Tie in.  "...so, similarly, if you were Toyota, and you wanted to record signtings of electric cars (or electric car charging stations in the most populated cities in the United States..."  Amy////
 
 ==== UFO Sighting Data Model
 
@@ -103,4 +104,4 @@ Test the full mapper-sort-reducer stack from the commandline:
     1999-01-10T06:00:00Z	1999-01-11T06:00:00Z	Tyson's Corner, VA   	circle   	1 to 2 sec        	Bright green circularly shaped light moved downward and easterly thro
     ...
 
-Great! That's enough for the reindeer to start their research. We'll come back in a bit and help them plan their summer tour.
+Great! That's enough for the reindeer to start their research. We'll come back in a bit and help them plan their summer tour. /// It's fine to say you're going to come back to it, but say just a bit more rather than totally leaving this dangling.  Give a bit more here in your preview of what's to come.  Or, you could just omit any mention of coming back to this.  But I suggest the former.  Amy////
