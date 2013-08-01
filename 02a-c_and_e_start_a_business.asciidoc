@@ -1,6 +1,6 @@
 === Chimpanzee and Elephant Start a Business ===
 
-As you know, chimpanzees love nothing more than sitting at typewriters processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of carge with great determination. The chimpanzees and the elephants realized there was a real business opportunity from combining their strengths, and so they formed the Chimpanzee and Elephant Data Shipping Corporation.
+Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. The chimpanzees and the elephants realized there was a real business opportunity from combining their strengths, and so they formed the Chimpanzee and Elephant Data Shipping Corporation.
 
 They were soon hired by a publishing firm to translate the works of Shakespeare into every language.
 In the system they set up, each chimpanzee sits at a typewriter doing exactly one thing well: read a set of passages, and type out the corresponding text in a new language. Each elephant has a pile of books, which she breaks up into "blocks" (a consecutive bundle of pages, tied up with string).
@@ -59,6 +59,8 @@ We're hardly as clever as one of these multilingual chimpanzees, but even we can
 * `yield(latinized)` hands off the `latinized` string for wukong to output
 ****
 
+//// Is the Ruby helper necessary? It may be, but wanted to query it as I don't see it appearing often as a feature.  Amy////
+
 To test the program on the commandline, run
 
     wu-local examples/text/pig_latin.rb data/magi.txt -
@@ -78,6 +80,8 @@ Some passages are harder than others, so it's important that any elephant can de
 The elephants' chief librarian, Nanette, employs several tricks to avoid this congestion.
 
 Since each chimpanzee typically shares a cubicle with an elephant, it's most convenient to hand a new page block across the desk rather then carry it down the hall. J.T. assigns tasks accordingly, using a manifest of page blocks he requests from Nanette. Together, they're able to make most tasks be "local".
+
+//// This would be a good spot to consider offering a couple additional, real-world analogies to aid your reader in making the leap to how this Chimp and Elephant story correlates to the needs for data manipulation in the readers' world - that is, relate it to science, epidemiology, finance, or what have you, some area of real-world application.  Amy////
 
 Second, the page blocks of each play are distributed all around the office, not stored in one book together. One elephant might have pages from Act I of _Hamlet_, Act II of _The Tempest_, and the first four scenes of _Troilus and Cressida_ footnote:[Does that sound complicated? It is -- Nanette is able to keep track of all those blocks, but if she calls in sick, nobody can get anything done. You do NOT want Nanette to call in sick.]. Also, there are multiple 'replicas' (typically three) of each book collectively on hand. So even if a chimp falls behind, JT can depend that some other colleague will have a cubicle-local replica. (There's another benefit to having multiple copies: it ensures there's always a copy available. If one elephant is absent for the day, leaving her desk locked, Nanette will direct someone to make a xerox copy from either of the two other replicas.)
 

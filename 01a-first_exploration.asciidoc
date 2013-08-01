@@ -1,12 +1,12 @@
-=== Regional Flavor
-
+=== Data and Locality
+////I'm concerned that even the keenest of readers will find it a challenge to parse the "regional flavor" idea from the concept of "locality." (Maybe I'm confirming your own concern about this?)  I do realize you may choose another term for "locality" at some point, yet I think locality, while not quick to digest, is actually best.)  For this section, do you possibly have another example handy, one that isn't geographical, to use here?  If not, I suggest making a clearer distinction between region and place versus locality.  Making a clearer distinction will enable your reader to more quickly grasp and retain the important "locality" concept, apart from your regional flavor example. Amy//// 
 There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
 The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays), Snow's BBQ (proclaimed "The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, the largest academic supercomputer to date).
 
 Since the birth of Artificial Intelligence we've wished we could quantify organic concepts like the "regional flavor" of a place -- wished we could help a computer understand that Austinites are passionate about Barbeque, Football and Technology -- and now we can, by say combining and analyzing the text of every article each city's page either links to or is geographically near.
 
-"That's fine for the robots," says the skeptic, "but I can just phone my cousin Bubba and ask him what people in Austin like. And though I have no friend in Timbuktu, I could learn what's unique about it from the Timbuktu article and all those it links to, using my mouse or my favorite relational database." True, true. This question has what we'll call "easy locality"footnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]: the pieces of context we need (the linked-to articles) are a simple mouse click or database JOIN away. But if we turn the question sideways that stops being true. 
+"That's fine for the robots," says the skeptic, "but I can just phone my cousin Bubba and ask him what people in Austin like. And though I have no friend in Timbuktu, I could learn what's unique about it from the Timbuktu article and all those it links to, using my mouse or my favorite relational database." True, true. This question has what we'll call "easy locality"footnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]: the pieces of context we need (the linked-to articles) are a simple mouse click or database JOIN away. But if we turn the question sideways that stops being true. ////You can help the reader grasp the concept more reaily; I recommend revising to: "This question has what we call "easy locality," essentially, "held in the same computer location" (nothing to do with geography). Amy//// 
 
 Instead of the places, let's look at the words. Barbeque is popular all through Texas and the Southeastern US, and as you'll soon be able to prove, the term "Barbeque" is overrepresented in articles from that region. You and cousin Bubba would be able to brainstorm a few more terms with strong place affinity, like "beach" (the coasts) or "wine" (France, Napa Valley), and you would guess that terms like "hat" or "couch" will not. But there's certainly no simple way you could do so comprehensively or quantifiably. That's because this question has no easy locality: we'll have to dismantle and reassemble in stages the entire dataset to answer it. This understanding of 'locality' is the most important concept in the book, so let's dive in and start to grok it. We'll just look at the step-by-step transformations of the data for now, and leave the actual code for <<geographic_words,a later chapter>>.
 
@@ -18,7 +18,11 @@ So here's our first exploration:
     which of them have a strong geographic flavor,
     and what are the places they attach to?
 
-This may not be a practical question (though I hope you agree it's a fascinating one), but it is a template for a wealth of practical questions. It's a _geospatial analysis_ showing how patterns of term usage vary over space; the same approach can instead uncover signs of an epidemic from disease reports, or common browsing behavior among visitors to a website. It's a _linguistic analysis_ attaching estimated location to each term; the same approach term can instead quantify document authorship for legal discovery, letting you prove the CEO did authorize his nogoodnik stepson to destroy that orphanage. It's a _statistical analysis_ requiring us to summarize and remove noise from a massive pile of term counts; we'll use those methods in almost every exploration we do. It isn't itself a _time-series analysis_, but you'd use this data to form a baseline to detect trending topics on a social network or the anomalous presence of drug-trade related terms on a communication channel.
+This may not be a practical question (though I hope you agree it's a fascinating one), but it is a template for a wealth of practical questions. It's a _geospatial analysis_ showing how patterns of term usage, such as ////list a couple quick examples of usage////, vary over space; the same approach can instead uncover signs of an epidemic from disease reports, or common browsing behavior among visitors to a website. It's a _linguistic analysis_ attaching estimated location to each term; the same approach term can instead quantify document authorship for legal discovery, letting you prove the CEO did authorize his nogoodnik stepson to destroy that orphanage. It's a _statistical analysis_ requiring us to summarize and remove noise from a massive pile of term counts; we'll use those methods ////unclear on which methods you're referring to?  Amy////in almost every exploration we do. It isn't itself a _time-series analysis_, but you'd use this data to form a baseline to detect trending topics on a social network or the anomalous presence of drug-trade related terms on a communication channel.
+
+////Consider defining the italicized terms, above, such as geospatial analysis, linguistic analysis, etc., inline (for example, "It's a linguistic analysis, the study of language, attaching estimated location to each term...") Amy////
+
+////Provide brief examples of how these methods might be useful, examples to support the above; offer questions that could be posed for each.  For example, for every symptom how it correlates to the epidemic and what zip codes the symptoms are attached to. Amy////
 
 [[baldridge_bbq_wine]]
 .Not the actual output, but gives you the picture; TODO insert actual results
@@ -94,6 +98,8 @@ Let's look at the fundamental pattern that we're using. Our steps:
 . organize the wordbags into groups having the same grid cell;
 . form a single combined wordbag for each grid cell.
 
+//// Consider adding some text here that guides the reader with regard to the findings they might expect to result.  For example, "...if you were to use the example of finding symptoms that intersect with illness as part of an epidemic, you would have done x, y, and z..."  This will bring the activity to life and help readers appreciate how it applies to thier own data at hand.  Amy////
+
 It's a sequence of _transforms_ (operations on each record in isolation: steps 1 and 4) and _pivots_ -- operations that combine records, whether from different tables (the join in step 2) or the same dataset (the group in step 3).
 
 In doing so, we've turned articles that have a geolocation into coarse-grained regions that have implied frequencies for words. The particular frequencies arise from this combination of forces:
@@ -128,11 +134,12 @@ Rather than step through each operation, I'll wave my hands and pull its output 
 
 As expected, in <<baldridge_bbq_wine>> you see BBQ loom large over Texas and the Southern US; Wine, over the Napa Valleyfootnote:[This is a simplified version of work by Jason Baldrige, Ben Wing (TODO: rest of authors), who go farther and show how to geolocate texts _based purely on their content_. An article mentioning barbecue and Willie Nelson would be placed near Austin, TX; one mentioning startups and trolleys in San Francisco. See: Baldridge et al (TODO: reference)].
 
-==== Takeaway #1: Simplicity
+==== Takeaway #1: Start with a Question
 
 We accomplished an elaborate data exploration, yet at no point did we do anything complex. Instead of writing a big hairy monolithic program, we wrote a series of simple scripts that either _transformed_ or _pivoted_ the data.
 
 As you'll see later, the scripts are readable and short (none exceed a few dozen lines of code). They run easily against sample data on your desktop, with no Hadoop cluster in sight; and they will then run, unchanged, against the whole of Wikipedia on dozens or hundreds of machines in a Hadoop cluster.
+////This sounds hard to believe.  Consider saying more here, as it comes off as a bit over-simplified.  Amy////
 
 That's the approach we'll follow through this book: develop simple, maintainable transform/pivot scripts by iterating quickly and always keeping the data visible; then confidently transition those scripts to production as the search for a question becomes the rote production of an answer.
 

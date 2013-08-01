@@ -13,9 +13,11 @@ First, copy the data onto the cluster:
 These commands understand `./data/text` to be a path on the HDFS, not your local disk; the dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `wu-put` command, which takes a list of local paths and copies them to the HDFS, treats its final argument as an HDFS path by default, and all the preceding paths as being local.
 
 First, let's test on the same tiny little file we used at the commandline. Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without hadoop.
+//// I'd delete the 'squash a flea' here in order to be direct and simple, not cute.  Amy////
 
     wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
 
+//// I suggest adding something about what the reader can expect to see on screen before moving on.  Amy////
 After outputting a bunch of happy robot-ese to your screen, the job should appear on the jobtracker window within a few seconds. The whole job should complete in far less time than it took to set it up. You can compare its output to the earlier by running
 
     hadoop fs -cat ./output/latinized_magi/\*
@@ -23,6 +25,8 @@ After outputting a bunch of happy robot-ese to your screen, the job should appea
 Now let's run it on the full Shakespeare corpus. Even this is hardly enough data to make Hadoop break a sweat, but it does show off the power of distributed computing.
 
     wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
+
+//// I suggest rounding out the exercise with something along the lines of a supportive "You should now see...on screen" for the reader.  Amy//// 
 
 === Brief Anatomy of a Hadoop Job ===
 
@@ -60,9 +64,11 @@ Please keep in mind that the tasktracker does _not_ run your code directly -- it
 === Chimpanzee and Elephant: Splits ===
 
 I've danced around a minor but important detail that the workers take care of. For the Chimpanzees, books are chopped up into set numbers of pages -- but the chimps translate _sentences_, not pages, and a page block boundary might happen mid-sentence.
+//// Provide a real world analogous example here to help readers correlate this story to their world and data analysis needs, "...This example is similar to..."  Amy////
 
 The Hadoop equivalent of course is that a data record may cross and HDFS block boundary. (In fact, you can force map-reduce splits to happen anywhere in the file, but the default and typically most-efficient choice is to split at HDFS blocks.)
 
 A mapper will skip the first record of a split if it's partial and carry on from there. Since there are many records in each split, that's no big deal. When it gets to the end of the split, the task doesn't stop processing until is completes the current record -- the framework makes the overhanging data seamlessley appear.
+//// Again, here, correlate this example to a real world scenario; "...so if you were translating x, this means that..."  Amy////
 
 In practice, Hadoop users only need to worry about record splitting when writing a custom `InputFormat` or when practicing advanced magick. You'll see lots of reference to it though -- it's a crucial subject for those inside the framework, but for regular users the story I just told is more than enough detail.
