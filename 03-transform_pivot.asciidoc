@@ -1,3 +1,4 @@
 [[transform_pivot]]
 == Chimpanzee and Elephant Save Christmas ==
 
+//// Say more about conceptualizing big data and tie in what readers have already learned (up to this chapter, the simple transform and first exploration material) and weave that in to help them have 'ah ha' moments and really grasp this material. Then, write your "...in this chapter..."  Finally, a good discussion of "locality" would go well anchored here.  And then you can dive into the Elves.  One note, and I acknowledge it may be annoying, is that it's possible some readers will bristle at Christmas being used (Christmas is Christian) but others will recognize how universally recognized it is.  Amy////
