@@ -14,45 +14,71 @@ For both Storm+Trident and Hadoop, our intent is to demonstrate
 
 These overlap far more than you might expect, and the hard part reamins the same: understanding 'locality' and how to deal with data dispersed across hundreds of machines. (In fact, a map-reduce job is simply a certain type of especially bursty dataflow.) Storm+Trident introduces a second DSL for describing that process, but the hard part is what script to write, not the writing of the script. The chapter on statistics will simplify in scope but describe both global and streaming algorithms for statistical summaries. The chapter on time series algorithms will be scaled back to simply being anomaly detection ("trending topics" detection), and presented using Storm+Trident. Third, we'll repurpose material from the log processing and the machine learning chapters to demonstrate an end-to-end big data application that combines Hadoop, Storm+Trident and HBase to make efficient online recommendations for a large-scale web application. The major additions are a chapter on tuning and on the internals of Storm+Trident.
 
-
 ==== Batch, Window, Partition and Group
 
-If Trident had a built-in notion of
+Trident has a few essential ways in which it segments tuples into non-overlapping sets:
 
-(since the word "partition" is so over-loaded, let's say "exclusive covering")
-
+* _batch_     -- the unit of transactional state at the transport level. Often abused as an effective event-order window at the data level.
 * _partition_ -- a bounded set of tuples guaranteed to be processed by the same executors in partial order
-* _group_     -- exclusive covering of a partition by subsets having the same group key
-* _batch_     -- the unit of transactional state 
+* _group_     -- data-level division into substreams each having the same group key. Each group lies within exactly one partition
 
-To get the rest of the pig relations, you 
+To get the rest of the pig relations, you will want to at some point introduce two more segmentations:
 
-* _subgroup_  -- an optional secondary sort within a group defining further hierarchical subgrouping. This captures ["data cube" operations](http://arnab.org/blog/introducing-cube-operator-apache-pig). An aggregator for sales data subgrouped on `(["product"], ["location", "year"], ["sales"])` would receive records with three fields (location, year, sales), each having the same value for product, and in order of location-then-year.
-
+* _subgroup_  -- an optional secondary sort within a group defining further hierarchical subgrouping. This captures ["data cube" operations](http://arnab.org/blog/introducing-cube-operator-apache-pig)
 http://web.cecs.pdx.edu/~tufte/papers/StreamSemantics.pdf
 
 * _window_    -- 
 
+* Scroll -- continuously sliding window -- advances tuple-by-tuple.
+
+Bracket -- punctuation carrying aggregates on a windowed range.
+
+
+
+There are three 
+
+* A window is explicitly what you want: "count requests, errors and logins by minute", or "every ten seconds emit the average request rate over the trailing 60 seconds, or "rebin by"
+* Single horizon of computation -- an indication that the stream is finite. Every Hadoop job has an implicit window the size of the data sent to its tasks.
+* Unit of computation 
+
+
+Let's talk about Data Frames and Tidy Data. The proper data warehousing term for it is "third normal form" Hadley Wickham has coined the term "tidy data".
+
+In 
+* Every row is an observation
+* Every column is distinct (never two values in a column) and uniform (all have same type)
+* Every file (table) has one data type (set of columns)
+
+A table with the address smushed together ("742 Evergreen Terrace, Springfield") might in some cases be distinct-columned, but it's likely that the value should be split into address and city (if not street number, street and city).
+
+The time axis here is not exactly 3NF(?)
+
+* The 'time' axis is the principal (row) axis 
+* can bracket a partition
+* ....
+
+Temporal sorting:
+
+Each of the following is enough to enable you to sort a slightly-disordered stream using finite memory.
 * _prompt_           -- every event is received within no more than time `D` delay. 
-* _ordered_	     -- 
-  ordered doesn't imply prompt, and prompt doesn't imply ordered.
-* _partial-ordered_  -- you can depend that the sixth record from webserver-A will come after the fifth and before the seventh record from that webserver. Every partial-ordered stream is also ordered. Trident will preserve the partial-order of a stream within a partition
+* _ordered_	     -- events arrive in time order (though with arbitrarily large delay -- ordered doesn't imply prompt, and prompt doesn't imply ordered).
+* _partial-ordered_  -- the stream can be non-overlappingly segmented into ordered substreams. You can depend that the sixth record from webserver-A will come after the fifth and before the seventh record from that webserver. Every partial-ordered stream is also ordered, and Trident will preserve the partial-order of a stream within a partition.
 * _block-disordered_ -- events will arrive out of sequence, but there is a bounded block horizon guaranteeing all events in one block are received before any event in a future block. My laundry-folding scheme is block disordered: I process a basket of jumbled-together socks, then jumbled-together shirts, then jumbled-together towels. There is no shirt that is folded up after a towel has been folded up, because each basket comes from the dryer in a separate load.
 * _band-disordered_  -- there is some statistical bound (i.e. every record is received within 50 slots of its natural order, or 99.9% of records are received within 50 slots of natural order)
-* _punctuated_	     --
-(more generally, a punctuation is a pattern rule with the guarantee that no tuple matching the rule will occur after it in the stream. For example `m = webserver-7, t < 2013-04-26T12:00:00Z` means that all windows ending before that day noon can safely process the records from webserver-7.)
+* _punctuated_	     -- a special tuple introduced into the stream that will always occur last in its segment. Trident uses a $coord tuple punctuation to delimit each batch partition. More generally, a punctuation is a pattern rule guaranteeing that no tuple matching the rule occurs after it in the stream. For example `m = webserver-7, t < 2013-04-26T12:00:00Z` means that all windows ending before that day noon can safely process the records from webserver-7.)
 
 * types of windows: landmark, tumbling, slide-by-tuple, partitioned, etc.
 
 Given those,
 
-
 If you then add
 
 * _arbitrarily large sorted buffers_
-* _data-local execution on large blobs_ -- if you run HDFS datanodes on all the storm worker machines, 
+* _data-local execution on large blobs_ -- if you run HDFS datanodes on all the storm worker machines, and can specify that a 
 
 I would set the default assumption that no changes to the core grammar are necessary: it will help enforce abstraction. For the particular examples you chose: PARALLEL should correspond directly. LOAD and STORE are perfectly reasonable verbs to use for Trident spouts and partitionPersist operations. I don't know whether a datastore-backed persistentAggregate should correspond to a STORE, or should instead be an annotation on the various relation verbs. Implement that on a memory-backed state only and see what happens in practice.
+
+
 
            ^^
            ||
@@ -60,15 +86,15 @@ I would set the default assumption that no changes to the core grammar are neces
            ||
            vv
 
-      <-------------- process ordering
-      <--/\__/\_-/^-- temporal ordering
+      <----|----|----|---- process ordering
+      <--/\_/\_-^--v- temporal ordering
 
+An aggregator for sales data subgrouped on `(["product"], ["location", "year"], ["sales"])` would receive records with three fields (location, year, sales), each having the same value for product, and in order of location-then-year.
 
-      12 10 9 11 8 7 6 5 3 4 2 14 10
+exclusively covering (by which I mean "set partition", but partition is too over-loaded).
+
+12 10 9 11 8 7 6 5 3 4 2 14 10
       12 10 9 11 8 7 6 5 3 4 13 12 11
-
-
-
 
 ==== Locality Models
 

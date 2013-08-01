@@ -19,9 +19,9 @@ Hello and thank you, courageous and farsighted early released-to'er! We want to 
 
 * Our plan:  We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
-==== A Few Controversials ====
-
-//// Insert from later section Amy////
+//// ==== A Few Controversials ====
+////
+//// Insert from later section Amy
 
 ==== We Want Your Feedback ====
 
@@ -46,8 +46,6 @@ We really mean it about the git social-coding thing -- please https://github.com
 
 We'd like for you to be familiar with at least one programming language, but it doesn't have to be Ruby. Familiarity with SQL will help a bit, but isn't essential.
 
-This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation.   //// Flip I suggest cutting this note/paragraph as it's you talking about your process and readers (most) assume this is the case.  Amy////
-
 Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
 
 [[about_is_not_for]]
@@ -59,28 +57,36 @@ That is because for almost everyone, the cost of the cluster is far less than th
 
 The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 
-==== A Note on Ruby ====
-//// Flip I inserted a header here, and I suggest you say a bit about why you chose Ruby.  Amy////
-Ruby is a very readable language, and the code samples provided should map cleanly to languages like Python or Scala.
-
 ==== Hadoop ====
-//// Flip, same with Hadoop - say a couple things about it here.  Amy////
-All of the code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster (though you will want to use a reduced data set for the laptop). You do need a Hadoop installation of some sort, even if it's a single machine. While a multi-machine cluster isn't essential, you'll learn best by spending some time on a real environment with real data. Appendix (TODO: ref) describes your options for installing Hadoop.
 
-==== Wukong ==== 
-/// Flip, this one's up to you, but it might be helpful to say a couple things about Wukong for readers here.  Amy////
+In Doug Cutting's words, Hadoop is the "kernel of the big-data operating system". It's the dominant batch-processing solution, has both commercial enterprise support and a huge open source community, runs on every platform and cloud, and there are no signs any of that will change in the near term. 
 
-==== Helpful Hadoop Reading ====
-//// Flip I suggest putting a 5-7 book reading list suggestion here.  Amy////
+The code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster. (Of course you will need to use a reduced data set for the laptop). You do need a Hadoop installation of some sort -- Appendix (TODO: ref) describes your options, including instructions for running hadoop on a multi-machine cluster in the public cloud -- for a few dollars a day you can analyze terabyte-scale datasets.
+
+==== A Note on Ruby and Wukong ====
+
+We've chosen Ruby for two reasons. First, it's one of several high-level languages (along with Python, Scala, R and others) that have both excellent Hadoop frameworks and widespread support. More importantly, Ruby is a very readable language -- the closest thing to practical pseudocode we know. The code samples provided should map cleanly to those high-level languages, and the approach we recommend is available in any language.
+
+In particular, we've chosen the Ruby-language Wukong framework. We're the principal authors, but it's open-source and widely used. It's also the only framework I'm aware of that runs on both Hadoop and Storm+Trident.
+
+==== Helpful Reading ====
+
+* Hadoop the Definitive Guide by Tom White is a must-have. Don't try to absorb its whole -- the most powerful parts of Hadoop are its simplest parts -- but you'll refer to often it as your applications reach production.
+* Hadoop Operations by Eric Sammer -- hopefully you can hand this to someone else, but the person who runs your hadoop cluster will eventually need this guide to configuring and hardening a large production cluster.
+* "Big Data: principles and best practices of scalable realtime data systems" by Nathan Marz
+* ...
+
 
 [[about_coverage]]
 ==== What This Book Covers ====
 
-'Big Data for Chimps' shows you how to solve hard problems using simple, fun, elegant tools.
+'Big Data for Chimps' shows you how to solve important hard problems using simple, fun, elegant tools.
 
-//// Flip, throw in a few examples of "hard problems" in the line above. "By hard problems, we're referrring to...." =  Amy ////
+Geographic analysis is an important hard problem. To understand a disease outbreak in Europe, you need to see the data from Zurich in the context of Paris, Milan, Frankfurt and Munich; but to understand the situation in Munich requires context from Zurich, Prague and Vienna; and so on. How do you understand the part when you can't hold the whole world in your hand?
 
-It contains
+Finding patterns in massive event streams is an important hard problem. Most of the time, there aren't earthquakes -- but the patterns that will let you predict one in advance lie within the data from those quiet periods. How do you compare the trillions of subsequences in billions of events, each to each other, to find the very few that matter? Once you have those patterns, how do you react to them in real-time?
+
+We've chosen case studies anyone can understand that generalize to problems like those and the problems you're looking to solve. Our goal is to equip you with:
 
 * How to think at scale -- equipping you with a deep understanding of how to break a problem into efficient data transformations, and of how data must flow through the cluster to effect those transformations.
 * Detailed example programs applying Hadoop to interesting problems in context
@@ -93,9 +99,7 @@ All of the examples use real data, and describe patterns found in many problem d
 * Searching, filtering and herding records in bulk
 * Advanced queries against spatial or time-series data sets.
 
-This is not a beginner's book. The emphasis on simplicity and fun should make it especially appealing to beginners, but this is not an approach you'll outgrow. The emphasis is on simplicity and fun because it's the most powerful approach, and generates the most value, for creative analytics: humans are important, robots are cheap. The code you see is adapted from programs we write at Infochimps. There are sections describing how and when to integrate custom components or extend the toolkit, but simple high-level transformations meet almost all of our needs.
-
-//// Flip clear up possible confusion readers will have about the "not beginners" reference - what do you mean by that?  Later, regarding the exercises, you make a note about "If you're a beginning user..."  Amy////
+The emphasis on simplicity and fun should make this book especially appealing to beginners, but this is not an approach you'll outgrow. We've found it's the most powerful and valuable approach for creative analytics. One of our maxims is "Robots are cheap, Humans are important": write readable, scalable code now and find out later whether you want a smaller cluster. The code you see is adapted from programs we write at Infochimps to solve enterprise-scale business problems, and these simple high-level transformations (most of the book) plus the occasional Java extension (chapter XXX) meet our needs.
 
 ==== What This Book Does Not Cover ====
 
@@ -103,15 +107,21 @@ We are not currently planning to cover Hive.  The Pig scripts will translate nat
 
 Other things we do not plan to include:
 
-* Installing or maintaining Hadoo
+* Installing or maintaining Hadoo[
 * we will cover how to design HBase schema, but not how to use HBase as _database_
 * Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
-* Stream processing with Trident. (A likely sequel should this go well?)
 * At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
 
 ==== What's Covered in This Book? ====
 
-////Flip, this is where I suggest adding a header "Chimpanzee and Elephant."  State how these characters work to further the reader's understanding and to create generic, or universal, examples about how Big Data can be manipulated. This will prevent any confusion on the part of the reader when they begin to see Chimp and Elephant showing up and wondering what their roles are the book - just prevents it from being offputting.  Somethign along the lines of, "Starting with Chapter 2, you'll meet Chimpanzee and Elephant.  Chimpanzee is important to one's understanding of Big Data because....  We chose these characters in order to create "universal" examples for readers, so that a reader wouldn't be distracted by, say, a bioinformatics example, as if the lesson at hand were applicable only to medicine and bio data... "  Amy////
+Starting with Chapter 2, you'll meet the zealous members of the Chimpanzee and Elephant Computing Company. The elephants handle moving large heavy volumes: by efficiently reassembling
+
+The
+
+Together, they'll give you a physical understanding of how data moves 
+
+Chimpanzee is important to one's understanding of Big Data because....  We chose these characters in order to create "universal" examples for readers, so that a reader wouldn't be distracted by, say, a bioinformatics example, as if the lesson at hand were applicable only to medicine and bio data... 
+
 
 ////Flip I changed the header here to match the final book header, and to nudge you towards committing to final contents.  Amy////
 
