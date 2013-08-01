@@ -75,8 +75,9 @@ image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 Next to each chimpanzee stands a line of pygmy elephants, one for each workbench. Each pygmy elephant bears a vertical file like you find on a very organized person's desk:
 
 image::images/paper_sorter.jpg[paper sorter]
+//// Perhaps a smaller sizing for the image? Amy////
 
-The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!
+The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!  //// I'm not truly clear what kind of business analogy should be coming to mind for readers here? This is cute, but you might lose readers attention here - consider a business analogy.  Amy////
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
