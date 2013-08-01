@@ -7,6 +7,19 @@
 
 image::images/front_cover.jpg[Front Cover]
 
+=== Mission Statement ===
+
+Big Data for Chimps will:
+
+1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop
+2.  Readers will also come away with a useful, conceptual idea of big data;  big data in its simplest form is a small cluster of well-tagged information that sits upon a central pivot, and can be manipulated through various shifts and rotations with the purpose of delivering insights ("Insight is data in context").  Key to understanding big data is scalability:  infinite amounts of data can rest upon infinite pivot points (Flip - is that accurate or would you say there's just one central pivot - like a Rubic's cube?)
+3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life. 
+
+1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop
+2.  Readers will also come away with a useful, conceptual idea of big data;  big data in its simplest form is a small cluster of well-tagged information that sits upon a central pivot, and can be manipulated through various shifts and rotations with the purpose of delivering insights ("Insight is data in context").  Key to understanding big data is scalability:  infinite amounts of data can rest upon infinite pivot points (Flip - is that accurate or would you say there's just one central pivot - like a Rubic's cube?) Answer above
+3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life.
+
+
 === Dear Early Release Reader, ===
 
 Hello and thank you, courageous and farsighted early released-to'er! We want to make sure the book delivers value to you now, and rewards your early confidence by becoming a book you'll be proud to own.
@@ -112,18 +125,14 @@ Other things we do not plan to include:
 * Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
 * At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
 
+==== Chimpanzee and Elephant
+
+Starting with Chapter 2, you'll meet the zealous members of the Chimpanzee and Elephant Computing Company. Elephants have prodgious memories and move large heavy volumes with ease. They'll give you a physical analogue for using relationships to assemble data into context, and help you understand what's easy and what's hard in moving around massive amounts of data. Chimpanzees are clever but can only think about one thing at a time. They'll show you how to write simple transformations with a single concern and how to analyze a petabytes data with no more than megabytes of working space.
+
+Together, they'll equip you with a physical metaphor for how to work with data at scale.
+
+
 ==== What's Covered in This Book? ====
-
-Starting with Chapter 2, you'll meet the zealous members of the Chimpanzee and Elephant Computing Company. The elephants handle moving large heavy volumes: by efficiently reassembling
-
-The
-
-Together, they'll give you a physical understanding of how data moves 
-
-Chimpanzee is important to one's understanding of Big Data because....  We chose these characters in order to create "universal" examples for readers, so that a reader wouldn't be distracted by, say, a bioinformatics example, as if the lesson at hand were applicable only to medicine and bio data... 
-
-
-////Flip I changed the header here to match the final book header, and to nudge you towards committing to final contents.  Amy////
 
 ///Revise each chapter summary into paragraph form, as you've done for Chapter 1.  This can stay in the final book. Amy////
 
