@@ -1,5 +1,7 @@
 === Locality of Reference ===
 
+//// Add something along the lines of, "You'll recall our discussion about locality.  Remember how we learned that x, y, and z have...?  Now you'll be able to see that in action."  Amy////
+
 Ever since there were 
 
         [] [] [] [] 
