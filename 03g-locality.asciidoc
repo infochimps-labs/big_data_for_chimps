@@ -36,7 +36,7 @@ The difficulty the elves faced wasn't in processing the records. Workforms and G
 
 === Locality: Examples ===
 
-This book is fundamentally about just that thing: helping you identify the key locality of a data problem. /// Something like, "...in other words, the common center of a data problem.  Or, locality could refer to the universals in a set, such as blood type or eye color in the case of..."  Amy//// Now for folks who learn by reading, what we mean by "key locality" is starting to make sense, and so I'll give you some brief examples. For folks who learn by doing, you might want to read some more examples and then
+This book is fundamentally about just that thing: helping you identify the key locality of a data problem. /// Something like, "...in other words, the common center of a data problem.  Or, locality could refer to the universals in a set, such as blood type or eye color in the case of..."  (I don't know if that is correct but I hope you get what I'm suggesting with these examples.)  Amy//// Now for folks who learn by reading, what we mean by "key locality" is starting to make sense, and so I'll give you some brief examples. For folks who learn by doing, you might want to read some more examples and then 
 
 * *word count*: You can count the occurrence of every word in a large body of text by a) grouping all ocurrences of each word together b) counting each group. In this case, the key locality is the word itself. // the words are initially organized by position within the text; 
 
@@ -46,7 +46,7 @@ This book is fundamentally about just that thing: helping you identify the key l
 
 * *correlation*: Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
 
-//// I'm wondering if it would be worthwhile for readers to get the best possible hang of locality if you were to guide them through actually coding the above four?  Amy////
+//// I'm wondering if it would be worthwhile for readers to get the best possible hang of locality if you were to guide them through actually coding the above four? That would be helpful for the folks who learn by doing, as you refer to above. Amy////
 
 === The Hadoop Haiku ===
 
