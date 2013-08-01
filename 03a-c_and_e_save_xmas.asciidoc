@@ -17,6 +17,8 @@ image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 As bags of mail arrived from every town and city, they were hung from the branches of the Bag Tree. Each time an elf was ready for the next letter, a big claw arm swung out to the right spot on the Bag Tree to retrieve it. "The locality of access is all wrong!" bellowed the chimps. "The next request for Legos is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
 
 What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in, and from the warehouses that held completed toys. The hallways were clogged with frazzled elves running back and forth between the Bag Tree, their workbench, and the shipping center -- they spent almost as much effort on the mechanics of retrieving letters and dropping off gifts as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
+//// I'd finish this paragraph with a tie-in to the real-world, like, "...Again, just as a scientist would..."  Amy////
+
 
 ==== Letters to Toy Requests ====
 
