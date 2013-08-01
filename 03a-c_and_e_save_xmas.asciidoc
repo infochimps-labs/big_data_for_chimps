@@ -95,8 +95,10 @@ You should wonder how, from all the medley outputs of all the rambunctious chimp
 
 [NOTE]
 ==========
-You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number
+You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number.
 ==========
+
+/// Provide a practical appliation to a business problem here, to round-out the above section and, again, help readers tie it all together.  It doesn't have to be business per se, but could be archaeology, biology, education, etc. OK?  Amy//// 
 
 ==== Sorted Groups ====
 
