@@ -1,5 +1,5 @@
 [[event_streams]]
-== Event streams ==
+== Event Streams ==
 ////This intro here is a good model for other chapters - this one's rough, but the bones are here.  Amy////
 
 Much of Hadoop's adoption is driven by organizations realizing they the opportunity to measure every aspect of their operation, unify those data sources, and act on the patterns that Hadoop and other Big Data tools uncover.////Share a few examples of things that can be measured (website hits, etc.)  Amy////
