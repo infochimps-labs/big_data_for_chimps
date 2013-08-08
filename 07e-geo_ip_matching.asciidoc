@@ -19,6 +19,7 @@ To get the right locality, take each range and break it at some block level. Ins
 
 
 === Range Queries ===
+////Gently introduce the concept. "So, here's what range queries are all about, in a nutshell..."  Amy////
 
 This is a generally-applicable approach for doing range queries.
 
