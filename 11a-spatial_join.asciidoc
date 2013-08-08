@@ -123,6 +123,7 @@ Mapper output:
 
 
 ==== Reducer: combine objects on each quadtile ====
+////Introduce this - (it's true, you'll need to reorient the reader pretty consistently). "Here, we are looking for..."  Amy////
 
 The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
 
