@@ -1,5 +1,6 @@
+////Definitely add some additional introduction here.  Describe how this connects with other chapters.  Also characterize the overall goal of the chapter.  And, then, put into context to the real-world (and even connect to what readers have learned thus far in the book).  Amy////
 
-Space doesn't allow treating HBase in any depth, but it's worth equipping you with a few killer dance moves for the most important part of using it well: data modeling. It's also good for your brain -- optimizing data at rest presents new locality constraints, dual to the ones you've by now mastered for data in motion.  So please consult other references (like "HBase: The Definitive Guide" (TODO:reference) or the free file:///data/docs/hbase.apache.org/book.html#quickstart[HBase Book] online), load a ton of data into it, play around, then come back to enjoy this chapter.
+Space doesn't allow treating HBase in any depth, but it's worth equipping you with a few killer dance moves for the most important part of using it well: data modeling. It's also good for your brain -- optimizing data at rest presents new locality constraints, dual to the ones you've by now mastered for data in motion.  ////If it's true that readers may get something crutial out of first playing with the tool before reading this chapter, say so here as a suggestion.  Amy////So please consult other references (like "HBase: The Definitive Guide" (TODO:reference) or the free file:///data/docs/hbase.apache.org/book.html#quickstart[HBase Book] online), load a ton of data into it, play around, then come back to enjoy this chapter.
 
 === Row Key, Column Family, Column Qualifier, Timestamp, Value ===
 
@@ -345,6 +346,7 @@ To find the value of the most-frequent URL for a given cookie, do a `get(table: 
 For this hack to work, the value _must_ be forever monotonically increasing (that is, never decrease). The value "total lifetime pageviews" can only go up; "pageviews in last 30 days" will go up or down over time
 
 ==== TTL (Time-to-Live) expiring values ====
+////Consider, here, pointing out what the reader stands to gain, what they'll get out of the exercise in terms of learning how to use tools for real-world applications.  Amy////
 
 These high-volume tables consume significant space and memory; it might make sense to discard data older than say 60 days. HBase lets you set a "TTL" (time-to-live) on any column family; records whose timestamp is farther in the past than that TTL won't be returned in gets or scans, and they'll be removed at the next compaction (TODO: major or minor?) footnote:[The TTL will only work if you're playing honest with the timestamps -- you can't use it with the <<most_frequent_urls,most-frequent URL>> table].
 
