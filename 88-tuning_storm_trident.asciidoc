@@ -1,5 +1,8 @@
+////This may not be the actual beginning of a chapter, but if it is:  say something big, philosophical, and conceptual here before you jump into the chapter.  (Do this at the start of each chapter, to one degree or another.)  Weave in your "locality" stuff into the conversation.  Introduce the topic while also tying-in the over-arching concept/philosophy concerning big data here. Weave in lessons from previous chapters ("At this point, you know...")  Also, an observation -- with the great stories you've presented up to this point in the book (with Chimp and Elephant), the absence of them is kind of jarring; so this suddenly feels more like a manual...(for the moment).  I'm not saying to bring in Chimp and Elephant, just to do a smoother transition away from them.   Amy////
+
 ==== Tuning Storm+Trident
 
+////Before you just into this, expalin what you're about to explain.  This might sound silly, but the rule of thumb for writing a technical book is:  say what your're about to say; say it; then say what you've said. You can explain how you think about tuning, or how you recommend readers think about it conceptually, how to do it/not do it. Share observations, hard lessons, etc.  Amy////
 Tuning a dataflow system is easy: 
 
 ----
@@ -8,9 +11,9 @@ The First Rule of Dataflow Tuning:
 * Deliver each processed record promptly to its destination
 ----
 
-That may seem insultingly simplistic, but my point is that a) if you respect the laws of physics and economics, you can make your dataflow obey the First Rule; b) once your dataflow does obey the First Rule, stop tuning it.
+That may seem insultingly simplistic, but my point is that a) if you respect the laws of physics and economics, ////Which are...?  Amy////you can make your dataflow obey the First Rule; b) once your dataflow does obey the First Rule, stop tuning it.
 
-Mostly, Storm+Trident tuning is either catastrophically bad or relatively insensitive to small changes. 
+Mostly, Storm+Trident tuning is either catastrophically bad or relatively insensitive to small changes. ////Say why.  Amy////
 
 Outline:
 
