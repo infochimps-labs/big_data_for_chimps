@@ -1,4 +1,5 @@
 ==== Adaptive Grid Size ====
+////Very interesting; but, give an example (one, or two) of how this extends to equivalent real-world examples.  Amy////
 
 The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303].
 
