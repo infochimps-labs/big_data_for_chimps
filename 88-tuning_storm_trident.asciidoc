@@ -44,6 +44,7 @@ Outline:
 First, identify your principal goal: latency, throughput, memory or cost. We'll just discuss latency and throughput as goals -- tuning for cost means balancing the throughput (records/hour per machine) and cost of infrastructure (amortized $/hour per machine), so once you've chosen your hardware, tuning for cost is equivalent to tuning for throughput. I'm also going to concentrate on typical latency/throughput, and not on variance or 99th percentile figures or somesuch.
 
 Next, identify your dataflow's principal bottleneck, the constraining resource that most tightly bounds the performance of its slowest stage. A dataflow can't pass through more records per second than the cumulative output of its most constricted stage, and it can't deliver records in less end-to-end time than the stage with the longest delay.
+////I suggest a case example here to round-out and contextualize what you're getting at.  Amy////
 
 The principal bottleneck may be:
 
@@ -52,9 +53,10 @@ The principal bottleneck may be:
 * _concurrency_: network requests to an external resource often require almost no CPU and minimal volume. If your principal goal is throughput, the flow is only bound by how many network requests you can make in parallel.
 * _remote rate bottleneck bound_: alternatively, you may be calling an external resource that imposes a maximum throughput out of your control. A legacy datastore might only be able to serve a certain volume of requests before its performance degrades, or terms-of-service restrictions from a third-party web API (Google's Geolocation API.)
 * _memory_: large windowed joins or memory-intensive analytics algorithms may require so much RAM it defines the machine characteristics
+////By now your bullets are so voluminous they actually might kill. Take a break from bulleted lists - reduce, reformat, etc.  Amy///
 
 ===== Initial tuning
-
+////Open this up with some kind of grounding for readers; like, "Let's say your goal is to x, then ____ "  Amy////
 If you're memory-bound, use machines with lots of RAM. Otherwise, start tuning on a machine with lots of cores and over-provision the RAM, we'll optimize the hardware later.
 
 For a CPU-bound flow:
