@@ -1,5 +1,7 @@
 ////This may not be the actual beginning of a chapter, but if it is:  say something big, philosophical, and conceptual here before you jump into the chapter.  (Do this at the start of each chapter, to one degree or another.)  Weave in your "locality" stuff into the conversation.  Introduce the topic while also tying-in the over-arching concept/philosophy concerning big data here. Weave in lessons from previous chapters ("At this point, you know...")  Also, an observation -- with the great stories you've presented up to this point in the book (with Chimp and Elephant), the absence of them is kind of jarring; so this suddenly feels more like a manual...(for the moment).  I'm not saying to bring in Chimp and Elephant, just to do a smoother transition away from them.   Amy////
 
+////In general this chapter needs some connective tissues, which you may very well be aware of and planning to do (so my edits at this point are minimal-to-none), to elevate it from a cataloging of tools to something wrapped in a context, story, with suggestion of intended application, etc.  Amy////
+
 ==== Tuning Storm+Trident
 
 ////Before you just into this, expalin what you're about to explain.  This might sound silly, but the rule of thumb for writing a technical book is:  say what your're about to say; say it; then say what you've said. You can explain how you think about tuning, or how you recommend readers think about it conceptually, how to do it/not do it. Share observations, hard lessons, etc.  Amy////
