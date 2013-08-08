@@ -39,6 +39,7 @@ You might ask why that is necessary -- surely each mapper reads the lines in ord
 This script will accumulate multiple visits of a page.
 
 TODO: say more about the secondary sort.
+////This may sound wacky, but please try it out:  use the JFK/MM exmaple again, here. Tie this all together more, the concepts, using those memorable people. I can explain this live, too.   Amy////
 
 ==== Web-crawlers and the Skew Problem ====
 
