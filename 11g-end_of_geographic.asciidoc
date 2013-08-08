@@ -10,6 +10,7 @@ K-D trees are another approach. The rough idea: rather than blindly splitting in
 ==== It's not just for Geo =====
 
 === Exercises ===
+////Include a bit where you explain what the exercises will do for readers, the why behind the effort.  Amy////
 
 [[brain_example]]
 **Exercise 1**: Extend quadtile mapping to three dimensions
