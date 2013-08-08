@@ -3,6 +3,8 @@
 
 We can use the user logs to assemble a picture of how users navigate the site -- 'sessionizing' their pageviews. Marketing and e-commerce sites have a great deal of interest in optimizing their "conversion funnel", the sequence of pages that visitors follow before filling out a contact form, or buying those shoes, or whatever it is the site exists to serve. Visitor sessions are also useful for defining groups of related pages, in a manner far more robust than what simple page-to-page links would define. A recommendation algorithm using those relations would for example help an e-commerce site recommend teflon paste to a visitor buying plumbing fittings, or help a news site recommend an article about Marilyn Monroe to a visitor who has just finished reading an article about John F Kennedy. Many commercial web analytics tools don't offer a view into user sessions -- assembling them is extremely challenging for a traditional datastore. It's a piece of cake for Hadoop, as you're about to see.
 
+////This spot could be an effective place to say more about "Locality" and taking the reader deeper into thinking about that concept in context.  Amy////
+
 NOTE:[Take a moment and think about the locality: what feature(s) do we need to group on? What additional feature(s) should we sort with?]
 
 
