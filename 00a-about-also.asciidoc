@@ -120,7 +120,7 @@ We are not currently planning to cover Hive.  The Pig scripts will translate nat
 
 Other things we do not plan to include:
 
-* Installing or maintaining Hadoo[
+* Installing or maintaining Hadoop
 * we will cover how to design HBase schema, but not how to use HBase as _database_
 * Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
 * At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
