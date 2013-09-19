@@ -1,0 +1,215 @@
+
+===== Tuple handling internals
+
+[[acker_lifecycle_complex]]
+.Acker Lifecycle: Complex
+|=======
+| Event				 	| Tuples                       			    	| Acker Tree
+| spout emits three tuples	 	| zeus:   `<~,     { zeus: a  }>`		     	|
+| to bolt-0 and acker-inits      	| hera:   `<~,     { hera: b  }>`		     	|
+|				 	| dione:  `<~,     { dione: c }>`		     	|
+| and sends acker-inits as it does so	|                                                    	| { zeus: `a`, hera: `b`, dione: `c` }
+| ...					| 						     	|
+| bolt-0 emits "war"             	| ares:   `<~,     { zeus: d,   hera: e }>`	     	|
+|   to bolt-1 (ares)             	| zeus:   `<d,     { zeus: a  }>`		     	|
+|   anchored on zeus (edge id `d`)    	| hera:   `<e,     { hera: b  }>`		     	|
+|   and hera (edge id `e`)	 	| dione:  `<~,     { dione: c }>`		     	|
+| ...					| 						     	|
+| bolt-0 acks hera                     	| acks with `hera: b^e`				     	| { zeus: `a`, hera: `e`, dione: `c` }
+| ...					| 						     	|
+| bolt-0 emits "love"            	| ares:   `<~,     { zeus: d,   hera: e }>`	     	|
+|   sent to bolt-1 (aphrodite)     	| aphrdt: `<~,     { zeus: f,   hera: g }>`	     	|
+|   anchored on zeus (edge id `f`)    	| zeus:   `<d^f,   { zeus: a  }>`		     	|
+|   and dione (edge id `g`)	 	| hera:   `<e,     { hera: b  }>`		     	|
+|				 	| dione:  `<g,     {                     dione: c }>`	|
+|					| 						     	|
+| ...					| 						     	|
+| bolt-0 acks dione                    	| acks with `dione: c^g`			     	| { zeus: `a`,   hera: `e`, dione: `g` }
+| bolt-0 acks zeus                     	| acks with `zeus:  a^d^f`			     	| { zeus: `d^f`, hera: `e`, dione: `g` }
+| ...					| 						     	|
+| bolt-1 emits "strife"          	| phobos: `<~,     { zeus: h^i, hera: h, dione: i }>`	| { zeus: `d^f`, hera: `e`, dione: `g` }
+|   sent to bolt-2 (phobos)            	| ares:   `<h,     { zeus: d,   hera: e           }>`	|
+|   and aphrodite                     	| aphrdt: `<i,     { zeus: f,            dione: g }>`	|
+| ...					| 						     	|
+| and sent to bolt-3 (deimos)          	| phobos: `<~,     { zeus: h^i, hera: h, dione: i }>`	| { zeus: `d^f`, hera: `e`, dione: `g` }
+|   (edge ids `j`,`k`)               	| deimos: `<~,     { zeus: j^k, hera: j, dione: k }>`	|
+|   anchored on ares            	| ares:   `<h^j,   { zeus: d,   hera: e           }>`	|
+|                                     	| aphrdt: `<i^k,   { zeus: f,            dione: g }>`	|
+| ...					| 						     	|
+| bolt-1 emits "calm"            	| harmonia: `<0,   { zeus: l^m, hera: l, dione: m }>`	| { zeus: `d^f`, hera: `e`, dione: `g` }
+|   sent only to bolt-2 (harmonia)     	| phobos: `<~,     { zeus: h^i, hera: h, dione: i }>`	|
+|   (edge ids `j`,`k`)               	| deimos: `<~,     { zeus: j^k, hera: j, dione: k }>`	|
+|   anchored on ares            	| ares:   `<h^j^l, { zeus: d,   hera: e           }>`	|
+|                                     	| aphrdt: `<i^k^m, { zeus: f,            dione: g }>`	|
+| ...					| 						     	|
+| bolt-1 acks ares                    	| acks `zeus: d^h^j^l, hera: `e^h^j^l`		     	| { zeus: `f^h^j^l`,     hera: `h^j^l`, dione: `g` }
+| bolt-1 acks aphrodite               	| acks `zeus: f^i^k^m, dione: `g^i^k^m`		     	| { zeus: `h^i^j^k^l^m`, hera: `h^j^l`, dione: `i^k^m` }
+| ...					| 						     	|
+| bolt-2 processes phobos, emits none	| phobos: `<~,     { zeus: h^i, hera: h, dione: i }>`	|
+| bolt-2 acks phobos                	| acks `zeus: h^i, hera: h, dione: i`		     	| { zeus: `j^k^l^m`,     hera: `j^l`,   dione: `k^m` }
+| bolt-2 processes harmonia, emits none	| harmonia: `<~,   { zeus: l^m, hera: l, dione: m }>`	|
+| bolt-2 acks harmonia                	| acks `zeus: l^m, hera: l, dione: m`		     	| { zeus: `j^k`,         hera: `j`,     dione: `k` }
+| bolt-3 processes deimos, emits none	| deimos: `<~,     { zeus: j^k, hera: j, dione: k }>`	|
+| bolt-3 acks deimos                	| acks `zeus: j^k, hera: j, dione: k`		     	| { zeus: `0`,           hera: `0`,     dione: `0` }
+| ...
+| acker removes them each from ledger, notifies spout	|                                                              	| `{ }`
+|=======
+
+
+
+Let's suppose you go to emit a tuple with anchors `aphrodite` and `ares`, destined for three different places
+
+    aphrodite: { ack_val: ~, ack_tree: { zeus:  a, dione:  b } }
+    ares:      { ack_val: ~, ack_tree: { zeus:  c, hera:   d } }
+
+For each anchor, generate an edge id; in this case, one for aphrodite and one for ares:
+
+----
+    aphrodite: { ack_val: (e),	   ack_tree: { zeus:  a, dione:  b } }
+    ares:      { ack_val: (f),	   ack_tree: { zeus:  c, hera:   d } }
+    eros:      { ack_val: ~,	   ack_tree: { zeus: (e ^ f), dione: e, hera: f }
+
+    aphrodite: { ack_val: (e^g),   ack_tree: { zeus:  a, dione:  b } }
+    ares:      { ack_val: (f^h),   ack_tree: { zeus:  c, hera:   d } }
+    eros:      { ack_val: ~,	   ack_tree: { zeus: (e ^ f), dione: e, hera: f }
+    phobos:    { ack_val: ~,	   ack_tree: { zeus: (g ^ h), dione: g, hera: h }
+
+    aphrodite: { ack_val: (e^g^i), ack_tree: { zeus:  a, dione:  b } }
+    ares:      { ack_val: (f^h^j), ack_tree: { zeus:  c, hera:   d } }
+    eros:      { ack_val: ~,	   ack_tree: { zeus: (e ^ f), dione: e, hera: f }
+    phobos:    { ack_val: ~,	   ack_tree: { zeus: (g ^ h), dione: g, hera: h }
+    deimos:    { ack_val: ~,	   ack_tree: { zeus: (i ^ j), dione: i, hera: j }
+----
+
+Now the executor acks `aphrodite` and `ares`.
+This sends the following:
+
+----
+    ack( zeus,  a ^ e^g^i )
+    ack( dione, b ^ e^g^i )
+    ack( zeus,  c ^ f^h^j )
+    ack( hera,  d ^ f^h^j )
+----
+
+That makes the acker's ledger be
+
+----
+    zeus:  ( spout_id: 0, val: a ^ a ^ e^g^i ^ c ^ c ^ f^h^j)
+    dione: ( spout_id: 0, val: b ^ b ^ e^g^i)
+    hera:  ( spout_id: 0, val: d ^ d ^ f^h^j)
+----
+
+Finally, let's assume eros, phobos and deimos are processed without further issue of tuples. They will also ack with the XOR of their ackVal (zero, since they have no children) and the ack tree
+
+----
+    ack( zeus,  e^f ^ 0 )
+    ack( dione, e   ^ 0 )
+    ack( hera,  f   ^ 0 )
+    ack( zeus,  g^h ^ 0 )
+    ack( dione, g   ^ 0 )
+    ack( hera,  h   ^ 0 )
+    ack( zeus,  i^j ^ 0 )
+    ack( dione, i   ^ 0 )
+    ack( hera,  j   ^ 0 )
+----
+
+----
+    zeus:  ( spout_id: 0, val: a ^ a ^ e^g^i ^ c ^ c ^ f^h^j ^ e^f ^ g^h ^ i^j)
+    dione: ( spout_id: 0, val: b ^ b ^ e^g^i ^ e ^ g ^ i )
+    hera:  ( spout_id: 0, val: d ^ d ^ f^h^j ^ f ^ h ^ j )
+----
+
+At this point, every term appears twice in the checksum:
+its record is removed from the ack ledger,
+and the spout is notified (via emit-direct) that the tuple tree has been successfully completed.
+
+==== More on Transport
+
+
+* **Queues between Spout and Wu-Stage**: exec.send/transfer/exec.receive buffers
+  - output of each spout goes to its executor send buffer
+  - router batches records destined for local executors directly to their receive disruptor Queues, and records destined for _all_ remote workers in a single m-batch into this worker's transfer queue buffer.
+  - ?? each spout seems to match with a preferred downstream executor
+    **question**: does router load _all_ local records, or just one special executors', directly send buf=> receive buf
+  - IMPLICATION: If you can, size the send buffer to be bigger than `(messages/trident batch)/spout` (i.e., so that each executor's portion of a batch fits in it).
+  - router in this case recognizes all records are local, so just deposits each m-batch directly in wu-bolt's exec.receive buffer.
+  - The contents of the various queues live in memory, as is their wont. IMPLICATION: The steady-state size of all the various buffers should fit in an amount of memory you can afford. The default worker heap size is fairly modest -- ??768 MB??.
+
+* **Wu-bolt** -- suppose 6 wu-bolts (3 per worker, 2 workers)
+  - Each takes about `8ms/rec` to process a batch.
+  - As long as the pipeline isn't starved, this is _always_ the limit of the flow. (In fact, let's say that's what we mean by the pipeline being starved)
+  - with no shuffle, each spout's records are processed serially by single wukong doohickey
+  - IMPLICATION: max spout pending must be larger than `(num of wu-bolt executors)` for our use case. (There is controversy about how _much_ larger; initially, we're going to leave this as a large multiple).
+
+* **Queues between Wu stage and State+ES stage**
+  - each input tuple to wu-stage results in about 5x the number of output tuples
+  - If ??each trident batch is serially processed by exactly one wukong ruby process??, each wu executor outputs `5 * adacts_per_batch`
+  - IMPLICATION: size exec.send buffer to hold an wu-stage-batch's worth of output tuples.
+
+* **Group-by guard**
+  - records are routed to ES+state bolts uniquely by group-by key.
+  - network transfer, and load on the transfer buffer, are inevitable here
+  - IMPLICATION: size transfer buffer comfortably larger than `wukong_parallelism/workers_count`
+
+* **ES+state bolt** -- Transactional state with ES-backed cache map.
+  - each state batch gets a uniform fraction of aggregables
+  - tuple tree for each initial tuple (kafka message) exhausts here, and the transaction is cleared.
+  - the batch's slot in the pending queue is cleared.
+  - we want `(time to go thru state-bolt) * (num of wu-bolt executors) < (time to go thru one wu-bolt)`, because we do not want the state-bolt stage to be the choking portion of flow.
+
+* **Batch size**:
+  - _larger_: a large batch will condense more in the aggregation step -- there will be proportionally fewer PUTs to elasticsearch per inbound adact
+  - _larger_: saving a large batch to ES is more efficient per record (since batch write time increases slowly with batch size)
+  - _smaller_: the wu-stage is very slow (8ms/record), and when the flow starts the first wave of batches have to work through a pipeline bubble. This means you must size the processing timeout to be a few times longer than the wu-stage time, and means the cycle time of discovering a flow will fail is cumbersome.
+  - IMPLICATION: use batch sizes of thousands of records, but keep wukong latency under 10_000 ms.
+    - initially, more like 2_000 ms
+
+* **Transactionality**: If any tuple in a batch fails, all tuples in that batch will be retried.
+  - with transactional (non-opaque), they are retried for sure in same batch.
+  - with opaque transactional, they might be retried in different or shared batches.
+
+
+===== Variables
+
+	  storm_machines               --       4 ~~ .. How fast you wanna go?
+	  kafka_machines               --       4 ~~ .. see `kpartitions_per_broker`
+	  kpartitions_per_broker       --       4 ~~ .. such that `kpartitions_per_broker * kafka_machines` is a strict multiple of `spout_parallelism`.
+	  zookeeper_machines           --       3 ~~ .. three, for reliability. These should be very lightly loaded
+	  workers_per_machine          --       1 ~~ ?? one per topology per machine -- transport between executors is more efficient when it's in-worker
+	  workers_count                --       4 ~~ .. `storm_machines * workers_per_machine`
+
+	  spouts_per_worker	       --       4 ~~ .. same as `wukongs_per_worker` to avoid shuffle
+	  wukongs_per_worker	       --       4 ~~ .. `cores_per_machine / workers_per_machine` (or use one less than cores per machine)
+	  esstates_per_worker          --       1 ~~ .. 1 per worker: large batches distill aggregates more, and large ES batch sizes are more efficient, and this stage is CPU-light.
+	  shuffle between spout and wu --   false ~~ .. avoid network transfer
+
+	  spout_parallelism	       --       4 ~~ .. `workers_count * spouts_per_worker`
+	  wukong_parallelism	       --      16 ~~ .. `workers_count * wukongs_per_worker`
+	  esstate_parallelism          --       4 ~~ .. `workers_count * esstates_per_worker`
+
+	  wu_batch_ms_target           --     800 ~~ .. 800ms processing time seems humane. Choose high enough to produce efficient batches, low enough to avoid timeouts, and low enough to make topology launch humane.
+	  wu_tuple_ms                  --       8 ~~ .. measured average time for wu-stage to process an adact
+	  adact_record_bytes           --    1000 ~~ .. measured average adact bytesize.
+	  aggregable_record_bytes      --     512 ~~ ?? measured average aggregable bytesize.
+	  spout_batch_tuples           --    1600 ~~ .? `(wu_batch_ms_target / wu_tuple_ms) * wukong_parallelism`
+	  spout_batch_kb               --    1600 ~~ .. `spout_batch_tuples * record_bytes / 1024`
+	  fetch_size_bytes             -- 100_000 ~~ .. `spout_batch_kb * 1024 / (kpartitions_per_broker * kafka_machines)`
+
+	  wukong_batch_tuples          --    8000 ~~ ?? about 5 output aggregables per input adact
+	  wukong_batch_kb              --      xx ~~ ?? each aggregable is about yy bytes
+
+	  pending_ratio                --       2 ~~ .. ratio of pending batch slots to workers; must be comfortably above 1, but small enough that `adact_batch_kb * max_spout_pending << worker_heap_size`
+	  max_spout_pending            --      32 ~~ .. `spout_pending_ratio * wukong_parallelism`
+
+	  worker_heap_size_mb          --     768 ~~ .. enough to not see GC activity in worker JVM. Worker heap holds counting cache map, max_spout_pending batches, and so forth
+	  counting_cachemap_slots      --   65535 ~~ .. enough that ES should see very few `exists` GET requests (i.e. very few records are evicted from counting cache)
+
+	  executor_send_slots	       --   16384 ~~ .. (messages)  larger than (output tuples per batch per executor). Must be a power of two.
+	  transfer_buffer_mbatches     --      32 ~~ ?? (m-batches) ?? some function of network latency/thruput and byte size of typical executor send buffer. Must be a power of two.
+	  executor_receive_mbatches    --   16384 ~~ ?? (m-batches) ??. Must be a power of two.
+	  receiver_buffer_mbatches     --       8 ~~ .. magic number, leave at 8. Must be a power of two.
+
+	  trident_batch_ms             --     100 ~~ .. small enough to ensure continuous processing
+	  spout_sleep_ms               --      10 ~~ .. small enough to ensure continuous processing; in development, set it large enough that you're not spammed with dummy transactions (eg 2000ms)
+
+	  scheduler                    --    isol ~~ .. Do not run multiple topologies in production without this

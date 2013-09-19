@@ -1,58 +1,65 @@
+Outline
+
+* Tuning constraints -- refer to earlier discussion on acceptable delay, thruput, horizon of compute, et
+* Process for initial tuning
+* General recommendations
+* cloud tuning
+
+
+
 ==== Tuning Storm+Trident
 
 Tuning a dataflow system is easy: 
 
 ----
-The First Rule of Dataflow Tuning:
+The Dataflow Tuning Rules:
 * Ensure each stage is always ready to accept records, and
 * Deliver each processed record promptly to its destination
 ----
 
-That may seem insultingly simplistic, but my point is that a) if you respect the laws of physics and economics, you can make your dataflow obey the First Rule; b) once your dataflow does obey the First Rule, stop tuning it.
-
-Mostly, Storm+Trident tuning is either catastrophically bad or relatively insensitive to small changes. 
-
-Outline:
-
-* Topology; Little's Law
-  - skew
-* System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
-  - machine sizing: use c1.xlarge if cpu-bound, or m3.xlarge if you need more ram than that; the cc1.xlarge are overkill
-
-* Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout
-* Congestion: number of ackers; queue sizing (exec send, exec recv, transfer)
-* Memory: Max heap (Xmx), new gen/survivor size; (queue sizes)
-  - GC tuning: use an agressively large NewGen size, bump perm-gen size some and give it a hard cap, and size old-gen to for 50% occupancy
-  - minimize frequency of gc's now, worry about pause times later
-* Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
-* Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
-* zookeeper sizing
-  - start with 3 c1.mediums and find out when it should be bigger. That should be good up to a few dozen workers
-  - you will hit a brick wall at high-hundreds of nodes
-  - keep in mind that more zookeeper nodes *slows* response
-* Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size,  `zmq.threads`
-* if running multiple topologies, use the worker isolation scheduler
-* huge records (eg. a large video file)
-  - if possible, just transmit its metadata as the record, and transfer the blob out-of-band to the local filesystem: you want to do this at max network speed and not interfere with control flow
-  - if you can't do this, you may have to attend to the zmq high-water mark. Also evaluate the new netty transport -- it's very recent, so expect bugs, but it's but much more tunable and transparent.
+That may seem insultingly simplistic, but most tuning questions come down to finding some barrier to one or the other. It also implies a corollary: once your dataflow does obey the Dataflow Tuning Rules, stop tuning it. Storm+Trident flows are not subtle: they either work (in which case configuration changes typically have small effect on performance) or they are catastrophically bad. So most of the tuning you’ll do is to make sure you don’t sabotage Storm’s ability to meet the Dataflow Tuning Rules
   
 ===== Goal
 
-First, identify your principal goal: latency, throughput, memory or cost. We'll just discuss latency and throughput as goals -- tuning for cost means balancing the throughput (records/hour per machine) and cost of infrastructure (amortized $/hour per machine), so once you've chosen your hardware, tuning for cost is equivalent to tuning for throughput. I'm also going to concentrate on typical latency/throughput, and not on variance or 99th percentile figures or somesuch.
+First, identify your principal goal and principal bottleneck. 
+
+The goal of tuning here is to optimize one of latency, throughput, memory or cost, without sacrificing sabotaging the other measures or harm stability. 
 
 Next, identify your dataflow's principal bottleneck, the constraining resource that most tightly bounds the performance of its slowest stage. A dataflow can't pass through more records per second than the cumulative output of its most constricted stage, and it can't deliver records in less end-to-end time than the stage with the longest delay.
 
 The principal bottleneck may be:
 
-* _IO volume_:  there's a hardware bottleneck to the number of bytes per second that a machine's disks or network connection can sustain. Event log processing often involves large amounts of data requiring only parsing or other trivial transformations before storage -- throughput of such dataflows are IO bound.
-* _CPU_: a CPU-bound flow spends more time in calculations to process a record
-* _concurrency_: network requests to an external resource often require almost no CPU and minimal volume. If your principal goal is throughput, the flow is only bound by how many network requests you can make in parallel.
-* _remote rate bottleneck bound_: alternatively, you may be calling an external resource that imposes a maximum throughput out of your control. A legacy datastore might only be able to serve a certain volume of requests before its performance degrades, or terms-of-service restrictions from a third-party web API (Google's Geolocation API.)
-* _memory_: large windowed joins or memory-intensive analytics algorithms may require so much RAM it defines the machine characteristics
+* _IO volume_:  a hardware bottleneck for the number of bytes per second that a machine's disks or network connection can sustain. For example, event log processing often involves large amounts of data, but only trivial transformations before storage.
+* _CPU_: by contrast, a CPU-bound flow spends more time in calculations to process a record than to transport that record. 
+* _memory_: large windowed joins or memory-intensive analytics algorithms will in general require you to provision each machine for the largest expected memory extent. Buying three more machines won’t help: if you have a 10 GB window, you need a machine with 10 GB+ of RAM. 
+* _concurrency_: If your dataflow makes external network calls, you will typically find that the network request latency for each record is far more than the time spent to process and transport the record. The solution is to parallelize the request by running small batches and and high parallelism for your topology. However, increasing parallelism has a cost: eventually thread switching, per-executor bookkeeping, and other management tasks will consume either all available memory or CPU.
+* _remote rate limit_: alternatively, you may be calling an external resource that imposes a maximum throughput limit. For example, terms-of-service restrictions from a third-party web API might only permit a certain number of bulk requests per hour, or a legacy datastore might only be able to serve a certain volume of requests before its performance degrades. If the remote resource allows bulk requests, you should take care that each Trident batch is sized uniformly. For example, the https://dev.twitter.com/docs/api/1.1/get/users/lookup[twitter users lookup API] returns user records for up to 100 user IDs -- so it’s essential that each batch consist of 100 tuples (and no more). Otherwise, there’s not much to do here besides tuning your throughput to comfortably exceed the maximum expected rate.
 
-===== Initial tuning
+For each of the cases besides IO-bound and CPU-bound, there isn’t that much to say: 
+for memory-bound flows, it’s “buy enough RAM” (though you should read the tips on JVM tuning later in this chapter). For remote rate-limited flows, buy a better API plan or remote datastore --  otherwise, tune as if CPU-bound, allowing generous headroom. For concurrency-bound flows, apply the recommendations that follow, 
+increase concurrency until things get screwy. If that per-machine throughput is acceptable to your budget, great; otherwise, hire an advanced master sysadmin to help you chip away at the 
 
-If you're memory-bound, use machines with lots of RAM. Otherwise, start tuning on a machine with lots of cores and over-provision the RAM, we'll optimize the hardware later.
+
+
+===== Provisioning
+
+If you’re 
+
+For CPU-bound stages, set one executor per core for the bounding stage (or one less than cores at large core count). Don't adjust the parallelism without reason -- even a shuffle implies network transfer. Shuffles don't impart any load-balancing.
+
+Use one worker per machine for each topology: since sending a tuple is much more efficient if the executor is in the same worker, the fewer workers the better. (Tuples go directly from send queue to receive queue, skipping the worker transfer buffers and the network overhead). Also, if you’re using Storm pre-0.9, set the number of ackers equal to the number of workers -- previously, the default was one acker per topology.
+
+Match your spout parallelism to its downstream flow. Use the same number of kafka partitions as kafka spouts (or a small multiple). If there are more spouts than kafka machines*kpartitions, the extra spouts will sit idle.
+
+For map states or persistentAggregates -- things where results are accumulated into memory structures -- allocate one stage per worker. Cache efficiency and batch request overhead typically improve with large record set sizes.
+
+==== Initial tuning
+
+===== CPU-bound flow
+
+Select machines with many cores
+
+Start tuning on a machine with lots of cores and over-provision the RAM -- we'll optimize the hardware later.
 
 For a CPU-bound flow:
 
@@ -65,15 +72,10 @@ For a CPU-bound flow:
 
 Once you have roughly dialed in the batch size and parallelism, check in with the First Rule. The stages upstream of your principal bottleneck should always have records ready to process. The stages downstream should always have capacity to accept and promptly deliver processed records.
 
-===== Provisioning
+===== Memory-bound flows
 
-Use one worker per topology per machine: storm passes tuples directly from sending executor to receiving executor if they're within the same worker. Also set number of ackers equal to number of workers -- the default of one per topology never makes sense (future versions of Storm will fix this).
+If you're memory-bound, use machines with lots of RAM. 
 
-Match your spout parallelism to its downstream flow. Use the same number of kafka partitions as kafka spouts (or a small multiple). If there are more spouts than kafka machines*kpartitions, the extra spouts will sit idle.
-
-For CPU-bound stages, set one executor per core for the bounding stage (or one less than cores at large core count). Don't adjust the parallelism without reason -- even a shuffle implies network transfer. Shuffles don't impart any load-balancing.
-
-For map states or persistentAggregates -- things where results are accumulated into memory structures -- allocate one stage per worker. Cache efficiency and batch request overhead typically improve with large record set sizes.
 
 ====== Concurrency Bound
 
@@ -212,5 +214,34 @@ In general:
 * Start with fewer, larger aggregators, one per machine with workers on it
 * Use the isolation scheduler
 * Use one acker per worker -- [pull request #377](https://github.com/nathanmarz/storm/issues/377) makes that the default.
+
+______________________________________
+
+Outline:
+
+* Topology; Little's Law
+  - skew
+* System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
+  - machine sizing: use c1.xlarge if cpu-bound, or m3.xlarge if you need more ram than that; the cc1.xlarge are overkill
+
+* Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout
+* Congestion: number of ackers; queue sizing (exec send, exec recv, transfer)
+* Memory: Max heap (Xmx), new gen/survivor size; (queue sizes)
+  - GC tuning: use an agressively large NewGen size, bump perm-gen size some and give it a hard cap, and size old-gen to for 50% occupancy
+  - minimize frequency of gc's now, worry about pause times later
+* Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
+* Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
+* zookeeper sizing
+  - start with 3 c1.mediums and find out when it should be bigger. That should be good up to a few dozen workers
+  - you will hit a brick wall at high-hundreds of nodes
+  - keep in mind that more zookeeper nodes *slows* response
+* Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size,  `zmq.threads`
+* if running multiple topologies, use the worker isolation scheduler
+* huge records (eg. a large video file)
+  - if possible, just transmit its metadata as the record, and transfer the blob out-of-band to the local filesystem: you want to do this at max network speed and not interfere with control flow
+  - if you can't do this, you may have to attend to the zmq high-water mark. Also evaluate the new netty transport -- it's very recent, so expect bugs, but it's but much more tunable and transparent.
+
+Two notes: First, once you’ve chosen your hardware, tuning for cost is reducible to tuning for throughput: amortized $/record = (amortized hardware cost/hour per machine) over  (records/hour per machine). So we’ll only speak to the principal goals of latency, throughput or memory.
+going to talk about optimizing the _steady-state average_ performance, and not discuss tuning to decrease variance (in other words: Wall Street types, go home).
 
 
