@@ -14,6 +14,7 @@ For your first Storm+Trident topology, we’re going to create a topology to han
 
 A basic logical diagram of the topology looks like this:
 
+... 89-intro-to-storm-topo.png ...
 
 Each node in the diagram above represents a specific operation on the data flow. Initially JSON records are retrieved from Github and injected into the topology by the Github Spout, where they are transformed by a series of operations and eventually persisted to an external data store. Trident spouts are sources of streams of data -- common use cases include pulling from a Kafka queue, Redis queue, or some other external data source. Streams are in turn made up of tuples which are just lists of values with names attached to each field.
 
