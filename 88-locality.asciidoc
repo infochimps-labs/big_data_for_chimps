@@ -4,7 +4,7 @@
 * Combiner within initial compute horizon; group and combine
 * Window dimension is a horizon dimension; hard windows
   - strictly nested panes corresponding to horizon dimensions
-* ...
+* Sorted
 
 
 
