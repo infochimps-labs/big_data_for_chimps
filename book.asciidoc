@@ -40,11 +40,11 @@ include::88-storm-glossary.asciidoc[]
 	 
 include::88-storm-junk_ignore.asciidoc[]
 	 
-include::88-storm-lifecycle_of_a_record.asciidoc[]
-	 
-include::88-storm-overview.asciidoc[]
-	 
 include::88-tuning_storm_trident.asciidoc[]
+
+include::88-storm-lifecycle_of_a_record.asciidoc[]
+  
+include::88-storm-overview.asciidoc[]
 	 
 include::25-appendix.asciidoc[]
 
@@ -53,3 +53,4 @@ include::25a-authors.asciidoc[]
 include::25b-colophon.asciidoc[]
 
 include::25g-back_cover.asciidoc[]
+

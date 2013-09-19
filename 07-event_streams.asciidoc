@@ -1,7 +1,8 @@
 [[event_streams]]
-== Event streams ==
+== Event Streams ==
+////This intro here is a good model for other chapters - this one's rough, but the bones are here.  Amy////
 
-Much of Hadoop's adoption is driven by organizations realizing they the opportunity to measure every aspect of their operation, unify those data sources, and act on the patterns that Hadoop and other Big Data tools uncover.
+Much of Hadoop's adoption is driven by organizations realizing they the opportunity to measure every aspect of their operation, unify those data sources, and act on the patterns that Hadoop and other Big Data tools uncover.////Share a few examples of things that can be measured (website hits, etc.)  Amy////
 
 For
 
@@ -11,7 +12,7 @@ can use the clickstream of interactions with each email
 ; this was one of the cardinal advantages cited in the success of Barack Obama's 2012 campaign.
 
 
-This chapter's techniques will help a hospital process the stream of data from every ICU patient; a retailer process the entire purchase-decision process
+This chapter's techniques will help, say, a hospital process the stream of data from every ICU patient; a retailer process the entire purchase-decision process
 from
 or a political campaign to understand and tune
 the response to
@@ -23,5 +24,5 @@ Hadoop cut its teeth at Yahoo, where it was primarily used for processing intern
 // ?? maybe this should just be 'data streams' or something
 
 
-Quite likely, server log processing either a) is the reason you got this book or b) seems utterly boring. For the latter folks, stick with it; hidden in this chapter are basic problems of statistics (finding histogram of pageviews), text processing (regular expressions for parsing), and graphs (constructing the tree of paths that users take through a website).
+Quite likely, server log processing either a) is the reason you got this book or b) seems utterly boring.////I think you should explain this for readers.  Amy//// For the latter folks, stick with it; hidden in this chapter are basic problems of statistics (finding histogram of pageviews), text processing (regular expressions for parsing), and graphs (constructing the tree of paths that users take through a website).
 

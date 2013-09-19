@@ -15,8 +15,10 @@ image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
 As bags of mail arrived from every town and city, they were hung from the branches of the Bag Tree. Each time an elf was ready for the next letter, a big claw arm swung out to the right spot on the Bag Tree to retrieve it. "The locality of access is all wrong!" bellowed the chimps. "The next request for Legos is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
+//// Tie the bags to the real world here, "This is similar to the business issue of ..."  Amy////
 
-What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in, and from the warehouses that held completed toys. The hallways were clogged with frazzled elves running back and forth between the Bag Tree, their workbench, and the shipping center -- they spent almost as much effort on the mechanics of retrieving letters and dropping off gifts as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
+What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in, and from the warehouses that held completed toys. The hallways were clogged with frazzled elves running back and forth between the Bag Tree, their workbench, and the shipping center -- they spent almost as much effort on the mechanics of retrieving letters and dropping off gifts as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!" //// I'd finish this paragraph with a tie-in to the real-world, whatever is equal to letters and heavy loads in the real world, "Again, just as a scientist would..."  Amy////
+
 
 ==== Letters to Toy Requests ====
 
@@ -24,7 +26,7 @@ In marched the chimps and elephants, who (singing a rather bawdy version of the 
 
 As you might guess from the last chapter, they set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate. Rather than the centralized Bag Tree, the elephants mustered to distribute mailbags all across the processing stations -- now they could be processed locally, rather than clogging up the hallways as the old Bag Tree required.
 
-The chimps' job was to take letters one-by-one from a mailbag, and fill out a toyform for each requested toy. A toyform has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Goodness, Location, and so forth. Here are some simplified examples:
+The chimps' job was to take letters one-by-one from a mailbag, and fill out a toyform for each requested toy. A toyform has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Goodness, Location, and so forth. Here are some simplified examples:  //// Provide eaders with more explanation as to how you arrived at the following classifications below.   Amy////
 
         --------------------------------------         # Joe is clearly a good kid, and thoughtful for his sister. He will get a robot and his sister will get a doll.
 
@@ -58,19 +60,24 @@ The chimps' job was to take letters one-by-one from a mailbag, and fill out a to
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
+//// This is a good spot to insert a business or real world example to tie together the lesson, before moving on to the Toyform stuff.  Amy////
+
 ==== Toyform Delivery ====
 
-So far, this looks a lot like the process for the translation project, with letters in, toyforms out, and the elephant librarians ensuring a steady supply of mail. But a simple transform isn't enough. Since the set-up for tying ribbons on Ponies is very different from the set-up for assembling a Yo-Yo, the elves would like to process each type of toy as a group.
+So far, this looks a lot like the process for the translation project, with letters in, toyforms out, and the elephant librarians ensuring a steady supply of mail. But a simple transform isn't enough. //// Please explain why, something like, "...if we attempted a simple transform, what we'd get is...." Amy//// Since the set-up for tying ribbons on Ponies is very different from the set-up for assembling a Yo-Yo, the elves would like to process each type of toy as a group.
 
 So in the new system, each type of toy is handled at the specific workbench designated for that toy. For example, all the robots and hats might go to workbench A, while all the ponies and yo-yos go to workbench B, and all the coal orders to workbench C.
+
+//// Add something here to tie the concept to the real world, like, "...so, again, if this were a biology setting, the correlation would be something like, workbench = Lab A in a biology research lab..."  Amy////
 
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
 Next to each chimpanzee stands a line of pygmy elephants, one for each workbench. Each pygmy elephant bears a vertical file like you find on a very organized person's desk:
 
 image::images/paper_sorter.jpg[paper sorter]
+//// Perhaps a smaller sizing for the image? Amy////
 
-The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!
+The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!  //// I'm not truly clear what kind of business analogy should be coming to mind for readers here? This is cute, but you might lose readers attention here - consider a business analogy.  Amy////
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
@@ -88,8 +95,10 @@ You should wonder how, from all the medley outputs of all the rambunctious chimp
 
 [NOTE]
 ==========
-You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number
+You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number.
 ==========
+
+/// Provide a practical appliation to a business problem here, to round-out the above section and, again, help readers tie it all together.  It doesn't have to be business per se, but could be archaeology, biology, education, etc. OK?  Amy//// 
 
 ==== Sorted Groups ====
 

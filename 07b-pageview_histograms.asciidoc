@@ -1,4 +1,5 @@
 === Pageview Histograms ===
+////Ease the reader in with something like, "Our goal here will be..."  Amy////
 
 Let's start exploring the dataset. Andy Baio
 

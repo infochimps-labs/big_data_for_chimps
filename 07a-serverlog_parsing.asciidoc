@@ -11,8 +11,10 @@ include::code/serverlogs/models/logline--fields.rb[]
 Since most of our questions are about what visitors do, we'll mainly use `visitor_id` (to identify common requests for a visitor), `uri_str` (what they requested), `requested_at` (when they requested it) and `referer` (the page they clicked on).  Don't worry if you're not deeply familiar with the rest of the fields in our model -- they'll become clear in context.
 
 Two notes, though. In these explorations, we're going to use the `ip_address` field for the `visitor_id`. That's good enough if you don't mind artifacts, like every visitor from the same coffee shop being treated identically. For serious use, though, many web applications assign an identifying "cookie" to each visitor and add it as a custom logline field. Following good practice, we've built this model with a `visitor_id` method that decouples the _semantics_ ("visitor") from the _data_ ("the IP address they happen to have visited from"). Also please note that, though the dictionary blesses the term 'referrer', the early authors of the web used the spelling 'referer' and we're now stuck with it in this context.
+///Here is a great example of supporting with real-world analogies, above where you wrote, "like every visitor from the same coffee shop being treated identically..." Yes! That is the kind of simple, sophisticated tying-together type of connective tissue needed throughout, to greater and lesser degrees.  Amy////
 
 === Simple Log Parsing ===
+////Help the reader in by writing something quick, short, like, "The core nugget that you should know about simple log parsing is..."  Amy////
 
 Webserver logs typically follow some variant of the <<serverlog_example_line,"Apache Common Log" format>> -- a series of lines describing each web request:
 

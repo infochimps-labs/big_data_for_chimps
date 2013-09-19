@@ -9,6 +9,7 @@ We also have a severe version of the multiscale problem.  The coverage varies wi
 
 
 ==== Find the Voronoi Polygon for each Weather Station ====
+////I think readers will need for you to draw out what's key here.  Say why this matters.  Connect the dots for readers.  This is important for them to grasp.  Amy////
 
 These factors rule out any naïve approach to locality, but there's an elegant solution known as a Voronoi diagram footnote:[see http://en.wikipedia.org/wiki/Voronoi_diagram[Wikipedia entry] or (with a Java-enabled browser) this http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet]].
 

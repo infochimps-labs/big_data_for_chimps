@@ -1,5 +1,7 @@
 === Locality of Reference ===
 
+//// Add something along the lines of, "You'll recall our discussion about locality.  Remember how we learned that x, y, and z have...?  Now you'll be able to see that in action."  Amy////
+
 Ever since there were 
 
         [] [] [] [] 
@@ -28,11 +30,13 @@ In the example of the Elves, the data was at points organized in three different
 2. In pygmy-elephant batches according to toy type, sorted by toy detail.
 3. In sacks of gifts for each household, ordered by Santa's delivery path.
 
-The difficulty the elves faced wasn't in processing the records. Workforms and Gift Making, that's what they were born to do. Their problem was first, that toy requests were organized by mail route, not toy type; and next, that the gifts for each household were organized by toy type, not geography. In both cases, the job of the chimps was to transform the data and then label it by its _key locality_: in these examples, toy type and toy detail, or delivery path and household.
+The difficulty the elves faced wasn't in processing the records. Workforms and Gift Making, that's what they were born to do. Their problem was first, that toy requests were organized by mail route, not toy type; and next, that the gifts for each household were organized by toy type, not geography. In both cases, the job of the chimps was to transform the data and then label it by its _key locality_: in these examples, toy type and toy detail, or delivery path and household.   //// This seems unclear. Are you saying that toy type and toy deail ARE the key localities?  This is an important point to clearly define. Amy////
+
+//// Correlate the above to equivalent real-world scenarios and explain the "key localities" of those examples too.  Amy////
 
 === Locality: Examples ===
 
-This book is fundamentally about just that thing: helping you identify the key locality of a data problem. Now for folks who learn by reading, what we mean by "key locality" is starting to make sense, and so I'll give you some brief examples. For folks who learn by doing, you might want to read some more examples and then
+This book is fundamentally about just that thing: helping you identify the key locality of a data problem. /// Something like, "...in other words, the common center of a data problem.  Or, locality could refer to the universals in a set, such as blood type or eye color in the case of..."  (I don't know if that is correct but I hope you get what I'm suggesting with these examples.)  Amy//// Now for folks who learn by reading, what we mean by "key locality" is starting to make sense, and so I'll give you some brief examples. For folks who learn by doing, you might want to read some more examples and then 
 
 * *word count*: You can count the occurrence of every word in a large body of text by a) grouping all ocurrences of each word together b) counting each group. In this case, the key locality is the word itself. // the words are initially organized by position within the text; 
 
@@ -41,6 +45,8 @@ This book is fundamentally about just that thing: helping you identify the key l
 * *network graph statistics*: Counting the average number of Twitter messages per day in each user's timeline requires two steps. First, take every 'A follows B' link and get it into the same locality as the user record for its "B".  Next, group all those links by the user record for 'A', and sum their messages-per-day. 
 
 * *correlation*: Correlate stock prices with pageview counts of each corporation's Wikipedia pages: bring the stock prices and pageview counts for each stock symbol together, and sort them together by time. 
+
+//// I'm wondering if it would be worthwhile for readers to get the best possible hang of locality if you were to guide them through actually coding the above four? That would be helpful for the folks who learn by doing, as you refer to above. Amy////
 
 === The Hadoop Haiku ===
 

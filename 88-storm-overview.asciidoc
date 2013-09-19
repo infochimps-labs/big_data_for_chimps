@@ -1,6 +1,7 @@
 == Storm+Trident
 
 INTRO SECTION:
+////Weave in a couple of buisness examples to round out this chapter, refer to a few business problem scenarios and how they can be solved (like, "Say your finance client wants to understand x...")  Amy////
 
 * what should reader learn?
 * match with the three goals
@@ -18,9 +19,9 @@ The obvious applications are extract/transform/load ("ETL") processes -- the aut
 
 It's best instead to think of Stream Analytics as a way to query your data on the way _in_ to your datastore. A full-capability big data platform has all three of the following pieces:
 
-* Stream Processing, to assemble data in simple context at write time;
-* Queryable Datastore, to assemble data in simple context at read time;
-* Batch Processing, to assemble data in global context 
+* Stream Processing, to assemble data in simple context at write time;////For example... Amy////
+* Queryable Datastore, to assemble data in simple context at read time;////For example... Amy////
+* Batch Processing, to assemble data in global context////For example... Amy//// 
  
 The Storm+Trident data processing system, developed by Backtype and Twitter, is a remarkably elegant open-source project that's emerging as the dominant streaming analytics platform.
 
@@ -28,7 +29,7 @@ While the raw API of Storm+Trident is quite different from that of Hadoop, the i
 
 === Storm+Trident
 
-Storm is the underlying framework that handles transport, messaging, process supervision and so forth. It guarantees reliable processing of each record using a brilliantly simple scheme that will scale to millions of records without requiring its own massive data flow for bookkeeping. 
+Storm is the underlying framework that handles transport, messaging, process supervision and so forth. It guarantees reliable processing of each record using a brilliantly simple scheme that will scale to millions of records without requiring its own massive data flow for bookkeeping. ////For example, in healthcare, it's used to...  Amy////
 
 Trident builds on Storm to provide exactly once processing and transactional  
 * layer on the flow DSL

@@ -38,7 +38,7 @@ Geographic data shows up in the form of
 The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for its machine learning sense only just say "object" in place of "geographic feature" (and ).
 ===============================
 
-Geospatial Information Science ("GIS") is a deep subject, treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
+Geospatial Information Science ("GIS") is a deep subject, ////Say how, like, ", which focuses on the study of..."  Amy////treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
 
 === Geospatial JOIN using quadtiles ===
 
@@ -79,6 +79,7 @@ This is a 1-d index into a 2-d space! What's more, nearby points in space are ty
 Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
 
 ==== Patterns in UFO Sightings ====
+////Introduce/buffer a bit first -- like, "The following approach can also be used to analyze x, y, or z..."  Root in real-world applications, first.  Amy////
 
 Let's put Hadoop into practice for something really important: understanding where a likely alien invasion will take place. The National UFO Reporting Center has compiled a dataset of 60,000+ documented UFO sightings, with metadata. We can combine that with the 7 million labelled points of interest in the Geonames dataset: airports and zoos, capes to craters, schools, churches and more.
 
@@ -122,6 +123,7 @@ Mapper output:
 
 
 ==== Reducer: combine objects on each quadtile ====
+////Introduce this - (it's true, you'll need to reorient the reader pretty consistently). "Here, we are looking for..."  Amy////
 
 The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
 
