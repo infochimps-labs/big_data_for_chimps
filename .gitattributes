@@ -1,0 +1,8 @@
+text=auto
+
+*.asciidoc text
+*.md       text
+*.txt      text
+*.rb       text
+*.pig      text
+*.tsv      eol=lf

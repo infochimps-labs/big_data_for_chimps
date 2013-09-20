@@ -1,3 +1,4 @@
+=== Storm Internals
 
 * Storm Internals
   - Glossary of Terms
@@ -12,12 +13,6 @@
   - Batch and Partition:
 * Trident Transactionality
 * Tuning Storm+Trident
-
-
-
-Intro:
-  - ???
-=== Storm Internals
 
 
 ==== Glossary of Terms
@@ -55,6 +50,8 @@ Intro:
   - so with 3 kafka spouts on a worker, there are three executors spouting
 
 === Trident Lifecycle
+
+...
 
 ==== Coordinator
 
@@ -148,9 +145,7 @@ At the heart
 
 ===== Worker Transfer and Receive Handlers
 
-
 Unlike the transfer and the executor queues, the worker's receive buffer is a ZeroMQ construct, not a disruptor queue
-
 
 ==== Transport of Tuples
 diagram of a flow. Explain how tuples move through the flow
@@ -173,8 +168,6 @@ Acking framework/machinery for guaranteeing at least once (maybe sidebar or adva
 
 
 * Alice does a favor for Bob and Charlie. Alice is now in the clear; Bob and Charlie owe
-* 
-
 
 * For every record generated, send it to the acker
 * Who keeps it in a table
@@ -190,8 +183,6 @@ Instead,
     - it's actually a set of lookup tables: current, old and dead. new tuple trees are added to the current bucket; every timeout number of seconds, current becomes old, and old becomes dead -- they are declared failed and their records retried.
 * The spout holds the original tuple until it receives notice from the acker. The spout won't fetch more than the max-pending number of tuples: this is to protect the spout against memory pressure , and the downstream system against congestion.
 
-
-
 When a tuple is born in the spout,
 
 * creates a `root-id` -- this will identify the tuple tree. Let's say it had the value `3`.
@@ -203,8 +194,7 @@ When a tuple is born in the spout,
 
 When a tuple is sent from a bolt, it claims one or more anchors (the tuples it came from), and one or more destination task ids.
 
-
-====== Acker Walkthrough
+==== Acker Walkthrough
 
 When a tuple is born in the spout,
 
@@ -265,7 +255,7 @@ traffic occurs to the acker in two places:
 even if there are thousands of tuples, only a very small amount of data is sent: the init_stream when the tuple tree is born, and once for each child tuple.
 When a tuple is acked, it both clears its own record and implicates its children.
 
-====== Acker
+===== Acker
 
 * Acker is just a regular bolt -- all the interesting action takes place in its execute method.
 * it knows
@@ -281,11 +271,11 @@ pending has objects like `{ val: "(checksum)", spout_task: "(task_id)" }`
 
 * when it's an ACKER-INIT-STREAM
   `pending[:val] = pending[:val] ^ tuple[1]`
-*
 
 
 pseudocode
 
+----
     class Acker < Bolt
 
 	def initialize
@@ -321,13 +311,9 @@ pseudocode
 	end
 
     end
+----
 
-
-
-
-
-
-====== A few details
+===== A few details
 
 There's a few details to clarify:
 
@@ -339,70 +325,71 @@ First, the spout must never block when emitting -- if it did, critical bookkeepi
 
 The spout's async-loop won't call `nextTuple` if overflow is present, so the overflow buffer only has to accomodate the maximum number of tuples emitted in a single `nextTuple` call.
 
-
-
 Topology Life Cycle
+
 from launch to running`
     - you upload your jar, nimbus instantiates your topoology, then it goes to each supervisor, child processes evaluate topology, etc...
 
 === Trident
 
 ==== Trident motivation
-  - example of things you can't do with storm
-    - what topologies could we run that wouldn't work on storm?
+
+- example of things you can't do with storm
+  - what topologies could we run that wouldn't work on storm?
 
 ==== Trident Fundamental Operations:
-  - https://github.com/nathanmarz/storm/wiki/Trident-API-Overview
+- https://github.com/nathanmarz/storm/wiki/Trident-API-Overview
 
-  - each: accepts one tuple, emits 0, 1, or many tuples
-  - filter: accepts one tuple, implements isKeep, causing it to emit 0 or 1 tuples
-  - batch query/batch apply/map
-    - Accepts a list of n tuples
-    - emits a list of n things (could be tuples, objects, whatever)
-    - then, in 'executor' the list of n things is handed to a method that emits 0, 1 or many tuples for each thing
-  - batch apply/map
-    - emits only 1 thing for each of the n things
-    - list of results
-  - batch each
-    - emits the original n things
-    - list of result lists
-  - partition persist
-    - basically a batch query with a commit guarantee
-    - equivalent of pig store
-    - talk about failure cases
-      - what happens if some of the partitions fail in the commit? where are the tuples retried from?
-    - school bus metaphor:
-      - there is no ordering of partitions, however there is an ordering over tuples within partitions
-       - you will never see an out of order tuple within a partition, but you might switch contexts between partitions
-         - i.e: Partition Green - 1,2,3,4,5 Parition Red: 2,3,4,5 Partition Green: 6,7,8,9,10
-      - coord tuple is at the end of the partition
-  - persistent aggregate
-    - a persistent aggregate ensures that an aggregator is applied to each tuple in a batch, and persists the result
-      using transactional guarantees
-    - commits once the prior batch has succeeded and all partitions have succeeded(completed)
-  - partition aggregate
-    - does not have a commit
-    - give it an aggregator function, ensuring that the aggregator is applied to each partition in the batch
-    - like persistent aggregate without commit
+- each: accepts one tuple, emits 0, 1, or many tuples
+- filter: accepts one tuple, implements isKeep, causing it to emit 0 or 1 tuples
+- batch query/batch apply/map
+  - Accepts a list of n tuples
+  - emits a list of n things (could be tuples, objects, whatever)
+  - then, in 'executor' the list of n things is handed to a method that emits 0, 1 or many tuples for each thing
+- batch apply/map
+  - emits only 1 thing for each of the n things
+  - list of results
+- batch each
+  - emits the original n things
+  - list of result lists
+- partition persist
+  - basically a batch query with a commit guarantee
+  - equivalent of pig store
+  - talk about failure cases
+    - what happens if some of the partitions fail in the commit? where are the tuples retried from?
+  - school bus metaphor:
+    - there is no ordering of partitions, however there is an ordering over tuples within partitions
+     - you will never see an out of order tuple within a partition, but you might switch contexts between partitions
+       - i.e: Partition Green - 1,2,3,4,5 Parition Red: 2,3,4,5 Partition Green: 6,7,8,9,10
+    - coord tuple is at the end of the partition
+- persistent aggregate
+  - a persistent aggregate ensures that an aggregator is applied to each tuple in a batch, and persists the result
+    using transactional guarantees
+  - commits once the prior batch has succeeded and all partitions have succeeded(completed)
+- partition aggregate
+  - does not have a commit
+  - give it an aggregator function, ensuring that the aggregator is applied to each partition in the batch
+  - like persistent aggregate without commit
 
 Trident aggregators
-    - aggregator (cannot be used with a persist)
-      - gets an init call, can emit
-      - gets a call with aggregate with every tuple in a partition, can emit
-      - gets a call to complete, can emit
-    - accumulator
-      - calls firstTuple() with the first tuple in a partition
-      - calls aggregate method with each tuple in partition, including first
-      - calls complete
-    - improver * the method signatures may change slightly
-      - accepts a unified profile and deltas, emits 'improved' profile
-      - complete called, emits 'posterior'
-    - reducing aggregator (fold)
-      - call init (sometimes) for first element in series
-      - stepwise improver - one at a time. Improver accepts many deltas, reducing aggregator accepts one at a time
-    - combiner
-      - has a zero method
-      - has a combine method that accepts to values and returns combined value
+
+- aggregator (cannot be used with a persist)
+  - gets an init call, can emit
+  - gets a call with aggregate with every tuple in a partition, can emit
+  - gets a call to complete, can emit
+- accumulator
+  - calls firstTuple() with the first tuple in a partition
+  - calls aggregate method with each tuple in partition, including first
+  - calls complete
+- improver * the method signatures may change slightly
+  - accepts a unified profile and deltas, emits 'improved' profile
+  - complete called, emits 'posterior'
+- reducing aggregator (fold)
+  - call init (sometimes) for first element in series
+  - stepwise improver - one at a time. Improver accepts many deltas, reducing aggregator accepts one at a time
+- combiner
+  - has a zero method
+  - has a combine method that accepts to values and returns combined value
 
 Trident Persistent Aggregates
 
@@ -412,18 +399,22 @@ the Trident `State` has retrieved the prior values for the keys
 the Trident `State` is given the new tuples 
 Persistent Aggregate has the following things
 aggregator, which is called with the list of values (refer above)
-there is a backing store facade which presents the interface for a key-value store
-    - it’s a key-value store of some kind. Concrete implementations exist for memory, elasticsearch, memcached, hbase, etc…
-    - can say getValues and give it a bunch of group keys
-    - can say putValues and give it a list of group keys and a list of group values
+
+* there is a backing store facade which presents the interface for a key-value store
+  - it’s a key-value store of some kind. Concrete implementations exist for memory, elasticsearch, memcached, hbase, etc…
+  - can say getValues and give it a bunch of group keys
+  - can say putValues and give it a list of group keys and a list of group values
 
 Persistent aggregate has many moving parts that are all decomposed and connected. we are *not* going to describe every single way to assemble a persistent aggregate. We will give you the (somewhat elaborate) recommended configuration that you will want to use most of the time, but will not go into all of the details of constructing your own from scratch.
  
 Recommended Pieces:
+
 Data Store Adapter (look up correct word) presents a map-esque interface that actually carries out storing and retrieving values.
 Write-through LRU cache sitting in front of data store adapter -- wraps the data store adapter with an LRU cache
-Aggregator function like those listed above that performs the aggregation 
+Aggregator function like those listed above that performs the aggregation
+
 Not covered:
+
 Serializers  - responsible for turning a value into a string suitable to be sent to the datastore
 Value Updater - responsible for something *look up function*
 State Updater - also does something *look up function*
@@ -433,40 +424,40 @@ Life Cycle:
 
 In case you’re wondering we’re going to talk about a transactional topology with a non-combiner aggregator first. We’ll explain more later. The point being that this aggregator must get the values before performing the aggregation.
 
-1) Executor hosting this state operation enters the commit phase (commit tuple arrives)
-2) Executor calls getValues() on the datastore (actually lru cache) on all group keys within the partition. The values are retrieved for use in the aggregation. e.g. in the diagram for the first partition, those keys will a,e,l,m,o,u,t. Note that even though l occurs twice it’s only one key.
-3) Executor applies aggregator to each group (i.e. the values associated with the keys aelmout)
+1. Executor hosting this state operation enters the commit phase (commit tuple arrives)
+2. Executor calls getValues() on the datastore (actually lru cache) on all group keys within the partition. The values are retrieved for use in the aggregation. e.g. in the diagram for the first partition, those keys will a,e,l,m,o,u,t. Note that even though l occurs twice it’s only one key.
+3. Executor applies aggregator to each group (i.e. the values associated with the keys aelmout)
 
-In the letter counting example the first executor in batch two gets the keys a,c, and e. The data store has values for a and e from the first batch. Next it will apply the aggregator function. In the case of key a, it will call reduce() 3 times: call it with 
+In the letter counting example the first executor in batch two gets the keys a,c, and e. The data store has values for a and e from the first batch. Next it will apply the aggregator function. In the case of key a, it will call reduce() 3 times: call it with
+
 ==== Trident Is Storm
 
-  - describe the storm topology that results from a trident topology
-    - lay of the land/actors
+- describe the storm topology that results from a trident topology
+  - lay of the land/actors
 
 ==== Batch and Partition:
-  - implications of transactions (transactional guarantees)/lifecycle of a batch/partition
-    - there is no mechanism guaranteeing a partial order
-    - each partition becomes complete once 
-      - field-trip metaphor
-    - guarantee is this: if you are told to commit, you are guaranteed that all batches before you have succeeded 
-      and no batch after you has tried to commit.
 
 
+- implications of transactions (transactional guarantees)/lifecycle of a batch/partition
+  - there is no mechanism guaranteeing a partial order
+  - each partition becomes complete once 
+    - field-trip metaphor
+  - guarantee is this: if you are told to commit, you are guaranteed that all batches before you have succeeded 
+    and no batch after you has tried to commit.
 
 ==== Trident Transactionality
 
-  - A detailed look at partitions and transactions
-    - partition = sub-batch
-    - set of things that should all be committed to the database at the same time
-    - partitions are defined back at the trident. they're where you actually save something
-    - partition/persist is an example of what exactly once is used for
+- A detailed look at partitions and transactions
+  - partition = sub-batch
+  - set of things that should all be committed to the database at the same time
+  - partitions are defined back at the trident. they're where you actually save something
+  - partition/persist is an example of what exactly once is used for
 
 ===== Kinds of State
 
 * non-transactional: batching behavior only
 * transactional: exactly once; batches are always processed in whole
 * opaque transactional: all records are processed, but might not be in same batches
-
 
 ==== Transactional State
 
@@ -487,7 +478,9 @@ Let's say for transaction ID 69 the old aggregated values were `{A:20, B: 10, C:
 
 It stores (TODO: verify order of list):
 
+----
    {A: [24, 20, 69], B: [12, 10, 69], C: [2, 1, 69], D: [1, 0, 69]}
+----
 
 If I am processing batch 
 
@@ -495,18 +488,21 @@ Since this is a _State_, you have contractual obligation from Trident that batch
 
 So when I go to read from the DB, I will usually see something like
 
+----
    {A: [20, ??, 68], B: [10, ??, 68], C: [1, ??, 68]}
+----
 
 I might instead however see
 
+----
   {A: [??, 20, 69], B: [??, 10, 69], C: [??, 1, 69], D: [??, 0, 69]}
+----
 
 This means another attempt has been here: maybe it succeeded but was slow; maybe it failed; maybe _I_ am the one who is succeeding but slow. In any case, I don't know whether to trust the _new_ (first slot) values for this state, but I do know that I can trust the prior (second slot) values saved from batch 68. I just use those, and clobber the existing values with my new, correct counts.
 
 ==== Code Locations
 
-
-====== Code Locations
+===== Code Locations
 
 Since the Storm+Trident code is split across multiple parent directories, it can be hard to track where its internal logic lives. Here's a guide to the code paths as of version `0.9.0-wip`.
 
@@ -528,9 +524,9 @@ Since the Storm+Trident code is split across multiple parent directories, it can
 | `..`			 	| `clj/b/s/`			    	|
 |=======
 
-
 ==== Tuning Storm and Trident
 
+...
 
 ===== Numerology
 
@@ -539,24 +535,13 @@ The following should be even multiples:
 * `N_w` workers per machine. (one if you're only running one topology)
 * `N_spouts` per
   - `N_partitions_per_spout` -- even number of partitions per spout
-  
 * Don't change multiplicity lightly
   - it will route directly
   - don't really understand how/when/why yet
-
-
 * Parallelism hint is a hint --
   - can get more never less (TODO: verify)
 
-
-
-=== Intro to Trident (appears earlier) 
-hey lets use storm a bunch
-
-
-==== Storm+Trident: Lifecycle of a Record
-
-===== Refs
+==== Refs
 
 * http://www.slideshare.net/lukjanovsv/twitter-storm?from_search=1
 
