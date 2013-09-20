@@ -1,15 +1,14 @@
+=== Locality
 
+_(rough notes only from here to tuning)_
+
+==== Types of windows
 
 * Time horizon infinite; converges to truth; scroll
 * Combiner within initial compute horizon; group and combine
 * Window dimension is a horizon dimension; hard windows
   - strictly nested panes corresponding to horizon dimensions
 * Sorted
-
-
-
-
-
 
 ==== Batch, Window, Partition and Group
 
@@ -53,11 +52,9 @@ Trident should support the concept of a _stream window_, implemented using 'punc
 
 Many CEP (Complex Event Processing) systems offer this concept
 
-* _scrolling_ --
+* _scrolling_
 * _window_
-* _window and pane_ -- 
-
-
+* _window and pane_
 
 landmark, tumbling, slide-by-tuple, partitioned, etc.
 

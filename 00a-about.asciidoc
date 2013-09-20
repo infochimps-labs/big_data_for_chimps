@@ -5,6 +5,8 @@
 // :lang: 		en
 // :encoding: 	utf-8
 
+image::images/front_cover.jpg[Front Cover]
+
 === Hello, Early Releasers ===
 ////Dev editor edited////
 Hello and thanks, courageous and farsighted early released-to'er! We want to make sure the book delivers value to you now, and rewards your early confidence by becoming a book you're proud to own.
