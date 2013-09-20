@@ -57,9 +57,12 @@ For map states or persistentAggregates -- things where results are accumulated i
 
 ===== CPU-bound flow
 
-Select machines with many cores
+If the flow is intensely CPU-bound,
 
-Start tuning on a machine with lots of cores and over-provision the RAM -- we'll optimize the hardware later.
+Otherwise, prefer a machine with many cores -- Storm parallelizes extremely well
+For example, on Amazon EC2, you have a choice between a c1.xlarge (8 cores, 2.5 "compute units" (CU), for 34 CU
+
+Start tuning on a machine with lots of cores and over-provision the RAM. We'll optimize the hardware later, but first you'd like to qualify the flow's critical bottleneck. 
 
 For a CPU-bound flow:
 
