@@ -21,14 +21,14 @@ Trident
 * TridentOperation
 * TridentFunction
 * Aggregator
-* 
+*
 
 Layout
 
 * Topology
 * Stream
 * Assembly
-* 
+*
 
 Internal
 
@@ -44,4 +44,3 @@ Transport
 * Executor Receive Queue
 * Worker Transfer Queue
 * (Worker Receive Buffer)
-

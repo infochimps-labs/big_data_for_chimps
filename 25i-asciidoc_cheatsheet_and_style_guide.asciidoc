@@ -1,6 +1,12 @@
 [[style_notes]]
 === Style notes:
 
+==== Gotchas
+
+Make sure your codebase respects platform-appropriate line-endings, or you will constantly find meaningless diffs caused by windows/mac/unix newline rinsing. https://help.github.com/articles/dealing-with-line-endings[Dealing with Line Endings] on Github and http://git-scm.com/docs/gitattributes[gitattributes man page] from the git project have the solution.
+
+If you see a complaint about `section title not permitted in delimited block`, that probably indicates a block delimiter (`____`, `====`)  is hanging -- it is opened but never closed. Two common ways to do this are to import a file with markdown horizontal rule (`_____`), or to fail to remove the `======` from a git context diff block.
+
 ==== Markup
 
 Conventions:

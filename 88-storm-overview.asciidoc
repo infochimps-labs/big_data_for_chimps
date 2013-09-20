@@ -1,6 +1,7 @@
 == Storm+Trident
 
 INTRO SECTION:
+
 ////Weave in a couple of buisness examples to round out this chapter, refer to a few business problem scenarios and how they can be solved (like, "Say your finance client wants to understand x...")  Amy////
 
 * what should reader learn?
@@ -11,18 +12,17 @@ INTRO SECTION:
   - recognize the pattern
   - advance grok
 
-
 === Storm+Trident: Overview
 
-One of the biggest changes to the practice of big data over the last year has been the rapid adoption of streaming data analytics. 
-The obvious applications are extract/transform/load ("ETL") processes -- the automated version of chapter (TODO REF) on Data Munging -- and complex event processing ("CEP") -- the kind of real-time data handling that powers Wall Street and high-scale security monitoring. 
+One of the biggest changes to the practice of big data over the last year has been the rapid adoption of streaming data analytics.
+The obvious applications are extract/transform/load ("ETL") processes -- the automated version of chapter (TODO REF) on Data Munging -- and complex event processing ("CEP") -- the kind of real-time data handling that powers Wall Street and high-scale security monitoring.
 
 It's best instead to think of Stream Analytics as a way to query your data on the way _in_ to your datastore. A full-capability big data platform has all three of the following pieces:
 
 * Stream Processing, to assemble data in simple context at write time;////For example... Amy////
 * Queryable Datastore, to assemble data in simple context at read time;////For example... Amy////
-* Batch Processing, to assemble data in global context////For example... Amy//// 
- 
+* Batch Processing, to assemble data in global context////For example... Amy////
+
 The Storm+Trident data processing system, developed by Backtype and Twitter, is a remarkably elegant open-source project that's emerging as the dominant streaming analytics platform.
 
 While the raw API of Storm+Trident is quite different from that of Hadoop, the interesting parts are the same. Wukong unifies the two, letting us concentrate on data and questions. Let's dive in.
@@ -31,7 +31,7 @@ While the raw API of Storm+Trident is quite different from that of Hadoop, the i
 
 Storm is the underlying framework that handles transport, messaging, process supervision and so forth. It guarantees reliable processing of each record using a brilliantly simple scheme that will scale to millions of records without requiring its own massive data flow for bookkeeping. ////For example, in healthcare, it's used to...  Amy////
 
-Trident builds on Storm to provide exactly once processing and transactional  
+Trident builds on Storm to provide exactly once processing and transactional
 * layer on the flow DSL
 * some primitive aggregators
 
@@ -46,15 +46,17 @@ The central challenge of high-scale stream analytics is this: the amount of meta
 
 A distributed framework can provide one of the following guarantees:
 
-* "best-effort": 
-* "at least once": every record will be successfully processed at least once. If your data 
+* "best-effort":
+* "at least once": every record will be successfully processed at least once. If your data
 * "exactly-once": every record is successfully processed, and every unsuccessful attempt can be reliably invalidated or retracted
 
 A surprising number of tasks require only best-effort or at-least-once processing
-But exactly-once processing is essential for analytics processes: counting distinct records, 
+But exactly-once processing is essential for analytics processes: counting distinct records,
 
 
 ==== Storm
+
+...
 
 ===== Tuple
 
@@ -64,21 +66,21 @@ There's a temptation to take your 'Car' model and put its fields -- make, model,
 
 ===== Aggregator
 
-A CombinerAggregator and a ReducerAggregator MUST NOT be stateful. 
+A CombinerAggregator and a ReducerAggregator MUST NOT be stateful.
 
-There is also such a thing as a AccumulatorAggregator. This *does* have state, 
+There is also such a thing as a AccumulatorAggregator. This *does* have state,
 
 
 ===== Reliability
 
-Storm provides "at least once" processing of data. 
+Storm provides "at least once" processing of data.
 
 Storm uses an incredibly elegant strategy to track the successful completion in whole of a tuple tree.
-The acker task tracks a check 
+The acker task tracks a check
 (TODO: verify -- attempt id combines the tuple's id (`messageId`) and task id)
 For each tuple tree. Each execute attempt id is XORed onto the checksum on execute and again on completion.
 
-The XOR function is commutative: `A ^ B == B ^ A`, and the XOR of a number with itself is zero. So if the acker got the events `A_beg, B_beg, A_end, C_beg, C_end, B_end`, the resulting checksum would be `A ^ B ^ A ^ C ^ C ^ B`, which is the same as `A ^ A ^ B ^ B ^ C ^ C` -- which collapses to zero. Without proving the second point, 
+The XOR function is commutative: `A ^ B == B ^ A`, and the XOR of a number with itself is zero. So if the acker got the events `A_beg, B_beg, A_end, C_beg, C_end, B_end`, the resulting checksum would be `A ^ B ^ A ^ C ^ C ^ B`, which is the same as `A ^ A ^ B ^ B ^ C ^ C` -- which collapses to zero. Without proving the second point,
 
 * If the tuple tree is processed successfully, each attempt id will appear twice and so the sum must be zero if successful
 * If the tuple tree is not -- if some one or more tuples are incorrectly acked -- it is exceedingly unlikely the the checksum will be zero.
@@ -91,7 +93,7 @@ In trident, a batch does indeed succeed or fail as a whole, and it will be repla
 
 Trident sits on Storm, which still processes records one-by-one. It's *not* the case, as many people meeting Trident for the first time think, that a general trident operator receives a full batch and than is asked to act on it. Whenever you're forced to pool records you face grave evils like synchronization and memory pressure.
 
-Think about a field trip of school kids to the museum. A school trip (batch) shows up at its chosen time slot (txid) to tour the museum. The buses all show up together, and they will all depart together; but in the meantime the kids will tour the museum as individuals organized within manageably-accounted partitions. 
+Think about a field trip of school kids to the museum. A school trip (batch) shows up at its chosen time slot (txid) to tour the museum. The buses all show up together, and they will all depart together; but in the meantime the kids will tour the museum as individuals organized within manageably-accounted partitions.
 
 The school buses (trident spouts) each dispense a set of kids one by one in front of the museum, who tour the museum together as a partition. In this analogy we'll also make the kids stay in order, and tie a balloon (the $coord tuple) to the belt of the last kid in the partition. Most of the time, the kids walk at their own pace past the exhibits, and each exhibit is enjoyed individually. Some few operations (the lunchtime partitionQuery) require that everyone in a partition be in the same place and time. The chaperones can just start accumulating kids in the same partition; once it sees the baloon that trails the last kid, it knows the partition is all presend. Other operations, like the final partitionPersist back into the schoolbus, can't commit until the chaperone for every partition in the batch signals that its partition is assembled and accounted. Every time you do these batch operations, though, you have some kids sitting around bored and hungry waiting for the stragglers, and you need to ensure there's enough space for the partition to gather together without blocking the hallway. The great thing is that this loose supervision is enough to keep the kids safe while letting various partitions enjoy different wings of the museum concurrently, at their own pace, and without letting one crowded exhibit slow down the whole museum trip.
 
@@ -103,7 +105,7 @@ The school buses (trident spouts) each dispense a set of kids one by one in fron
 * Activity content vs geo context
 * Trade request - risk analysis - hedge - verification
 * Document security - patterns of access
-* 
+*
 
 === Writing to a database from a stream
 
@@ -132,7 +134,7 @@ If those records are identical, immutable and complete, then the email (or email
 
 ===== Partial records
 
-If you need to update parts of a record, you will still need to have a unique id. 
+If you need to update parts of a record, you will still need to have a unique id.
 
 ===== Distinguishable Records
 

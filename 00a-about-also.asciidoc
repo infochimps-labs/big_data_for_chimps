@@ -13,10 +13,6 @@ Big Data for Chimps will:
 
 1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop
 2.  Readers will also come away with a useful, conceptual idea of big data;  big data in its simplest form is a small cluster of well-tagged information that sits upon a central pivot, and can be manipulated through various shifts and rotations with the purpose of delivering insights ("Insight is data in context").  Key to understanding big data is scalability:  infinite amounts of data can rest upon infinite pivot points (Flip - is that accurate or would you say there's just one central pivot - like a Rubic's cube?)
-3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life. 
-
-1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop
-2.  Readers will also come away with a useful, conceptual idea of big data;  big data in its simplest form is a small cluster of well-tagged information that sits upon a central pivot, and can be manipulated through various shifts and rotations with the purpose of delivering insights ("Insight is data in context").  Key to understanding big data is scalability:  infinite amounts of data can rest upon infinite pivot points (Flip - is that accurate or would you say there's just one central pivot - like a Rubic's cube?) Answer above
 3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life.
 
 
@@ -27,23 +23,19 @@ Hello and thank you, courageous and farsighted early released-to'er! We want to 
 ==== Our Questions for You ==== 
 
 * "If it's well-covered on the internet, leave it out" is the rule of thumb we're using for the introductory material covered in this book. We find it annoying when technology books go on (and on) as if giving a bus-tour-of-London tour of a topic ("Outside the window to your left you can see the southwest side of the British Museum!") So we will refrain from exhaustive coverage; yet you should never find yourself completely stranded in the book. Please do let us know if you notice that we're either too exhaustive or too brief in our coverage.  
-
 * Analogies: Two "characters" appear in the first part of the book, Chimpanzee and Elephant.  We utilize them because their activities are surprisingly relevant to understanding the internals of Hadoop; however, we don't want to waste your time, or patience, remapping those activities back to the problem at hand, so please provide feedback as to the usefulness you derive from the analogies.  
-
 * Our plan:  We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
-//// ==== A Few Controversials ====
-////
-//// Insert from later section Amy
+// ==== A Few Controversials ====
+//
+// Insert from later section Amy
 
 ==== We Want Your Feedback ====
 
 * The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`.
-
 * Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
 
 OK! On to the book. Or, on to the introductory parts of the book and then the book.
-
 
 [[about]]
 === About  ===

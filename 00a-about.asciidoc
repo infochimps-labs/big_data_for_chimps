@@ -14,7 +14,6 @@ Hello and thanks, courageous and farsighted early released-to'er! We want to mak
 ==== Our Questions for You ====
 
 * The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". It's annoying when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
-
 * Analogies: We'll be accompanied on part of our journey by Chimpanzee and Elephant, whose adventures are surprisingly relevant to understanding the internals of Hadoop. I don't want to waste your time laboriously remapping those adventures back to the problem at hand, but I definitely don't want to get too cute with the analogy. Again, please let me know if I err on either side.
 
 ==== Probable Contents ====
