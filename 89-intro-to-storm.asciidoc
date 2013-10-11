@@ -4,8 +4,6 @@ Storm+Trident is a system for processing streams of data at scale, and represent
 <Storm Intro>
 
 
-
-
 Your First Topology
 
 Topologies in Storm are analogous to jobs in Hadoop - they define the path data takes through your system and the operations applied along the way. Topologies are compiled locally and then submitted to a Storm cluster where they run indefinitely until stopped. You define your topology and Storm handles all the hard parts -- fault tolerance, retrying, and distributing your code across the cluster among other things.

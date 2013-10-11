@@ -34,8 +34,9 @@ The principal bottleneck may be:
 * _remote rate limit_: alternatively, you may be calling an external resource that imposes a maximum throughput limit. For example, terms-of-service restrictions from a third-party web API might only permit a certain number of bulk requests per hour, or a legacy datastore might only be able to serve a certain volume of requests before its performance degrades. If the remote resource allows bulk requests, you should take care that each Trident batch is sized uniformly. For example, the https://dev.twitter.com/docs/api/1.1/get/users/lookup[twitter users lookup API] returns user records for up to 100 user IDs -- so it’s essential that each batch consist of 100 tuples (and no more). Otherwise, there’s not much to do here besides tuning your throughput to comfortably exceed the maximum expected rate.
 
 For each of the cases besides IO-bound and CPU-bound, there isn’t that much to say:
-for memory-bound flows, it’s "buy enough RAM" (though you should read the tips on JVM tuning later in this chapter). For remote rate-limited flows, buy a better API plan or remote datastore --  otherwise, tune as if CPU-bound, allowing generous headroom. For concurrency-bound flows, apply the recommendations that follow,
-increase concurrency until things get screwy. If that per-machine throughput is acceptable to your budget, great; otherwise, hire an advanced master sysadmin to help you chip away at the
+for memory-bound flows, it’s "buy enough RAM" (though you should read the tips on JVM tuning later in this chapter). For remote rate-limited flows, buy a better API plan or remote datastore --  otherwise, tune as if CPU-bound, allowing generous headroom.
+
+For concurrency-bound flows, apply the recommendations that follow, increase concurrency until things get screwy. If that per-machine throughput is acceptable to your budget, great; otherwise, hire an advanced master sysadmin to help you chip away at the
 
 ==== Provisioning
 
@@ -75,11 +76,9 @@ Once you have roughly dialed in the batch size and parallelism, check in with th
 
 If you're memory-bound, use machines with lots of RAM.
 
-
 ===== Concurrency Bound
 
-In a concurrency bound problem, use very high parallelism
-If possible, use a QueryFunction to combine multiple queries into a batch request.
+In a concurrency bound problem, use very high parallelism. If possible, use a QueryFunction to combine multiple queries into a batch request.
 
 ===== Sidebar: Little's Law
 
@@ -117,9 +116,19 @@ Since the execution time increases slowly in case (2), you get better and better
 
 ===== Executor send buffer size
 
-Don't worry about this setting until most other things stabilize -- it's mostly important for ensuring that a burst of records doesn't clog the send queue.
+Now that the records-per-batch is roughly sized, take a look at the disruptor queue settings (the internal buffers between processing stages). 
 
-Set the executor send buffer to be larger than the batch record count of the spout or first couple stages. Since it applies universally, don't go crazy with this value. It has to be an even power of two (1024, 2048, 4096, 8192, 16384).
+As you learned in the storm internals chapter, each slot in the executor send buffer queue holds a single tuple. The worker periodically sweeps all its hanging records, dispatching them in bunches either directly into executor receive buffers (for executors in the same worker) or the worker transfer buffer (for remote executors). Let us highlight the important fact that the executor send queue contains _tuples_, while the receive/transfer queues contain _bunches of tuples_.
+
+These are advanced-level settings, so don't make changes unless you can quantify their effect, and make sure you understand why any large change is necessary. In all cases, the sizes have to be an even power of two (1024, 2048, 4096, and so forth).
+
+As long as the executor send queu is large enough, further increase makes no real difference apart from increased ram use and a small overhead cost. If the executor send queue is too small, however, a burst of records will clog it unnecessarily. Unfortunately, in current versions of Storm it applies universally so everyone has to live with the needs of the piggiest customer.
+
+This is most severe in the case of a spout, which will receive a large number of records in a burst, or anywhere there is high fanout (one tuple that rapidly turns into many tuples). 
+Set the executor send buffer to be larger than the batch record count of the spout or first couple stages. 
+
+
+
 
 ==== Garbage Collection and other JVM options
 

@@ -19,9 +19,13 @@ The obvious applications are extract/transform/load ("ETL") processes -- the aut
 
 It's best instead to think of Stream Analytics as a way to query your data on the way _in_ to your datastore. A full-capability big data platform has all three of the following pieces:
 
-* Stream Processing, to assemble data in simple context at write time;////For example... Amy////
-* Queryable Datastore, to assemble data in simple context at read time;////For example... Amy////
-* Batch Processing, to assemble data in global context////For example... Amy////
+* queryable scalable datastores, like HBase or Elasticsearch;
+* batch processing, typically Hadoop; and
+* stream analytics, like Storm or Spark Streaming.
+
+You're probably familiar with the datastore layer's responsibilities: direct row-level access to records, and answers in simple context at read time (summing counts by hour to form counts across days, or a simple faceted rollup on sales by dealership to sales by region). Batch processing gives you answers in global context, but delayed from both write time and read time. 
+
+The most powerful feature of stream processing is that it lets you assemble data in simple context at _write_ time. /// More to come here.
 
 The Storm+Trident data processing system, developed by Backtype and Twitter, is a remarkably elegant open-source project that's emerging as the dominant streaming analytics platform.
 

@@ -1,4 +1,4 @@
-text=auto
+*          text=auto
 
 *.asciidoc text
 *.md       text
@@ -6,3 +6,5 @@ text=auto
 *.rb       text
 *.pig      text
 *.tsv      eol=lf
+
+*.pdf      -text
