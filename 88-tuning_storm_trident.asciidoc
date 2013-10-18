@@ -36,7 +36,7 @@ The principal bottleneck may be:
 For each of the cases besides IO-bound and CPU-bound, there isn’t that much to say:
 for memory-bound flows, it’s "buy enough RAM" (though you should read the tips on JVM tuning later in this chapter). For remote rate-limited flows, buy a better API plan or remote datastore --  otherwise, tune as if CPU-bound, allowing generous headroom.
 
-For concurrency-bound flows, apply the recommendations that follow, increase concurrency until things get screwy. If that per-machine throughput is acceptable to your budget, great; otherwise, hire an advanced master sysadmin to help you chip away at the
+For concurrency-bound flows, apply the recommendations that follow, increase concurrency until things get screwy. If that per-machine throughput is acceptable to your budget, great; otherwise, hire an advanced master sysadmin to help you chip away at it.
 
 ==== Provisioning
 
