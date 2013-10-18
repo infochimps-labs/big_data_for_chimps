@@ -40,26 +40,33 @@ For concurrency-bound flows, apply the recommendations that follow, increase con
 
 ==== Provisioning
 
-If you’re
+Unless you're memory-bound, the Dataflow Tuning Rules imply network performance and multiple cores  are valuable, but that you should not need machines with a lot of RAM. Since tuples are handled and then handed off, they should not be accumulating in memory to any significant extent. Storm works very well on commodity hardware or cloud/virtualized machines. Buy server-grade hardware, but don't climb the price/performance curve.
 
-For CPU-bound stages, set one executor per core for the bounding stage (or one less than cores at large core count). Don't adjust the parallelism without reason -- even a shuffle implies network transfer. Shuffles don't impart any load-balancing.
+The figures of merit here are the number and quality of CPU cores, which govern how much parallelism you can use; the amount of RAM per core, which governs how much memory is available to each parallel executor chain; and the cost per month of CPU cores (if CPU-bound) or cost per month of RAM (if memory-bound. Using the Amazon cloud machines as a reference, we like to use either the `c1.xlarge` machines (7GB ram, 8 cores, $424/month, giving the highest CPU-performance-per-dollar) or the `m3.xlarge` machines (15 GB ram, 4 cores, $365/month, the best balance of CPU-per-dollar and RAM-per-dollar). You shouldn't use fewer than four worker machines in production, so if your needs are modest feel free to downsize the hardware accordingly.
+
+=== Topology-level settings
 
 Use one worker per machine for each topology: since sending a tuple is much more efficient if the executor is in the same worker, the fewer workers the better. (Tuples go directly from send queue to receive queue, skipping the worker transfer buffers and the network overhead). Also, if you’re using Storm pre-0.9, set the number of ackers equal to the number of workers -- previously, the default was one acker per topology.
 
+The total number of workers per machine is set when the supervisor is launched -- each supervisor manages some number of JVM child processes. In your topology, you specify how many worker slots it will try to claim.
+
+In our experience, there isn't a great reason to use more than one worker per topology per machine. With one topology running on those three nodes, and parallelism hint 24 for the critical path, you will get 8 executors per bolt per machine, i.e. one for each core. This gives you three benefits.
+
+The primary benefit is that when data is repartitioned (shuffles or group-bys) to executors in the same worker, it will not have to hit the transfer buffer -- tuples will be directly deposited from send to receive buffer. That's a big win. By contrast, if the destination executor were on the same machine in a different worker, it would have to go send -> worker transfer -> local socket -> worker recv -> exec recv buffer. It doesn't hit the network card, but it's not as big a win as when executors are in the same worker.
+
+Second, you're typically better off with three aggregators having very large backing cache than having twenty-four aggregators having small backing caches. This reduces the effect of skew, and improves LRU efficiency.
+
+Lastly, fewer workers reduces control flow chatter.
+
+For CPU-bound stages, set one executor per core for the bounding stage (If there are many cores, uses one less). Using the examples above, you would run parallelism of 7 or 8 on a `c1.xlarge` and parallism of 4 on an `m3.xlarge`. Don't adjust the parallelism unless there's good reason -- even a shuffle implies network transfer, and shuffles don't impart any load-balancing. For memory-bound stages, set the parallelism to make good use of the system RAM; for concurrency-bound stages, find the parallelism that makes performance start to degrade and then back off to say 80% of that figure.
+
 Match your spout parallelism to its downstream flow. Use the same number of kafka partitions as kafka spouts (or a small multiple). If there are more spouts than kafka machines*kpartitions, the extra spouts will sit idle.
 
-For map states or persistentAggregates -- things where results are accumulated into memory structures -- allocate one stage per worker. Cache efficiency and batch request overhead typically improve with large record set sizes.
+Map states or persistentAggregates accumulate their results into memory structures, and so you'll typically see the best cache efficiency and lowest bulk-request overhead by using one such stage per worker.
 
 === Initial tuning
 
-==== CPU-bound flow
-
-If the flow is intensely CPU-bound,
-
-Otherwise, prefer a machine with many cores -- Storm parallelizes extremely well
-For example, on Amazon EC2, you have a choice between a c1.xlarge (8 cores, 2.5 "compute units" (CU), for 34 CU
-
-Start tuning on a machine with lots of cores and over-provision the RAM. We'll optimize the hardware later, but first you'd like to qualify the flow's critical bottleneck.
+If you have the ability to specify your development hardware, start tuning on a machine with many cores and over-provisioned RAM so that you can qualify the flow's critical bottleneck. A machine similar to Amazon's `m3.2xlarge` (30 GB ram, 8 cores) lets you fall back to either of the two reference machines described above.
 
 For a CPU-bound flow:
 
@@ -72,43 +79,37 @@ For a CPU-bound flow:
 
 Once you have roughly dialed in the batch size and parallelism, check in with the First Rule. The stages upstream of your principal bottleneck should always have records ready to process. The stages downstream should always have capacity to accept and promptly deliver processed records.
 
-==== Memory-bound flows
+==== Sidebar: Little's Law
 
-If you're memory-bound, use machines with lots of RAM.
+Little's Law is a simple but very useful formula to keep in mind. It says that for any flow,
 
-===== Concurrency Bound
+    `Capacity (records in system) = Throughput (records/second) / Latency (seconds to pass through)`
 
-In a concurrency bound problem, use very high parallelism. If possible, use a QueryFunction to combine multiple queries into a batch request.
+This implies that you can't have better throughput than the collective rate of your slowest stage, and you can't have better latency than the sum of the individual latencies.
 
-===== Sidebar: Little's Law
+For example, if all records must pass through a stage that handles 10 records per second, then the flow cannot possibly proceed faster than 10 records per second, and it cannot have latency smaller than 100ms (1/10 second).
 
-* `Throughput (recs/s) = Capacity / Latency`
-* you can't have better throughput than the collective rate of your slowest stage;
-* you can't have better latency than the sum of the individual latencies.
-
-If all records must pass through a stage that handles 10 records per second, then the flow cannot possibly proceed faster than 10 records per second, and it cannot have latency smaller than 100ms (1/10)
-
-* with 20 parallel stages, the 95th percentile latency of your slowest stage becomes the median latency of the full set. (TODO: nail down numbers)
-
+What's more, with 20 parallel stages, the 95th percentile latency -- your slowest stage -- becomes the median latency of the full set. (TODO: nail down numbers) Current versions of Storm+Trident don't do any load-balancing within batches, and so it's worth benchmarking each machine to ensure performance is uniform.
 
 ==== Batch Size
 
-Set the batch size to optimize the throughput of your most expensive batch operation -- a bulk database operation, network request, or intensive aggregation. (There might instead be a natural batch size: for example the twitter `users/lookup` API call returns information on up to 100 distinct user IDs.)
+Next, we'll set the batch size.
 
 ===== Kafka Spout: Max-fetch-bytes
 
-The batch count for the Kafka spout is controlled indirectly by the max fetch bytes. The resulting total batch size is at most `(kafka partitions) * (max fetch bytes)`.
+Most production deployments use the Kafka spout, which for architectural reasons does not allow you to specify a precise count of records per batch. Instead, the batch count for the Kafka spout is controlled indirectly by the max fetch bytes. The resulting total batch size is at most `(kafka partitions) * (max fetch bytes)`.
 
 For example, given a topology with six kafka spouts and four brokers with three kafka-partitions per broker, you have twelve kafka-partitions total, two per spout. When the MBCoordinator calls for a new batch, each spout produces two sub-batches (one for each kafka-partition), each into its own trident-partition. Now also say you have records of 1000 +/- 100 bytes, and that you set max-fetch-bytes to 100_000. The spout fetches the largest discrete number of records that sit within max-fetch-bytes -- so in this case, each sub-batch will have between 90 and 111 records. That means the full batch will have between 1080 and 1332 records, and 1_186_920 to 1_200_000 bytes.
 
 ===== Choosing a value
 
-* `each()` functions should not care about batch size.
-* `partitionAggregate`, `partitionPersist`, `partitionQuery` do.
+In some cases, there is a natural batch size: for example the twitter `users/lookup` API call returns information on up to 100 distinct user IDs. If so, use that figure.
+
+Otherwise, you want to optimize the throughput of your most expensive batch operation. `each()` functions should not care about batch size -- batch operations like bulk database requests, batched network requests, or intensive aggregation (`partitionPersist`, `partitionQuery`, or `partitionAggregate`) do care.
 
 Typically, you'll find that there are three regimes:
 
-1. when it's too small, response time is flat -- it's dominated by bookeeping.
+1. when the batch size is too small, the response time per batch is flat -- it's dominated by bookeeping.
 2. it then grows slowly with batch size. For example, a bulk put to elasticsearch will take about 200ms for 100 records, about 250ms for 1000 records, and about 300ms for 2000 records (TODO: nail down these numbers).
 3. at some point, you start overwhelming some resource on the other side, and execution time increases sharply.
 
@@ -122,31 +123,17 @@ As you learned in the storm internals chapter, each slot in the executor send bu
 
 These are advanced-level settings, so don't make changes unless you can quantify their effect, and make sure you understand why any large change is necessary. In all cases, the sizes have to be an even power of two (1024, 2048, 4096, and so forth).
 
-As long as the executor send queu is large enough, further increase makes no real difference apart from increased ram use and a small overhead cost. If the executor send queue is too small, however, a burst of records will clog it unnecessarily. Unfortunately, in current versions of Storm it applies universally so everyone has to live with the needs of the piggiest customer.
+As long as the executor send queue is large enough, further increase makes no real difference apart from increased ram use and a small overhead cost. If the executor send queue is way too small, a burst of records will clog it unnecessarily, causing the executor to block.  The more likely pathology is that if it is _slightly_ too small, you'll get skinny residual batches that will make poor use of the downstream receive queues. Picture an executor that emits 4097 tuples, fast enough to cause one sweep of 4096 records and a second sweep of the final record -- that sole record at the end requires its own slot in the receive queue.
+
+Unfortunately, in current versions of Storm it applies universally so everyone has to live with the needs of the piggiest customer.
 
 This is most severe in the case of a spout, which will receive a large number of records in a burst, or anywhere there is high fanout (one tuple that rapidly turns into many tuples). 
+
 Set the executor send buffer to be larger than the batch record count of the spout or first couple stages. 
 
-
-
-
 ==== Garbage Collection and other JVM options
 
-Our worker JVM options:
-
-	worker.childopts: >-
-	    -Xmx2600m -Xms2600m -Xss256k -XX:MaxPermSize=128m -XX:PermSize=96m
-	    -XX:NewSize=1000m -XX:MaxNewSize=1000m -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=6
-	    -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled
-	    -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly
-	    -server -XX:+AggressiveOpts -XX:+UseCompressedOops -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true
-	    -Xloggc:logs/gc-worker-%ID%.log -verbose:gc
-	    -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1m
-	    -XX:+PrintGCDetails -XX:+PrintHeapAtGC -XX:+PrintGCTimeStamps -XX:+PrintClassHistogram
-	    -XX:+PrintTenuringDistribution -XX:-PrintGCApplicationStoppedTime -XX:-PrintGCApplicationConcurrentTime
-	    -XX:+PrintCommandLineFlags -XX:+PrintFlagsFinal
-
-This sets:
+TODO: make this amenable for the non-dragonmaster
 
 * New-gen size to 1000 MB (`-XX:MaxNewSize=1000m`). Almost all the objects running through storm are short-lived -- that's what the First Rule of data stream tuning says -- so almost all your activity is here.
 * Apportions that new-gen space to give you 800mb for newly-allocated objects and 100mb for objects that survive the first garbage collection pass.
@@ -167,16 +154,6 @@ If you watch your GC logs, in steady-state you should see
 
 Side note: regardless of whether you're tuning your overall flow for latency or throughput, you want to tune the GC for latency (low pause times). Since things like committing a batch can't proceed until the last element is received, local jitter induces global drag.
 
-Reference: http://www.slideshare.net/aszegedi/everything-i-ever-learned-about-jvm-performance-tuning-twitter
-notes from ES tuning:  https://gist.github.com/mrflip/5366376#file-20130416-todo-md
-
-* Option one: Parallel GC (`-XX:+UseParallelGC`) with `-XX:UseAdaptiveSizePolicy -XX:+PrintAdaptiveSizePolicy`. If too much latency, look at
-* Option two: CMS (`-XX:+UseConcMarkSweepGC`)
-* Option three: G1 (`-XX:+UseG1GC` with `-XX:MaxGCPauseMillis=` to set the target time).
-* `-XX:ParallelGCThreads` and `-XX:ParallelCMSThreads` specify the number of parallel CMS threads.
-* Other flags that affect performance include `-XX::+UseCompressedOops`, `-XX:+UseLargePages`, `-XX:LargePageSizeInBytes`, `-XX:+UseNUMA`, `-XX:+AggressiveOpts`, `-XX:AggressiveHeap`, `-XX:+UseBiasedLocking`, `-XX:+DoEscapeAnalysis`, `-XX:+AlwaysPreTouch`
-* Useful for monitoring are -XX:+PrintCommandLineFlags and -XX:+PrintFlagsFinal.
-
 ==== Tempo and Throttling
 
 Max-pending (`TOPOLOGY_MAX_SPOUT_PENDING`) sets the number of tuple trees live in the system at any one time.
@@ -184,286 +161,8 @@ Max-pending (`TOPOLOGY_MAX_SPOUT_PENDING`) sets the number of tuple trees live i
 Trident-batch-delay (`topology.trident.batch.emit.interval.millis`) sets the maximum pace at which the trident Master Batch Coordinator will issue new seed tuples. It's a cap, not an add-on: if t-b-d is 500ms and the most recent batch was released 486ms, the spout coordinator will wait 14ms before dispensing a new seed tuple. If the next pending entry isn't cleared for 523ms, it will be dispensed immediately. If it took 1400ms, it will also be released immediately -- but no make-up tuples are issued.
 
 Trident-batch-delay is principally useful to prevent congestion, especially around startup. As opposed to a traditional Storm spout, a Trident spout will likely dispatch hundreds of records with each batch. If max-pending is 20, and the spout releases 500 records per batch, the spout will try to cram 10,000 records into its send queue.
-
-
-==== Machine Sizing
-
-(...)
-
-==== Dump of some notes
-
-* System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
-* Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout
-* Congestion: number of ackers; queue sizing (exec send, exec recv, transfer); `zmq.threads`
-* Memory: Max heap (Xmx), new gen/survivor size; (queue sizes)
-* Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
-* Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
-* Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size
-
-To support large cluster, in zeromq increase `max_sockets` -- see 0MQ source code `src/config.hpp`; the default of 512 can be too small.
-
 
 __________________________________________________________________________
-
-The total number of workers is set by the supervisors -- there's some number of JVM slots each supervisor will superintend. The thing you set on the topology is how many worker slots it will try to claim.
-
-In our experience, there isn't a great reason to use more than one worker per topology per machine. With one topology running on those three nodes, and parallelism hint 24 for the critical path, you will get 8 executors per bolt per machine, i.e. one for each core. This gives you three benefits.
-
-The primary benefit is that when data is repartitioned (shuffles or group-bys) to executors in the same worker, it will not have to hit the transfer buffer -- tuples will be directly deposited from send to receive buffer. That's a big win. By contrast, if the destination executor were on the same machine in a different worker, it would have to go send -> worker transfer -> local socket -> worker recv -> exec recv buffer. It doesn't hit the network card, but it's not as big a win as when executors are in the same worker.
-
-Second, you're typically better off with three aggregators having very large backing cache than having twenty-four aggregators having small backing caches. This reduces the effect of skew, and improves LRU efficiency.
-
-Lastly, fewer workers reduces control flow chatter.
-
-In general:
-
-* number of workers a multiple of number of machines; parallelism a multiple of number of workers; number of kafka partitions a multiple of number of spout parallelism
-* Use one worker per topology per machine
-* Start with fewer, larger aggregators, one per machine with workers on it
-* Use the isolation scheduler
-* Use one acker per worker -- [pull request #377](https://github.com/nathanmarz/storm/issues/377) makes that the default.
-
-______________________________________
-
-Outline:
-
-* Topology; Little's Law
-  - skew
-* System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
-  - machine sizing: use c1.xlarge if cpu-bound, or m3.xlarge if you need more ram than that; the cc1.xlarge are overkill
-
-* Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout
-* Congestion: number of ackers; queue sizing (exec send, exec recv, transfer)
-* Memory: Max heap (Xmx), new gen/survivor size; (queue sizes)
-  - GC tuning: use an agressively large NewGen size, bump perm-gen size some and give it a hard cap, and size old-gen to for 50% occupancy
-  - minimize frequency of gc's now, worry about pause times later
-* Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
-* Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
-* zookeeper sizing
-  - start with 3 c1.mediums and find out when it should be bigger. That should be good up to a few dozen workers
-  - you will hit a brick wall at high-hundreds of nodes
-  - keep in mind that more zookeeper nodes *slows* response
-* Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size,  `zmq.threads`
-* if running multiple topologies, use the worker isolation scheduler
-* huge records (eg. a large video file)
-  - if possible, just transmit its metadata as the record, and transfer the blob out-of-band to the local filesystem: you want to do this at max network speed and not interfere with control flow
-  - if you can't do this, you may have to attend to the zmq high-water mark. Also evaluate the new netty transport -- it's very recent, so expect bugs, but it's but much more tunable and transparent.
-
-Two notes: First, once you’ve chosen your hardware, tuning for cost is reducible to tuning for throughput: amortized $/record = (amortized hardware cost/hour per machine) over  (records/hour per machine). So we’ll only speak to the principal goals of latency, throughput or memory.
-going to talk about optimizing the _steady-state average_ performance, and not discuss tuning to decrease variance (in other words: Wall Street types, go home).
-
-
-////This may not be the actual beginning of a chapter, but if it is:  say something big, philosophical, and conceptual here before you jump into the chapter.  (Do this at the start of each chapter, to one degree or another.)  Weave in your "locality" stuff into the conversation.  Introduce the topic while also tying-in the over-arching concept/philosophy concerning big data here. Weave in lessons from previous chapters ("At this point, you know...")  Also, an observation -- with the great stories you've presented up to this point in the book (with Chimp and Elephant), the absence of them is kind of jarring; so this suddenly feels more like a manual...(for the moment).  I'm not saying to bring in Chimp and Elephant, just to do a smoother transition away from them.   Amy////
-
-////In general this chapter needs some connective tissues, which you may very well be aware of and planning to do (so my edits at this point are minimal-to-none), to elevate it from a cataloging of tools to something wrapped in a context, story, with suggestion of intended application, etc.  Amy////
-
-=== Tuning Storm+Trident
-
-////Before you just into this, expalin what you're about to explain.  This might sound silly, but the rule of thumb for writing a technical book is:  say what your're about to say; say it; then say what you've said. You can explain how you think about tuning, or how you recommend readers think about it conceptually, how to do it/not do it. Share observations, hard lessons, etc.  Amy////
-Tuning a dataflow system is easy:
-
-----
-The First Rule of Dataflow Tuning:
-* Ensure each stage is always ready to accept records, and
-* Deliver each processed record promptly to its destination
-----
-
-That may seem insultingly simplistic, but my point is that a) if you respect the laws of physics and economics, ////Which are...?  Amy////you can make your dataflow obey the First Rule; b) once your dataflow does obey the First Rule, stop tuning it.
-
-Mostly, Storm+Trident tuning is either catastrophically bad or relatively insensitive to small changes. ////Say why.  Amy////
-
-Outline:
-
-* Topology; Little's Law
-  - skew
-* System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
-  - machine sizing: use c1.xlarge if cpu-bound, or m3.xlarge if you need more ram than that; the cc1.xlarge are overkill
-
-* Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout
-* Congestion: number of ackers; queue sizing (exec send, exec recv, transfer)
-* Memory: Max heap (Xmx), new gen/survivor size; (queue sizes)
-  - GC tuning: use an agressively large NewGen size, bump perm-gen size some and give it a hard cap, and size old-gen to for 50% occupancy
-  - minimize frequency of gc's now, worry about pause times later
-* Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
-* Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
-* zookeeper sizing
-  - start with 3 c1.mediums and find out when it should be bigger. That should be good up to a few dozen workers
-  - you will hit a brick wall at high-hundreds of nodes
-  - keep in mind that more zookeeper nodes *slows* response
-* Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size,  `zmq.threads`
-* if running multiple topologies, use the worker isolation scheduler
-* huge records (eg. a large video file)
-  - if possible, just transmit its metadata as the record, and transfer the blob out-of-band to the local filesystem: you want to do this at max network speed and not interfere with control flow
-  - if you can't do this, you may have to attend to the zmq high-water mark. Also evaluate the new netty transport -- it's very recent, so expect bugs, but it's but much more tunable and transparent.
-
-==== Goal
-
-First, identify your principal goal: latency, throughput, memory or cost. We'll just discuss latency and throughput as goals -- tuning for cost means balancing the throughput (records/hour per machine) and cost of infrastructure (amortized $/hour per machine), so once you've chosen your hardware, tuning for cost is equivalent to tuning for throughput. I'm also going to concentrate on typical latency/throughput, and not on variance or 99th percentile figures or somesuch.
-
-Next, identify your dataflow's principal bottleneck, the constraining resource that most tightly bounds the performance of its slowest stage. A dataflow can't pass through more records per second than the cumulative output of its most constricted stage, and it can't deliver records in less end-to-end time than the stage with the longest delay.
-////I suggest a case example here to round-out and contextualize what you're getting at.  Amy////
-
-The principal bottleneck may be:
-
-* _IO volume_:  there's a hardware bottleneck to the number of bytes per second that a machine's disks or network connection can sustain. Event log processing often involves large amounts of data requiring only parsing or other trivial transformations before storage -- throughput of such dataflows are IO bound.
-* _CPU_: a CPU-bound flow spends more time in calculations to process a record
-* _concurrency_: network requests to an external resource often require almost no CPU and minimal volume. If your principal goal is throughput, the flow is only bound by how many network requests you can make in parallel.
-* _remote rate bottleneck bound_: alternatively, you may be calling an external resource that imposes a maximum throughput out of your control. A legacy datastore might only be able to serve a certain volume of requests before its performance degrades, or terms-of-service restrictions from a third-party web API (Google's Geolocation API.)
-* _memory_: large windowed joins or memory-intensive analytics algorithms may require so much RAM it defines the machine characteristics
-////By now your bullets are so voluminous they actually might kill. Take a break from bulleted lists - reduce, reformat, etc.  Amy///
-
-===== Initial tuning
-////Open this up with some kind of grounding for readers; like, "Let's say your goal is to x, then ____ "  Amy////
-If you're memory-bound, use machines with lots of RAM. Otherwise, start tuning on a machine with lots of cores and over-provision the RAM, we'll optimize the hardware later.
-
-For a CPU-bound flow:
-
-* Construct a topology with parallelism one
-* set max-pending to one, use one acker per worker, and ensure that storm's `nofiles` ulimit is large (65000 is a decent number).
-* Set the trident-batch-delay to be comfortably larger than the end-to-end latency -- there should be a short additional delay after each batch completes.
-* Time the flow through each stage.
-* Increase the parallelism of CPU-bound stages to nearly saturate the CPU, and at the same time adjust the batch size so that state operations (aggregates, bulk database reads/writes, kafka spout fetches) don't slow down the total batch processing time.
-* Keep an eye on the GC activity. You should see no old-gen or STW GCs, and efficient new-gen gcs (your production goal no more than one new-gen gc every 10 seconds, and no more than 10ms pause time per new-gen gc, but for right now just overprovision -- set the new-gen size to give infrequent collections and don't worry about pause times).
-
-Once you have roughly dialed in the batch size and parallelism, check in with the First Rule. The stages upstream of your principal bottleneck should always have records ready to process. The stages downstream should always have capacity to accept and promptly deliver processed records.
-
-===== Provisioning
-
-Use one worker per topology per machine: storm passes tuples directly from sending executor to receiving executor if they're within the same worker. Also set number of ackers equal to number of workers -- the default of one per topology never makes sense (future versions of Storm will fix this).
-
-Match your spout parallelism to its downstream flow. Use the same number of kafka partitions as kafka spouts (or a small multiple). If there are more spouts than kafka machines*kpartitions, the extra spouts will sit idle.
-
-For CPU-bound stages, set one executor per core for the bounding stage (or one less than cores at large core count). Don't adjust the parallelism without reason -- even a shuffle implies network transfer. Shuffles don't impart any load-balancing.
-
-For map states or persistentAggregates -- things where results are accumulated into memory structures -- allocate one stage per worker. Cache efficiency and batch request overhead typically improve with large record set sizes.
-
-===== Concurrency Bound
-
-In a concurrency bound problem, use very high parallelism
-If possible, use a QueryFunction to combine multiple queries into a batch request.
-
-===== Sidebar: Little's Law
-
-* `Throughput (recs/s) = Capacity / Latency`
-* you can't have better throughput than the collective rate of your slowest stage;
-* you can't have better latency than the sum of the individual latencies.
-
-If all records must pass through a stage that handles 10 records per second, then the flow cannot possibly proceed faster than 10 records per second, and it cannot have latency smaller than 100ms (1/10)
-
-* with 20 parallel stages, the 95th percentile latency of your slowest stage becomes the median latency of the full set. (TODO: nail down numbers)
-
-
-===== Batch Size
-
-Set the batch size to optimize the throughput of your most expensive batch operation -- a bulk database operation, network request, or intensive aggregation. (There might instead be a natural batch size: for example the twitter `users/lookup` API call returns information on up to 100 distinct user IDs.)
-
-===== Kafka Spout: Max-fetch-bytes
-
-The batch count for the Kafka spout is controlled indirectly by the max fetch bytes. The resulting total batch size is at most `(kafka partitions) * (max fetch bytes)`.
-
-For example, given a topology with six kafka spouts and four brokers with three kafka-partitions per broker, you have twelve kafka-partitions total, two per spout. When the MBCoordinator calls for a new batch, each spout produces two sub-batches (one for each kafka-partition), each into its own trident-partition. Now also say you have records of 1000 +/- 100 bytes, and that you set max-fetch-bytes to 100_000. The spout fetches the largest discrete number of records that sit within max-fetch-bytes -- so in this case, each sub-batch will have between 90 and 111 records. That means the full batch will have between 1080 and 1332 records, and 1_186_920 to 1_200_000 bytes.
-
-===== Choosing a value
-
-* `each()` functions should not care about batch size.
-* `partitionAggregate`, `partitionPersist`, `partitionQuery` do.
-
-Typically, you'll find that there are three regimes:
-
-1. when it's too small, response time is flat -- it's dominated by bookeeping.
-2. it then grows slowly with batch size. For example, a bulk put to elasticsearch will take about 200ms for 100 records, about 250ms for 1000 records, and about 300ms for 2000 records (TODO: nail down these numbers).
-3. at some point, you start overwhelming some resource on the other side, and execution time increases sharply.
-
-Since the execution time increases slowly in case (2), you get better and better records-per-second throughput. Choose a value that is near the top range of (2) but comfortably less than regime (3).
-
-===== Executor send buffer size
-
-Don't worry about this setting until most other things stabilize -- it's mostly important for ensuring that a burst of records doesn't clog the send queue.
-
-Set the executor send buffer to be larger than the batch record count of the spout or first couple stages. Since it applies universally, don't go crazy with this value. It has to be an even power of two (1024, 2048, 4096, 8192, 16384).
-
-==== Garbage Collection and other JVM options
-
-Our worker JVM options:
-
-	worker.childopts: >-
-	    -Xmx2600m -Xms2600m -Xss256k -XX:MaxPermSize=128m -XX:PermSize=96m
-	    -XX:NewSize=1000m -XX:MaxNewSize=1000m -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=6
-	    -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled
-	    -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly
-	    -server -XX:+AggressiveOpts -XX:+UseCompressedOops -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true
-	    -Xloggc:logs/gc-worker-%ID%.log -verbose:gc
-	    -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1m
-	    -XX:+PrintGCDetails -XX:+PrintHeapAtGC -XX:+PrintGCTimeStamps -XX:+PrintClassHistogram
-	    -XX:+PrintTenuringDistribution -XX:-PrintGCApplicationStoppedTime -XX:-PrintGCApplicationConcurrentTime
-	    -XX:+PrintCommandLineFlags -XX:+PrintFlagsFinal
-
-This sets:
-
-* New-gen size to 1000 MB (`-XX:MaxNewSize=1000m`). Almost all the objects running through storm are short-lived -- that's what the First Rule of data stream tuning says -- so almost all your activity is here.
-* Apportions that new-gen space to give you 800mb for newly-allocated objects and 100mb for objects that survive the first garbage collection pass.
-* Initial perm-gen size of 96m (a bit generous, but Clojure uses a bit more perm-gen than normal Java code would), and a hard cap of 128m (this should not change much after startup, so I want it to die hard if it does).
-* Implicit old-gen size of 1500 MB (total heap minus new- and perm-gens) The biggest demand on old-gen space comes from long-lived state objects: for example an LRU counting cache or dedupe'r. A good initial estimate for the old-gen size is the larger of a) twice the old-gen occupancy you observe in a steady-state flow, or b) 1.5 times the new-gen size. The settings above are governed by case (b).
-* Total heap of 2500 MB (`-Xmx2500m`): a 1000 MB new-gen, a 100 MB perm-gen, and the implicit 1500 MB old-gen. Don't use gratuitously more heap than you need -- long gc times can cause timeouts and jitter. Heap size larger than 12GB is trouble on AWS, and heap size larger than 32GB is trouble everywhere.
-* Tells it to use the "concurrent-mark-and-sweep" collector for long-lived objects, and to only do so when the old-gen becomes crowded.
-* Enables that a few mysterious performance options
-* Logs GC activity at max verbosity, with log rotation
-
-If you watch your GC logs, in steady-state you should see
-
-* No stop-the-world (STW) gc's -- nothing in the logs about aborting parts of CMS
-* old-gen GCs should not last longer than 1 second or happen more often than every 10 minutes
-* new-gen GCs should not last longer than 50 ms or happen more often than every 10 seconds
-* new-gen GCs should not fill the survivor space
-* perm-gen occupancy is constant
-
-Side note: regardless of whether you're tuning your overall flow for latency or throughput, you want to tune the GC for latency (low pause times). Since things like committing a batch can't proceed until the last element is received, local jitter induces global drag.
-
-Reference: http://www.slideshare.net/aszegedi/everything-i-ever-learned-about-jvm-performance-tuning-twitter
-notes from ES tuning:  https://gist.github.com/mrflip/5366376#file-20130416-todo-md
-
-* Option one: Parallel GC (`-XX:+UseParallelGC`) with `-XX:UseAdaptiveSizePolicy -XX:+PrintAdaptiveSizePolicy`. If too much latency, look at
-* Option two: CMS (`-XX:+UseConcMarkSweepGC`)
-* Option three: G1 (`-XX:+UseG1GC` with `-XX:MaxGCPauseMillis=` to set the target time).
-* `-XX:ParallelGCThreads` and `-XX:ParallelCMSThreads` specify the number of parallel CMS threads.
-* Other flags that affect performance include `-XX::+UseCompressedOops`, `-XX:+UseLargePages`, `-XX:LargePageSizeInBytes`, `-XX:+UseNUMA`, `-XX:+AggressiveOpts`, `-XX:AggressiveHeap`, `-XX:+UseBiasedLocking`, `-XX:+DoEscapeAnalysis`, `-XX:+AlwaysPreTouch`
-* Useful for monitoring are -XX:+PrintCommandLineFlags and -XX:+PrintFlagsFinal.
-
-
-==== Tempo and Throttling
-
-Max-pending (`TOPOLOGY_MAX_SPOUT_PENDING`) sets the number of tuple trees live in the system at any one time.
-
-Trident-batch-delay (`topology.trident.batch.emit.interval.millis`) sets the maximum pace at which the trident Master Batch Coordinator will issue new seed tuples. It's a cap, not an add-on: if t-b-d is 500ms and the most recent batch was released 486ms, the spout coordinator will wait 14ms before dispensing a new seed tuple. If the next pending entry isn't cleared for 523ms, it will be dispensed immediately. If it took 1400ms, it will also be released immediately -- but no make-up tuples are issued.
-
-Trident-batch-delay is principally useful to prevent congestion, especially around startup. As opposed to a traditional Storm spout, a Trident spout will likely dispatch hundreds of records with each batch. If max-pending is 20, and the spout releases 500 records per batch, the spout will try to cram 10,000 records into its send queue.
-
-
-==== Machine Sizing
-
-...
-
-==== Dump of some notes
-
-* System: machines; workers/machine, machine sizing; (zookeeper, kafka sizing)
-* Throttling: batch size; kafka-partitions; max pending; trident batch delay; spout delay; timeout
-* Congestion: number of ackers; queue sizing (exec send, exec recv, transfer); `zmq.threads`
-* Memory: Max heap (Xmx), new gen/survivor size; (queue sizes)
-* Ulimit, other ntwk sysctls for concurrency and ntwk; Netty vs ZMQ transport; drpc.worker.threads;
-* Other important settings: preferIPv4; `transactional.zookeeper.root` (parent name for transactional state ledger in Zookeeper); `` (java options passed to _your_ worker function), `topology.worker.shared.thread.pool.size`
-* Don't touch: `zmq.hwm` (unless you are seeing unreliable network trnsport under bursty load), disruptor wait strategy, worker receive buffer size
-
-To support large cluster, in zeromq increase `max_sockets` -- see 0MQ source code `src/config.hpp`; the default of 512 can be too small.
-
-The total number of workers is set by the supervisors -- there's some number of JVM slots each supervisor will superintend. The thing you set on the topology is how many worker slots it will try to claim.
-
-In our experience, there isn't a great reason to use more than one worker per topology per machine. With one topology running on those three nodes, and parallelism hint 24 for the critical path, you will get 8 executors per bolt per machine, i.e. one for each core. This gives you three benefits.
-
-The primary benefit is that when data is repartitioned (shuffles or group-bys) to executors in the same worker, it will not have to hit the transfer buffer -- tuples will be directly deposited from send to receive buffer. That's a big win. By contrast, if the destination executor were on the same machine in a different worker, it would have to go send -> worker transfer -> local socket -> worker recv -> exec recv buffer. It doesn't hit the network card, but it's not as big a win as when executors are in the same worker.
-
-Second, you're typically better off with three aggregators having very large backing cache than having twenty-four aggregators having small backing caches. This reduces the effect of skew, and improves LRU efficiency.
-
-Lastly, fewer workers reduces control flow chatter.
 
 In general:
 
