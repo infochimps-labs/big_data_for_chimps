@@ -1,3 +1,109 @@
+=== Model for Data Analysis
+
+The architecture, APIs and user experience of Storm+Trident and Hadoop are very different, and there are fundamental differences in what they provide: Hadoop cannot process an infinite stream of data, and Storm+Trident doesn't naturally lend itself to complex aggregations at terabyte scale. But there is so much commonality in how to think about an analytic flow in each that they must be reflections of the same core process -- with differences that are the result of engineering under constraint.
+
+Let's explore a spare, fundamental conceptual model for the act of data analysis. 
+
+* conceptualize the core process that lies behind Hadoop and Storm+Trident
+* equip you to build better dataflow architectures
+* explain why "big data" problems require a foundationally different approach from the traditional database solution.
+
+==== Synthesizing new beliefs
+
+Because this model is so simple, we'll have to be very pedantic at the start.
+
+Our working material is data: a set of observations of a subject at a point in time.
+
+The goal of analysis is to turn data into insight -- to make better decisions or to better understand the system.
+
+Insight comes from _putting data in context_, and _synthesizing a new set of beliefs_.
+
+You should recognize this as a description of data analysis in the large -- that is, what you would be doing over a week-long data exploration -- but it's actually a way to frame every atomic step in such an exploration.  As an example, here's how to this model captures the most basic analytic exercise -- counting things.
+
+It's Valentine's Day at Chimpanzee Elementary School, and Cupid has delivered into each chimpanzee's desk the Valentine notes their friends have sent. The ever-curious chimpanzees would like to know the total number of Valentines received across the class.
+
+For the kindergarten class, they might each bring all their valentines to the teacher's desk, then count the valentines upwards by one to find the total.
+
+
+               Ham    Enos       Gordo
+     method 1: V      V V V      V V V V
+               V V V V V V V V
+               1 2 3 4 5 6 7 8
+	       8
+
+The context step here is _putting all the notes in a single bunhe_, the synthesis is to _count the notes upwards by one_, producing a resulting belief in total number of notes.
+
+
+For the older fifth-grade students, each chimp might count the Valentine notes at their desk. write their count on the blackboard at the front of the room, and then as a class sum the counts to find the total.
+
+               Ham    Enos       Gordo
+     method 2: V      V V V      V V V V
+               1,     3,         4
+	       1 + 3 + 4
+	       8
+
+In this case there are two analysis steps. The first context step is to simply use the natural grouping at each desk; the synthesis step is to count those cards, producing an intermediate belief in the count at that desk. Next, those individual counts are brought into context on the backboard, and finally summed to the final belief of the total.
+
+==== Horizon of local computation
+
+For the chimpanzees to count their valentines, getting data into context was straightforward -- everyone was together in the same room -- and so it is only a matter of taste to aggregate the full dataset directly (as the kindergarteners did)
+or to use a more complex aggregation stream (as the fifth-graders did).
+
+In the nutty US election system, the official candidate for a political party is chosen at a national convention. The voting delegates gather in a giant convention center to register their vote for nomination. That works because there are only a few hundred people.
+
+For the major election, it is clearly impossible to have everyone in the US travel to the same place (the context step is impractical), and even if they did, there is no convention hall large enough to hold them, and even if you did, no accurate way to to count them all.
+
+So instead, the US uses the same method as the fifth-graders. Each local voting district performs a count; those counts are summed across regions; and finally the winner is determined.
+
+For many analyses, there is a practical limit to how much data you can effectively handle in a single synthesis step. For the political convention case, it is the size of a major convention hall; for the major election, it is the distance that people are willing to travel in order to register their vote.
+
+In reality, even counting the ballots isn't simple
+
+During the 2001 US election debacle, every vote in the state of Florida was brought to the same location
+
+
+You'd
+
+
+
+==== Volume of justification
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== WORK IN PROGRESS BELOW, READABLE PROSE ABOVE
+
+i.e. don't bother reading past this line in 88-locality.asciidoc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 === Locality
 
 _(rough notes only from here to tuning)_
@@ -23,7 +129,7 @@ To get the rest of the pig relations, you will want to at some point introduce t
 * _subgroup_  -- an optional secondary sort within a group defining further hierarchical subgrouping. This captures ["data cube" operations](http://arnab.org/blog/introducing-cube-operator-apache-pig)
 http://web.cecs.pdx.edu/~tufte/papers/StreamSemantics.pdf
 
-* _window_    -- 
+* _window_    --
 
 * Scroll -- continuously sliding window -- advances tuple-by-tuple.
 
@@ -31,10 +137,10 @@ Bracket -- punctuation carrying aggregates on a windowed range.
 
 
 Synthesizing a new proposition
-observation -- values for dimensions at point in time; ¿Data? -- beliefs held to be durably true; 
+observation -- values for dimensions at point in time; ¿Data? -- beliefs held to be durably true;
 
-* Volume of Justification - 
-* 
+* Volume of Justification -
+*
 * Timescale of stability (beliefs to become untrustworthy over time).
 * Synthesis
     * set of propositions needed to assemble new belief
@@ -76,9 +182,9 @@ landmark, tumbling, slide-by-tuple, partitioned, etc.
 
 === Three legs of the big data stack
 
-In early 2012, my company (Infochimps) began selling our big data stack to enterprise companies. At first, clients came to us with the word Hadoop on their lips and a flood of data on their hands -- yet what consistently emerged as the right solution was an initial implementation using streaming data analytics into a scalable datastore, and a follow-on installment of Hadoop once their application reached scale. From nowhere on their radar last year, we now hear requests for Storm by name. I've seen Hadoop's historically fast growth from open-source product with momentum in 2008 to foundational enterprise technology in 2013, and can attest that the rate of adoption for streaming analytics (and Storm+Trident in particular) looks to be even faster. 
+In early 2012, my company (Infochimps) began selling our big data stack to enterprise companies. At first, clients came to us with the word Hadoop on their lips and a flood of data on their hands -- yet what consistently emerged as the right solution was an initial implementation using streaming data analytics into a scalable datastore, and a follow-on installment of Hadoop once their application reached scale. From nowhere on their radar last year, we now hear requests for Storm by name. I've seen Hadoop's historically fast growth from open-source product with momentum in 2008 to foundational enterprise technology in 2013, and can attest that the rate of adoption for streaming analytics (and Storm+Trident in particular) looks to be even faster.
 
-It's become clear that a big data application platform should have three legs: streaming analytics, to process records as they are created; one or more scalable databases, for processing records as they are consumed; and batch processing, for results that require the full dataset. 
+It's become clear that a big data application platform should have three legs: streaming analytics, to process records as they are created; one or more scalable databases, for processing records as they are consumed; and batch processing, for results that require the full dataset.
 
 The workflow described in this book unifies and simplifies the streaming data and Hadoop frameworks without limiting their fundamental power. We use wukong (Ruby) for direct transformations of records, and high-level DSLs (Pig for Hadoop, Trident for streaming) to orchestrate structural transformations of datasets. This lets the data scientist focus on their data and problem domain, not on the low-level complexity of the half-dozen APIs otherwise involved.
 
@@ -95,9 +201,9 @@ These overlap far more than you might expect, and the hard part reamins the same
 your data is now comprehensive -- _everything_ about something, no longer a sample -- which is awesome. But getting insight still isn't easy. Getting signal from noise -- vs getting signal from signal.
 
 * Some Overwhelming Practical considerations
-* Unreasonable effectiveness of big data: 
+* Unreasonable effectiveness of big data:
 * When basis volume of belief won't fit into horizon of computation -- Approximation, algorithm, method
-* 
+*
 
 
 Trident has a few essential ways in which it segments tuples into non-overlapping sets:
@@ -111,7 +217,7 @@ To get the rest of the pig relations, you will want to at some point introduce t
 * _subgroup_  -- an optional secondary sort within a group defining further hierarchical subgrouping. This captures ["data cube" operations](http://arnab.org/blog/introducing-cube-operator-apache-pig)
 http://web.cecs.pdx.edu/~tufte/papers/StreamSemantics.pdf
 
-* _window_    -- 
+* _window_    --
 
 * Scroll -- continuously sliding window -- advances tuple-by-tuple.
 
@@ -119,16 +225,16 @@ Bracket -- punctuation carrying aggregates on a windowed range.
 
 
 
-There are three 
+There are three
 
 * A window is explicitly what you want: "count requests, errors and logins by minute", or "every ten seconds emit the average request rate over the trailing 60 seconds, or "rebin by"
 * Single horizon of computation -- an indication that the stream is finite. Every Hadoop job has an implicit window the size of the data sent to its tasks.
-* Unit of computation 
+* Unit of computation
 
 
 Let's talk about Data Frames and Tidy Data. The proper data warehousing term for it is "third normal form" Hadley Wickham has coined the term "tidy data".
 
-In 
+In
 * Every row is an observation
 * Every column is distinct (never two values in a column) and uniform (all have same type)
 * Every file (table) has one data type (set of columns)
@@ -137,14 +243,14 @@ A table with the address smushed together ("742 Evergreen Terrace, Springfield")
 
 The time axis here is not exactly 3NF(?)
 
-* The 'time' axis is the principal (row) axis 
+* The 'time' axis is the principal (row) axis
 * can bracket a partition
 * ....
 
 Temporal sorting:
 
 Each of the following is enough to enable you to sort a slightly-disordered stream using finite memory.
-* _prompt_           -- every event is received within no more than time `D` delay. 
+* _prompt_           -- every event is received within no more than time `D` delay.
 * _ordered_	     -- events arrive in time order (though with arbitrarily large delay -- ordered doesn't imply prompt, and prompt doesn't imply ordered).
 * _partial-ordered_  -- the stream can be non-overlappingly segmented into ordered substreams. You can depend that the sixth record from webserver-A will come after the fifth and before the seventh record from that webserver. Every partial-ordered stream is also ordered, and Trident will preserve the partial-order of a stream within a partition.
 * _block-disordered_ -- events will arrive out of sequence, but there is a bounded block horizon guaranteeing all events in one block are received before any event in a future block. My laundry-folding scheme is block disordered: I process a basket of jumbled-together socks, then jumbled-together shirts, then jumbled-together towels. There is no shirt that is folded up after a towel has been folded up, because each basket comes from the dryer in a separate load.
@@ -158,7 +264,7 @@ Given those,
 If you then add
 
 * _arbitrarily large sorted buffers_
-* _data-local execution on large blobs_ -- if you run HDFS datanodes on all the storm worker machines, and can specify that a 
+* _data-local execution on large blobs_ -- if you run HDFS datanodes on all the storm worker machines, and can specify that a
 
 I would set the default assumption that no changes to the core grammar are necessary: it will help enforce abstraction. For the particular examples you chose: PARALLEL should correspond directly. LOAD and STORE are perfectly reasonable verbs to use for Trident spouts and partitionPersist operations. I don't know whether a datastore-backed persistentAggregate should correspond to a STORE, or should instead be an annotation on the various relation verbs. Implement that on a memory-backed state only and see what happens in practice.
 
@@ -249,8 +355,8 @@ Weather data: weather stations take immutable observations of atm'c vars, artifi
 ==== Example lambda architecture: product rating aggregator
 
 * Products have model numbers, names, attributes and prices
-    * 
-* Vendors 
+    *
+* Vendors
     * some vendors: bulk upload of inventory. this is mutable ground truth, so we can update with clobber
 * Raters
 * Ratings
@@ -259,7 +365,7 @@ Weather data: weather stations take immutable observations of atm'c vars, artifi
 
 The core value of your product is a clear, unified exploration of different sites. If products or deals show up multiple times in searches, and inconsistent information is scattered across incomplete pages, users will derive no value from the site
 
-On the other hand, timeliness is also key. I'm writing this before the event, but I confidently predict that the release of "Big Data for Chimps" will set the whole twittersphere abuzz, with glowing reviews from Shaq and Lady Gaga. It's better to have several transiently inconsistent records 
+On the other hand, timeliness is also key. I'm writing this before the event, but I confidently predict that the release of "Big Data for Chimps" will set the whole twittersphere abuzz, with glowing reviews from Shaq and Lady Gaga. It's better to have several transiently inconsistent records
 
 ==== Architecture
 
@@ -276,7 +382,7 @@ The law of small numbers holds here -- in a data stream of billions of events, t
 
 Master data reconciliation is a classic "Neighbor's lawnmower" problem -- gee, it sure does look easy to fix from over here across the street, maybe I should ask Bill if he remembered to put gas in the tank.
 
-There are existing records A: `<name: "stapler", upc:12345| ...>`, B:`<best_buy_id:23, walmart_id:69>` and C:`<mfr_id:8675309, amz_id:42| ...>`, each with associated fields. A batch of records arrives, including ones that assert D:`<mfr_id:8675309, best_buy_id:23>` and E:`<upc:12345, walmart_id:69>`. With our global perspective in hand, it's clear all of these record pertain to the same product. In the stream, however, there's no prior way to recognize that D and E should be grouped together. One reaction is to say "well, query an indentifier reconciliation table, update it and then group." However many reconciliation stages you spackle on, as more identifiers are added to the dataflow you'll need another. It's common to have dozens, hundreds or thousands of matching keys in a real-world master data management dataflow. Now throw in the fact that these records will be infuriatingly inconsistent, even to the point of making conflicting assertions about their hard identifiers. 
+There are existing records A: `<name: "stapler", upc:12345| ...>`, B:`<best_buy_id:23, walmart_id:69>` and C:`<mfr_id:8675309, amz_id:42| ...>`, each with associated fields. A batch of records arrives, including ones that assert D:`<mfr_id:8675309, best_buy_id:23>` and E:`<upc:12345, walmart_id:69>`. With our global perspective in hand, it's clear all of these record pertain to the same product. In the stream, however, there's no prior way to recognize that D and E should be grouped together. One reaction is to say "well, query an indentifier reconciliation table, update it and then group." However many reconciliation stages you spackle on, as more identifiers are added to the dataflow you'll need another. It's common to have dozens, hundreds or thousands of matching keys in a real-world master data management dataflow. Now throw in the fact that these records will be infuriatingly inconsistent, even to the point of making conflicting assertions about their hard identifiers.
 
 You can handle the problem consistently in Hadoop, because you have the whole world in your hands. Freeze time and make locality pivoting easy, and can make the reconciliation logic arbitrarily sophisticated
 
@@ -286,10 +392,10 @@ It's primarily a practical question
 It's slightly harder than you think, your code will be tangibly more complex and unpredictable than you think, and the business value of a good answer produced slowly will outweigh the value of a slightly less bad answer produced quickly.
 
 * Make a processor that accepts `<[unified profile], [{new tidbit}, {new tidbit}, ...], [{relevant prior record}, {relevant prior record}]>`
-* Given a set of ground truths or faithful summaries, idempotently synthesizes a unified consensus record. 
+* Given a set of ground truths or faithful summaries, idempotently synthesizes a unified consensus record.
 
 
-IF your 
+IF your
 
 ==== Example lambda architecture: online pagerank
 
@@ -306,11 +412,11 @@ IF your
 * Denormalized remote data request
 * Hash join -- hold a cached version of table and decorate
 
-===== Why can you get away with 
+===== Why can you get away with
 
 Storm/Trident has buffering and throttling mechanisms built in
 
-Hadoop is designed to drive all system resources to their full limit until the fundamental limiting resource is encountered. 
+Hadoop is designed to drive all system resources to their full limit until the fundamental limiting resource is encountered.
 
 ==== Why Storm+Trident is bigger than it looks
 
@@ -321,6 +427,6 @@ Hadoop is designed to drive all system resources to their full limit until the f
 * Transport Agnosticism:
 * Distributed Programming without quantum mechanics
 
-How do you make a program that will run forever? Joe Armstrong, the inventor of Erlang, identifies these six key features: 
+How do you make a program that will run forever? Joe Armstrong, the inventor of Erlang, identifies these six key features:
 Isolation; Concurrency; Failure Detection; Fault Identification, Live Code Upgrade; Stable Storage
-Storm+Trident provides all six, 
+Storm+Trident provides all six,
