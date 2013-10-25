@@ -1,15 +1,5 @@
 = Big Data for Chimps
 
-include::22-hadoop_tuning.asciidoc[]
-
-include::22a-tuning-wise_and_lazy.asciidoc[]
-
-include::22b-scripts.asciidoc[]
-
-include::22b-tuning-pathology.asciidoc[]
-
-include::22c-tuning-brave_and_foolish.asciidoc[]
-
-include::22d-use_method_checklist.asciidoc[]
+include::88-tuning_storm_trident.asciidoc[]
 
 include::88-locality.asciidoc[]
