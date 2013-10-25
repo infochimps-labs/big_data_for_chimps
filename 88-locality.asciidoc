@@ -24,23 +24,26 @@ It's Valentine's Day at Chimpanzee Elementary School, and Cupid has delivered in
 
 For the kindergarten class, they might each bring all their valentines to the teacher's desk, then count the valentines upwards by one to find the total.
 
-
+----
                Ham    Enos       Gordo
      method 1: V      V V V      V V V V
                V V V V V V V V
                1 2 3 4 5 6 7 8
 	       8
+----
 
 The context step here is _putting all the notes in a single bunhe_, the synthesis is to _count the notes upwards by one_, producing a resulting belief in total number of notes.
 
 
 For the older fifth-grade students, each chimp might count the Valentine notes at their desk. write their count on the blackboard at the front of the room, and then as a class sum the counts to find the total.
 
+----
                Ham    Enos       Gordo
      method 2: V      V V V      V V V V
                1,     3,         4
 	       1 + 3 + 4
 	       8
+----
 
 In this case there are two analysis steps. The first context step is to simply use the natural grouping at each desk; the synthesis step is to count those cards, producing an intermediate belief in the count at that desk. Next, those individual counts are brought into context on the backboard, and finally summed to the final belief of the total.
 

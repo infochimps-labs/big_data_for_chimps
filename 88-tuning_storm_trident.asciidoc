@@ -162,7 +162,6 @@ Trident-batch-delay (`topology.trident.batch.emit.interval.millis`) sets the max
 
 Trident-batch-delay is principally useful to prevent congestion, especially around startup. As opposed to a traditional Storm spout, a Trident spout will likely dispatch hundreds of records with each batch. If max-pending is 20, and the spout releases 500 records per batch, the spout will try to cram 10,000 records into its send queue.
 
-__________________________________________________________________________
 
 In general:
 
