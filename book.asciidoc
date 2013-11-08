@@ -1,5 +1,7 @@
 = Big Data for Chimps
 
+include::00-preface.asciidoc[]
+
 include::00a-about.asciidoc[]
 
 include::00a-intro-more_outlines.asciidoc[]
