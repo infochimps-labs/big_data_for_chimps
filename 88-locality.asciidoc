@@ -47,7 +47,7 @@ For the older fifth-grade students, each chimp might count the Valentine notes a
 
 In this case there are two analysis steps. The first context step is to simply use the natural grouping at each desk; the synthesis step is to count those cards, producing an intermediate belief in the count at that desk. Next, those individual counts are brought into context on the backboard, and finally summed to the final belief of the total.
 
-==== Horizon of local computation
+==== Compute Horizon
 
 For the chimpanzees to count their valentines, getting data into context was straightforward -- everyone was together in the same room -- and so it is only a matter of taste to aggregate the full dataset directly (as the kindergarteners did)
 or to use a more complex aggregation stream (as the fifth-graders did).
@@ -64,8 +64,7 @@ In reality, even counting the ballots isn't simple
 
 During the 2001 US election debacle, every vote in the state of Florida was brought to the same location
 
-
-You'd
+The compute horizon on conventional hardware for any data processing system -- database, stream processing, batch processing --  is a single execution unit within a given OS process within, as necessary, the same memory spaces. The cost to achieve the same horizon increases as you move outward through execution units that share the same OS process, same machine, same network rack, same local-area network, same data center, or same wide-area network. The practical systems you're familiar with are simply pragmatic solutions to the general problem of moving data within a common horizon.
 
 
 

@@ -1,6 +1,14 @@
-=== Tuning Storm+Trident
+== Tuning Storm+Trident
 
 Outline
+
+Our approach for Storm+Trident, as it is for Hadoop, is to use it from the "outside". If you find yourself seeking out details of its internal construction to accomplish a task, stop and consider whether you're straying outside its interface. But once your command of its external model solidifies and as your application reaches production, it's worth understanding what is going on. This chapter describes the lifecycle of first, a Storm+Trident tuple, and next, 
+
+Along the way, we can also illuminate how Storm+Trident acheives its breakthroughs -- its ability to do exactly-once processing is a transformative improvement over transfer-oriented systems (such as Flume or S4) and wall street-style Complex Event Processing (CEP) systems (such as Esper). 
+
+
+Because Storm+Trident has not reached Hadoop's relative maturity, it's important for the regular data scientist to under 
+
 
 * Tuning constraints -- refer to earlier discussion on acceptable delay, thruput, horizon of compute, et
 * Process for initial tuning
@@ -17,7 +25,7 @@ The Dataflow Tuning Rules:
 
 That may seem insultingly simplistic, but most tuning questions come down to finding some barrier to one or the other. It also implies a corollary: once your dataflow does obey the Dataflow Tuning Rules, stop tuning it. Storm+Trident flows are not subtle: they either work (in which case configuration changes typically have small effect on performance) or they are catastrophically bad. So most of the tuning you’ll do is to make sure you don’t sabotage Storm’s ability to meet the Dataflow Tuning Rules
 
-==== Goal
+=== Goal
 
 First, identify your principal goal and principal bottleneck.
 
@@ -38,7 +46,7 @@ for memory-bound flows, it’s "buy enough RAM" (though you should read the tips
 
 For concurrency-bound flows, apply the recommendations that follow, increase concurrency until things get screwy. If that per-machine throughput is acceptable to your budget, great; otherwise, hire an advanced master sysadmin to help you chip away at it.
 
-==== Provisioning
+=== Provisioning
 
 Unless you're memory-bound, the Dataflow Tuning Rules imply network performance and multiple cores  are valuable, but that you should not need machines with a lot of RAM. Since tuples are handled and then handed off, they should not be accumulating in memory to any significant extent. Storm works very well on commodity hardware or cloud/virtualized machines. Buy server-grade hardware, but don't climb the price/performance curve.
 
@@ -131,7 +139,7 @@ This is most severe in the case of a spout, which will receive a large number of
 
 Set the executor send buffer to be larger than the batch record count of the spout or first couple stages. 
 
-==== Garbage Collection and other JVM options
+=== Garbage Collection and other JVM options
 
 TODO: make this amenable for the non-dragonmaster
 
@@ -154,7 +162,7 @@ If you watch your GC logs, in steady-state you should see
 
 Side note: regardless of whether you're tuning your overall flow for latency or throughput, you want to tune the GC for latency (low pause times). Since things like committing a batch can't proceed until the last element is received, local jitter induces global drag.
 
-==== Tempo and Throttling
+=== Tempo and Throttling
 
 Max-pending (`TOPOLOGY_MAX_SPOUT_PENDING`) sets the number of tuple trees live in the system at any one time.
 

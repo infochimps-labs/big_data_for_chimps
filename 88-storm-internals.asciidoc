@@ -1,0 +1,105 @@
+== Storm+Trident Internals
+
+
+What should you take away from this chapter:
+
+You should:
+
+* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking. 
+* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.  
+* Understand the lifecycle of partitions within a Trident batch and thus, the context behind partition operations such as Apply or PartitionPersist.
+* Understand Trident's transactional mechanism, in the case of a PartitionPersist.
+* Understand how Aggregators, Statemap and the Persistence methods combine to give you _exactly once_  processing with transactional guarantees.  Specifically, what an OpaqueValue record will look like in the database and why.
+* Understand how the master batch coordinator and spout coordinator for the Kafka spout in particular work together to uniquely and efficiently process all records in a Kafka topic.
+* One specific:  how Kafka partitions relate to Trident partitions.
+
+=== Storm tuple lifecycle
+
+Once the Coordinator has brought the dataflow online, the Worker (TODO:  ?Executor?) calls the spouts next tuple operator.  The spout emits a tuple to its Collector if it has one ready.  (Actually, the spout is permitted to emit 0, 1 or _many tuples_ -- but you should try to emit just one unless there's a good reason.)  It then registers that tuple as pending until its tupletree (this tuple and all the descendent tuples produced by later processing stages) are acked.  Please note that though the spout pending mechanism relies on the final result of the acking mechanism, it is distinct from that and handled by the spout's Executor.  (TODO:  Check)  
+
+If the spout doesn't emit a tuple, the Worker will sleep for a fixed number of milliseconds (by default, you can change the sleep policy).  Otherwise, the Worker will keep calling `nextTuple` until either its send queue is full (see below) or until there are `MAX_SPOUT_PENDING` or more tuples pending.  
+
+==== Spout send queue
+
+The Collector places that tuple into the Executor's send queue.  
+
+Since it's important that the spout never block when emitting (if it did, critical bookkeeping tuples might get trapped, locking up the flow), a spout emitter keeps an "overflow buffer," and publishes as follows:
+
+* if there are tuples in the overflow buffer add the tuple to it -- the queue is certainly full.
+* otherwise, publish the tuple to the flow with the non-blocking call. That call will either succeed immediately ...
+* or fail with an `InsufficientCapacityException`, in which case add the tuple to the overflow buffer.
+
+==== Executor Queues
+
+At this point, you see that the spout spins in an independent loop, emitting records to its Collector until one of its limits is hit.  We will pick up with the specific tuple in a moment but first, let's get a picture of how tuples move between Executors, locally and remotely.  Each Executor, whether bolt or spout, has both a send and a receive queue.  (For now, all you need to know about a bolt Executor is that it takes things from its receive queue, does stuff to them and puts them into the send queue.)
+
+(TODO:  Insert information on what disrupter queue is and how wonderful it is)
+
+When a tuple is emitted, the Collector places each into a slot in the send queue, once for each downstream Executor that will process it.  (The code, if you should find yourself reading it, doesn't distinguish the tuple as emitted and the copies used for sending.  It has to make these multiple copies so that each can be acked independently.)  These writes are done in a blocking fashion.  If the queue is full, the "writemethod" does not return until it has been swept; this means that, in turn, the Collectors emit and the Executors execute methods block as well, preventing the Executor from sending more records than downstream stages can process.
+
+The worker sweeps each Executor's send queue on a tight loop.  Unless the downstream queue blocks, it repeats immediately (TODO:  Check).  Each sweep of the queue gathers all tuples, removing them into a temporary buffer.  Tuples to be handled by a local Executor are deposited directly into that Executor's receive queue.  All tuples destined for remote Executors are placed in the Worker's transfer queue in a single write, regardless of how many remote Executors there are. 
+
+A couple of notes:  First, send and receive queues are per Executor, while the transfer queue is shared by all Executors in the Worker.  
+
+When the Worker writes to a downstream queue, it deposits all records from that sweep into the queue in a bunch.  [FOOTNOTE:  I'm being careful to use the informal term "bunch" rather than "batch" because you'll never hear about these again.  A "batch" is a principal element for Trident, whereas we'll never talk about these again.]  So note that, while each slot in a send queue holds exactly one tuple, each slot in a receive or transfer queue can hold up to the `SEND_QUEUE` size amount of tuples.  (TODO:  Check variable's name)  This is important when you're thinking about memory usage.
+
+===== Worker Transfer Queue
+
+The Worker transport mechanism in turn sweeps the transfer queue and writes tuples over the network to each destination worker.  There are two transport mechanisms, using either the legacy ZeroMQ transport or the more recent Netty transport.  The ZeroMQ transport has been replaced due to both licensing issues and minor dissatisfaction with its performance in production.  The Netty transport is probably the better choice, although at time of writing (November 2013), it's received much less production exposure. 
+
+In our experience, the remaining details of the Worker-to-Worker transfer are fairly unimportant.  Records are sent over the network, accepted by the remote Worker and deposited into the relevant Executors' receive queues.  There is such a thing as a Worker receive queue; this is not a disruptor queue and not a piece of user-maintainable machinery; ignore it and leave its configuration alone.
+
+===== Executor Receive Queues
+
+As you may now guess, each Executor runs in its own loop, sweeping each receive queue and removing all hanging bunches.  Each of those tuples are handed, one after the other, to its bolt's `executemethod`.  
+
+So now, we can explain the backpressure mechanism of a Storm flow -- the reason that tuples don't pile up unmanageably in RAM at the slowest stage.  As mentioned, the `executemethod` won't return if anything downstream is blocking.  Since each call to execute is done in series, this, in turn, prevents the Executor from iterating through all the tuples in a sweep -- preventing it from beaconing a new sweep.  Tuples will begin accumulating in a blocked Executor's receive queue.  Ultimately, the Worker will, as well, become blocked writing to that receive queue, keeping it from sweeping upstream send queues.  This will continue all the way up the flow to the spout.  Finally, as we hinted at the start, once the spout's send queue is full, it will stop calling `nexttuple`, stop draining its source and so stop writing more records into the flow.
+
+If this sounds awfully coarse-grained, you're right. While nothing will _break_ if you get to this L.A. freeway state of gridlock, your flow will have become disastrously inefficient, even well before that point. You can straightforwardly prevent the situation by adjusting the `maxspoutpending` parameter and each stage's parallelism correctly in the next chapter (TODO:  ref), Storm+Trident Tuning, will show you how.  
+
+In normal operation, you shouldn't have to think about the backpressure mechanics, though; Storm quietly and efficiently buffers records in front of your slowest stages and handles latency shocks (such as transient sluggishness from a remote database or API).
+
+==== Executor Details (?)
+
+Not sure if I need anything here.  
+
+==== The Spout Pending Register
+
+Say how a tuple is cleared from the pending register when its tree is finally acked and what this means for `maxspoutpending`. 
+
+=== Acking and Reliability
+
+Storm's elegant acking mechanism is probably its most significant breakthrough.  It ensures that a tuple and its descendents are processed successfully or fail loudly and it does so with a minimum amount of bookkeeping chatter. The rest of the sections in this chapter, while advanced, ultimately are helpful for architecting and productionizing a dataflow.  This section, however, . is comparatively optional -- the whole point of the reliability mechanism is that it Just Works.  It's so fascinating we can't help but include it but if you're not looking to have your brain bent today, feel free to skip it.  (It's fairly complicated, so in a few places, I will make mild simplifications and clarify the details in footnotes.)
+
+Here's how it works.  
+
+As each tuple destined for an Executor is created, it is given a unique enough ID; in practice, these are 64-bit integers (this will be important later) but I'm going to pretend that, by cosmic luck, each of those integers ends up resembling the name of a Biblical figure.  
+
+When a spout produces a tuple -- let's take, for example, one named "Methuselah" -- it notifies the acker to do two things:  to start tracking Methuselah's tuple tree and to inscribe Methuselah's name in that tupletree's Scroll of Ages.  [FOOTNOTE:  Actually, since a tuple can be sent to multiple downstream Executors, it's more appropriate to say it inscribes each of Methuselah's clones in the Scroll of Ages.]
+
+As described above, that tuple will eventually be processed by the downstream Executor's `execute` method, which typically emits tuples and must call `ack` or `fail`, (TODO:  insert details of what happens when a tuple fails).  In the typical case, the Executor's bolt happily calls `emit` 0, 1 or many times and then calls `ack`.  As each emitted tuple is placed in the send queue, the Executor notes its name [FOOTNOTE:  Actually, the names of all its clones.] for later delivery to the acker.  When the bolt calls `ack`, the Executor notifies the acker with the name of the parent and each child.  
+
+So if a bolt, receiving a tuple called "Noah," emitted tuples called "Ham" and "Shem," it strikes Noah from the Scroll of Ages but lists Ham and Shem therein.  (TODO:  Rearrange?)  When a bolt emits one or more tuples, the parent is removed but the children are added and so the Scroll of Ages continues to have at least those entries in it. If a bolt received a tuple called "Onan," and emitted nothing, then it would only notify the acker to clear Onan, adding nothing.  Ultimately, for a tupletree to be successfully completed, every descendent must ultimately encounter a bolt that emits nothing.  
+
+Up until now, I've made it sound as if each name in the Scroll of Ages is maintained separately.  The actual implementation is far more elegant than that and relies on a few special properties of the XOR function.
+
+First, you can freely rearrange the order in which several terms are XOR'd together:  `Noah XOR Shem XOR Ham` is the same as `Shem XOR Noah XOR Ham` and so forth.  Second, the XOR of a term with itself is 0:  Noah XOR Noah is 0 for anybody.  Do you see where this is going? In our example, (TODO:  Repair so it's Noah's tree)when the Scroll of Ages was first prepared, inscribed on it was only Noah's name.  When the Executor handling that tuple notified back, it didn't have to send Noah, Ham and Shem distinctly; it just sent the single 64-bit integer `Noah XOR Ham XOR Shem`.  So the Scroll of Ages is pretty brief, as Scrolls go; it actually only holds the one entry that is the combined XOR of every tuple ID that has been sent.  So when the acker receives the ack for Noah, namely `Noah XOR Ham XOR Shem`, it XOR`s that single 64-bit entry with the existing tupletree `checksum` storing that `checksum` back to the Scroll of Ages.  (NOTE:  TODO Rework Scroll of Ages metaphor to hold all tupletrees.) 
+
+The value at this point is effectively `Noah XOR Shem XOR Ham`. From the first property, the Noah terms cancel out and so our tupletree state is now just `Shem XOR Ham`.  
+
+Thanks to the second property, even as acks come in asynchronously, the Scroll of Ages remains correct.  `(Shem XOR Ham) XOR (Shem XOR Abraham) XOR (Ham) XOR (Abraham)` rearranges to provide two Shems, two Hams and two Abrahams.  ,Since, in this example, the family line of Shem and Abraham produced no resulting tuples, we are left with 0.
+
+As soon as that last ack comes in, producing a 0 in the Scroll of Ages, the acker notifies the spout that the tupletree has concluded.  This lets the spout remove that very first tuple from its pending list.  The loop that calls `nexttuple` will, on its next trip through, see the new pending count and, if conditions are right, call `nexttuple`.  
+
+This system is thus able to accommodate many millions of active tuples with remarkably little network chatter or memory footprint.  Only the spout's pending tuples are retained for anything except immediate processing.  Now, this comes at a cost, if any downstream tuple fails, the whole tree is retried but since failure is the uncommon case, (and finite RAM is the universal case), this is the right tradeoff.  Second, the XOR trick means a single 64-bit integer is sufficient to track the legacy of an entire tupletree, no matter how large, and a single 64-bit integer is all that has to be tracked and sent to the acker, no matter how many downstream tuples an Executor produces.  
+
+If you're scoring at home, for each tupletree, the entire bookkeeping system consumes Order(1) number of tuples, Order(1) size of `checksum` and only as many acks as tuples.  
+
+One last note.  You can do the math on this yourself, but 64 bits is enough that the composed XOR of even millions of arbitrary 64-bit integer will effectively never come out to be 0 unless each term is repeated.  
+
+
+=== Walk-through of the Github dataflow
+
+Let's walk through the batch lifecycle using the Github dataflow from the Intro to Storm chapter (TODO:  ref).  
+
+(NOTE:  TODO:  In chapter on Trident tuning, make clear that we are not talking about Storm tuning and some of our advice, especially around `maxspoutpending` will be completely inappropriately for a pure Storm flow.)
