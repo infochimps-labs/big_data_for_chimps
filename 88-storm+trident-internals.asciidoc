@@ -97,9 +97,9 @@ If you're scoring at home, for each tupletree, the entire bookkeeping system con
 
 One last note.  You can do the math on this yourself, but 64 bits is enough that the composed XOR of even millions of arbitrary 64-bit integer will effectively never come out to be 0 unless each term is repeated.  
 
-
 === Walk-through of the Github dataflow
 
 Let's walk through the batch lifecycle using the Github dataflow from the Intro to Storm chapter (TODO:  ref).  
 
 (NOTE:  TODO:  In chapter on Trident tuning, make clear that we are not talking about Storm tuning and some of our advice, especially around `maxspoutpending` will be completely inappropriately for a pure Storm flow.)
+
