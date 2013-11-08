@@ -1,5 +1,22 @@
+
+////Write an introductory paragraph that specifically plants a first seed about the conceptual way of viewing big data.  Then, write a paragraph that puts this chapter in context for the reader, introduces it ("...in this chapter we'll show you how to start with a question and arrive at an answer without coding a big, hairy, monolithic program...")  Orient your reader to big data and the goals for lassoing it.  Doing this will hook your reader and prep their mind for the chapter's main thrust, its juicy bits.  Finally, say a word or two about big data before getting into Hadoop, for context (like "...big data is to Hadoop what x is to y...") Do these things before you jump so quickly into Hadoop. Amy////
+
+Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this paragraph.
+
+What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing. This exposes a core simplicity that makes programming it exceptionally fun.
+
+Hadoop's bargain is this. You must give up fine-grained control over how data is read and sent over the network. Instead, you write a series of short, constrained transformations, a sort of programming Haiku:
+
+    Data flutters by
+    Elephants make sturdy piles
+    Insight shuffles forth
+
+For any such program, Hadoop's diligent elephants intelligently schedule the tasks across single or dozens or thousands of machines. They attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and attend to myriad other details that otherwise stand between you and insight. Putting these constraints on how you ask your _question_ releases constraints that traditional database technology placed on your _data_. Unlocking access to data that is huge, unruly, organic, highly-dimensional and deeply connected unlocks answers to a new deeper set of questions about the large-scale behavior of humanity and our universe. <remark>too much?? pk4</remark>
+
 === Data and Locality
+
 //// I'm concerned that even the keenest of readers will find it a challenge to parse the "regional flavor" idea from the concept of "locality." (Maybe I'm confirming your own concern about this?)  I do realize you may choose another term for "locality" at some point, yet I think locality, while not quick to digest, is actually best.)  For this section, do you possibly have another example handy, one that isn't geographical, to use here?  If not, I suggest making a clearer distinction between region and place versus locality.  Making a clearer distinction will enable your reader to more quickly grasp and retain the important "locality" concept, apart from your regional flavor example. Amy//// 
+
 There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
 The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays), Snow's BBQ (proclaimed "The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, the largest academic supercomputer to date).

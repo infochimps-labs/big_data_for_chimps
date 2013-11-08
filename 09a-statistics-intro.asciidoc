@@ -1,0 +1,15 @@
+
+- Counting
+  - total burgers sold - total commits, repos, 
+- counting a running and or smoothed average
+- standard deviation
+- sampling
+  - uniform
+  - top k
+  - reservior
+  - ?rolling topk/reservior sampling?
+- algebraic vs holistic aggregate
+- use countmin sketch to turn a holistic aggregate into an algebraic aggregate
+- quantile or histogram
+- numeric stability
+
