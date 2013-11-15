@@ -1,12 +1,7 @@
 
-
-
-
 === Reduce Logs ===
 
 TODO: need one that does reduce spills
-
-
 
 	2012-12-17 02:11:58,555 WARN org.apache.hadoop.conf.Configuration: /mnt/hadoop/mapred/local/taskTracker/flip/jobcache/job_201212070519_0013/job.xml:a attempt to override final parameter: hadoop.tmp.dir;  Ignoring.
 	...
