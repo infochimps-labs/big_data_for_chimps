@@ -1,3 +1,33 @@
+
+
+
+
+
+
+
+Big Data is two things: 
+
+* The solution to a problem: what happens when volume of ....
+* The emergence of an opportunity: (the "Unreasonable Effectiveness of Data" phenomenon).
+
+....
+So big data is what happens when the required context volume for fully-justified synthesis of belief.
+There are several ways to get into trouble with the context volume -- too much data in space, in time, etc (explain).
+
+You have to hit a set of things. 
+
+* **Truth** -- consistent, stable and complete synthesis of the facts (define?)
+
+you might think this is in general essential, overriding, and achievable. It isn't, isn't and isn't. 
+
+
+
+
+
+
+
+
+
 === Model for Data Analysis
 
 The architecture, APIs and user experience of Storm+Trident and Hadoop are very different, and there are fundamental differences in what they provide: Hadoop cannot process an infinite stream of data, and Storm+Trident doesn't naturally lend itself to complex aggregations at terabyte scale. But there is so much commonality in how to think about an analytic flow in each that they must be reflections of the same core process -- with differences that are the result of engineering under constraint.

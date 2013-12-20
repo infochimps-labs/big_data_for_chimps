@@ -1,11 +1,10 @@
 ==== Adaptive Grid Size ====
+
 ////Very interesting; but, give an example (one, or two) of how this extends to equivalent real-world examples.  Amy////
 
 The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303].
 
-Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that
-Monaco fits easily within on one zoom-level 12 quadtile; Russia spans two zoom-level 1 quadtiles.
-Without multiscaling, to cover the globe at 1-km scale and 64-kB records would take 70 terabytes -- and 1-km is not all that satisfactory. Huge parts of the world would be taken up by grid cells holding no border that simply said "Yep, still in Russia".
+Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that Monaco fits easily within on one zoom-level 12 quadtile; Russia spans two zoom-level 1 quadtiles. Without multiscaling, to cover the globe at 1-km scale and 64-kB records would take 70 terabytes -- and 1-km is not all that satisfactory. Huge parts of the world would be taken up by grid cells holding no border that simply said "Yep, still in Russia".
 
 There's a simple modification of the grid system that lets us very naturally describe multiscale data.
 
@@ -27,7 +26,6 @@ Pad out each of the keys with `x`'s to meet our lower limit of ZL=9.
 The quadkey `1330011xx` means "I carry the information for grids `133001100`, `133001101`, `133001110`, `133001111`, ".
 
 image::images/fu05-quadkeys-multiscale-ZL8.png[Japan at Zoom Level 8]
-
 
 
 image::images/fu05-quadkeys-multiscale-ZL9.png[Japan at Zoom Level 9]

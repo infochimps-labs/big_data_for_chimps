@@ -1,1 +1,27 @@
 == Intro to Storm+Trident
+
+
+==== Intro: Storm+Trident Fundamentals
+
+At this point, you have good familiarity with Hadoop’s batch processing power and the powerful inquiries it unlocks above and as a counterpart to traditional database approach.  Stream analytics is a third mode of data analysis and, it is becoming clear, one that is just as essential and transformative as massive scale batch processing has been.  
+
+Storm is an open-source framework developed at Twitter that provides scalable stream processing.  Trident draws on Storm’s powerful transport mechanism to provide _exactly once_ processing of records in _windowed batches es_ for aggregating and persisting
+to an external data store.   
+
+The central challenge in building a system that can perform fallible operations on billions of records reliably is how to do so without yourself producing so much bookkeeping that it becomes its own scalable Stream processing challenge.  Storm handles all details of reliable transport and efficient routing for you, leaving you with only the business process at hand.  (The remarkably elegant way Storm handles that bookkeeping challenge is one of its principle breakthroughs; you’ll learn about it in the later chapter on Storm Internals.)
+
+This takes Storm past the mere processing of records to Stream Analytics -- with some limitations and some advantages, you have the same ability to specify locality and write arbitrarily powerful general-purpose code to handle every record.  A lot of Storm+Trident’s adoption is in application to real-time systems. footnote:[for reasons you’ll learn in the Storm internals chapter, it’s not suitable for ultra-low latency (below, say, 5s of milliseconds), Wall Street-type applications, but if latencies above that are real-time enough for you, Storm+Trident shines.]
+
+But, just as importantly, the framework exhibits radical _tolerance_ of latency.  It’s perfectly reasonable to, for every record, perform reads of a legacy data store, call an internet API and the like, even if those might have hundreds or thousands of milliseconds worst-case latency.  That range of timescales is simply impractical within a batch processing run or database query.  In the later chapter on the Lambda Architecture, you’ll learn how to use stream and batch analytics together for latencies that span from milliseconds to years.  
+
+As an example, one of the largest hard drive manufacturers in the world  ingests sensor data from its manufacturing line, test data from quality assurance processes, reports from customer support and post mortem analysis of returned devices.  They have been able to mine the accumulated millisecond scale sensor data for patterns that predict flaws months and years later.  Hadoop produces the "slow, deep" results, uncovering the patterns that predict failure.  Storm+Trident produces the fast, relevant results:  operational alerts when those anomalies are observed.
+
+Things you should take away from this chapter:
+
+Understand the type of problems you solve using stream processing and apply it to real examples using the best-in-class stream analytics frameworks.
+Acquire the practicalities of authoring, launching and validating a Storm+Trident flow.  
+Understand Trident’s operators and how to use them:  Each apply `CombinerAggregator`s, `ReducerAggregator`s and `AccumulatingAggregator`s (generic aggregator?)
+Persist records or aggregations directly to a backing database or to Kafka for item-potent downstream storage.
+(probably not going to discuss how to do a streaming join, using either DRPC or a hashmap join)
+
+NOTE: This chapter will only speak of Storm+Trident, the high level and from the outside. We won’t spend any time on how it’s making this all work until (to do ref the chapter on Storm+Trident internals)

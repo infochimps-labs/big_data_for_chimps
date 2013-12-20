@@ -1,4 +1,3 @@
-
 **TODO**:
 
 Will be reorganizing below in this order:
@@ -79,6 +78,7 @@ This is a 1-d index into a 2-d space! What's more, nearby points in space are ty
 Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
 
 ==== Patterns in UFO Sightings ====
+
 ////Introduce/buffer a bit first -- like, "The following approach can also be used to analyze x, y, or z..."  Root in real-world applications, first.  Amy////
 
 Let's put Hadoop into practice for something really important: understanding where a likely alien invasion will take place. The National UFO Reporting Center has compiled a dataset of 60,000+ documented UFO sightings, with metadata. We can combine that with the 7 million labelled points of interest in the Geonames dataset: airports and zoos, capes to craters, schools, churches and more.
@@ -123,6 +123,7 @@ Mapper output:
 
 
 ==== Reducer: combine objects on each quadtile ====
+
 ////Introduce this - (it's true, you'll need to reorient the reader pretty consistently). "Here, we are looking for..."  Amy////
 
 The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
@@ -364,7 +365,6 @@ In code:
 =========================
 Take care to put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as `long` -- it's a keyword in pig and other languages. I like `lng`.
 =========================
-
 
 ==== Exploration
 

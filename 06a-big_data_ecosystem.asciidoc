@@ -1,0 +1,311 @@
+=== Big Data Ecosystem and Toolset
+
+Big data is necessarily a polyglot sport.  The extreme technical challenges demand diverse technological solutions and the relative youth of this field means, unfortunately, largely incompatible languages, formats, nomenclature and transport mechanisms.  What’s more, every ecosystem niche has multiple open source and commercial contenders vying for prominence and it is difficult to know which are widely used, which are being adopted and even which of them work at all.
+
+Fixing a map of this ecosystem to print would be nearly foolish; predictions of success or failure will prove wrong, the companies and projects whose efforts you omit or downplay will inscribe your name in their “Enemies” list, the correct choice can be deeply use-case specific and any list will become out of date the minute it is committed to print.  Your authors, fools both, feel you are better off with a set of wrong-headed, impolitic, oblivious and obsolete recommendations based on what has worked for us and what we have seen work for other people.
+
+==== Basic Toolset
+
+We think you are doing it wrong if you are not using :
+  - for most general-purpose jobs, a high-level data orchestration tool such as Pig or Hive
+  - for the dirty stuff (e.g. parsing, contacting external apis, etc..), a high-level scripting language such as Ruby or Python
+  - for deeper exploration of your data once it's been cut down to size, a statistical analysis tool -- R, Pandas or Julia
+  - Additionally: toolkits (Mahout, Scikit, Kiji; NLTK / Stanford / OpenNLP)
+
+Infrastructure:
+  - Batch analytics: Hadoop, from either the Cloudera or Hortonworks distributions (or, for the moneyed, Map/R)
+  - Streaming Analytics: Storm+Trident, although Spark Streaming shows promise.
+  - One or more scalable datastores -- for storing billions of objects, HBase, Accumulo or Cassandra; and for storing millions of results, Elasticsearch or MongoDB
+  - Optionally, an in-memory OLAP tool such as Impala, Druid or Redshift.
+
+==== Core Platform: Batch Processing
+
+Hadoop is the one easy choice to make; Doug Cutting calls it the “kernel of the big data operating system” and we agree.  It can’t be just that easy, though; you further have to decide which distribution to adopt.  Almost everyone should either choose Cloudera’s distribution (CDH) or Hortonworks' (HDP).  Both come in a complete, well-tested open source version as well as a commercial version backed by enterprise features and vendor support.  Both employ significant numbers of core contributors,  have unshakable expertise and open-source credibility.
+
+Cloudera started in 2009 with an all-star list of founders including Doug Cutting, the originator of the Hadoop project.  It was the first to offer a packaged distribution and the first to offer commercial support; its offerings soon came to dominate the ecosystem.
+
+Hortonworks was founded two years later by Eric Baldeschwieler (aka Eric 14), who brought the project into Yahoo! and fostered its essential early growth, and a no-less-impressive set of core contributors.  It has rapidly matured a first-class offering with its own key advantages.
+
+Cloudera was the first company to commercialize Hadoop; it’s distribution is, by far, the most widely adopted and if you don’t feel like thinking, it’s the easy choice.  The company is increasingly focused on large-scale enterprise customers and its feature velocity is increasingly devoted to its commercial-only components.
+
+Hortonworks’ offering is 100-percent open source, which will appeal to those uninterested in a commercial solution or who abhor the notion of vendor lock-in.  More impressively to us has been Hortonworks’ success in establishing beneficial ecosystem partnerships.  The most important of these partnerships is with Microsoft and, although we do not have direct experience, any Microsoft shop should consider Hortonworks first.
+
+There are other smaller distributions, from IBM VMware and others, which are only really interesting if you use IBM VMware or one of those others.
+
+The core project has a distribution of its own, but apart from people interested in core development, you are better off with one of the packaged distributions.
+
+The most important alternative to Hadoop is Map/R, a C++-based rewrite, that is 100-percent API compatible with Hadoop.  It is a closed-source commercial product for high-end Enterprise customers and has a free version with all essential features for smaller installations.  Most compellingly, its HDFS also presents an NFS interface and so can be mounted as a native file system.  See the section below (TODO:  REF) on why this is such a big deal.  Map/R is faster, more powerful and much more expensive than the open source version, which is pretty much everything you need to know to decide if it is the right choice for you.
+
+There are two last alternatives worthy of note.  Both discard compatibility with the Hadoop code base entirely, freeing them from any legacy concerns.
+
+Spark is, in some sense, an encapsulation of the iterative development process espoused in this book:  prepare a sub-universe, author small self-contained scripts that checkpoint frequently and periodically reestablish a beachhead by running against the full input dataset.  The output of Spark’s Scala-based domain-specific statements are managed intelligently in memory and persisted to disk when directed.  This eliminates, in effect, the often-unnecessary cost of writing out data from the Reducer tasks and reading it back in again to Mapper tasks.  That’s just one example of many ways in which Spark is able to impressively optimize development of Map/Reduce jobs.
+
+Disco is an extremely lightweight Python-based implementation of Map/Reduce that originated at Nokia.  FOOTNOTE:  [If these analogies help, you could consider the Leica to Hadoop’s Canon or the nginX to its Apache.]  Its advantage and disadvantage is that it is an essentials-only realization of what Hadoop provides whose code base is a small fraction of the size.
+
+We do not see either of them displacing Hadoop but since both are perfectly happy to run on top of any standard HDFS, they are reasonable tools to add to your repertoire.
+
+
+====== Sidebar:  Which Hadoop Version?
+
+At the time of writing, Hadoop is at a crossroads between versions with fundamental differences in architecture and interface.  Hadoop is, beyond a doubt, one of the greatest open source software success stories.  It’s co-base has received contributions from thousands of committers, operators and users.
+
+But, as Hadoop entered Enterprise-adoption adulthood from its Web-2.0 adolescence, the core team determined that enough early decisions -- in naming, in architecture, in interface -- needed to be remade to justify a rewrite.  The project was split into multiple pieces:  principally, Map/Reduce (processing data), HDFS (storing data) and core essential code shared by each.
+
+Under the hood, the 2.0 branch still provides the legacy architecture of Job Tracker/Namenode/SecondaryNamenode masters but the way forward is a new componentized and pluggable architecture.  The most significant flaw in the 1.0 branch -- the terrifying lack of Namenode redundancy -- has been addressed by a Zookeeper-based “high availability” implementation.  (TODO: Describe YARN, Distributed Job Tracker and so forth).  At the bottom, the name and meaning of Hadoop's hundreds of configuration variables have been rethought; you can find a distressingly-long Rosetta Stone from old to new at (TODO: add link).
+
+Even more important are the changes to interface.  The HDFS is largely backward-compatible; you probably only need to recompile.  The 2.0 branch offers an “MR1” toolkit -- backward compatible with the legacy API -- and the next-generation “MR2” toolkit that takes better advantage of 2.0’s new architecture.  Programs written for “MR1” will not run on “MR2” and vice versa.
+
+So, which should you choose?  The way forward is clearly with the 2.0’s architecture.  If you are just ramping up on Hadoop, use the componentized YARN-based systems from the start.  If you have an existing legacy installation, plan to upgrade at at a deliberate pace -- informed exactly by whether you are more terrified of having a Namenode fail or being an early-ish adopter.  For the Map/Reduce toolkit, our best advice is to use the approach described in this book:  Do not use the low-level API.  Pig, Hive, Wukong and most other high-level toolkits are fully compatible with each.  Cascading is not yet compatible with “MR2” but likely will if the market moves that way.
+
+The 2.0 branch has cleaner code, some feature advantages and has the primary attention of the core team.  However, the “MR1” toolkit has so much ecosystem support, documentation, applications, lessons learned from wide-scale deployment, it continues to be our choice for production use.  Note that you can have your redundant Namenode without having to adopt the new-fangled API.  Adoption of “MR2” is highly likely (though not certain); if you are just starting out, adopting it from the start is probably a sound decision. If you have a legacy investment in “MR1” code, wait until you start seeing blog posts from large-scale deployers titled “We Spent Millions Upgrading To MR2 And Boy Are We Ever Happy We Did So.”
+
+The biggest pressure to move forward will be Impala, which requires the “MR2” framework.  If you plan to invest in Impala heavily, it is probably best to uniformly adopt “MR2.”
+
+==== Core Platform: Streaming Data Processing
+
+While the batch processing landscape has largely settled around Hadoop, there are many more data streaming data processing technologies vying for mind share.  Roughly speaking, we see three types of solutions:  Complex Event Processing (CEP) systems that grew out of high-frequency trading and security applications;  Streaming Transport systems, which grew out of the need to centralize server logs at extremely high throughput; and Streaming Analytics systems, developed to perform sophisticated analysis of high-rate activity streams.
+
+The principal focus of a CEP is to enable time-windowed predicates on ordered streams -- for example, “Trigger a buy order for frozen orange juice futures if Mortimer & Mortimer has sold more than 10,000 shares in the last hour” or “Lock down system access if a low-level Army analyst’s terminal is accessing thousands of State Department memos.”  These platforms are conventionally programmed using a SQL-like query language but support low-level extension and an ecosystem of expensive consultants to write same.
+
+These platforms are relentlessly focused on low latency, which is their gift and their curse.  If you are looking for tightly-bound response times in the milliseconds, nothing else will do.  Its cost is a tightly-constrained programming model, poor tolerance for strongly-disordered data and a preference for high-grade hardware and expensive commercial software.  The leading open source entrant is Esper, which is Java-based and widely used.  Commercial offerings include (TODO: find out what commercial offerings there are, e.g. Tibco and Streambase).
+
+Most people with petabyte-scale data first have to figure out how to ship terabyte-scale data to their cluster.  The best solutions here are Kafka or Flume.  Kafka, a Java-based open source project from LinkedIn, is our choice.  It is lightweight, increasingly well-adopted and has a wonderful architecture that allows the operating system to efficiency do almost all the work.  Flume, from Cloudera and also Java-based, solves the same problem but less elegantly, in our opinion.  It offers the ability to do rudimentary in-stream processing similar to Storm but lacks the additional sophistication Trident provides.
+
+Both Kafka and Flume are capable of extremely high throughput and scalability.  Most importantly, they guarantee “at least once” processing.  Within the limits of disk space and the laws of physics, they will reliably transport each record to its destination even as networks and intervening systems fail.
+
+Kafka and Flume can both deposit your data reliably onto an HDFS but take very different approaches to doing so.  Flume uses the obvious approach of having an “always live” sync write records directly to a DataNode acting as a native client.  Kafka’s Camus add-on uses a counterintuitive but, to our mind, superior approach.  In Camus, data is loaded onto the HDFS using Mapper-Only MR jobs running in an endless loop.  Its Map tasks are proper Hadoop jobs and Kafka clients and elegantly leverage the reliability mechanisms of each.  Data is live on the HDFS as often as the Import job runs -- not more, not less.
+
+Flume’s scheme has two drawbacks:  First, the long-running connections it requires to individual DataNodes silently compete with the traditional framework.  (FOOTNOTE: Make sure you increase DataNode handler counts to match.)  Second, a file does not become live on the HDFS until either a full block is produced or the file is closed.  That’s fine if all your datastreams are high rate, but if you have a range of rates or variable rates, you are forced to choose between inefficient block sizes (larger NameNode burden, more Map tasks) or exceedingly long delays until data is ready to process.  There are workarounds but they are workarounds.
+
+Both Kafka and Flume have evolved into general purpose solutions from their origins in high-scale server log transport but there are other use-case specific technologies.  You may see Scribe and S4 mentioned as alternatives but they are not seeing the same wide-spread adoption.  Scalable message queue systems such as AMQP, RabbitMQ or Kestrel will make sense if (a) you are already using one; (b) you require complex event-driven routing; or (c) your system is zillions of sources emitting many events rather than many sources emitting zillions of events.  AMQP is Enterprise-y and has rich commercial support.  RabbitMQ is open source-y and somewhat more fresh.  Kestrel is minimal and fast.
+
+===== Stream Analytics
+
+The streaming transport solutions just described focus on getting your data from here to there as efficiently as possible.  A streaming analytics solution allows you to perform, well, analytics on the data in flight.  While a transport solution only guarantees _at least once_ processing, frameworks like Trident guarantee _exactly once_ processing, enabling you to perform aggregation operations.  They encourage you to do anything to the data in flight that Java or your high-level language of choice permits you to do -- including even high-latency actions such as pinging an external API or legacy data store -- while giving you efficient control over locality and persistence.  There is a full chapter introduction to Trident in Chapter (TODO:  REF), so we won’t go into much more detail here.
+Trident, a Java and Clojure-based open source project from Twitter, is the most prominent so far.
+
+There are two prominent alternatives.  Spark Streaming, an offshoot of the Spark project mentioned above (TODO:  REF), is receiving increasing attention.  Continuity offers an extremely slick developer-friendly commercial alternative.  It is extremely friendly with HBase (the company was started by some members of the HBase core team); as we understand it, most of the action actually takes place within HBase, an interesting alternative approach.
+
+Trident is extremely compelling, the most widely used, is our choice for this book and our best recommendation for general use.
+
+===== Online Analytic Processing (OLAP) on Hadoop
+
+The technologies mentioned so far, for the most part, augment the mature, traditional data processing tool sets.  There are now arising Hadoop-based solutions for online analytic processing (OLAP) that directly challenge the data warehousing technologies at the core of most large-scale enterprises.  These rely on keeping a significant amount of your data in memory, so bring your wallet.  (It may help to note that AWS offers instances with 244 GB of RAM -- yes, that’s one quarter of a terabyte -- for a mere $2500 per month, letting you try before you buy.)
+
+The extremely fast response times close the gap to existing Enterprise IT in two ways:  First, by offering SQL-like interface and database-like response times and second, by providing the ODBC (FOOTNOTE: Online Database Connectivity)-compatible connectors that traditional business intelligence (BI) tools expect.
+
+Impala, a Java-based open source project from Cloudera, is the most promising.  It reuses Hive’s query language, although current technological limitations prevent it from supporting the full range of commands available in Hive. Druid, a Java-based open source project from Metamarkets, offers a clean, elegant API and will be quite compelling to folks who think like programmers and not like database analysts.  If you're interested in a commercial solution, Hadapt and VoltDB (software) and Amazon’s RedShift (cloud-hosted) all look viable.
+
+Lastly, just as this chapter was being written Facebook open sourced their Presto project.  It is too early to say whether it will be widely adopted, but Facebook doesn't do anything thoughtlessly or at a small scale. We'd include it in any evaluation.
+
+Which to choose? If you want the simple answer, use Impala if you run your own clusters or RedShift if you prefer a cloud solution. But this technology only makes sense when you've gone beyond what traditional solutions support. You'll be spending hundreds of thousands of dollars here, so do a thorough investigation.
+
+NOTE:  You’ll hear the word “realtime” attached to both streaming and OLAP technologies; there are actually three things meant by that term.  The first, let’s call “immediate realtime” provided by the CEP solutions:  If the consequent actions of a new piece of data have not occurred within 50 milliseconds or less, forget about it.  Let’s call what the streaming analytics solutions provide “prompt realtime;” there is a higher floor on the typical processing latency but you are able to handle all the analytical processing and consequent actions for each piece of data as it is received.  Lastly, the OLAP data stores provide what we will call “interactive realtime;” data is both promptly manifested in the OLAP system’s tables and the results of queries are returned and available within an analyst’s attention span.
+
+===== Database Crossloading
+
+ All the tools above focus on handling massive streams of data in constant flight.  Sometimes, what is needed is just to get that big pile of data over there into that thing over there.  Sqoop, an Apache project from Cloudera, capably solves the unlovely task of transferring data in and out of legacy Enterprise stores, SQL server, Natiza, Oracle, MySQL, PostgreSQL and more.
+
+Most large enterprises are already using a traditional ETL (FOOTNOTE:  Extract, Transform and Load, although by now it means the thing ETL vendors sell) tool such as Informatica and (TODO: put in name of the other one).  If you want a stodgy, expensive Enterprise-grade solution, their sales people will enthusiastically endorse it for your needs, but if extreme scalability is essential, and their relative immaturity is not a deal breaker, use Sqoop, Kafka or Flume to centralize your data.
+
+==== Core Platform: Data Stores
+
+In the old days, there was such a thing as “a” database. These adorable, all-in-one devices not only stored your data, they allowed you to interrogate it and restructure it.  They did those tasks so well we forgot they were different things, stopped asking questions about what was possible and stopped noticing the brutal treatment the database inflicted on our programming models.
+
+As the size of data under management explodes beyond one machine, it becomes increasingly impossible to transparently support that abstraction.  You can pay companies like Oracle or Netezza large sums of money to fight a rear-guard action against data locality on your behalf or you can abandon the Utopian conceit that one device can perfectly satisfy the joint technical constraints of storing, interrogating and restructuring data at arbitrary scale and velocity for every application in your shop.
+
+As it turns out, there are a few coherent ways to variously relax those constraints and around each of those solution sets has grown a wave of next-generation data stores -- referred to with the (TODO: change word) idiotic collective term “NoSQL” databases.  The resulting explosion in the number of technological choices presents a baffling challenge to anyone deciding “which NoSQL database is the right one for me?”  Unfortunately, the answer is far worse than that because the right question is “which NoSQL _databases_ are the right choices for me?”
+
+Big data applications at scale are best architected using a variety of data stores and analytics systems.
+
+The good news is that, by focusing on narrower use cases and relaxing selected technical constraints, these new data stores can excel at their purpose far better than an all-purpose relational database would.  Let’s look at the respective data store archetypes that have emerged and their primary contenders.
+
+===== Traditional Relational Databases
+
+The reason the name “NoSQL” is so stupid is that it is not about rejecting traditional databases, it is about choosing the right database for the job.  For the majority of jobs, that choice continues to be a relational database.  Oracle, MS SQL Server, MySQL and PostgreSQL are not going away.  The latter two have widespread open source support and PostgreSQL, in particular, has extremely strong geospatial functionality.  As your data scales, fewer and fewer of their powerful JOIN capabilities survive but for direct retrieval, they will keep up with even the dedicated, lightweight key-value stores described below.
+
+If you are already using one of these products, find out how well your old dog performs the new tricks before you visit the pound.
+
+===== Billions of Records
+
+At the extreme far end of the ecosystem are a set of data stores that give up the ability to be queried in all but the simplest ways in return for the ability to store and retrieve trillions of objects with exceptional durability, throughput and latency.  The choices we like here are Cassandra, HBase or Accumulo, although Riak, Voldemort, Aerospike, Couchbase and Hypertable deserve consideration as well.
+
+Cassandra is the pure-form expression of the “trillions of things” mission.  It is operationally simple and exceptionally fast on write, making it very popular for time-series applications.  HBase and Accumulo are architecturally similar in that they sit on top of Hadoop’s HDFS; this makes them operationally more complex than Cassandra but gives them an unparalleled ability to serve as source and destination of Map/Reduce jobs.
+
+All three are widely popular open source, Java-based projects.  Accumulo was initially developed by the U.S. National Security Administration (NSA) and was open sourced in 2011.  HBase has been an open source Apache project since its inception in 2006 and both are nearly identical in architecture and functionality.  As you would expect, Accumulo has unrivaled security support while HBase’s longer visibility gives it a wider installed base.
+
+We can try to make the choice among the three sound simple:  If security is an overriding need, choose Accumulo.  If simplicity is an overriding need, choose Cassandra.  For overall best compatibility with Hadoop, use HBase.
+
+However, if your use case justifies a data store in this class, it will also require investing hundreds of thousands of dollars in infrastructure and operations.  Do a thorough bake-off among these three and perhaps some of the others listed above.
+
+What you give up in exchange is all but the most primitive form of locality.  The only fundamental retrieval operation is to look records or ranges of records by primary key.  There is Sugar for secondary indexing and tricks that help restore some of the power you lost but effectively, that’s it.  No JOINS, no GROUPS, no SQL.
+
+-  H-base, Accumulo and Cassandra
+-  Aerospike, Voldemort and Riak, Hypertable
+
+===== Scalable Application-Oriented Data Stores
+
+If you are using Hadoop and Storm+Trident, you do not need your database to have sophisticated reporting or analytic capability.  For the significant number of use cases with merely hundreds of millions (but not tens of billions) of records, there are two data stores that give up the ability to do complex JOINS and GROUPS and instead focus on delighting the application programmer.
+
+MongoDB starts with a wonderful hack:  It uses the operating system’s “memory-mapped file” (mmap) features to give the internal abstraction of an infinitely-large data space.  The operating system’s finely-tuned virtual memory mechanisms handle all details of persistence, retrieval and caching.  That internal simplicity and elegant programmer-friendly API make MongoDB a joy to code against.
+
+Its key tradeoff comes from its key advantage:  The internal mmap abstraction delegates all matters of in-machine locality to the operating system.  It also relinquishes any fine control over in-machine locality.  As MongoDB scales to many machines, its locality abstraction starts to leak.  Some features that so delighted you at the start of the project prove to violate the laws of physics as the project scales into production.  Any claims that MongoDB “doesn’t scale,” though, are overblown; it scales quite capably into the billion-record regime but doing so requires expert guidance.
+
+Probably the best thing to do is think about it this way:  The open source version of MongoDB is free to use on single machines by amateurs and professionals, one and all; anyone considering using it on multiple machines should only do so with commercial support from the start.
+
+The increasingly-popular ElasticSearch data store is our first choice for hitting the sweet spot of programmer delight and scalability.  The heart of ElasticSearch is Lucene, which encapsulates the exceptionally difficult task of indexing records and text in a streamlined gem of functionality, hardened by a decade of wide open source adoption.   (FOOTNOTE: Lucene was started, incidentally, by Doug Cutting several years before he started the Hadoop project.)
+
+ElasticSearch embeds Lucene into a first-class distributed data framework and offers a powerful programmer-friendly API that rivals MongoDB’s.  Since Lucene is at its core, it would be easy to mistake ElasticSearch for a text search engine like Solr; it is one of those and, to our minds, the best one, but it is also a first-class database.
+
+===== Scalable Free-Text Search Engines:  Solr, ElasticSearch and More
+
+The need to perform free-text search across millions and billions of documents is not new and the Lucene-based Solr search engine is the dominant traditional solution with wide Enterprise support.  It is, however, long in tooth and difficult to scale.
+
+ElasticSearch, described above as an application-oriented database, is also our recommended choice for bringing Lucene’s strengths to Hadoop’s scale.
+
+Two recent announcements -- the Apache Blur project and the closely-related ClouderaSearch product -- also deserve consideration.
+
+
+===== Lightweight Data Structures
+
+ZooKeeper is basically “distributed correctness in a box.”  Transactionally updating data within a distributed system is a fiendishly difficult task, enough that implementing it on your own should be a fireable offense.  ZooKeeper and its ubiquitously available client libraries let you synchronize updates and state among arbitrarily large numbers of concurrent processes.  It sits at the core of HBase, Storm, Hadoop’s newer high-availability Namenode and dozens of other high-scale distributed applications.  It is a bit thorny to use; projects like etcd (TODO link) and Doozer (TODO link) fill the same need but provide friendlier APIs.  We feel this is no place for liberalism, however -- ZooKeeper is the default choice.
+
+If you turn the knob for programmer delight all the way to the right, one request that would fall out would be, “Hey - can you take the same data structures I use while I’m coding but make it so I can have as many of them as I have RAM and shared across as many machines and processes as I like?”  The Redis data store is effectively that.  Its API gives you the fundamental data structures you know and love -- hashmap, stack, buffer, set, etc -- and exposes exactly the set of operations that can be performance and distributedly correct.  It is best used when the amount of data does not much exceed the amount of RAM you are willing to provide and should only be used when its data structures are a direct match to your application.  Given those constraints, it is simple, light and a joy to use.
+
+Sometimes, the only data structure you need is “given name, get thing.”  Memcached is an exceptionally fast in-memory key value store that serves as the caching layer for many of the Internet’s largest websites.  It has been around for a long time and will not go away any time soon.
+
+If you are already using MySQL or PostgreSQL, and therefore only have to scale by cost of RAM not cost of license, you will find that they are perfectly defensible key value stores in their own right.  Just ignore 90-percent of their user manuals and find out when the need for better latency or lower cost of compute forces you to change.
+
+Kyoto Tycoon is an open source C++-based distributed key value store with the venerable DBM database engine at its core.  It is exceptionally fast and, in our experience, is the simplest way to efficiently serve a mostly-cold data set.  It will quite happily serve hundreds of gigabytes or terabytes of data out of not much more RAM than you require for efficient caching.
+
+===== Graph Databases
+
+Graph-based databases have been around for some time but have yet to see general adoption outside of, as you might guess, the intelligence and social networking communities (NASH).  We suspect that, as the price of RAM continues to drop and the number of data scientists continues to rise, sophisticated analysis of network graphs will become increasingly important and, we hear, increasing adoption of graph data stores.
+
+The two open source projects we hear the most about are the longstanding Neo 4J project and the newer, fresher TitanDB.
+
+Your authors do not have direct experience here, but the adoption rate of TitanDB is impressive and we believe that is where the market is going.
+
+==== Programming Languages, Tools and Frameworks
+
+===== SQL-like High-Level Languages:  Hive and Pig
+
+Every data scientist toolkit should include either Hive or Pig, two functionally equivalent languages that transform SQL-like statements into efficient Map/Reduce jobs.  Both of them are widely-adopted open source projects, written in Java and easily extensible using Java-based User-Defined Functions (UDFs).
+
+Hive is more SQL-like, which will appeal to those with strong expertise in SQL.  Pig’s language is sparer, cleaner and more orthogonal, which will appeal to people with a strong distaste for SQL  Hive’s model manages and organizes your data for you, which is good and bad.  If you are coming from a data warehouse background, this will provide a very familiar model.  On the other hand, Hive _insists_ on managing and organizing your data, making it play poorly with the many other tools that experimental data science requires.  (The H Catalog Project aims to fix this and is maturing nicely).
+
+In Pig, every language primitive maps to a fundamental dataflow primitive; this harmony with the Map/Reduce paradigm makes it easier to write and reason about efficient dataflows.  Hive aims to complete the set of traditional database operations; this is convenient and lowers the learning curve but can make the resulting dataflow more opaque.
+
+Hive is seeing slightly wider adoption but both have extremely solid user bases and bright prospects for the future.
+
+Which to choose?  If you are coming from a data warehousing background or think best in SQL, you will probably prefer Hive.  If you come from a programming background and have always wished SQL just  made more sense, you will probably prefer Pig. We have chosen to write all the examples for this book in Pig -- its greater harmony with Map/Reduce makes it a better tool for teaching people how to think in scale.  Let us pause and suggestively point to this book’s creative commons license, thus perhaps encouraging an eager reader to translate the book into Hive (or Python, Chinese or Cascading).
+
+===== High-Level Scripting Languages:  Wukong (Ruby), mrjob (Python) and Others
+
+Many people prefer to work strictly within Pig or Hive, writing Java UDFs for everything that cannot be done as a high-level statement.  It is a defensible choice and a better mistake than the other extreme of writing everything in the native Java API.  Our experience, however, has been, say 60-percent of our thoughts are best expressed in Pig, perhaps 10-percent of them require a low-level UDF but that the remainder are far better expressed in a high-level language like Ruby or Python.
+
+Most Hadoop jobs are IO-bound, not CPU-bound, so performance concerns are much less likely to intervene.  (Besides, robots are cheap but people are important.  If you want your program to run faster, use more machines, not more code).  These languages have an incredibly rich open source toolkit ecosystem and cross-platform glue.  Most importantly, their code is simpler, shorter and easier to read; far more of data science than you expect is brass-knuckle street fighting, necessary acts of violence to make your data look like it should.  These are messy, annoying problems, not deep problems and, in our experience, the only way to handle them maintainably is in a high-level scripting language.
+
+You probably come in with a favorite scripting language in mind, and so by all means, use that one.  The same Hadoop streaming interface powering the ones we will describe below is almost certainly available in your language of choice.  If you do not, we will single out Ruby, Python and Scala as the most plausible choices, roll our eyes at the language warhawks sharpening their knives and briefly describe the advantages of each.
+
+Ruby is elegant, flexible and maintainable.  Among programming languages suitable for serious use, Ruby code is naturally the most readable and so it is our choice for this book.  We use it daily at work and believe its clarity makes the thought we are trying to convey most easily portable into the reader’s language of choice.
+
+Python is elegant, clean and spare.  It boasts two toolkits appealing enough to serve as the sole basis of choice for some people.  The Natural Language toolkit (NLTK) is not far from the field of computational linguistics set to code.  SciPy is widely used throughout scientific computing and has a full range of fast, robust matrix and numerical logarithms.
+
+Lastly, Scala, a relative newcomer, is essentially “Java but readable.”  It’s syntax feels very natural to native Java programmers and executives directly into the JBM, giving it strong performance and first-class access to native Java frameworks, which means, of course, native access to the code under Hadoop, Storm, Kafka, etc.
+
+If runtime efficiency and a clean match to Java are paramount, you will prefer Scala.  If your primary use case is text processing or hardcore numerical analysis, Python’s superior toolkits make it the best choice.  Otherwise, it is a matter of philosophy.  Against Perl’s mad credo of “there is more than one way to do it,” Python says “there is exactly one right way to do it,” while Ruby says “there are a few good ways to do it, be clear and use good taste.”  One of those alternatives gets your world view; choose accordingly.
+
+===== Statistical Languages: R, Julia, Pandas and more
+
+For many applications, Hadoop and friends are most useful for turning big data into medium data, cutting it down enough in size to apply traditional statistical analysis tools.  SPSS, SaSS, Matlab and Mathematica are long-running commercial examples of these, whose sales brochures will explain their merits better than we can.
+
+R is the leading open source alternative.  You can consider it the “PHP of data analysis.”  It is extremely inviting, has a library for everything, much of the internet runs on it and considered as a language, is inelegant, often frustrating and Vulcanized.  Do not take that last part too seriously; whatever you are looking to do that can be done on a single machine, R can do.  There are Hadoop integrations, like RHIPE, but we do not take them very seriously.  R is best used on single machines or trivially parallelized using, say, Hadoop.
+
+Julia is an upstart language designed by programmers, not statisticians.  It openly intends to replace R by offering cleaner syntax, significantly faster execution and better distributed awareness.  If its library support begins to rival R’s, it is likely to take over but that probably has not happened yet.
+
+Lastly, Pandas, Anaconda and other Python-based solutions give you all the linguistic elegance of Python, a compelling interactive shell and the extensive statistical and machine-learning capabilities that NumPy and scikit provide.  If Python is your thing, you should likely start here.
+
+===== Mid-level Languages
+
+You cannot do everything a high-level language, of course.  Sometimes, you need closer access to the Hadoop API or to one of the many powerful, extremely efficient domain-specific frameworks provided within the Java ecosystem.  Our preferred approach is to write Pig or Hive UDFs; you can learn more in Chapter (TODO:  REF).
+
+Many people prefer, however, prefer to live exclusively at this middle level.  Cascading strikes a wonderful balance here.  It combines an elegant DSL for describing your Hadoop job as a dataflow and a clean UDF framework for record-level manipulations.  Much of Trident’s API was inspired by Cascading; it is our hope that Cascading eventually supports Trident or Storm as a back end.  Cascading is quite popular, and besides its native Java experience, offers first-class access from Scala (via the Scalding project) or Clojure (via the Cascalog project).
+
+Lastly, we will mention Crunch, an open source Java-based project from Cloudera.  It is modeled after a popular internal tool at Google; it sits much closer to the Map/Reduce paradigm, which is either compelling to you or not.
+
+===== Frameworks
+
+Finally, for the programmers, there are many open source frameworks to address various domain-specific problems you may encounter as a data scientist.  Going into any depth here is outside the scope of this book but we will at least supply you with a list of pointers.
+
+Elephant Bird, Datafu and Akela offer extremely useful additional Pig and Hive UDFs.  While you are unlikely to need all of them, we consider no Pig or Hive installation complete without them.  For more domain-specific purposes, anyone in need of a machine-learning algorithm should look first at Mahout, Kiji, Weka scikit-learn or those available in a statistical language, such as R, Julia or NumPy.
+
+Apache Giraph and Gremlin are both useful for graph analysis.  (NOTE TO TECH REVIEWERS:  What else deserves inclusion?)
+
+// ==== Visualization And Business Insight (BI) Tools
+//
+// NOT TODAY(?):
+//   - Datameer
+//   - Pentaho
+//   - Tableau
+//   - Platfora
+// Amino
+// Spotfire
+// Tableau Desktop and Server
+//   - chartio, Raw, d3, ???
+//
+// Lastly, because we do not know where else to put them, there are several Hadoop “environments,” some combination of IDE frameworks and conveniences that aim to make Hadoop friendlier to the Enterprise programmer.  If you are one of those, they are worth a look.
+
+// ==== Cloud and Managed Services
+//
+// TODAY:
+//
+// -  Qubole, Elastic Map/Reduce, Mortar Data, Treasure Data, Continuity and Infochimps
+// -  Heroku-based options
+// -  AWS Redshift
+// -  Azure, HDInsight
+//
+// ==== Operational Components
+//
+// * Workflow Tools
+//   - Azkaban, Oozie
+//
+//   - Mesos
+//   - WANDisco
+// * Administration
+//   - Cloudera Manager
+//   - Ambari - monitoring thru RESTful APIs
+//   - Provisioning: Ironfan, Juju, Whirr, Serengeti, Openstack Hadoop barclamp
+//   - Monitoring: Chukwa, Cactus, Ganglia,
+//   - StackIQ
+//
+// Cloudera Enterprise
+// Hortonworks Data Platform
+//
+// ===== Alternative HDFS Implementations
+//
+// TODAY:
+//
+//     - WANDisco
+//     - OrangeFS
+//     - glusterfs
+//     - Quantcast QFS
+//     - Map/R NFS
+//     - ...
+//   - Direct datastore: DataStax Brisk,
+//
+// ===== Security
+//
+//   - Kerberos; MS/Hortonworks has Active Directory integration
+//   - fundamental limitations
+//   - Gazzang, Dataguise
+//
+// ==== Vertical-Focused and System Integrators
+//
+//   - ThinkBig Analytics
+//   - Tresata - Big Data Analytics Platform for the Financial Services Industry
+//   - Mu Sigma
+//   - Booz-Allen
+//   - Wibidata Real-time personalization framework
+//   - Metamarkets
+//   - Infochimps/CSC

@@ -20,7 +20,6 @@ mapper do
 end
 --------------------
 
-
 We're going to make the following changes:
 
 * split the `lang_and_project` attribute into `in_language` and `wp_project`. They're different properties, and there's no good reason to leave them combined.

@@ -9,8 +9,6 @@ end
 
 Reading it as prose the script says "for each article: break it into a list of words; group all occurrences of each word and count them; then output the article id, word and count."
 
-
-
 .Snippet from the Wikipedia article on "Barbecue"
 [quote, wikipedia, http://en.wikipedia.org/wiki/Barbeque]
 ____

@@ -20,31 +20,6 @@ Introduce the chapter to the reader
 * like a "map" of the book
 * "First part is about blah, next is about blah, ..."
 
-==== Intro: Storm+Trident Fundamentals
-
-At this point, you have good familiarity with Hadoop’s batch processing power and the powerful  inquiries it unlocks above and as a counterpart to traditional database approach.  Stream analytics is a third mode of data analysis and, it is becoming clear, one that is just as essential and transformative as massive scale batch processing has been.  
-
-Storm is an open-source framework developed at Twitter that provides scalable stream processing.  Trident draws on Storm’s powerful transport mechanism to provide _exactly once_ processing of records in _windowed batches es_ for aggregating and persisting
-to an external data store.   
-
-The central challenge in building a system that can perform fallible operations on billions of records reliably is how to do so without yourself producing so much bookkeeping that it becomes its own scalable Stream processing challenge.  Storm handles all details of reliable transport and efficient routing for you, leaving you with only the business process at hand.  (The remarkably elegant way Storm handles that bookkeeping challenge is one of its principle breakthroughs; you’ll learn about it in the later chapter on Storm Internals.)
-
-This takes Storm past the mere processing of records to Stream Analytics -- with some limitations and some advantages, you have the same ability to specify locality and write arbitrarily powerful general-purpose code to handle every record.  A lot of Storm+Trident’s adoption is in application to real-time systems. footnote:[for reasons you’ll learn in the Storm internals chapter, it’s not suitable for ultra-low latency (below, say, 5s of milliseconds), Wall Street-type applications, but if latencies above that are real-time enough for you, Storm+Trident shines.]
-
-But, just as importantly, the framework exhibits radical _tolerance_ of latency.  It’s perfectly reasonable to, for every record, perform reads of a legacy data store, call an internet API and the like, even if those might have hundreds or thousands of milliseconds worst-case latency.  That range of timescales is simply impractical within a batch processing run or database query.  In the later chapter on the Lambda Architecture, you’ll learn how to use stream and batch analytics together for latencies that span from milliseconds to years.  
-
-As an example, one of the largest hard drive manufacturers in the world  ingests sensor data from its manufacturing line, test data from quality assurance processes, reports from customer support and post mortem analysis of returned devices.  They have been able to mine the accumulated millisecond scale sensor data for patterns that predict flaws months and years later.  Hadoop produces the “slow,” deep results, uncovering the patterns that predict failure.  Storm+Trident produces the fast, relevant results:  operational alerts when those anomalies are observed.
-
-Things you should take away from this chapter:
-
-Understand the type of problems you solve using stream processing and apply it to real examples using the best-in-class stream analytics frameworks.
-Acquire the practicalities of authoring, launching and validating a Storm+Trident flow.  
-Understand Trident’s operators and how to use them:  Each apply `CombinerAggregator`s, `ReducerAggregator`s and `AccumulatingAggregator`s (generic aggregator?)
-Persist records or aggregations directly to a backing database or to Kafka for item-potent downstream storage.
-(probably not going to discuss how to do a streaming join, using either DRPC or a hashmap join)
-
-NOTE: This chapter will only speak of Storm+Trident, the high level and from the outside. We won’t spend any time on how it’s making this all work until (to do ref the chapter on Storm+Trident internals)
-
 ==== Skeleton: Storm+Trident Internals
 
 What should you take away from this chapter:
@@ -98,7 +73,7 @@ Lifecycle of a File:
 * An interesting opportunity happens when the sequence order of records corresponds to one of your horizon keys.
 * Explain using the example of weblogs. highlighting strict order and partial order.
 * In the frequent case, the sequence order only somewhat corresponds to one of the horizon keys.  There are several types of somewhat ordered streams:  block disorder, bounded band disorder, band disorder.  When those conditions hold, you can use windows to recover the power you have with ordered streams -- often, without having to order the stream.
-* Unbounded band disorder only allows “”convergent truth” aggregators.  If you have no idea when or whether that some additional record from a horizon group might show up, then you can’t treat your aggregation as anything but a best possible guess at the truth.
+* Unbounded band disorder only allows "convergent truth" aggregators.  If you have no idea when or whether that some additional record from a horizon group might show up, then you can’t treat your aggregation as anything but a best possible guess at the truth.
 * However, what the limited disorder does get you, is the ability to efficiently cache aggregations from  a practically infinite backing data store.  
 * With bounded band or block disorder, you can perform accumulator-style aggregations.
 * How to, with the abstraction of an infinite sorting buffer or an infinite binning buffer, efficiently re-present the stream as one where sequence order and horizon key directly correspond.
@@ -129,16 +104,6 @@ Lifecycle of a File:
 Continuous horizon: getting 1-d locality
 
 ==== Skeleton: Statistics
-
-Data is worthless. Actually, it's worse than worthless. It costs you money to gather, store, manage, replicate and analyze. What you really want is insight -- a relevant summary of the essential patterns in that data -- produced using relationships to analyze data in context.
-
-Statistical summaries are the purest form of this activity, and will be used repeatedly in the book to come, so now that you see how Hadoop is used it's a good place to focus.
-
-Some statistical measures let you summarize the whole from summaries of the parts: I can count all the votes in the state by summing the votes from each county, and the votes in each county by summing the votes at each polling station. Those types of aggregations -- average/standard deviation, correlation, and so forth -- are naturally scalable, but just having billions of objects introduces some practical problems you need to avoid. We'll also use them to introduce Pig, a high-level language for SQL-like queries on large datasets.
-
-Other statistical summaries require assembling context that grows with the size of the whole dataset. The amount of intermediate data required to count distinct objects, extract an accurate histogram, or find the median and other quantiles can become costly and cumbersome. That's especially unfortunate because so much data at large scale has a long-tail, not normal (Gaussian) distribution -- the median is far more robust indicator of the "typical" value than the average. (If Bill Gates walks into a bar, everyone in there is a billionaire on average.)
-
-But you don't always need an exact value -- you need actionable insight. There's a clever pattern for approximating the whole by combining carefully re-mixed summaries of the parts, and we'll apply it to
 
 * Holistic vs algebraic aggregations
 * Underflow and the "Law of Huge Numbers"

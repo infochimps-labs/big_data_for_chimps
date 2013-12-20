@@ -70,7 +70,7 @@ Say how a tuple is cleared from the pending register when its tree is finally ac
 
 === Acking and Reliability
 
-Storm's elegant acking mechanism is probably its most significant breakthrough.  It ensures that a tuple and its descendents are processed successfully or fail loudly and it does so with a minimum amount of bookkeeping chatter. The rest of the sections in this chapter, while advanced, ultimately are helpful for architecting and productionizing a dataflow.  This section, however, . is comparatively optional -- the whole point of the reliability mechanism is that it Just Works.  It's so fascinating we can't help but include it but if you're not looking to have your brain bent today, feel free to skip it.  (It's fairly complicated, so in a few places, I will make mild simplifications and clarify the details in footnotes.)
+Storm's elegant acking mechanism is probably its most significant breakthrough.  It ensures that a tuple and its descendents are processed successfully or fail loudly and it does so with a minimum amount of bookkeeping chatter. The rest of the sections in this chapter, while advanced, ultimately are helpful for architecting and productionizing a dataflow.  This section, however, is comparatively optional -- the whole point of the reliability mechanism is that it Just Works.  It's so fascinating we can't help but include it but if you're not looking to have your brain bent today, feel free to skip it.  Footnote:[This story is complicated enough that I'm going to make two minor simplifications that are areally only interesting if you're knee-deep in the code. We'll let you know about them in the footnotes.]
 
 Here's how it works.
 
