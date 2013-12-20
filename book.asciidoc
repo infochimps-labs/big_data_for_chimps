@@ -16,8 +16,6 @@ include::05d-intro_to_pig.asciidoc[]
 
 include::06-filesystem_mojo.asciidoc[]
 
-include::06a-big_data_ecosystem.asciidoc[]
-
 include::07-intro_to_storm+trident.asciidoc[]
 
 include::09-statistics.asciidoc[]
