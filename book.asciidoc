@@ -2,10 +2,6 @@
 
 include::00-preface.asciidoc[]
 
-include::00a-about.asciidoc[]
-
-include::00a-intro-more_outlines.asciidoc[]
-
 include::01-first_exploration.asciidoc[]
 
 include::02-simple_transform.asciidoc[]
@@ -16,7 +12,11 @@ include::04-regional_flavor.asciidoc[]
 
 include::05-toolset.asciidoc[]
 
+include::05d-intro_to_pig.asciidoc[]
+
 include::06-filesystem_mojo.asciidoc[]
+
+include::06a-big_data_ecosystem.asciidoc[]
 
 include::07-intro_to_storm+trident.asciidoc[]
 
@@ -35,6 +35,8 @@ include::16-machine_learning.asciidoc[]
 include::18-java_api.asciidoc[]
 
 include::19-advanced_pig.asciidoc[]
+
+include::19a-advanced_pig.asciidoc[]
 
 include::20-hbase_data_modeling.asciidoc[]
 
