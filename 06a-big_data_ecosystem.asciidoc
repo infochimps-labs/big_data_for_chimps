@@ -165,5 +165,148 @@ The need to perform free-text search across millions and billions of documents i
 
 ElasticSearch, described above as an application-oriented database, is also our recommended choice for bringing Lucene’s strengths to Hadoop’s scale.
 
-Two recent announcements -- the Apache Blur project and the closely-related ClouderaSearch product -- also deserve consideration.
+Two recent announcements -- the "Apache Blur" (TODO LINK) project and the related "Cloudera Search" (TODO LINK) product -- also deserve consideration.
 
+===== Lightweight Data Structures
+
+"ZooKeeper" (TODO LINK) is basically “distributed correctness in a box.”  Transactionally updating data within a distributed system is a fiendishly difficult task, enough that implementing it on your own should be a fireable offense.  ZooKeeper and its ubiquitously available client libraries let you synchronize updates and state among arbitrarily large numbers of concurrent processes.  It sits at the core of HBase, Storm, Hadoop’s newer high-availability Namenode and dozens of other high-scale distributed applications.  It is a bit thorny to use; projects like etcd (TODO link) and Doozer (TODO link) fill the same need but provide friendlier APIs.  We feel this is no place for liberalism, however -- ZooKeeper is the default choice.
+
+If you turn the knob for programmer delight all the way to the right, one request that would fall out would be, “Hey - can you take the same data structures I use while I’m coding but make it so I can have as many of them as I have RAM and shared across as many machines and processes as I like?”  The Redis data store is effectively that.  Its API gives you the fundamental data structures you know and love -- hashmap, stack, buffer, set, etc -- and exposes exactly the set of operations that can be performance and distributedly correct.  It is best used when the amount of data does not much exceed the amount of RAM you are willing to provide and should only be used when its data structures are a direct match to your application.  Given those constraints, it is simple, light and a joy to use.
+
+Sometimes, the only data structure you need is “given name, get thing.”  Memcached is an exceptionally fast in-memory key value store that serves as the caching layer for many of the Internet’s largest websites.  It has been around for a long time and will not go away any time soon.
+
+If you are already using MySQL or PostgreSQL, and therefore only have to scale by cost of RAM not cost of license, you will find that they are perfectly defensible key value stores in their own right.  Just ignore 90-percent of their user manuals and find out when the need for better latency or lower cost of compute forces you to change.
+
+"Kyoto Tycoon" (TODO LINK) is an open source C++-based distributed key value store with the venerable DBM database engine at its core.  It is exceptionally fast and, in our experience, is the simplest way to efficiently serve a mostly-cold data set.  It will quite happily serve hundreds of gigabytes or terabytes of data out of not much more RAM than you require for efficient caching.
+
+===== Graph Databases
+
+Graph-based databases have been around for some time but have yet to see general adoption outside of, as you might guess, the intelligence and social networking communities (NASH).  We suspect that, as the price of RAM continues to drop and the number of data scientists continues to rise, sophisticated analysis of network graphs will become increasingly important and, we hear, increasing adoption of graph data stores.
+
+The two open source projects we hear the most about are the longstanding Neo 4J project and the newer, fresher TitanDB.
+
+Your authors do not have direct experience here, but the adoption rate of TitanDB is impressive and we believe that is where the market is going.
+
+==== Programming Languages, Tools and Frameworks
+
+===== SQL-like High-Level Languages:  Hive and Pig
+
+Every data scientist toolkit should include either Hive or Pig, two functionally equivalent languages that transform SQL-like statements into efficient Map/Reduce jobs.  Both of them are widely-adopted open source projects, written in Java and easily extensible using Java-based User-Defined Functions (UDFs).
+
+Hive is more SQL-like, which will appeal to those with strong expertise in SQL.  Pig’s language is sparer, cleaner and more orthogonal, which will appeal to people with a strong distaste for SQL  Hive’s model manages and organizes your data for you, which is good and bad.  If you are coming from a data warehouse background, this will provide a very familiar model.  On the other hand, Hive _insists_ on managing and organizing your data, making it play poorly with the many other tools that experimental data science requires.  (The H Catalog Project aims to fix this and is maturing nicely).
+
+In Pig, every language primitive maps to a fundamental dataflow primitive; this harmony with the Map/Reduce paradigm makes it easier to write and reason about efficient dataflows.  Hive aims to complete the set of traditional database operations; this is convenient and lowers the learning curve but can make the resulting dataflow more opaque.
+
+Hive is seeing slightly wider adoption but both have extremely solid user bases and bright prospects for the future.
+
+Which to choose?  If you are coming from a data warehousing background or think best in SQL, you will probably prefer Hive.  If you come from a programming background and have always wished SQL just  made more sense, you will probably prefer Pig. We have chosen to write all the examples for this book in Pig -- its greater harmony with Map/Reduce makes it a better tool for teaching people how to think in scale.  Let us pause and suggestively point to this book’s creative commons license, thus perhaps encouraging an eager reader to translate the book into Hive (or Python, Chinese or Cascading).
+
+===== High-Level Scripting Languages:  Wukong (Ruby), mrjob (Python) and Others
+
+Many people prefer to work strictly within Pig or Hive, writing Java UDFs for everything that cannot be done as a high-level statement.  It is a defensible choice and a better mistake than the other extreme of writing everything in the native Java API.  Our experience, however, has been, say 60-percent of our thoughts are best expressed in Pig, perhaps 10-percent of them require a low-level UDF but that the remainder are far better expressed in a high-level language like Ruby or Python.
+
+Most Hadoop jobs are IO-bound, not CPU-bound, so performance concerns are much less likely to intervene.  (Besides, robots are cheap but people are important.  If you want your program to run faster, use more machines, not more code).  These languages have an incredibly rich open source toolkit ecosystem and cross-platform glue.  Most importantly, their code is simpler, shorter and easier to read; far more of data science than you expect is brass-knuckle street fighting, necessary acts of violence to make your data look like it should.  These are messy, annoying problems, not deep problems and, in our experience, the only way to handle them maintainably is in a high-level scripting language.
+
+You probably come in with a favorite scripting language in mind, and so by all means, use that one.  The same Hadoop streaming interface powering the ones we will describe below is almost certainly available in your language of choice.  If you do not, we will single out Ruby, Python and Scala as the most plausible choices, roll our eyes at the language warhawks sharpening their knives and briefly describe the advantages of each.
+
+Ruby is elegant, flexible and maintainable.  Among programming languages suitable for serious use, Ruby code is naturally the most readable and so it is our choice for this book.  We use it daily at work and believe its clarity makes the thought we are trying to convey most easily portable into the reader’s language of choice.
+
+Python is elegant, clean and spare.  It boasts two toolkits appealing enough to serve as the sole basis of choice for some people.  The Natural Language toolkit (NLTK) is not far from the field of computational linguistics set to code.  SciPy is widely used throughout scientific computing and has a full range of fast, robust matrix and numerical logarithms.
+
+Lastly, Scala, a relative newcomer, is essentially “Java but readable.”  It’s syntax feels very natural to native Java programmers and executives directly into the JBM, giving it strong performance and first-class access to native Java frameworks, which means, of course, native access to the code under Hadoop, Storm, Kafka, etc.
+
+If runtime efficiency and a clean match to Java are paramount, you will prefer Scala.  If your primary use case is text processing or hardcore numerical analysis, Python’s superior toolkits make it the best choice.  Otherwise, it is a matter of philosophy.  Against Perl’s mad credo of “there is more than one way to do it,” Python says “there is exactly one right way to do it,” while Ruby says “there are a few good ways to do it, be clear and use good taste.”  One of those alternatives gets your world view; choose accordingly.
+
+===== Statistical Languages: R, Julia, Pandas and more
+
+For many applications, Hadoop and friends are most useful for turning big data into medium data, cutting it down enough in size to apply traditional statistical analysis tools.  SPSS, SaSS, Matlab and Mathematica are long-running commercial examples of these, whose sales brochures will explain their merits better than we can.
+
+R is the leading open source alternative.  You can consider it the “PHP of data analysis.”  It is extremely inviting, has a library for everything, much of the internet runs on it and considered as a language, is inelegant, often frustrating and Vulcanized.  Do not take that last part too seriously; whatever you are looking to do that can be done on a single machine, R can do.  There are Hadoop integrations, like RHIPE, but we do not take them very seriously.  R is best used on single machines or trivially parallelized using, say, Hadoop.
+
+Julia is an upstart language designed by programmers, not statisticians.  It openly intends to replace R by offering cleaner syntax, significantly faster execution and better distributed awareness.  If its library support begins to rival R’s, it is likely to take over but that probably has not happened yet.
+
+Lastly, Pandas, Anaconda and other Python-based solutions give you all the linguistic elegance of Python, a compelling interactive shell and the extensive statistical and machine-learning capabilities that NumPy and scikit provide.  If Python is your thing, you should likely start here.
+
+===== Mid-level Languages
+
+You cannot do everything a high-level language, of course.  Sometimes, you need closer access to the Hadoop API or to one of the many powerful, extremely efficient domain-specific frameworks provided within the Java ecosystem.  Our preferred approach is to write Pig or Hive UDFs; you can learn more in Chapter (TODO:  REF).
+
+Many people prefer, however, prefer to live exclusively at this middle level.  Cascading strikes a wonderful balance here.  It combines an elegant DSL for describing your Hadoop job as a dataflow and a clean UDF framework for record-level manipulations.  Much of Trident’s API was inspired by Cascading; it is our hope that Cascading eventually supports Trident or Storm as a back end.  Cascading is quite popular, and besides its native Java experience, offers first-class access from Scala (via the Scalding project) or Clojure (via the Cascalog project).
+
+Lastly, we will mention Crunch, an open source Java-based project from Cloudera.  It is modeled after a popular internal tool at Google; it sits much closer to the Map/Reduce paradigm, which is either compelling to you or not.
+
+===== Frameworks
+
+Finally, for the programmers, there are many open source frameworks to address various domain-specific problems you may encounter as a data scientist.  Going into any depth here is outside the scope of this book but we will at least supply you with a list of pointers.
+
+Elephant Bird, Datafu and Akela offer extremely useful additional Pig and Hive UDFs.  While you are unlikely to need all of them, we consider no Pig or Hive installation complete without them.  For more domain-specific purposes, anyone in need of a machine-learning algorithm should look first at Mahout, Kiji, Weka scikit-learn or those available in a statistical language, such as R, Julia or NumPy.
+
+Apache Giraph and Gremlin are both useful for graph analysis.  (NOTE TO TECH REVIEWERS:  What else deserves inclusion?)
+
+// ==== Visualization And Business Insight (BI) Tools
+//
+// NOT TODAY(?):
+//   - Datameer
+//   - Pentaho
+//   - Tableau
+//   - Platfora
+// Amino
+// Spotfire
+// Tableau Desktop and Server
+//   - chartio, Raw, d3, ???
+//
+// Lastly, because we do not know where else to put them, there are several Hadoop “environments,” some combination of IDE frameworks and conveniences that aim to make Hadoop friendlier to the Enterprise programmer.  If you are one of those, they are worth a look.
+
+// ==== Cloud and Managed Services
+//
+// TODAY:
+//
+// -  Qubole, Elastic Map/Reduce, Mortar Data, Treasure Data, Continuity and Infochimps
+// -  Heroku-based options
+// -  AWS Redshift
+// -  Azure, HDInsight
+//
+// ==== Operational Components
+//
+// * Workflow Tools
+//   - Azkaban, Oozie
+//
+//   - Mesos
+//   - WANDisco
+// * Administration
+//   - Cloudera Manager
+//   - Ambari - monitoring thru RESTful APIs
+//   - Provisioning: Ironfan, Juju, Whirr, Serengeti, Openstack Hadoop barclamp
+//   - Monitoring: Chukwa, Cactus, Ganglia,
+//   - StackIQ
+//
+// Cloudera Enterprise
+// Hortonworks Data Platform
+//
+// ===== Alternative HDFS Implementations
+//
+// TODAY:
+//
+//     - WANDisco
+//     - OrangeFS
+//     - glusterfs
+//     - Quantcast QFS
+//     - Map/R NFS
+//     - ...
+//   - Direct datastore: DataStax Brisk,
+//
+// ===== Security
+//
+//   - Kerberos; MS/Hortonworks has Active Directory integration
+//   - fundamental limitations
+//   - Gazzang, Dataguise
+//
+// ==== Vertical-Focused and System Integrators
+//
+//   - ThinkBig Analytics
+//   - Tresata - Big Data Analytics Platform for the Financial Services Industry
+//   - Mu Sigma
+//   - Booz-Allen
+//   - Wibidata Real-time personalization framework
+//   - Metamarkets
+//   - Infochimps/CSC
