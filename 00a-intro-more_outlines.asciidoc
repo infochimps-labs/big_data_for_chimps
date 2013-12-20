@@ -26,8 +26,8 @@ What should you take away from this chapter:
 
 You should:
 
-* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking. 
-* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.  
+* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking.
+* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.
 * Understand the lifecycle of partitions within a Trident batch and thus, the context behind partition operations such as Apply or PartitionPersist.
 * Understand Trident’s transactional mechanism, in the case of a PartitionPersist.
 * Understand how Aggregators, Statemap and the Persistence methods combine to give you _exactly once_  processing with transactional guarantees.  Specifically, what an OpaqueValue record will look like in the database and why.
@@ -74,7 +74,7 @@ Lifecycle of a File:
 * Explain using the example of weblogs. highlighting strict order and partial order.
 * In the frequent case, the sequence order only somewhat corresponds to one of the horizon keys.  There are several types of somewhat ordered streams:  block disorder, bounded band disorder, band disorder.  When those conditions hold, you can use windows to recover the power you have with ordered streams -- often, without having to order the stream.
 * Unbounded band disorder only allows "convergent truth" aggregators.  If you have no idea when or whether that some additional record from a horizon group might show up, then you can’t treat your aggregation as anything but a best possible guess at the truth.
-* However, what the limited disorder does get you, is the ability to efficiently cache aggregations from  a practically infinite backing data store.  
+* However, what the limited disorder does get you, is the ability to efficiently cache aggregations from  a practically infinite backing data store.
 * With bounded band or block disorder, you can perform accumulator-style aggregations.
 * How to, with the abstraction of an infinite sorting buffer or an infinite binning buffer, efficiently re-present the stream as one where sequence order and horizon key directly correspond.
 * Re-explain the Hadoop Map-Reduce algorithm  in this window+horizon model.

@@ -1,28 +1,169 @@
-------
-stream do |article|
-  words = Wukong::TextUtils.tokenize(article.text, remove_stopwords: true)
-  words.group_by(&:to_s).map{|word, occurs|
-    yield [article.id, word, occurs.count]
-  end
-end
-------
+TODO: Intro
+* What we want the reader to have learned
+* Call forward to the section on advanced Pig
 
-Reading it as prose the script says "for each article: break it into a list of words; group all occurrences of each word and count them; then output the article id, word and count."
+=== Overview of Pig
 
-.Snippet from the Wikipedia article on "Barbecue"
-[quote, wikipedia, http://en.wikipedia.org/wiki/Barbeque]
-____
-Each Southern locale has its own particular variety of barbecue, particularly concerning the sauce. North Carolina sauces vary by region; eastern North Carolina uses a vinegar-based sauce, the center of the state enjoys Lexington-style barbecue which uses a combination of ketchup and vinegar as their base, and western North Carolina uses a heavier ketchup base. Lexington boasts of being "The Barbecue Capital of the World" and it has more than one BBQ restaurant per 1,000 residents. In much of the world outside of the American South, barbecue has a close association with Texas. Many barbecue restaurants outside the United States claim to serve "Texas barbecue", regardless of the style they actually serve. Texas barbecue is often assumed to be primarily beef. This assumption, along with the inclusive term "Texas barbecue", is an oversimplification. Texas has four main styles, all with different flavors, different cooking methods, different ingredients, and different cultural origins. In the June 2008 issue of Texas Monthly Magazine Snow's BBQ in Lexington was rated as the best BBQ in the state of Texas. This ranking was reinforced when New Yorker Magazine also claimed that Snow's BBQ was "The Best Texas BBQ in the World".
-____
+Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts.  Its interface is similar to SQL, which makes it a great choice for folks with significant experience there.  (It’s not identical, though, and things that are efficient in SQL may not be so in Pig; we will try to highlight those traps.)
 
-The output of the first stage 
+Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in month months over others:
 
 ----
-37135	texas   	8
-37135	barbecue	8
-37135	bbq     	5
-37135	different	4
-37135	lexington	3
-37135	north   	3
-37135	carolina	3
+PARALLEL 1; (USE 1 REDUCER) (DISABLE COMBINERS)
+LOAD UFO DATASET
+EXTRACT MONTH FROM EACH LINE
+GROUP ON MONTHS
+COUNT WITHIN GROUPS
+STORE INTO OUTPUT FILE
 ----
+
+In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping.  In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
+
+Here’s what you might write in Wukong to answer the same question:
+
+----
+DEFINE MODEL FOR INPUT RECORDS
+MAPPER EXTRACTS MONTHS, EMITS MONTH AS KEY WITH NO VALUE
+COUNTING REDUCER INCREMENTS ON EACH ENTRY IN GROUP AND EMITS TOTAL IN FINALIZED METHOD
+----
+
+Did you notice, by the way, that in both cases, the output was sorted? that is no coincidence -- as you saw in Chapter (TODO: REF), Hadoop sorted the results in order to group them.
+
+To run the Pig job, go into the ‘EXAMPLES/UFO’ directory and run
+
+----
+pig monthly_visit_counts.pig /data_UFO_sightings.tsv /dataresults monthly_visit_counts-pig.tsv
+----
+
+To run the Wukong job, go into the (TODO: REF) directory and run
+
+----
+wu-run monthly_visit_counts.rb --reducers_count=1 /data_UFO_sightings.tsv /dataresults monthly_visit_counts-wu.tsv
+----
+
+If you consult the output, you’ll see (TODO:CODE: INSERT CONCLUSIONS).
+
+If you consult the Job Tracker Console, you should see a single Map/Reduce for each with effectively similar statistics; the dataflow Pig instructed Hadoop to run is essentially similar to the Wukong script you ran.  What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
+
+==== Wikipedia Visitor Counts
+
+Let’s put Pig to a sterner test.  Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
+
+----
+LOAD SOURCE FILE
+PARALLEL 3
+TURN RECORD INTO HOUR PART OF TIMESTAMP AND COUNT
+GROUP BY HOUR
+SUM THE COUNTS BY HOUR
+ORDER THE RESULTS BY HOUR
+STORE INTO FILE
+----
+
+(TODO: If you do an order and then group, is Pig smart enough to not add an extra REDUCE stage?)
+
+Run the script just as you did above:
+
+----
+(TODO: command to run the script)
+----
+
+Up until now, we have described Pig as authoring the same Map/Reduce job you would.  In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part.  If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although x bytes were read by the Mapper, only y bytes were output.  Pig instructed Hadoop to use a Combiner.  In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (TODO: REF), the Mapper output files have already been partitioned and sorted.  Hadoop offers you the opportunity to do pre-Aggregation on those groups.  Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
+
+----
+SIDEBAR:  You can write Combiners in Wukong, too.  (TODO:CODE: Insert example with Combiners)
+----
+
+You’ll notice that, in the second script, we introduced the additional operation of instructing Pig to explicitly sort the output by minute.  We did not do that in the first example because its data was so small that we had instructed Hadoop to use a single Reducer.  As you will recall from (TODO: REF), Hadoop uses a Sort to prepare the Reducer groups, so its output was naturally ordered.  If there are multiple Reducers, however, that would not be enough to give you a Result file you can treat as ordered.  By default, Hadoop assigns partitions to Reducers using the ‘RandomPartitioner’, designed to give each Reducer a uniform chance of claiming any given partition.  This defends against the problem of one Reducer becoming overwhelmed with an unfair share of records but means the keys are distributed willy-nilly across machines.  Although each Reducer’s output is sorted, you will see records from 2008 at the top of each result file and records from 2012 at the bottom of each result file.
+
+What we want instead is a total sort, the earliest records in the first numbered file in order, the following records in the next file in order, and so on until the last numbered file.  Pig’s ‘ORDER’ Operator does just that.  In fact, it does better than that.  If you look at the Job Tracker Console, you will see Pig actually ran three Map/Reduce jobs.  As you would expect, the first job is the one that did the grouping and summing and the last job is the one that sorted the output records.  In the last job, all the earliest records were sent to Reducer 0, the middle range of records were sent to Reducer 1 and the latest records were sent to Reducer 2.
+
+Hadoop, however, has no intrinsic way to make that mapping happen.  Even if it figured out, say, that the earliest buckets were in 2008 and the latest buckets were in 2012, if we fed it a dataset with skyrocketing traffic in 2013, we would end up sending an overwhelming portion of results to that Reducer.  In the second job, Pig sampled the set of output keys, brought them to the same Reducer, and figured out the set of partition breakpoints to distribute records fairly.
+
+In general, Pig offers many more optimizations beyond these and we will talk more about them in the chapter on Advanced Pig (TODO: REF).  In our experience, the only times Pig will author a significantly less-performant dataflow than would an expert comes when Pig is overly aggressive about introducing an optimization.  The chief example you’ll hit is that often, the intermediate stage in the total sort to calculate partitions has a larger time penalty than doing a bad job of partitioning would; you can disable that by (TODO:CODE: Describe how).
+
+=== Group and Flatten
+
+The fundamental Map/Reduce operation is to group a set of records and operate on that group.  In fact, it’s a one-liner in Pig:
+
+----
+BINS = Group WP_pageviews by (date, hour)
+DESCRIBE BINS
+(TODO:CODE: SHOW OUTPUT)
+----
+
+The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order.  The next field has the full input record with all its keys, even the group key.  Here’s a Wukong script that illustrates what is going on:
+
+----
+(TODO:CODE: Wukong script)
+----
+
+You can group more than one dataset at the same time.  In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station.  Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
+
+----
+G1=GROUP WSTNS BY (ID1, ID2), WOBS BY (ID1, ID2);
+G2=FLATTEN G1…
+G3=FOR EACH G2 …
+----
+
+This is equivalent to the following Wukong job:
+
+----
+(TODO:CODE: Wukong job)
+----
+
+(TODO: replace with an example where you would use a pure COGROUP).
+
+====  Join Practicalities
+
+The output of the Join job has one line for each discrete combination of A and B.  As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order.  We have to accumulate all the A records in memory so we know what rows to emit for each B record.  All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first.  In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
+
+==== Ready Reckoner: How fast should your Pig fly?
+
+TODO:CODE: describe for each Pig command what jobs should result.
+
+====  More
+
+There are a few more Operators we will use later in the book:
+Cube, which produces aggregations at multiple levels within a Group;
+Rank, which is sugar on top of Order to produce a number, total-ordered set of records;
+Split, to separate a dataset into multiple pieces; and
+Union, to produce a new dataset to have all the records from its input datasets.
+
+That’s really about it.  Pig is an extremely sparse language.  By having very few Operators and very uniform syntax (FOOTNOTE:  Something SQL users but non-enthusiasts like your authors appreciate), the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
+
+We won’t spend any more time introducing Pig, the language, as its usage will be fairly clear in context as you meet it later in the book.  The online Pig manual at (TODO: REF) is quite good and for a deeper exploration, consult (TODO: Add name of best Pig book here).
+
+==== Pig Gotchas
+
+TODO:CODE: That one error where you use the dot or the colon when you should use the other.
+TODO:CODE: Where to look to see that Pig is telling you have either nulls, bad fields, numbers larger than your type will hold or a misaligned schema.
+
+
+// ------
+// stream do |article|
+//   words = Wukong::TextUtils.tokenize(article.text, remove_stopwords: true)
+//   words.group_by(&:to_s).map{|word, occurs|
+//     yield [article.id, word, occurs.count]
+//   end
+// end
+// ------
+//
+// Reading it as prose the script says "for each article: break it into a list of words; group all occurrences of each word and count them; then output the article id, word and count."
+//
+// .Snippet from the Wikipedia article on "Barbecue"
+// [quote, wikipedia, http://en.wikipedia.org/wiki/Barbeque]
+// ____
+// Each Southern locale has its own particular variety of barbecue, particularly concerning the sauce. North Carolina sauces vary by region; eastern North Carolina uses a vinegar-based sauce, the center of the state enjoys Lexington-style barbecue which uses a combination of ketchup and vinegar as their base, and western North Carolina uses a heavier ketchup base. Lexington boasts of being "The Barbecue Capital of the World" and it has more than one BBQ restaurant per 1,000 residents. In much of the world outside of the American South, barbecue has a close association with Texas. Many barbecue restaurants outside the United States claim to serve "Texas barbecue", regardless of the style they actually serve. Texas barbecue is often assumed to be primarily beef. This assumption, along with the inclusive term "Texas barbecue", is an oversimplification. Texas has four main styles, all with different flavors, different cooking methods, different ingredients, and different cultural origins. In the June 2008 issue of Texas Monthly Magazine Snow's BBQ in Lexington was rated as the best BBQ in the state of Texas. This ranking was reinforced when New Yorker Magazine also claimed that Snow's BBQ was "The Best Texas BBQ in the World".
+// ____
+//
+// The output of the first stage
+//
+// ----
+// 37135	texas   	8
+// 37135	barbecue	8
+// 37135	bbq     	5
+// 37135	different	4
+// 37135	lexington	3
+// 37135	north   	3
+// 37135	carolina	3
+// ----

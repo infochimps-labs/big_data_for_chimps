@@ -20,29 +20,92 @@ Hello and thanks, courageous and farsighted early released-to'er! We want to mak
 
 This is the plan. We'll roll material out over the next few months. Should we find we need to cut things (I hope not to), I've flagged a few chapters as _(bubble)_.
 
-1. *First Exploration*: A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
 
-2. *Simple Transform*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+1. *First Exploration*:
+Objective: Show you a thing you couldn’t do without hadoop, you couldn’t do it any other way. Your mind should be blown and when you’re slogging through the data munging chapter you should think back to this and remember why you started this mess in the first place.
+
+A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
+2. *Simple Transform*:
+Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrassingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
   - Chimpanzee and Elephant start a business
   - Pig Latin translation
   - Your first job: test at commandline
   - Run it on cluster
   - Input Splits
   - Why Hadoop I: Simple Parallelism
+3. *Transform-Pivot Job*:
 
-3. *Transform-Pivot Job*: C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
+C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
   - Locality: the central challenge of distributed computing
   - The Hadoop Haiku
 
-4. *First Exploration: Geographic Flavor* pt II
+Note: we will almost certainly re-arrange the content in chapters 1-3.
+They will be centered around the following 3 explorations
+(in pig and wukong)
+- Pig Latin exploration (map only job)
+- Count UFO visits by month
+	- might visit the jobtracker
+- Counting Wikipedia pageviews by hour (or whatever)
+	- should be same as UFO exploration, but:
+		- will actually require Hadoop
+		- also do a total sort at the end
+	- will visit the jobtracker
 
-5. *The Hadoop Toolset*
+By this point in the book  you should:
+- Have your mind blown
+- See some compelling enough data and a compelling enough question, and a wukong job that answers that job by using only a mapper
+- see some compelling enough data and a compelling enough question, which requires a map and reduce job, written in both pig and wukong
+- believe the mapreduce story, i.e. you know, in general, the high-level conceptual mechanics of a mapreduce job
+
+You should have:
+- whimsical & concrete explanations of mapreduce,  what’s happening as a job is born and run, and HDFS
+
+You shouldn’t have:
+a lot of words in pig
+a good feel for how to deftly use wukong yet
+5. *The Hadoop Toolset and Other Practical Matters*
   - toolset overview
+- It’s a necessarily polyglot sport
+- Pig is a language that excels at describing
+- we think you are doing it wrong if you are not using :
+- a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
+-  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
+- there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
   - launching and debugging jobs
-  - overview of wukong
-  - overview of pig
+  - overview of Wukong
+  - overview of Pig
 
-6. *Filesystem Mojo and `cat` herding*
+6. Fundamental Data Operations in Hadoop*
+here’s the stuff you’d like to be able to do with data, in wukong and in pig
+	- Foreach/filter operations (messing around inside a record)
+	- reading data (brief practical directions on the level of “this is what you type in”)
+		- pig schema
+		- wukong model
+		- loading TSV
+- loading generic JSON
+- storing JSON
+- loading schematized JSON
+- loading parquet or Trevni
+- (Reference the section on working with compressed files; call back to the points about splitability and performance/size tradeoffs)
+- TSV, JSON, not XML; Protobufs, Thrift, Avro; Trevni, Parquet; Sequence Files; HAR
+- compression: gz, bz2, snappy, LZO
+	- subsetting your data
+- limit
+- filter
+- sample
+- using a hash digest function to take a signature
+- top k and reservoir sampling
+- refer to subuniverse which is probably elsewhere
+- group
+- join
+- ??cogroup?? (does this go with group? Does it go anywhere?)
+- sort, etc.. : cross cube
+- total sort
+- partitioner
+- basic UDFs
+- ?using ruby or python within a pig dataflow?
+7. *Filesystem Mojo and `cat` herding*
+
   - dumping, listing, moving and manipulating files on the HDFS and local filesystems
   - total sort
   - transformations from the commandline (grep, cut, wc, etc)
@@ -50,26 +113,125 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - commandline workflow tips
   - advanced hadoop filesystem (chmod, setrep, fsck)
 
-7. *Intro to Storm+Trident*
+8. *Intro to Storm+Trident*
 
-8. *Statistics*:
+9. *Statistics*:
   - (this is first deep experience with Storm+Trident)
   - Summarizing: Averages, Percentiles, and Normalization
-  - Sampling responsibly: it's harder and more important than you think
-  - Statistical aggregates and the danger of large numbers
+    - running / windowed stream summaries
+	- make a "SummarizingTap" trident operation that collects {Sum Count Min Max Avg Stddev SomeExampleValuesReservoirSampled} (fill in the details of what exactly this means)
+	- also, maybe: Median+Deciles, Histogram
+	- understand the flow of data going on in preparing such an aggregate, by either making sure the mechanics of working with Trident don't overwhelm that or by retracing the story of records in an aggregation
+		- you need a group operation -> means everything in group goes to exactly one executor, exactly one machine, aggregator hits everything in a group
+- combiner-aggregators (in particular), do some aggregation beforehand, and send an intermediate aggregation to the executor that hosts the group operation
+	- by default, always use persistent aggregate until we find out why you wouldn’t
 
-9. *Time Series and Event Log Processing*:
+	- (BUBBLE) highlight the corresponding map/reduce dataflow and illuminate the connection
+  - (BUBBLE) Median / calculation of quantiles at large enough scale that doing so is hard
+  - (in next chapter we can do histogram)
+  - Use a sketching algorithm to get an approximate but distributed answer to a holistic aggregation problem eg most frequent elements
+  - Rolling timeseries averages
+  - Sampling responsibly: it's harder and more important than you think
+	- consistent sampling using hashing
+	- don’t use an RNG
+	- appreciate that external data sources may have changed
+	- reservoir sampling
+	- connectivity sampling (BUBBLE)
+	- subuniverse sampling (LOC?)
+  - Statistical aggregates and the danger of large numbers
+	- numerical stability
+	- overflow/underflow
+	- working with distributions at scale
+		- your intuition is often incomplete
+		- with trillions of things, 1 in billion chance things happen thousands of times
+
+  - weather temperature histogram in streaming fashion
+
+approximate distinct counts (using HyperLogLog)
+approximate percentiles (based on quantile digest)
+
+10. *Time Series and Event Log Processing*:
   - Parsing logs and using regular expressions with Hadoop
-  - Histograms and time series of pageviews
-  - Geolocate visitors based on IP (with Storm+Trident)
+    - logline model
+    - regexp to match lines, highlighting this as a parser pattern
+    - reinforce the source blob -> source model -> domain model practice
+  - Histograms and time series of pageviews using Hadoop
+    -
+  - sessionizing
+    - flow chart throughout site?
+    - "n-views": pages viewed in sequence
+    - ?? Audience metrics:
+    - make sure that this serves the later chapter with the live recommender engine (lambda architecture)
+  - Geolocate visitors based on IP with Hadoop
+    - use World Cup data?
+    - demonstrate using lookup table,
+    - explain it as a range query
+    - use a mapper-only (replicated) join -- explain why using that (small with big) but don't explain what it's doing (will be covered later)
   - (Ab)Using Hadoop to stress-test your web server
 
-10. *Geographic Data*:
-  - Spatial join (find all UFO sightings near Airports)
+Exercise: what predicts the team a country will root for next? In particular: if say Mexico knocks out Greece, do Greeks root for, or against, Mexico in general?
 
-11. *Conceptual Model for Data Analysis*
+11. *Geographic Data*:
+Spatial join (find all UFO sightings near Airports) of points with points
+map points to grid cell in the mapper
+truncate at a certain zoom level (explain how to choose zoom level)
+must send points to reducers for own grid key and also neighbors (9 total squares).
+Perhaps, be clever about not having to use all 9 quad grid neighbors by partitioning on a grid size more fine-grained than your original one and then use that to send points only the pertinent grid cell reducers
+Perhaps generate the four points that are x away from you and use their quad cells.
+In the reducer, do point-by-point comparisons
+*Maybe* a secondary sort???
+Geospacial data model, i.e. the terms and fields that you use in, e.g. GeoJSON
+We choose X, we want the focus to be on data science not on GIS
+Still have to explain ‘feature’, ‘region’, ‘latitude’, ‘longitude’, etc…
+Decomposing a map into quad-cell mapping at constant zoom level
+mapper input:
+[name of region, GeoJSON region boundary]
+Goal 1: have a mapping from region -> quad cells it covers
+Goal 2: have a mapping from quad key to partial GeoJSON objects on it
+mapper output:
+[thing, quadkey]
+[quadkey, list of region ids, hash of region ids to GeoJSON region boundaries]
+Spacial join of points with regions, e.g. what congressional district are you in?
+in mapper for points emit truncated quad key, the rest of the quad key, just stream the regions through (with result from prior exploration)
+a reducer has quadcell, all points that lie within that quadcell, and all regions (truncated) that lie on that quadcell. Do a brute force search for the regions that the points lie on
+Nearness query
+suppose the set of items you want to find nearness to is not huge
+produce the voronoi diagrams
+Decomposing a map into quad-cell mapping at multiple zoom levels
+in particular, use voronoi regions to make show multi-scale decomposition
+Re-do spacial join with Voronoi cells in multi-scale fashion (fill in details later)
+Framing the problem (NYC vs Pacific Ocean)
+Discuss how, given a global set of features, to decompose into a multi-scale grid representation
+Other mechanics of working with geo data
 
-12. *Data Munging (Semi-Structured Data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
+12. *Conceptual Model for Data Analysis*
+
+See bottom
+13. *Data Munging (Semi-Structured Data)*:
+
+Welcome to chapter to 13. This is some f'real shit, yo.
+
+Wiki pageviews - String encoding and other bullshit
+Airport data -Reconciling to *mostly* agreeing datasets
+Something that has errors (SW Kid) - dealing with bad records
+Weather Data - Parsing a flat pack file
+	- bear witness, explain that you DID have to temporarily become an ameteur meteorologist, and had to write code to work with that many fields.
+- when your schema is so complicated, it needs to be automated, too.
+- join hell, when your keys change over time
+
+Data formats
+	- airing of grievances on XML
+	- airing of grievances on CSV
+	- don’t quote, escape
+	- the only 3 formats you should use, and when to use them
+
+- Just do a data munging project from beginning to end that wasn’t too horrible
+- Talk about the specific strategies and tactics
+	- source blob to source domain object, source domain object to business object. e.g. you want your initial extraction into a model mirrors closely the source domain data format. Mainly because you do not want mix your extraction logic and business logic (extraction logic will pollute business objects code). Also, will end up building the wrong model for the business object, i.e. it will look like the source domain.
+
+Airport data - chief challenge is reconciling data sets, dealing with conflicting errors
+
+The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
   - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
   - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
   - US Commercial Airline Flights: every commercial airline flight since 1987
@@ -81,22 +243,55 @@ This is the plan. We'll roll material out over the next few months. Should we fi
   - Logistic Regression
   - Random Forest (using Mahout)
   We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
+14. *Full Application: Regional Flavor*
 
-14. *Hadoop Native Java API*
+15. *Hadoop Native Java API*
   - don't
 
-15. *Advanced Pig*
+16. *Advanced Pig*
   - Specialized joins that can dramatically speed up (or make feasible) your data transformations
-  - Basic UDF
   - why algebraic UDFs are awesome and how to be algebraic
   - Custom Loaders
   - Performance efficiency and tunables
+  - using a filter after a cogroup will get pushed up by Pig, sez Jacob
 
-16. *Data Modeling for HBase-style Database*
+
+17. *Data Modeling for HBase-style Database*
 
 17. *Hadoop Internals*
+
   - What happens when a job is launched
   - A shallow dive into the HDFS
+
+=====  HDFS
+
+Lifecycle of a File:
+
+* What happens as the Namenode and Datanode collaborate to create a new file.
+* How that file is replicated to acknowledged by other Datanodes.
+* What happens when a Datanode goes down or the cluster is rebalanced.
+* Briefly, the S3 DFS facade // (TODO: check if HFS?).
+
+===== Hadoop Job Execution
+
+* Lifecycle of a job at the client level including figuring out where all the source data is; figuring out how to split it; sending the code to the JobTracker, then tracking it to completion.
+* How the JobTracker and TaskTracker cooperate to run your job, including:  The distinction between Job, Task and Attempt., how each TaskTracker obtains its Attempts, and dispatches progress and metrics back to the JobTracker, how Attempts are scheduled, including what happens when an Attempt fails and speculative execution, ________, Split.
+* How TaskTracker child and Datanode cooperate to execute an Attempt, including; what a child process is, making clear the distinction between TaskTracker and child process.
+* Briefly, how the Hadoop Streaming child process works.
+
+==== Skeleton: Map-Reduce Internals
+
+* How the mapper and Datanode handle record splitting and how and when the partial records are dispatched.
+* The mapper sort buffer and spilling to disk (maybe here or maybe later, the I/O.record.percent).
+* Briefly note that data is not sent from mapper-to-reducer using HDFS and so you should pay attention to where you put the Map-Reduce scratch space and how stupid it is about handling an overflow volume.
+* Briefly that combiners are a thing.
+* Briefly how records are partitioned to reducers and that custom partitioners are a thing.
+* How the Reducer accepts and tracks its mapper outputs.
+* Details of the merge/sort (shuffle and sort), including the relevant buffers and flush policies and why it can skip the last merge phase.
+* (NOTE:  Secondary sort and so forth will have been described earlier.)
+* Delivery of output data to the HDFS and commit whether from mapper or reducer.
+* Highlight the fragmentation problem with map-only jobs.
+* Where memory is used, in particular, mapper-sort buffers, both kinds of reducer-merge buffers, application internal buffers.
 
 18. *Hadoop Tuning*
   - Tuning for the Wise and Lazy
@@ -105,21 +300,19 @@ This is the plan. We'll roll material out over the next few months. Should we fi
 
 19. *Storm+Trident Internals*
 
+* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking.
+* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.
+* Understand the lifecycle of partitions within a Trident batch and thus, the context behind partition operations such as Apply or PartitionPersist.
+* Understand Trident’s transactional mechanism, in the case of a PartitionPersist.
+* Understand how Aggregators, Statemap and the Persistence methods combine to give you _exactly once_  processing with transactional guarantees.  Specifically, what an OpaqueValue record will look like in the database and why.
+* Understand how the master batch coordinator and spout coordinator for the Kafka spout in particular work together to uniquely and efficiently process all records in a Kafka topic.
+* One specific:  how Kafka partitions relate to Trident partitions.
+
+
 20. *Storm+Trident Tuning*
 
-21. *Appendix: Overview of Datasets and Scripts*
- - Datasets
-   - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
-   - Airline Flights
-   - UFO Sightings
-   - Global Hourly Weather
-   - Waxy.org "Star Wars Kid" Weblogs
- - Scripts
 
-22. *Appendix: Cheatsheets*:
-  - Regular Expressions
-  - Sizes of the Universe
-  - Hadoop Tuning & Configuration Variables
+
 
 Chopping block
 
