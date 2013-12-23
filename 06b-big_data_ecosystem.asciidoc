@@ -1,0 +1,69 @@
+Apache Giraph and Gremlin are both useful for graph analysis.  (NOTE TO TECH REVIEWERS:  What else deserves inclusion?)
+
+// ==== Visualization And Business Insight (BI) Tools
+//
+// NOT TODAY(?):
+//   - Datameer
+//   - Pentaho
+//   - Tableau
+//   - Platfora
+// Amino
+// Spotfire
+// Tableau Desktop and Server
+//   - chartio, Raw, d3, ???
+//
+// Lastly, because we do not know where else to put them, there are several Hadoop “environments,” some combination of IDE frameworks and conveniences that aim to make Hadoop friendlier to the Enterprise programmer.  If you are one of those, they are worth a look.
+
+// ==== Cloud and Managed Services
+//
+// TODAY:
+//
+// -  Qubole, Elastic Map/Reduce, Mortar Data, Treasure Data, Continuity and Infochimps
+// -  Heroku-based options
+// -  AWS Redshift
+// -  Azure, HDInsight
+//
+// ==== Operational Components
+//
+// * Workflow Tools
+//   - Azkaban, Oozie
+//
+//   - Mesos
+//   - WANDisco
+// * Administration
+//   - Cloudera Manager
+//   - Ambari - monitoring thru RESTful APIs
+//   - Provisioning: Ironfan, Juju, Whirr, Serengeti, Openstack Hadoop barclamp
+//   - Monitoring: Chukwa, Cactus, Ganglia,
+//   - StackIQ
+//
+// Cloudera Enterprise
+// Hortonworks Data Platform
+//
+// ===== Alternative HDFS Implementations
+//
+// TODAY:
+//
+//     - WANDisco
+//     - OrangeFS
+//     - glusterfs
+//     - Quantcast QFS
+//     - Map/R NFS
+//     - ...
+//   - Direct datastore: DataStax Brisk,
+//
+// ===== Security
+//
+//   - Kerberos; MS/Hortonworks has Active Directory integration
+//   - fundamental limitations
+//   - Gazzang, Dataguise
+//
+// ==== Vertical-Focused and System Integrators
+//
+//   - ThinkBig Analytics
+//   - Tresata - Big Data Analytics Platform for the Financial Services Industry
+//   - Mu Sigma
+//   - Booz-Allen
+//   - Wibidata Real-time personalization framework
+//   - Metamarkets
+//   - Infochimps/CSC

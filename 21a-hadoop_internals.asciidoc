@@ -100,7 +100,6 @@ If your dataset is
 
 ===== Mapper-only jobs =====
 
-
 There's a tradeoff:
 
 If you set your min-split-size larger than your block size, you'll get non-local map tasks, which puts a load on your network.

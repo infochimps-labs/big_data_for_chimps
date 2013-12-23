@@ -1,0 +1,22 @@
+=== Hadoop Job Execution Internals
+
+* **Hadoop Job Execution**
+  * Lifecycle of a job at the client level including figuring out where all the source data is; figuring out how to split it; sending the code to the JobTracker, then tracking it to completion.
+  * How the JobTracker and TaskTracker cooperate to run your job, including:  The distinction between Job, Task and Attempt., how each TaskTracker obtains its Attempts, and dispatches progress and metrics back to the JobTracker, how Attempts are scheduled, including what happens when an Attempt fails and speculative execution, ________, Split.
+  * How TaskTracker child and Datanode cooperate to execute an Attempt, including; what a child process is, making clear the distinction between TaskTracker and child process.
+  * Briefly, how the Hadoop Streaming child process works.
+
+=== Map-Reduce Internals
+
+* How the mapper and Datanode handle record splitting and how and when the partial records are dispatched.
+* The mapper sort buffer and spilling to disk (maybe here or maybe later, the I/O.record.percent).
+* Briefly note that data is not sent from mapper-to-reducer using HDFS and so you should pay attention to where you put the Map-Reduce scratch space and how stupid it is about handling an overflow volume.
+* Briefly, that combiners are a thing.
+* Briefly, how records are partitioned to reducers and that custom partitioners are a thing.
+* How the Reducer accepts and tracks its mapper outputs.
+* Details of the merge/sort (shuffle and sort), including the relevant buffers and flush policies and why it can skip the last merge phase.
+* (NOTE:  Secondary sort and so forth will have been described earlier.)
+* Delivery of output data to the HDFS and commit whether from mapper or reducer.
+* Highlight the fragmentation problem with map-only jobs.
+* Where memory is used, in particular, mapper-sort buffers, both kinds of reducer-merge buffers, application internal buffers.
+* When using EBS volumes, beware of the commit & replication factor
