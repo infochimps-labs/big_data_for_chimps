@@ -43,6 +43,7 @@ include::20-hbase_data_modeling.asciidoc[]
 include::21-hadoop_internals.asciidoc[]
 
 include::21c-hadoop_internals-hdfs.asciidoc[]
+include::21d-hadoop_internals-tuning.asciidoc[]
 
 include::22-hadoop_tuning.asciidoc[]
 

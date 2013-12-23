@@ -240,4 +240,6 @@ Lastly, we will mention Crunch, an open source Java-based project from Cloudera.
 Finally, for the programmers, there are many open source frameworks to address various domain-specific problems you may encounter as a data scientist.  Going into any depth here is outside the scope of this book but we will at least supply you with a list of pointers.
 
 Elephant Bird, Datafu and Akela offer extremely useful additional Pig and Hive UDFs.  While you are unlikely to need all of them, we consider no Pig or Hive installation complete without them.  For more domain-specific purposes, anyone in need of a machine-learning algorithm should look first at Mahout, Kiji, Weka scikit-learn or those available in a statistical language, such as R, Julia or NumPy.
+Apache Giraph and Gremlin are both useful for graph analysis.  (NOTE TO TECH REVIEWERS:  What else deserves inclusion?)
+Lastly, because we do not know where else to put them, there are several Hadoop “environments,” some combination of IDE frameworks and conveniences that aim to make Hadoop friendlier to the Enterprise programmer.  If you are one of those, they are worth a look.  
 
