@@ -1,4 +1,19 @@
-Apache Giraph and Gremlin are both useful for graph analysis.  (NOTE TO TECH REVIEWERS:  What else deserves inclusion?)
+
+==== Basic Toolset
+
+We think you are doing it wrong if you are not using :
+
+- for most general-purpose jobs, a high-level data orchestration tool such as Pig or Hive
+- for the dirty stuff (e.g. parsing, contacting external apis, etc..), a high-level scripting language such as Ruby or Python
+- for deeper exploration of your data once it's been cut down to size, a statistical analysis tool -- R, Pandas or Julia
+- Additionally: toolkits (Mahout, Scikit, Kiji; NLTK / Stanford / OpenNLP)
+
+Infrastructure:
+
+- Batch analytics: Hadoop, from either the Cloudera or Hortonworks distributions (or, for the moneyed, Map/R)
+- Streaming Analytics: Storm+Trident, although Spark Streaming shows promise.
+- One or more scalable datastores -- for storing billions of objects, HBase, Accumulo or Cassandra; and for storing millions of results, Elasticsearch or MongoDB
+- Optionally, an in-memory OLAP tool such as Impala, Druid or Redshift.
 
 // ==== Visualization And Business Insight (BI) Tools
 //

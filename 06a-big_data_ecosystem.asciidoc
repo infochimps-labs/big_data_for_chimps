@@ -4,22 +4,6 @@ Big data is necessarily a polyglot sport.  The extreme technical challenges dema
 
 Fixing a map of this ecosystem to print would be nearly foolish; predictions of success or failure will prove wrong, the companies and projects whose efforts you omit or downplay will inscribe your name in their “Enemies” list, the correct choice can be deeply use-case specific and any list will become out of date the minute it is committed to print.  Your authors, fools both, feel you are better off with a set of wrong-headed, impolitic, oblivious and obsolete recommendations based on what has worked for us and what we have seen work for other people.
 
-==== Basic Toolset
-
-We think you are doing it wrong if you are not using :
-
-- for most general-purpose jobs, a high-level data orchestration tool such as Pig or Hive
-- for the dirty stuff (e.g. parsing, contacting external apis, etc..), a high-level scripting language such as Ruby or Python
-- for deeper exploration of your data once it's been cut down to size, a statistical analysis tool -- R, Pandas or Julia
-- Additionally: toolkits (Mahout, Scikit, Kiji; NLTK / Stanford / OpenNLP)
-
-Infrastructure:
-
-- Batch analytics: Hadoop, from either the Cloudera or Hortonworks distributions (or, for the moneyed, Map/R)
-- Streaming Analytics: Storm+Trident, although Spark Streaming shows promise.
-- One or more scalable datastores -- for storing billions of objects, HBase, Accumulo or Cassandra; and for storing millions of results, Elasticsearch or MongoDB
-- Optionally, an in-memory OLAP tool such as Impala, Druid or Redshift.
-
 ==== Core Platform: Batch Processing
 
 Hadoop is the one easy choice to make; Doug Cutting calls it the “kernel of the big data operating system” and we agree.  It can’t be just that easy, though; you further have to decide which distribution to adopt.  Almost everyone should either choose Cloudera’s distribution (CDH) or Hortonworks' (HDP).  Both come in a complete, well-tested open source version as well as a commercial version backed by enterprise features and vendor support.  Both employ significant numbers of core contributors,  have unshakable expertise and open-source credibility.
