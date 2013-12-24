@@ -59,18 +59,6 @@ The chimps' job was to take letters one-by-one from a mailbag, and fill out a to
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
-=== Hadoop vs Traditional Databases ===
-
-Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Bag Tree), then
-there is no "locality of access"
-for records retrieved by, say, type of toy --
-records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the disk,
-and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
-
-What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order). Unless you invest expertise and effort, the 
-
-
-
 === Chimpanzee and Elephant Save Christmas, part 2 ===
 
 So far, this looks a lot like the process for the translation project, with letters in, toyforms out, and the elephant librarians ensuring a steady supply of mail. But a simple transform isn't enough. You see, the set-up for tying ribbons on Ponies is very different from the set-up for assembling a Yo-Yo. The elves would like to process each type of toy as a group, designating a specific workbench for each type of toy. All the robots and hats might go to workbench A, while all the ponies and yo-yos go to workbench B, and all the coal orders to workbench C.
@@ -85,6 +73,25 @@ image::images/paper_sorter.jpg[paper sorter]
 The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
+
+
+
+=== Hadoop vs Traditional Databases ===
+
+Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Bag Tree), then
+there is no "locality of access"
+for records retrieved by, say, type of toy --
+records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the disk,
+and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
+
+What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
+
+Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested. Instead, it focuses purely on the throughput case. 
+TODO explain disk is the new tape It takes X to seek but
+
+The typical Hadoop operation streams large swaths of data 
+The locality 
+
 
 ==== Toy Assembly ====
 
