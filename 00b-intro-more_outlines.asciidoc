@@ -1,0 +1,379 @@
+=== Topics
+
+1. *First exploration* Pt I
+  - motivation
+  - walkthrough
+  - reflection
+
+2. *Simple Transform*: Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrasingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+  - Chimpanzee and Elephant start a business
+  - Pig Latin translation
+  - Your first job: test at commandline
+  - Run it on cluster
+  - Input Splits
+  - Why Hadoop I: Simple Parallelism
+
+3. *Transform-Pivot Job*
+  - Locality
+  - Elves pt1
+  - Simple Join
+  - Elves pt2
+  - Partition key + sort key
+
+4. *First Exploration: Regional Flavor* pt II
+  - articles -> wordbags
+  - wordbag+geolocation join (wukong)
+  - wordbag+geolocation join (pig)
+  - statistics on corpus
+  - wordbag for each geotiles
+  - PMI for each geotile
+  - MI for geotile
+  - (visualize)
+
+5. *The Toolset*
+  - toolset overview
+    - pig vs hive vs impala
+    - hbase & elasticsearch (not accumulo or cassandra)
+  - launching jobs
+    - seeing the data
+    - seeing the logs
+    - simple debugging
+    - `wu-ps`, `wu-kill`
+    - globbing, and caveat about shell vs. hdfs globs
+  - overview of wukong
+    - installing it (pointer to internet)
+    - classes you inherit from
+    - options, launching
+  - overview of pig
+    - options, launching
+    - operations
+    - functions
+
+6. *Filesystem Mojo*
+    - `wu-dump`
+    - `wu-lign`
+    - `wu-ls`, `wu-du`
+    - `wu-cp`, `wu-mv`, `wu-put`, `wu-get`, `wu-mkdir`
+    - `wu-rm`, `wu-rm -r`, `wu-rm -r --skip_trash`
+    - filenames, wu style
+      - s3n, s3hdfs, hdfs, file (note: 'hdfs:///~' should translate to 'hdfs:///.')
+      - templating: `{user}`, `{pid}`, `{uuid}`; `{date}`, `{time}`, `{tod}`, `{epoch}`, `{yr}`, `{mo}`, `{day}`, `{hr}`, `{min}`, `{sec}`; `{run_env}`, `{project}`)
+      - (the default time-based one in http://docs.oracle.com/javase/6/docs/api/java/util/UUID.html)
+    - `wu-distcp`
+  - sugared jobs (wu-identity, wu-grep, wu-wc, wu-bzip, wu-gzip, wu-snappify, wu-digest (md5/sha1/etc))
+
+7. *Event Streams*
+  - Parsing logs and using regular expressions
+  - Histograms and time series of pageviews
+  - Geolocate visitors based on IP
+  - Sessionizing a log
+  - (Ab)Using Hadoop to stress-test your web server
+  - (DL paste list here)
+  - (see pagerank in section on graphs)
+  
+8. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
+  - grep'ing etc for simple matches
+  - wordbags using Lucene
+  - Indexing documents
+  - Pointwise Mutual Information
+  - Minhashing to combat a massive feature space
+  - How to cheat with Bloom filters
+  - K-means Clustering (mini-batch)
+  - (?maybe?) TF-IDF 
+  - (?maybe?) Document clustering with SVD
+    - (?maybe?) SVD as Principal Component Analysis
+  - (?maybe?) Topic extraction using (to be determined)
+
+9. *Statistics*
+  - Averages, Percentiles, and Normalization
+    - sum, average, standard deviation, etc (airline_flights)
+  - Percentiles / Median
+    - exact percentiles / median
+    - approximate percentiles / median
+      - fit a curve to the CDF; 
+  - construct a histogram (tie back to server logs)
+    - "Average value frequency"
+  - Sampling responsibly: it's harder and more important than you think
+  - Statistical aggregates and the danger of large numbers
+  - normalize data by mapping to percentile, by mapping to Z-score
+  - sampling
+    - consistent sampling
+    - distributions
+  
+10. *Time Series*
+  - Anomaly detection
+    - Wikipedia Pageviews
+  - windowing and rolling statistics
+  - (?maybe?) correlation of joint timeseries
+    - (?even mayber?) similar wikipedia pages based on pageview time series
+  
+11. *Geographic*
+  - Spatial join (find all UFO sightings near Airports)
+  - mechanics of handling geo data
+  - Statistics on grid cells
+  - quadkeys and grid coordinate system
+  - `d3` -- map wikipedia 
+  - k-means clustering to produce readable summaries
+  - partial quad keys for "area" data
+  - voronoi cells to do "nearby"-ness
+  - Scripts:
+  - `calculate_voronoi_cells` -- use weather station locations to calculate voronoi polygons
+  - `voronoi_grid_assignment` -- cells that have a piece of border, or the largest grid cell that has no border on it
+  - Using polymaps to see results
+  - Clustering
+  - Pointwise mutual information
+ 
+12. *`cat` herding*
+  - total sort
+  - transformations
+    - `ruby -ne`
+    - grep, cut, seq, (reference back to `wu-lign`)
+    - wc, sha1sum, md5sum, nl
+  - pivots
+    - wu-box, head, tail, less, split
+    - uniq, sort, join, `sort| uniq -c`
+    - bzip2, gzcat
+  - commandline workflow tips
+    - `> /dev/null 2>&1`
+    - `for` loops (see if you can get agnostic btwn zsh & bash) 
+    - nohup, disown, bg and `&`
+    - `time`
+  - advanced hadoop filesystem (chmod, setrep, fsck)
+  
+13. *Data munging (Semi-structured data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book.
+  - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
+  - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
+  - US Commercial Airline Flights: every commercial airline flight since 1987
+  - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
+  - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
+
+14. Interlude I: *Data Models, Data Formats, Data Management*:
+  - How to design your data models
+  - How to serialize their contents (orig, scratch, prod)
+  - How to organize your scripts and your data
+
+15. *Graph* -- some better-motivated subset of:
+  - Adjacency List / Edge List conversion
+  - Undirecting a graph, Min-degree undirected graph
+  - Breadth-First Search
+  - subuniverse extraction
+  - (?maybe?) Pagerank on server logs?
+  - (?maybe?) identify strong links
+  - Minimum Spanning Tree
+  - clustering coefficient
+  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
+  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
+  - _(bubble)_
+
+16. *Machine Learning without Grad School*
+  - weather & flight delays for prediction
+    - Naive Bayes
+    - Logistic Regression ("SGD")
+    - Random Forest
+  - (?maybe?) Collaborative Filtering
+    - (?or maybe?) SVD on documents (eg authorship)
+  - where to go from here
+    - don't get fancy
+      - better features
+      - unreasonable effectiveness
+      - partition the data, recombine the models
+    - pointers for the person who is going to get fancy anyway
+
+17. Interlude II: *Best Practices and Pedantic Points of style*
+  - Pedantic Points of Style 
+  - Best Practices
+  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+  - Why Hadoop
+  - robots are cheap, people are important
+
+18. *Hadoop Native Java API*
+  - don't
+
+19. *Advanced Pig*
+  - Advanced operators:
+    - map-side join, merge join, skew joins
+  - Basic UDF
+  - why algebraic UDFs are awesome and how to be algebraic
+  - Custom Loaders
+    - Wonderdog: a LoadFunc / StoreFunc for elasticsearch
+  - Performance efficiency and tunables
+    
+20.  *Data Modeling for HBase-style Database*
+  
+21. *Hadoop Internals*
+  - What happens when a job is launched
+  - A shallow dive into the HDFS
+
+22. *Hadoop Tuning*
+  - Tuning for the Wise and Lazy
+  - Tuning for the Brave and Foolish
+  - The USE Method for understanding performance and diagnosing problems
+  
+23. *Overview of Datasets and Scripts*
+ - Datasets
+   - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
+   - Airline Flights
+   - UFO Sightings
+   - Global Hourly Weather
+   - Waxy.org "Star Wars Kid" Weblogs
+ - Scripts
+
+24. *Cheatsheets*:
+  - Regular Expressions
+  - Sizes of the Universe
+  - Hadoop Tuning & Configuration Variables
+
+25. *Appendix*  
+ 
+=== Chapter Skeletons
+
+(The remainder of the intro section is a planning document, please skip)
+
+==== Introductions
+
+**Intros**:
+
+Introduce the chapter to the reader
+
+* take the strands from the last chapter, and show them braided together
+* in this chapter, you'll learn .... OR ok we're done looking at that, now let's xxx
+* weave in the locality question
+* Tie each chapter to the goals of the book
+
+* perspective, philosophy, what we'll be working, a bit of repositioning, a bit opinionated, a bit personal.
+
+**Preface**:
+
+* like a "map" of the book
+* "First part is about blah, next is about blah, ..."
+
+==== Skeleton: Storm+Trident Internals
+
+What should you take away from this chapter:
+
+You should:
+
+* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking.
+* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.
+* Understand the lifecycle of partitions within a Trident batch and thus, the context behind partition operations such as Apply or PartitionPersist.
+* Understand Trident’s transactional mechanism, in the case of a PartitionPersist.
+* Understand how Aggregators, Statemap and the Persistence methods combine to give you _exactly once_  processing with transactional guarantees.  Specifically, what an OpaqueValue record will look like in the database and why.
+* Understand how the master batch coordinator and spout coordinator for the Kafka spout in particular work together to uniquely and efficiently process all records in a Kafka topic.
+* One specific:  how Kafka partitions relate to Trident partitions.
+
+==== Skeleton: Hadoop Internals
+
+=====  HDFS
+
+Lifecycle of a File:
+
+* What happens as the Namenode and Datanode collaborate to create a new file.
+* How that file is replicated to acknowledged by other Datanodes.
+* What happens when a Datanode goes down or the cluster is rebalanced.
+* Briefly, the S3 DFS facade // (TODO: check if HFS?).
+
+===== Hadoop Job Execution
+
+* Lifecycle of a job at the client level including figuring out where all the source data is; figuring out how to split it; sending the code to the JobTracker, then tracking it to completion.
+* How the JobTracker and TaskTracker cooperate to run your job, including:  The distinction between Job, Task and Attempt., how each TaskTracker obtains its Attempts, and dispatches progress and metrics back to the JobTracker, how Attempts are scheduled, including what happens when an Attempt fails and speculative execution, ________, Split.
+* How TaskTracker child and Datanode cooperate to execute an Attempt, including; what a child process is, making clear the distinction between TaskTracker and child process.
+* Briefly, how the Hadoop Streaming child process works.
+
+==== Skeleton: Map-Reduce Internals
+
+* How the mapper and Datanode handle record splitting and how and when the partial records are dispatched.
+* The mapper sort buffer and spilling to disk (maybe here or maybe later, the I/O.record.percent).
+* Briefly note that data is not sent from mapper-to-reducer using HDFS and so you should pay attention to where you put the Map-Reduce scratch space and how stupid it is about handling an overflow volume.
+* Briefly that combiners are a thing.
+* Briefly how records are partitioned to reducers and that custom partitioners are a thing.
+* How the Reducer accepts and tracks its mapper outputs.
+* Details of the merge/sort (shuffle and sort), including the relevant buffers and flush policies and why it can skip the last merge phase.
+* (NOTE:  Secondary sort and so forth will have been described earlier.)
+* Delivery of output data to the HDFS and commit whether from mapper or reducer.
+* Highlight the fragmentation problem with map-only jobs.
+* Where memory is used, in particular, mapper-sort buffers, both kinds of reducer-merge buffers, application internal buffers.
+
+==== Skeleton: Conceptual Model for Analytics.
+
+===== Domain Boundaries.
+
+* An interesting opportunity happens when the sequence order of records corresponds to one of your horizon keys.
+* Explain using the example of weblogs. highlighting strict order and partial order.
+* In the frequent case, the sequence order only somewhat corresponds to one of the horizon keys.  There are several types of somewhat ordered streams:  block disorder, bounded band disorder, band disorder.  When those conditions hold, you can use windows to recover the power you have with ordered streams -- often, without having to order the stream.
+* Unbounded band disorder only allows "convergent truth" aggregators.  If you have no idea when or whether that some additional record from a horizon group might show up, then you can’t treat your aggregation as anything but a best possible guess at the truth.
+* However, what the limited disorder does get you, is the ability to efficiently cache aggregations from  a practically infinite backing data store.
+* With bounded band or block disorder, you can perform accumulator-style aggregations.
+* How to, with the abstraction of an infinite sorting buffer or an infinite binning buffer, efficiently re-present the stream as one where sequence order and horizon key directly correspond.
+* Re-explain the Hadoop Map-Reduce algorithm  in this window+horizon model.
+* How windows and panes correspond to horizon groups, subgroups and the secondary sort; in particular, explain the CUBE and ROLLUP operations in Pig.
+* (somewhere:  Describe how to use Trident batches as they currently stand to fake out windows.)
+
+===== Fundamental Boundaries
+
+* Understand why conceptual model is useful; in particular, it illuminates the core similarity between batch and stream analytics and also, to help you reason about the architecture of your analysis.
+* The basic model:  Organize context globally, compute locally.  DO MORE HERE.
+* Horizon of computation, including what we mean by horizon key.  DO MORE HERE.
+* Volume of justified belief.  DO MORE HERE.
+* Note that the direct motivation for Big Data technology is to address the situation where the necessary volume for justified belief exceeds the practical horizon of computation.
+* Volume of aggregation, including holistic and algebraic aggregates.  Describe briefly one or two algebraic aggregates and two holistic aggregates, including medium (or something) and  Unified-Profile assembly.
+* Highlight that , in practice, we often and eagerly trade off truth and accuracy in favor of relevance, timeliness, cost and the other constraints we’ve described.  Give a few examples.
+* Timescale of acceptable delay.  DO MORE HERE.
+* Timescale of syndication.  DO MORE HERE.
+* Horizon of computational risk.  DO MORE HERE.
+* Horizon of external conversation.  DO MORE HERE.
+
+* Understand relativity: horizons of belief, computation, delay, etc
+* How guarantees of bounded disorder or delay, uniform sampling, etc let you trade off
+* Aggregation types: holistic, algebraic, combinable; accumulate, accretion
+
+==== Skeleton: Geographic data
+
+Continuous horizon: getting 1-d locality
+
+==== Skeleton: Statistics
+
+* Holistic vs algebraic aggregations
+* Underflow and the "Law of Huge Numbers"
+* Approximate holistic aggs: Median vs remedian; percentile; count distinct (hyperloglog)
+* Count-min sketch for most frequent elements
+* Approx histogram
+
+
+=== Hello, Reviewers ===
+
+I work somehow from the inside out -- generate broad content, fill in, fill in, and asymptotically approach coherency. So you will notices sentences that stop in the
+
+I'm endeavoring to leave fewer of these in chapters that hit the preview version, and to fill in the existing ones.
+
+==== Controversials
+
+I'd love feedback on a few decisions.
+
+**Sensible but nonstandard terms**: I want to flatten the learning curve for folks who have great hopes of never reading the source code or configuring Hadoop's internals. So where technical hadoop terms are especially misleading, I'm using an isomorphic but nonstandard one (introducing it with the technical term, of course). For example, I refer to the "early sort passes" and "last sort pass", rather than the misleading "shuffle" and "sort" terms from the source code.
+
+On the one hand, I know from experience that people go astray with those terms: far more sorting goes on during the shuffle phase than the sort phase. On the other hand, I don't want to leave them stranded with idiosyncratic jargon. Please let me know where I've struck the wrong balance.
+
+* "early sort passes" vs "shuffle phase"
+* "last sort pass" vs "sort phase"
+* "commit/output" for "commit".
+* for configuration options, use the standardized names from wukong (eg `midflight_compress_codec`, `midflight_compress_on` and `output_compress_codec` for `mapred.map.output.compression.codec`, `mapred.compress.map.output` and  `mapred.output.compression.codec`).
+
+**Vernacular Ruby? or Friendly to non-natives Ruby?**: I'm a heavy Ruby user, but I also believe it's the most readable language available. I want to show people the right way to do things, but some of its idioms can be distracting to non-native speakers. 
+
+      # Vernacular                     # Friendly
+ 
+      def bork(xx, yy=nil)             def bork(xx, yy=nil)
+        yy ||= xx                        yy = xx if (not yy)
+	xx * yy                          return xx * yy
+      end                              end
+
+      items = list.map(&:to_s)         items = list.map{|el| el.to_s }
+
+My plan is to use vernacular ruby -- with the one exception of providing `return` statements. I'd rather annoy rubyists than visitors, so please let me know what idioms seem opaque, and whether I should explain or eliminate them.
+
+
+
+**output directories with extensions**: If your job outputs tsv files, it will create directory of TSV files with names like `part-00000`. Normally, we hang extensions off the file and never off the directory. However, in Hadoop you don't name those files; and you treat that directory itself as the unit of processing. I've always been on the fence, but now lean towards `/data/results/wikipedia/full/pagelinks.tsv`: you can use the same name in local or hadoop mode; it's advisory; and as mentioned it's the unit of processing.
+
+==== Style Nits
+
