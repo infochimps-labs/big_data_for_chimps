@@ -74,8 +74,6 @@ The chimps places their toyforms into these file folders as fast as their dexter
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
-
-
 === Hadoop vs Traditional Databases ===
 
 Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Bag Tree), then

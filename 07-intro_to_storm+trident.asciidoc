@@ -1,7 +1,6 @@
 == Intro to Storm+Trident
 
-
-==== Intro: Storm+Trident Fundamentals
+=== Intro: Storm+Trident Fundamentals
 
 At this point, you have good familiarity with Hadoop’s batch processing power and the powerful inquiries it unlocks above and as a counterpart to traditional database approach.  Stream analytics is a third mode of data analysis and, it is becoming clear, one that is just as essential and transformative as massive scale batch processing has been.  
 

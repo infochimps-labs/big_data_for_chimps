@@ -1,3 +1,28 @@
 [[appendix]]
 == Appendix
 
+=== Author ===
+
+Philip (flip) Kromer is cofounder of Infochimps, a big data platform that makes acquiring, storing and analyzing massive data streams transformatively easier.  Infochimps became part of Computer Sciences Corporation in 2013, and their big data platform now serves customers such as Cisco, HGST and Infomart. He enjoys Bowling, Scrabble, working on old cars or new wood, and rooting for the Red Sox. 
+
+Graduate School, Dept. of Physics - University of Texas at Austin, 2001-2007
+Bachelor of Arts, Computer Science - Cornell University, Ithaca NY, 1992-1996
+
+* Cofounder of Infochimps, now Head of Technology and Architecture at Infochimps, a CSC Company.
+* Core committer for Storm, a framework for scalable stream processing and analytics
+* Core committer for Ironfan, a framework for provisioning complex distributed systems in the cloud or data center
+* Original author and core committer of Wukong, the leading Ruby library for Hadoop
+* Contributed chapter to _The Definitive Guide to Hadoop_ by Tom White
+
+Dieterich Lawson is a recent graduate of Stanford University.
+
+TODO DL: biography
+
+=== Colophon ===
+
+Writing a book with O'Reilly is magic in so many ways, but none moreso than their Atlas authoring platform. Rather than the XML hellscape that most publishers require, Atlas allows us to write simple text documents with readable markup, do a `git push`, and see a holy-smokes-that-looks-like-a-real-book PDF file moments later. 
+
+* Emacs, because a text editor that isn't its own operating system might as well be edlin.
+* Visuwords.com give good word when brain not able think word good. 
+* Posse East Bar and Epoch Coffee House in Austin provided us just the right amount of noise and focus for cranking out content.
+* http://dexy.it is a visionary tool for writing documentation. With it, we are able to directly use the runnable example scripts as the code samples for the book.

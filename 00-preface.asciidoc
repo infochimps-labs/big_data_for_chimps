@@ -1,3 +1,503 @@
+// :author:        Philip (flip) Kromer
+// :doctype: 	book
+// :toc:
+// :icons:
+// :lang: 		en
+// :encoding: 	utf-8
+
 [[preface]]
 == Preface
 
+
+image::images/front_cover.jpg[Front Cover]
+
+=== Mission Statement ===
+
+Big Data for Chimps will:
+
+1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop
+2.  Readers will also come away with a useful, conceptual idea of big data;  big data in its simplest form is a small cluster of well-tagged information that sits upon a central pivot, and can be manipulated through various shifts and rotations with the purpose of delivering insights ("Insight is data in context").  Key to understanding big data is scalability:  infinite amounts of data can rest upon infinite pivot points (Flip - is that accurate or would you say there's just one central pivot - like a Rubic's cube?)
+3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life.
+
+=== Hello, Early Releasers ===
+
+Hello and thanks, courageous and farsighted early released-to'er! We want to make sure the book delivers value to you now, and rewards your early confidence by becoming a book you're proud to own.
+
+==== Our Questions for You ====
+
+* The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". It's annoying when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
+* Analogies: We'll be accompanied on part of our journey by Chimpanzee and Elephant, whose adventures are surprisingly relevant to understanding the internals of Hadoop. I don't want to waste your time laboriously remapping those adventures back to the problem at hand, but I definitely don't want to get too cute with the analogy. Again, please let me know if I err on either side.
+
+==== Chimpanzee and Elephant
+
+Starting with Chapter 2, you'll meet the zealous members of the Chimpanzee and Elephant Computing Company. Elephants have prodgious memories and move large heavy volumes with ease. They'll give you a physical analogue for using relationships to assemble data into context, and help you understand what's easy and what's hard in moving around massive amounts of data. Chimpanzees are clever but can only think about one thing at a time. They'll show you how to write simple transformations with a single concern and how to analyze a petabytes data with no more than megabytes of working space.
+
+Together, they'll equip you with a physical metaphor for how to work with data at scale.
+
+
+==== What's Covered in This Book? ====
+
+///Revise each chapter summary into paragraph form, as you've done for Chapter 1.  This can stay in the final book. Amy////
+
+1. *First Exploration*:
+
+Objective: Show you a thing you couldn’t do without hadoop, you couldn’t do it any other way. Your mind should be blown and when you’re slogging through the data munging chapter you should think back to this and remember why you started this mess in the first place.
+
+A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
+
+2. *Simple Transform*:
+
+Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrassingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
+  - Chimpanzee and Elephant start a business
+  - Pig Latin translation
+  - Your first job: test at commandline
+  - Run it on cluster
+  - Input Splits
+  - Why Hadoop I: Simple Parallelism
+
+3. *Transform-Pivot Job*:
+
+C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
+  - Locality: the central challenge of distributed computing
+  - The Hadoop Haiku
+
+Note: we will almost certainly re-arrange the content in chapters 1-3.
+They will be centered around the following 3 explorations
+(in pig and wukong)
+- Pig Latin exploration (map only job)
+- Count UFO visits by month
+	- might visit the jobtracker
+- Counting Wikipedia pageviews by hour (or whatever)
+	- should be same as UFO exploration, but:
+		- will actually require Hadoop
+		- also do a total sort at the end
+	- will visit the jobtracker
+
+By this point in the book  you should:
+- Have your mind blown
+- See some compelling enough data and a compelling enough question, and a wukong job that answers that job by using only a mapper
+- see some compelling enough data and a compelling enough question, which requires a map and reduce job, written in both pig and wukong
+- believe the mapreduce story, i.e. you know, in general, the high-level conceptual mechanics of a mapreduce job
+
+You should have:
+- whimsical & concrete explanations of mapreduce,  what’s happening as a job is born and run, and HDFS
+
+You shouldn’t have:
+a lot of words in pig
+a good feel for how to deftly use wukong yet
+
+5. *The Hadoop Toolset and Other Practical Matters*
+  - toolset overview
+- It’s a necessarily polyglot sport
+- Pig is a language that excels at describing
+- we think you are doing it wrong if you are not using :
+- a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
+-  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
+- there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
+  - launching and debugging jobs
+  - overview of Wukong
+  - overview of Pig
+
+6. Fundamental Data Operations in Hadoop*
+
+here’s the stuff you’d like to be able to do with data, in wukong and in pig
+	- Foreach/filter operations (messing around inside a record)
+	- reading data (brief practical directions on the level of “this is what you type in”)
+		- pig schema
+		- wukong model
+		- loading TSV
+- loading generic JSON
+- storing JSON
+- loading schematized JSON
+- loading parquet or Trevni
+- (Reference the section on working with compressed files; call back to the points about splitability and performance/size tradeoffs)
+- TSV, JSON, not XML; Protobufs, Thrift, Avro; Trevni, Parquet; Sequence Files; HAR
+- compression: gz, bz2, snappy, LZO
+	- subsetting your data
+- limit
+- filter
+- sample
+- using a hash digest function to take a signature
+- top k and reservoir sampling
+- refer to subuniverse which is probably elsewhere
+- group
+- join
+- ??cogroup?? (does this go with group? Does it go anywhere?)
+- sort, etc.. : cross cube
+- total sort
+- partitioner
+- basic UDFs
+- ?using ruby or python within a pig dataflow?
+
+7. *Filesystem Mojo and `cat` herding*
+
+  - dumping, listing, moving and manipulating files on the HDFS and local filesystems
+  - total sort
+  - transformations from the commandline (grep, cut, wc, etc)
+  - pivots from the commandline (head, sort, etc)
+  - commandline workflow tips
+  - advanced hadoop filesystem (chmod, setrep, fsck)
+
+8. *Intro to Storm+Trident*
+
+9. *Statistics*:
+
+  - (this is first deep experience with Storm+Trident)
+  - Summarizing: Averages, Percentiles, and Normalization
+    - running / windowed stream summaries
+	- make a "SummarizingTap" trident operation that collects {Sum Count Min Max Avg Stddev SomeExampleValuesReservoirSampled} (fill in the details of what exactly this means)
+	- also, maybe: Median+Deciles, Histogram
+	- understand the flow of data going on in preparing such an aggregate, by either making sure the mechanics of working with Trident don't overwhelm that or by retracing the story of records in an aggregation
+		- you need a group operation -> means everything in group goes to exactly one executor, exactly one machine, aggregator hits everything in a group
+- combiner-aggregators (in particular), do some aggregation beforehand, and send an intermediate aggregation to the executor that hosts the group operation
+	- by default, always use persistent aggregate until we find out why you wouldn’t
+
+	- (BUBBLE) highlight the corresponding map/reduce dataflow and illuminate the connection
+  - (BUBBLE) Median / calculation of quantiles at large enough scale that doing so is hard
+  - (in next chapter we can do histogram)
+  - Use a sketching algorithm to get an approximate but distributed answer to a holistic aggregation problem eg most frequent elements
+  - Rolling timeseries averages
+  - Sampling responsibly: it's harder and more important than you think
+	- consistent sampling using hashing
+	- don’t use an RNG
+	- appreciate that external data sources may have changed
+	- reservoir sampling
+	- connectivity sampling (BUBBLE)
+	- subuniverse sampling (LOC?)
+  - Statistical aggregates and the danger of large numbers
+	- numerical stability
+	- overflow/underflow
+	- working with distributions at scale
+		- your intuition is often incomplete
+		- with trillions of things, 1 in billion chance things happen thousands of times
+
+  - weather temperature histogram in streaming fashion
+
+approximate distinct counts (using HyperLogLog)
+approximate percentiles (based on quantile digest)
+
+10. *Time Series and Event Log Processing*:
+  - Parsing logs and using regular expressions with Hadoop
+    - logline model
+    - regexp to match lines, highlighting this as a parser pattern
+    - reinforce the source blob -> source model -> domain model practice
+  - Histograms and time series of pageviews using Hadoop
+    -
+  - sessionizing
+    - flow chart throughout site?
+    - "n-views": pages viewed in sequence
+    - ?? Audience metrics:
+    - make sure that this serves the later chapter with the live recommender engine (lambda architecture)
+  - Geolocate visitors based on IP with Hadoop
+    - use World Cup data?
+    - demonstrate using lookup table,
+    - explain it as a range query
+    - use a mapper-only (replicated) join -- explain why using that (small with big) but don't explain what it's doing (will be covered later)
+  - (Ab)Using Hadoop to stress-test your web server
+
+Exercise: what predicts the team a country will root for next? In particular: if say Mexico knocks out Greece, do Greeks root for, or against, Mexico in general?
+
+11. *Geographic Data*:
+Spatial join (find all UFO sightings near Airports) of points with points
+map points to grid cell in the mapper
+truncate at a certain zoom level (explain how to choose zoom level)
+must send points to reducers for own grid key and also neighbors (9 total squares).
+Perhaps, be clever about not having to use all 9 quad grid neighbors by partitioning on a grid size more fine-grained than your original one and then use that to send points only the pertinent grid cell reducers
+Perhaps generate the four points that are x away from you and use their quad cells.
+In the reducer, do point-by-point comparisons
+*Maybe* a secondary sort???
+Geospacial data model, i.e. the terms and fields that you use in, e.g. GeoJSON
+We choose X, we want the focus to be on data science not on GIS
+Still have to explain ‘feature’, ‘region’, ‘latitude’, ‘longitude’, etc…
+Decomposing a map into quad-cell mapping at constant zoom level
+mapper input: `<name of region, GeoJSON region boundary>`
+Goal 1: have a mapping from region -> quad cells it covers
+Goal 2: have a mapping from quad key to partial GeoJSON objects on it
+mapper output:
+[thing, quadkey]
+[quadkey, list of region ids, hash of region ids to GeoJSON region boundaries]
+Spacial join of points with regions, e.g. what congressional district are you in?
+in mapper for points emit truncated quad key, the rest of the quad key, just stream the regions through (with result from prior exploration)
+a reducer has quadcell, all points that lie within that quadcell, and all regions (truncated) that lie on that quadcell. Do a brute force search for the regions that the points lie on
+Nearness query
+suppose the set of items you want to find nearness to is not huge
+produce the voronoi diagrams
+Decomposing a map into quad-cell mapping at multiple zoom levels
+in particular, use voronoi regions to make show multi-scale decomposition
+Re-do spacial join with Voronoi cells in multi-scale fashion (fill in details later)
+Framing the problem (NYC vs Pacific Ocean)
+Discuss how, given a global set of features, to decompose into a multi-scale grid representation
+Other mechanics of working with geo data
+
+12. *Conceptual Model for Data Analysis*
+
+See bottom
+13. *Data Munging (Semi-Structured Data)*:
+
+Welcome to chapter to 13. This is some f'real shit, yo.
+
+Wiki pageviews - String encoding and other bullshit
+Airport data -Reconciling to *mostly* agreeing datasets
+Something that has errors (SW Kid) - dealing with bad records
+Weather Data - Parsing a flat pack file
+	- bear witness, explain that you DID have to temporarily become an ameteur meteorologist, and had to write code to work with that many fields.
+- when your schema is so complicated, it needs to be automated, too.
+- join hell, when your keys change over time
+
+Data formats
+	- airing of grievances on XML
+	- airing of grievances on CSV
+	- don’t quote, escape
+	- the only 3 formats you should use, and when to use them
+
+- Just do a data munging project from beginning to end that wasn’t too horrible
+- Talk about the specific strategies and tactics
+	- source blob to source domain object, source domain object to business object. e.g. you want your initial extraction into a model mirrors closely the source domain data format. Mainly because you do not want mix your extraction logic and business logic (extraction logic will pollute business objects code). Also, will end up building the wrong model for the business object, i.e. it will look like the source domain.
+
+Airport data - chief challenge is reconciling data sets, dealing with conflicting errors
+
+The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
+  - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
+  - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
+  - US Commercial Airline Flights: every commercial airline flight since 1987
+  - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
+  - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
+
+13. *Machine Learning without Grad School*: We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
+  - Naive Bayes
+  - Logistic Regression
+  - Random Forest (using Mahout)
+  We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win.
+14. *Full Application: Regional Flavor*
+
+15. *Hadoop Native Java API*
+  - don't
+
+16. *Advanced Pig*
+  - Specialized joins that can dramatically speed up (or make feasible) your data transformations
+  - why algebraic UDFs are awesome and how to be algebraic
+  - Custom Loaders
+  - Performance efficiency and tunables
+  - using a filter after a cogroup will get pushed up by Pig, sez Jacob
+
+
+17. *Data Modeling for HBase-style Database*
+
+17. *Hadoop Internals*
+
+  - What happens when a job is launched
+  - A shallow dive into the HDFS
+
+=====  HDFS
+
+Lifecycle of a File:
+
+* What happens as the Namenode and Datanode collaborate to create a new file.
+* How that file is replicated to acknowledged by other Datanodes.
+* What happens when a Datanode goes down or the cluster is rebalanced.
+* Briefly, the S3 DFS facade // (TODO: check if HFS?).
+
+===== Hadoop Job Execution
+
+* Lifecycle of a job at the client level including figuring out where all the source data is; figuring out how to split it; sending the code to the JobTracker, then tracking it to completion.
+* How the JobTracker and TaskTracker cooperate to run your job, including:  The distinction between Job, Task and Attempt., how each TaskTracker obtains its Attempts, and dispatches progress and metrics back to the JobTracker, how Attempts are scheduled, including what happens when an Attempt fails and speculative execution, ________, Split.
+* How TaskTracker child and Datanode cooperate to execute an Attempt, including; what a child process is, making clear the distinction between TaskTracker and child process.
+* Briefly, how the Hadoop Streaming child process works.
+
+==== Skeleton: Map-Reduce Internals
+
+* How the mapper and Datanode handle record splitting and how and when the partial records are dispatched.
+* The mapper sort buffer and spilling to disk (maybe here or maybe later, the I/O.record.percent).
+* Briefly note that data is not sent from mapper-to-reducer using HDFS and so you should pay attention to where you put the Map-Reduce scratch space and how stupid it is about handling an overflow volume.
+* Briefly that combiners are a thing.
+* Briefly how records are partitioned to reducers and that custom partitioners are a thing.
+* How the Reducer accepts and tracks its mapper outputs.
+* Details of the merge/sort (shuffle and sort), including the relevant buffers and flush policies and why it can skip the last merge phase.
+* (NOTE:  Secondary sort and so forth will have been described earlier.)
+* Delivery of output data to the HDFS and commit whether from mapper or reducer.
+* Highlight the fragmentation problem with map-only jobs.
+* Where memory is used, in particular, mapper-sort buffers, both kinds of reducer-merge buffers, application internal buffers.
+
+18. *Hadoop Tuning*
+  - Tuning for the Wise and Lazy
+  - Tuning for the Brave and Foolish
+  - The USE Method for understanding performance and diagnosing problems
+
+19. *Storm+Trident Internals*
+
+* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking.
+* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.
+* Understand the lifecycle of partitions within a Trident batch and thus, the context behind partition operations such as Apply or PartitionPersist.
+* Understand Trident’s transactional mechanism, in the case of a PartitionPersist.
+* Understand how Aggregators, Statemap and the Persistence methods combine to give you _exactly once_  processing with transactional guarantees.  Specifically, what an OpaqueValue record will look like in the database and why.
+* Understand how the master batch coordinator and spout coordinator for the Kafka spout in particular work together to uniquely and efficiently process all records in a Kafka topic.
+* One specific:  how Kafka partitions relate to Trident partitions.
+
+20. *Storm+Trident Tuning*
+
+23. *Overview of Datasets and Scripts*
+ - Datasets
+   - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
+   - Airline Flights
+   - UFO Sightings
+   - Global Hourly Weather
+   - Waxy.org "Star Wars Kid" Weblogs
+ - Scripts
+
+24. *Cheatsheets*:
+  - Regular Expressions
+  - Sizes of the Universe
+  - Hadoop Tuning & Configuration Variables
+
+
+Chopping block
+
+1. Interlude I: *Organizing Data*:
+  - How to design your data models
+  - How to serialize their contents (orig, scratch, prod)
+  - How to organize your scripts and your data
+
+2. *Graph Processing*:
+  - Graph Representations
+  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
+  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
+
+3. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
+  - Indexing documents
+  - Tokenizing documents using Lucene
+  - Pointwise Mutual Information
+  - K-means Clustering
+
+4. Interlude II: *Best Practices and Pedantic Points of style*
+  - Pedantic Points of Style
+  - Best Practices
+  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+  - Why Hadoop
+  - robots are cheap, people are important
+
+
+17. Interlude II: *Best Practices and Pedantic Points of style*
+  - Pedantic Points of Style
+  - Best Practices
+  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
+  - Why Hadoop
+  - robots are cheap, people are important
+
+14. Interlude I: *Organizing Data*:
+  - How to design your data models
+  - How to serialize their contents (orig, scratch, prod)
+  - How to organize your scripts and your data
+
+
+==== Hadoop ====
+
+In Doug Cutting's words, Hadoop is the "kernel of the big-data operating system". It's the dominant batch-processing solution, has both commercial enterprise support and a huge open source community, runs on every platform and cloud, and there are no signs any of that will change in the near term.
+
+The code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster. (Of course you will need to use a reduced data set for the laptop). You do need a Hadoop installation of some sort -- Appendix (TODO: ref) describes your options, including instructions for running hadoop on a multi-machine cluster in the public cloud -- for a few dollars a day you can analyze terabyte-scale datasets.
+
+==== A Note on Ruby and Wukong ====
+
+We've chosen Ruby for two reasons. First, it's one of several high-level languages (along with Python, Scala, R and others) that have both excellent Hadoop frameworks and widespread support. More importantly, Ruby is a very readable language -- the closest thing to practical pseudocode we know. The code samples provided should map cleanly to those high-level languages, and the approach we recommend is available in any language.
+
+In particular, we've chosen the Ruby-language Wukong framework. We're the principal authors, but it's open-source and widely used. It's also the only framework I'm aware of that runs on both Hadoop and Storm+Trident.
+
+
+
+==== Helpful Reading ====
+
+* Hadoop the Definitive Guide by Tom White is a must-have. Don't try to absorb its whole -- the most powerful parts of Hadoop are its simplest parts -- but you'll refer to often it as your applications reach production.
+* Hadoop Operations by Eric Sammer -- hopefully you can hand this to someone else, but the person who runs your hadoop cluster will eventually need this guide to configuring and hardening a large production cluster.
+* "Big Data: principles and best practices of scalable realtime data systems" by Nathan Marz
+* ...
+
+
+==== What This Book Does Not Cover ====
+
+We are not currently planning to cover Hive.  The Pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
+
+This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation. Other things we do not plan to include:
+
+* Installing or maintaining Hadoop
+* we will cover how to design HBase schema, but not how to use HBase as _database_
+* Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
+* At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
+
+==== Feedback ====
+
+* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`.
+* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
+
+OK! On to the book. Or, on to the introductory parts of the book and then the book.
+
+[[about]]
+=== About  ===
+
+[[about_coverage]]
+==== What this book covers ====
+
+'Big Data for Chimps' shows you how to solve important hard problems using simple, fun, elegant tools.
+
+Geographic analysis is an important hard problem. To understand a disease outbreak in Europe, you need to see the data from Zurich in the context of Paris, Milan, Frankfurt and Munich; but to understand the situation in Munich requires context from Zurich, Prague and Vienna; and so on. How do you understand the part when you can't hold the whole world in your hand?
+
+Finding patterns in massive event streams is an important hard problem. Most of the time, there aren't earthquakes -- but the patterns that will let you predict one in advance lie within the data from those quiet periods. How do you compare the trillions of subsequences in billions of events, each to each other, to find the very few that matter? Once you have those patterns, how do you react to them in real-time?
+
+We've chosen case studies anyone can understand that generalize to problems like those and the problems you're looking to solve. Our goal is to equip you with:
+
+* How to think at scale -- equipping you with a deep understanding of how to break a problem into efficient data transformations, and of how data must flow through the cluster to effect those transformations.
+* Detailed example programs applying Hadoop to interesting problems in context
+* Advice and best practices for efficient software development
+
+All of the examples use real data, and describe patterns found in many problem domains:
+
+* Statistical Summaries
+* Identify patterns and groups in the data
+* Searching, filtering and herding records in bulk
+* Advanced queries against spatial or time-series data sets.
+
+The emphasis on simplicity and fun should make this book especially appealing to beginners, but this is not an approach you'll outgrow. We've found it's the most powerful and valuable approach for creative analytics. One of our maxims is "Robots are cheap, Humans are important": write readable, scalable code now and find out later whether you want a smaller cluster. The code you see is adapted from programs we write at Infochimps to solve enterprise-scale business problems, and these simple high-level transformations (most of the book) plus the occasional Java extension (chapter XXX) meet our needs.
+
+Many of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Deep learning will come less from having the book in front of you as you _read_ it than from having the book next to you while you *write* code inspired by it. There are sample solutions and result datasets on the book's website.
+
+Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters.
+
+
+[[about_is_for]]
+==== Who This Book Is For ====
+
+We'd like for you to be familiar with at least one programming language, but it doesn't have to be Ruby. Familiarity with SQL will help a bit, but isn't essential.
+
+Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
+
+[[about_is_not_for]]
+==== Who This Book Is Not For ====
+
+This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
+
+That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production.
+
+The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
+
+[[about_how_written]]
+==== How this book is being written ====
+
+I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[Infochimps blog] after minor cleanup.
+
+We really mean it about the git social-coding thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. However! We might not use your feedback, no matter how dazzlingly cogent it is; and while we are soliciting comments from readers, we are not seeking content from collaborators.
+
+
+==== How to Contact Us ====
+
+Please address comments and questions concerning this book to the publisher:
+
+O'Reilly Media, Inc.
+1005 Gravenstein Highway North
+Sebastopol, CA 95472
+(707) 829-0515 (international or local)
+
+To comment or ask technial questions about this book, send email to bookquestions@oreilly.com
+
+To reach the authors:
+
+Flip Kromer is @mrflip on Twitter
+
+For comments or questions on the material, file a github issue at http://github.com/infochimps-labs/big_data_for_chimps/issues
