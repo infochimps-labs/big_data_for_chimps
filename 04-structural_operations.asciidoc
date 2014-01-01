@@ -9,22 +9,121 @@
 JT and Nanette were enjoying the rising success of C&E Corp
   decided to celebrate with tickets to the latest sensation -- Olga the Remarkable Calculating Pig, playing nightly to sell-out crowds at Carnegie Hall.
 
-They watched, spellbound,
+They watched, spellbound, as she demonstrated her legendary fact retrieval ability. 
+The second act was perhaps even more impressive as the first, as Olga performed monstrous feats of calculation. 
 
-The second act was perhaps even more impressive as the first, as Olga performed monstrous feats of calculation.
+A dozen audience members wrote down their favorite baseball players -- including a few wise guys who apparently have never seen again the likes of Alamazoo Jennings, Snooks Dowd or Vinegar Bend Mizell footnote:[Yes, these are names of real major league baseball players.].
+Olga not only recited the complete career stats for every one, but the population of their hometown; every teammate they had in common; and the win-loss record for their
+Needless to say, the crowd roared for more, JT and Nanette along with them.
 
-"That's some pig", Nanette said to JT as they waited outside the dressing rooms. "Terrific," JT agreed. A voice behind them said "Radiant and Humble, too, they tell me. How can I help?" -- Olga, now dressed in street clothes.
+As Nanette reflected on what she was seeing, an idea formed.
+  "You always focus on 
+  "But you know I like to see the work as a whole, not as all its little parts like you do.
+  You worry about how to translate every little word, but I think about how to manage the book --
+  and I believe most people think like me.
 
-"Olga, your show is amazing. The way you amortized the debentures
-But
+  Olga's not just picking lines out of the almanac in her head.
+  She's retrieving them 
+  
+"I tell you, that's some pig", Nanette said to JT as they waited outside the dressing rooms. "Terrific," JT agreed. A voice behind them said "Radiant and Humble, too, they tell me. My manager says you've got some sort of proposition for me?" They turned to find Olga, now dressed in street clothes.
 
-"What you're saying sounds wonderful, but I'm just one Pig. When you saw me read off all of Ford's yearly production figures and then answer questions about revenue and inventory, you might have thought I was holding all that in my head. But what I've actually got
+Once settled in with their drinks, JT broke the ice. 
+"Olga, your show is amazing. The way you amortized the
+while accounting for debenture risk
+But... Is that all you really want?
+When you rattled off Duluth, Minnesota's daily low and high temperatures from 1973 to 1987, chills ran down my spine. But here's what I think. I think you're not in it for the crowds, but for the data.
+What you really wish you were chewing on was fifty hourly atmospheric indicators from twenty thousand weather stations extending back a century.
+
+Nannette picked up the pitch. "You were able to take raw production figures for every Ford factory and reel off a full report on revenue and inventory flows. But we have the technology to let you see at once the comprehensive activity of every manufacturing device within Ford -- compare that with downstream defect reports and maintenance records -- 
+
+"What you're saying sounds wonderful, and I'm intrigued. But you've got to remember, I'm just one Pig. Even when I was doing the Ford trick I 
+
+I've just now done the math, and I'd have to 
 I can only answer questions that come from those rollups."
 
 Nanette leaned in. "We know this, Olga.
-"Well," JT said with a grin, "I hope you've got a warm jacket. We're going to take a trip up north -- way north."
 
+"Well," JT said with a grin, "Pack a suitcase with a very warm jacket. We're going to take a trip up north -- way north."
 
 === Pig Helps Hadoop work with Datasets, not Records
 
-We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining Olga, JT and Nannette on their trip up north.
+
+=== Overview of Pig
+
+Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts.  Its interface is similar to SQL, which makes it a great choice for folks with significant experience there.  (It’s not exactly the same as SQL though -- be aware that some approaches that are efficient in SQL are not so in Pig, and vice-versa. We'll will try to highlight those traps.)
+
+As a demonstration, let's find out when aliens like to visit the planet earth. Here is a Pig script that processes the UFO dataset to find the aggregate number of sightings per month:
+
+----
+PARALLEL 1; (USE 1 REDUCER) (DISABLE COMBINERS)
+LOAD UFO DATASET
+EXTRACT MONTH FROM EACH LINE
+GROUP ON MONTHS
+COUNT WITHIN GROUPS
+STORE INTO OUTPUT FILE
+----
+
+Here’s what you might write in Wukong to answer the same question:
+
+----
+DEFINE MODEL FOR INPUT RECORDS
+MAPPER EXTRACTS MONTHS, EMITS MONTH AS KEY WITH NO VALUE
+COUNTING REDUCER INCREMENTS ON EACH ENTRY IN GROUP AND EMITS TOTAL IN FINALIZED METHOD
+----
+
+In a Wukong script or traditional Hadoop job, the focus is on the record, and you’re best off thinking in terms of message passing. In Pig, the focus is much more on the dataset as a whole, and you're able to think in terms of its structure or its relations to other datasets. In the example above, each line described an operation on the full dataset. We declare what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
+
+To run the Pig job, go into the `EXAMPLES/UFO` directory and run
+
+----
+pig monthly_visit_counts.pig /data_UFO_sightings.tsv /dataresults monthly_visit_counts-pig.tsv
+----
+
+To run the Wukong job, go into the (TODO: REF) directory and run
+
+----
+wu-run monthly_visit_counts.rb --reducers_count=1 /data_UFO_sightings.tsv /dataresults monthly_visit_counts-wu.tsv
+----
+
+The output shows (TODO:CODE: INSERT CONCLUSIONS).
+
+If you consult the Job Tracker Console, you should see a single Map/Reduce for each with effectively similar statistics; the dataflow Pig instructed Hadoop to run is essentially similar to the Wukong script you ran.  What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
+
+
+Did you notice, by the way, that in both cases, the output was sorted? that is no coincidence -- as you saw in Chapter (TODO: REF), Hadoop sorted the results in order to group them.
+
+==== Wikipedia Visitor Counts
+
+Let’s put Pig to a sterner test.  Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
+
+----
+LOAD SOURCE FILE
+PARALLEL 3
+TURN RECORD INTO HOUR PART OF TIMESTAMP AND COUNT
+GROUP BY HOUR
+SUM THE COUNTS BY HOUR
+ORDER THE RESULTS BY HOUR
+STORE INTO FILE
+----
+
+(TODO: If you do an order and then group, is Pig smart enough to not add an extra REDUCE stage?)
+
+Run the script just as you did above:
+
+----
+(TODO: command to run the script)
+----
+
+Up until now, we have described Pig as authoring the same Map/Reduce job you would.  In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part.  If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although x bytes were read by the Mapper, only y bytes were output.  Pig instructed Hadoop to use a Combiner.  In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (TODO: REF), the Mapper output files have already been partitioned and sorted.  Hadoop offers you the opportunity to do pre-Aggregation on those groups.  Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
+
+----
+SIDEBAR:  You can write Combiners in Wukong, too.  (TODO:CODE: Insert example with Combiners)
+----
+
+You’ll notice that, in the second script, we introduced the additional operation of instructing Pig to explicitly sort the output by minute.  We did not do that in the first example because its data was so small that we had instructed Hadoop to use a single Reducer.  As you will recall from (TODO: REF), Hadoop uses a Sort to prepare the Reducer groups, so its output was naturally ordered.  If there are multiple Reducers, however, that would not be enough to give you a Result file you can treat as ordered.  By default, Hadoop assigns partitions to Reducers using the ‘RandomPartitioner’, designed to give each Reducer a uniform chance of claiming any given partition.  This defends against the problem of one Reducer becoming overwhelmed with an unfair share of records but means the keys are distributed willy-nilly across machines.  Although each Reducer’s output is sorted, you will see records from 2008 at the top of each result file and records from 2012 at the bottom of each result file.
+
+What we want instead is a total sort, the earliest records in the first numbered file in order, the following records in the next file in order, and so on until the last numbered file.  Pig’s ‘ORDER’ Operator does just that.  In fact, it does better than that.  If you look at the Job Tracker Console, you will see Pig actually ran three Map/Reduce jobs.  As you would expect, the first job is the one that did the grouping and summing and the last job is the one that sorted the output records.  In the last job, all the earliest records were sent to Reducer 0, the middle range of records were sent to Reducer 1 and the latest records were sent to Reducer 2.
+
+Hadoop, however, has no intrinsic way to make that mapping happen.  Even if it figured out, say, that the earliest buckets were in 2008 and the latest buckets were in 2012, if we fed it a dataset with skyrocketing traffic in 2013, we would end up sending an overwhelming portion of results to that Reducer.  In the second job, Pig sampled the set of output keys, brought them to the same Reducer, and figured out the set of partition breakpoints to distribute records fairly.
+
+In general, Pig offers many more optimizations beyond these and we will talk more about them in the chapter on Advanced Pig (TODO: REF).  In our experience, the only times Pig will author a significantly less-performant dataflow than would an expert comes when Pig is overly aggressive about introducing an optimization.  The chief example you’ll hit is that often, the intermediate stage in the total sort to calculate partitions has a larger time penalty than doing a bad job of partitioning would; you can disable that by (TODO:CODE: Describe how).
