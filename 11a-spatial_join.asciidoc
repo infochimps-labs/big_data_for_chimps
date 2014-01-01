@@ -287,8 +287,6 @@ An example hash, taken from the spec:
 ----
 
 
-
-
 [[quadkey]]
 === Quadtile Practicalities ===
 

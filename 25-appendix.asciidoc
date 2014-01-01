@@ -1,6 +1,23 @@
 [[appendix]]
 == Appendix
 
+
+=== Appendix 1: Acquiring a Hadoop Cluster ===
+
+* Elastic Map-Reduce
+* Brew
+* Amazon
+* CDH and HortonWorks
+* MortarData and TreasureData
+
+=== Appendix 2: Cheatsheets
+
+...
+
+=== Appendix 3: Overview of Example Scripts and Datasets
+
+...
+
 === Author ===
 
 Philip (flip) Kromer is cofounder of Infochimps, a big data platform that makes acquiring, storing and analyzing massive data streams transformatively easier.  Infochimps became part of Computer Sciences Corporation in 2013, and their big data platform now serves customers such as Cisco, HGST and Infomart. He enjoys Bowling, Scrabble, working on old cars or new wood, and rooting for the Red Sox. 

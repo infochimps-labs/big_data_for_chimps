@@ -1,0 +1,30 @@
+[[structural_operations]]
+== Structural Operations
+
+=== Map-Reduce Jobs: Process Records in Context ===
+
+
+=== Olga, the Remarkable Calculating Pig
+
+JT and Nanette were enjoying the rising success of C&E Corp
+  decided to celebrate with tickets to the latest sensation -- Olga the Remarkable Calculating Pig, playing nightly to sell-out crowds at Carnegie Hall.
+
+They watched, spellbound,
+
+The second act was perhaps even more impressive as the first, as Olga performed monstrous feats of calculation.
+
+"That's some pig", Nanette said to JT as they waited outside the dressing rooms. "Terrific," JT agreed. A voice behind them said "Radiant and Humble, too, they tell me. How can I help?" -- Olga, now dressed in street clothes.
+
+"Olga, your show is amazing. The way you amortized the debentures
+But
+
+"What you're saying sounds wonderful, but I'm just one Pig. When you saw me read off all of Ford's yearly production figures and then answer questions about revenue and inventory, you might have thought I was holding all that in my head. But what I've actually got
+I can only answer questions that come from those rollups."
+
+Nanette leaned in. "We know this, Olga.
+"Well," JT said with a grin, "I hope you've got a warm jacket. We're going to take a trip up north -- way north."
+
+
+=== Pig Helps Hadoop work with Datasets, not Records
+
+We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining Olga, JT and Nannette on their trip up north.

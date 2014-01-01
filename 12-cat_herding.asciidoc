@@ -1,3 +1,7 @@
 [[cat_herding]]
 == `cat` Herding
 
+
+TODO: DL how to debug a hadoop script
+
+TODO: DL describe listing of attempts, view of attempt, view of attempt logs, view of attempt counters

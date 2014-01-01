@@ -1,4 +1,3 @@
-
 === Weather Near You ===
 
 The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.

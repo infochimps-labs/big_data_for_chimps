@@ -104,7 +104,7 @@ There's a tradeoff:
 
 If you set your min-split-size larger than your block size, you'll get non-local map tasks, which puts a load on your network.
 
-However, if you let it launch one job per block, you'll have two problems. First, one mapper per HDFS block can cause a large number of tasks: a 1 TB input dataset of 128 MB HDFS blocks requires 8,000 map tasks. Make sure your map task runtimes aren't swamped by job startup times and that your jobtracker heap size has been configured to handle that job count. Secondly, if your job is ever-so-slightly expansive -- if it turns a 128 MB input block into a 130 MB output file -- then you will double the block count of the dataset. It takes twice the actual size to store on disk and implies twice the count of mappers in subsequent stages. 
+However, if you let it launch one job per block, you'll have two problems. First, one mapper per HDFS block can cause a large number of tasks: a 1 TB input dataset of 128 MB HDFS blocks requires 8,000 map tasks. Make sure your map task runtimes aren't swamped by job startup times and that your jobtracker heap size has been configured to handle that job count. Secondly, if your job is ever-so-slightly expansive -- if it turns a 128 MB input block into a 130 MB output file -- then you will double the block count of the dataset. (The pig latin script from chapter two (TODO ref) is an example of this.) It takes twice the actual size to store on disk and implies twice the count of mappers in subsequent stages. 
 
 My recommendation: (TODO: need to re-confirm with numbers; current readers please take with a grain of salt.)
 

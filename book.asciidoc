@@ -2,11 +2,11 @@
 
 include::01-first_exploration.asciidoc[]
 
-include::02-simple_transform.asciidoc[]
+include::02-hadoop_basics.asciidoc[]
 
 include::03-transform_pivot.asciidoc[]
 
-include::04-regional_flavor.asciidoc[]
+include::04-structural_operations.asciidoc[]
 
 include::05-toolset.asciidoc[]
 
@@ -48,3 +48,6 @@ include::22-hadoop_tuning.asciidoc[]
 include::88-storm+trident-internals.asciidoc[]
 
 include::88-storm+trident-tuning.asciidoc[]
+
+include::25-appendix.asciidoc[]
+

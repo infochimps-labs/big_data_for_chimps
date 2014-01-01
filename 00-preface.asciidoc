@@ -37,7 +37,6 @@ Together, they'll equip you with a physical metaphor for how to work with data a
 
 ==== What's Covered in This Book? ====
 
-///Revise each chapter summary into paragraph form, as you've done for Chapter 1.  This can stay in the final book. Amy////
 
 1. *First Exploration*:
 
@@ -45,17 +44,25 @@ Objective: Show you a thing you couldn’t do without hadoop, you couldn’t do 
 
 A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
 
-2. *Simple Transform*:
+2. *Hadoop Processes Billions of Records*
 
 Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrassingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
   - Chimpanzee and Elephant start a business
   - Pig Latin translation
-  - Your first job: test at commandline
-  - Run it on cluster
-  - Input Splits
-  - Why Hadoop I: Simple Parallelism
+  - Test job on commandline
+  - Load data onto HDFS
+  - Run job on cluster
+  - See progress on jobtracker, results on HDFS
+  
+  - Message Passing -- visit frequency
+  - SQL-like Set Operations -- visit frequency II
+  - Graph operations
+  
+3. *Hadoop Derives Insight from Data in Context* -- You've already seen the first trick: processing records individually. The second trick is to form sorted context groups. There isn't a third trick. With these tiny two mustard seeds -- process and contextify -- we can reconstruct the full set of data analytic operations that turn mountains of data into gems of insight.
 
-3. *Transform-Pivot Job*:
+  - insight comes from data in context
+  - process and label; form context groups; process context groups
+  - 
 
 C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
   - Locality: the central challenge of distributed computing
@@ -71,7 +78,9 @@ They will be centered around the following 3 explorations
 	- should be same as UFO exploration, but:
 		- will actually require Hadoop
 		- also do a total sort at the end
-	- will visit the jobtracker
+
+4. *Hadoop Enables SQL-like Set Operations*
+  - ...
 
 By this point in the book  you should:
 - Have your mind blown
@@ -86,19 +95,7 @@ You shouldn’t have:
 a lot of words in pig
 a good feel for how to deftly use wukong yet
 
-5. *The Hadoop Toolset and Other Practical Matters*
-  - toolset overview
-- It’s a necessarily polyglot sport
-- Pig is a language that excels at describing
-- we think you are doing it wrong if you are not using :
-- a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
--  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
-- there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
-  - launching and debugging jobs
-  - overview of Wukong
-  - overview of Pig
-
-6. Fundamental Data Operations in Hadoop*
+4. *Fundamental Data Operations in Hadoop*
 
 here’s the stuff you’d like to be able to do with data, in wukong and in pig
 	- Foreach/filter operations (messing around inside a record)
@@ -128,6 +125,18 @@ here’s the stuff you’d like to be able to do with data, in wukong and in pig
 - partitioner
 - basic UDFs
 - ?using ruby or python within a pig dataflow?
+
+6. *The Hadoop Toolset and Other Practical Matters*
+  - toolset overview
+- It’s a necessarily polyglot sport
+- Pig is a language that excels at describing
+- we think you are doing it wrong if you are not using :
+- a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
+-  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
+- there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
+  - launching and debugging jobs
+  - overview of Wukong
+  - overview of Pig
 
 7. *Filesystem Mojo and `cat` herding*
 
