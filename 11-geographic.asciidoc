@@ -1,2 +1,138 @@
 [[geographic]]
 == Geographic Data Processing
+
+===  Weather Near You:  Turning A Point Distribution Into Regions of Influence
+
+Frequently, geospatial data is, for practical reasons, sampled at discrete points but should be understood to represent measurements at all points in space.  For example, the measurements in the NCDC datasets are gathered at locations chosen for convenience or value -- in some cases, neighboring stations are separated by blocks, in other cases by hundreds of miles.  It is useful to be able to reconstruct the underlying spatial distribution from point-sample measurements.  
+
+Given a set of locations -- broadcast towers, 7-11 stores, hospitals -- it is also useful to be able to determine, for any point in space, which of those objects is nearest.  When the distribution of objects is even, this is straightforward:  choose a bounding box or quad tile you are sure will encompass the point in question and all candidate locations, then choose the nearest candidate.  When the distribution is highly uneven, though, the bounding box that works well in rural Montana may return overwhelmingly many results in midtown Manhattan.  
+
+We can solve both those problems with a single elegant approach known as Voronoi partitioning.  Given a set of seed locations, the Voronoi partitioning returns a set of polygons with the following properties:  
+
+*  The polygon’s ‘partition’ is the space divided such that every piece of the plane belongs to exactly one polygon. 
+*  There is exactly one polygon for each seed location and all points within it are closer to that seed location than to any other seed location.
+*  All points on the boundary of two polygons are equidistant from the two neighboring seed locations; and all vertices where Voronoi polygons meet are equidistant from the respective seed locations.
+
+This effectively precomputes the “nearest x” problem:  For any point in question, find the unique polygon within which it resides (or rarely, the polygon boundaries upon which it lies). Breaking those polygons up by quad tile at a suitable zoom level makes it easy to either store them in HBase (or equivalent) for fast querying or as data files optimized for a spatial JOIN.  
+
+It also presents a solution to the spatial sampling problem by assigning the measurements taken at each sample location to its Voronoi region.  You can use these piece-wise regions directly or follow up with some sort of spatial smoothing as your application requires.  Let’s dive in and see how to do this in practice.  
+
+==== (TODO: section name)
+
+Let’s use the GeoNames dataset to create a “nearest <whatever> to you” application, one that, given a visitor’s geolocation, will return the closest hospital, school, restaurant and so forth.  We will do so by effectively pre-calculating all potential queries; this could be considered overkill for the number of geofeatures within the GeoNames dataset but we want to illustrate an approach that will scale to the number of cell towers, gas stations or anything else.   
+
+We will not go into the details of computing a decomposition; most scientific computing libraries have methods to do so and we have included a Python script (TODO: credits), which, when fed a set of locations, returns a set of GeoJSON regions, the Voronoi polygon for each location.  
+
+Run the script 'examples Geo Voronoi points to polygons.pi' (TODO: fix up command line).  After a few minutes, it will produce 'output GeoJSON' files.  To see the output (TODO: give instructions for seeing it in browser).  
+
+These polygons are pretty but not directly useful; we need a way to retrieve the relevant polygons for a given visitor’s location.  What we will do is store, for every quad key, the truncated Voronoi regions that lie within its quad tile.  We can then turn the position of a visitor into its corresponding quad key, retrieve the set of regions on that quad tile and find the specific region within which it lies.
+
+Pig does not have any built-in geospatial features, so we will have to use a UDF.  In fact, we will reach into the future and use one of the ones you will learn about in the Advanced Pig chapter (TODO:  REF).  
+
+Here is (TODO: finish sentence)
+----
+Register the UDF 
+Give it an alias
+Load the polygons file
+Turn each polygon into a bag of quad key polygon metadata tuples
+Group by quad key
+FOREACH generate the output data structure
+Store results
+----
+
+Transfer the output of the Voronoi script onto the HDFS and run the above Pig script.  Its output is a set of TSV files in which the first column is a quad key and the second column is a set of regions in GeoJSON format.  We will not go into the details, but the example code shows how to use this to power the nearest x application.  Follow the instructions to load the data into HBase and start the application.  
+
+The application makes two types of requests:  One is to determine which polygon is the nearest; it takes the input coordinates and uses the corresponding quad tile to retrieve the relevant regions.  It then calls into a geo library to determine which polygon contains the point and sends a response containing the GeoJSON polygon.  The application also answers direct requests for a quad tile with a straight GeoJSON stored in its database -- exactly what is required to power the drivable "slippy map" widget that is used on the page.  This makes the front end code simple, light and fast, enough that mobile devices will have no trouble rendering it.  If you inspect the Javascript file, in fact, it is simply the slippy map's example with the only customization being the additional query for the region of interest.  It uses the server's response to simply modify the style sheet rule for that portion of the map.
+
+The same data locality advantages that the quad key scheme grants are perhaps even more valuable in a database context, especially ones like HBase that store data in sorted form.  We are not expecting an epic storm of viral interest in this little app but you might be for the applications you write.  
+
+The very thing that makes such a flood difficult to manage -- the long-tail nature of the requests -- makes caching a suitable remedy.  You will get a lot more repeated requests for downtown San Francisco than you will for downtown Cheboygan, so those rows will always be hot in memory.  Since those points of lie within compact spatial regions, they also lie within not many more quad key regions, so the number of database blocks contending for cache space is very much smaller than the number of popular quad keys.  
+
+It also addresses the short-tail caching problem as well.  When word does spread to Cheboygan and the quad tile for its downtown is loaded, you can be confident requests for nearby tiles driven by the slippy map will follow as well.  Even if those rows are not loaded within the same database block, the quad key helps the operating system pick up the slack -- since this access pattern is so common, when a read causes the OS to go all the way to disk, it optimistically pre-fetches not just the data you requested but a bit of what follows.  When the database gets around to loading a nearby database block, there is a good chance the OS will have already buffered its contents.  
+
+The strategies employed here -- precalculating all possible requests, identifying the nature of popular requests, identifying the nature of adjacent requests and organizing the key space to support that adjacency -- will let your database serve large-scale amounts of data with millisecond response times even under heavy load.  
+
+.Sidebar:  Choosing A Decomposition Zoom Level
+====
+
+When you are decomposing spatial data onto quad tiles, you will face the question of what zoom level or zoom levels to choose.  At some point, coarser (lower indexed) zoom levels will lead to overpopulated tiles, tiles whose record size is unmanageably large; depending on your dataset, this could happen at zoom level 9 (the size of outer London), zoom level 12 (the size of Manhattan south of Central Park) or even smaller.  At the other end, finer zoom levels will produce unjustifiably many boring or empty tiles.  
+
+To cover the entire globe at zoom level 13 requires 67 million records, each covering about four kilometers; at zoom level 16, you will need four billion records, each covering about a half kilometer on a side; at zoom level 18, you will need 69 billion records, each covering a city block or so.  To balance these constraints, build a histogram of geofeature counts per quad tile at various zoom levels.  Desirable zoom levels are such that the most populous bin will have acceptable size while the number of bins with low geofeature count are not unmanageably numerous.  Quad keys up to zoom level 16 will fit within a 32-bit unsigned integer; the improved efficiency of storage and computation make a powerful argument for using zoom levels 16 and coarser, when possible.  
+
+If the preceding considerations leave you with a range of acceptable zoom levels, choose one in the middle.  If they do not, you will need to use the multiscale decomposition approach (TODO:  REF) described later in this chapter.
+
+==== (TODO: name section)
+
+Now, let's use the Voronoi trick to turn a distribution of measurements at discrete points into the distribution over regions it is intended to represent.  In particular, we will take the weather-station-by-weather-station measurements in the NCDC dataset and turn it into an hour-by-hour map of global data.  Spatial distribution of weather stations varies widely in space and over time; for major cities in recent years, there may be many dozens while over stretches of the Atlantic Ocean and in many places several decades ago, weather stations might be separated by hundreds of miles.  Weather stations go in and out of service, so we will have to prepare multiple Voronoi maps.  Even within their time of service, however, they can also go offline for various reasons, so we have to be prepared for missing data.  We will generate one Voronoi map for each year, covering every weather station active within that year, acknowledging that the stretch before and after its time of service will therefore appear as missing data.  
+
+In the previous section, we generated the Voronoi region because we were interested in its seed location.  This time, we are generating the Voronoi region because we are interested in the metadata that seed location imputes.  The mechanics are otherwise the same, though, so we will not repeat them here (they are described in the example codes documentation (TODO:  REF).  
+
+At this point, what we have are quad tiles with Voronoi region fragments, as in the prior example, and we could carry on from there.  However, we would be falling into the trap of building our application around the source data and not around the user and the application domain.  We should project the data onto regions that make sense for the domain of weather measurements not regions based on where it is convenient to erect a weather vane.  
+
+The best thing for the user would be to choose a grid size that matches the spatial extent of weather variations and combine the measurements its weather stations into a consensus value; this will render wonderfully as a heat map of values and since each record corresponds to a full quad cell, will be usable directly by downstream analytics or applications without requiring a geospatial library.  Consulting the quad key grid size cheat sheet (TODO:  REF), zoom level 12 implies 17 million total grid cells that are about five to six miles on a side in populated latitudes, which seems reasonable for the domain.  
+
+As such, though, it is not reasonable for the database.  The dataset has reasonably global coverage going back at least 50 years or nearly half a million hours.  Storing 1 KB of weather data per hour at zoom-level 12 over that stretch will take about 7.5 PB but the overwhelming majority of those quad cells are boring.  As mentioned, weather stations are sparse over huge portions of the earth.  The density of measurements covering much of the Atlantic Ocean would be well served by zoom-level 7; at that grid coarseness, 50 years of weather data occupies a mere 7 TB; isn't it nice to be able to say a "mere" 7 TB?  
+
+What we can do is use a multi-scale grid.  We will start with a coarsest grain zoom level to partition; 7 sounds good.  In the Reducers (that is, after the group), we will decompose down to zoom-level 12 but stop if a region is completely covered by a single polygon.  Run the multiscale decompose script (TODO: demonstrate it).  The results are as you would hope for; even the most recent year's map requires only x entries and the full dataset should require only x TB.  
+
+The stunningly clever key to the multiscale JOIN is, well, the keys.  As you recall, the prefixes of a quad key (shortening it from right to left) give the quad keys of each containing quad tile.  The multiscale trick is to serialize quad keys at the fixed length of the finest zoom level but where you stop early to fill in with an '.' - because it sorts lexicographically earlier than the numerals do.  This means that the lexicographic sort order Hadoop applies in the midstream group-sort still has the correct spatial ordering just as Zorro would have it.  
+
+Now it is time to recall how a JOIN works covered back in the Map/Reduce Patterns chapter (TODO:  REF).  The coarsest Reduce key is the JOIN value, while the secondary sort key is the name of the dataset.  Ordinarily, for a two-way join on a key like 012012, the Reducer would buffer in all rows of the form <012012 | A | ...>, then apply the join to each row of the form <012012 | B | ...>.  All rows involved in the join would have the same join key value.  For a multiscale spatial join, you would like rows in the two datasets to be matched whenever one is the same as or a prefix of the other.  A key of 012012 in B should be joined against a key of `0120..`, '01201.' and '012012' but not, of course, against '013...'.  
+
+We can accomplish this fairly straightforwardly.  When we defined the multiscale decomposition, we a coarsest zoom level at which to begin decomposing and the finest zoom level which defined the total length of the quad key.  What we do is break the quad key into two pieces; the prefix at the coarsest zoom level (these will always have numbers, never dots) and the remainder (fixed length with some number of quad key digits then some number of dots).  We use the quad key prefix as the partition key with a secondary sort on the quad key remainder then the dataset label.  
+
+
+Explaining this will be easier with some concrete values to use, so let's say we are doing a multiscale join between two datasets partitioning on a coarsest zoom level of 4, and a total quad key length of 6, leading to the following snippet of raw reducer input. 
+
+.Snippet of Raw Reducer Input for a Multiscale Spatial Join
+----
+0120    1.   A
+0120    10   B
+0120    11   B
+0120    12   B
+0120    13   B
+0120    2.   A
+0120    30   B
+0121    00   A
+0121    00   B
+----
+
+
+As before, the reducer buffers in rows from A for a given key -- in our example, the first of these look like <0120 | 1. | A | ...>. It will then apply the join to each row that follows of the form <0120 | (ANYTHING) | B | ...>.  In this case, the 01201. record from A will be joined against the 012010, 012011, 012012 and 012013 records from B.  Watch carefully what happens next, though.  The following line, for quad key 01202. is from A and so the Reducer clears the JOIN buffer and gets ready to accept records from B to join with it.  As it turns out, though, there is no record from B of the form 01202-anything.  In this case, the 01202. key from A matches nothing in B and the 012030 key in B is matched by nothing in A (this is why it is important the replacement character is lexicographically earlier than the digits; otherwise, you would have to read past all your brothers to find out if you have a parent).  The behavior is the same as that for a regular JOIN in all respects but the one, that JOIN keys are considered to be equal whenever their digit portions match. 
+
+The payoff for all this is pretty sweet.  We only have to store and we only have to ship and group-sort data down to the level at which it remains interesting in either dataset.  (TODO: do we get to be multiscale in both datasets?)  When the two datasets meet in the Reducer, the natural outcome is as if they were broken down to the mutually-required resolution.  The output is also efficiently multiscale.  
+
+NOTE:  The multiscale keys work very well in HBase too.  For the case where you are storing multiscale regions and querying on points, you will want to use a replacement character that is lexicographically after the digits, say, the letter "x."  To find the record for a given point, do a range request for one record on the interval starting with that point's quad key and extending to infinity (xxxxx…).  For a point with the finest-grain quad key of 012012, if the database had a record for 012012, that will turn up; if, instead, that region only required zoom level 4, the appropriate row (0120xx) would be correctly returned.  
+
+==== (TODO: name section)
+
+We now have in hand, for each year, a set of multiscale quad tile records with each record holding the weather station IDs that cover it.  What we want to produce is a dataset that has, for each hour and each such quad tile, a record describing the consensus weather on that quad tile.  If you are a meteorologist, you will probably want to take some care in forming the right weighted summarizations -- averaging the fields that need averaging, thresholding the fields that need thresholding and so forth.  We are going to cheat and adopt the consensus rule of "eliminate weather stations with missing data, then choose the weather station with the largest area coverage on the quad tile and use its data unmodified."  To assist that, we made a quiet piece of preparation and have sorted the weather station IDs from largest to smallest in area of coverage, so that the Reducer simply has to choose from among its input records the earliest one on that list.  
+
+What we have produced is gold dataset useful for any number of explorations and applications.  An exercise at the end of the chapter (TODO:  REF) prompts you to make a visual browser for historical weather.  Let's take it out for a simple analytical test drive, though.  
+
+The tireless members of Retrosheet.org have compiled box scores for nearly every Major League Baseball game since its inception in the late 1800s.  Baseball score sheets typically list the game time weather and wind speed and those fields are included in the Retrosheet data; however, values are missing for many records and since this is hand-entered data, surely many records have coding errors as well.  For example, on October 1, 2006, the home-team Brewers pleased a crowd of 44,133 fans with a 5-3 win over the Cardinals on a wonderful fall day recorded as having game-time temperature of 83 degrees, wind 60 miles per hour out to left field and sunny.  In case you are wondering, 60-mile per hour winds cause 30-foot waves at sea, trees to be uprooted and structural damage to buildings becomes likely, so it is our guess that the scoresheet is, in this respect, wrong.  
+
+Let's do a spatial drawing of the Retrosheet data for each game against the weather estimated using the NCDC dataset for that stadium's location at the start of the game; this will let us fill in missing data and flag outliers in the Retrosheet scores.  
+
+Baseball enthusiasts are wonderfully obsessive, so it was easy to find online data listing the geographic location of every single baseball stadium -- the file sports/baseball/stadium_geolocations.tsv lists each Retrosheet stadium ID followed by its coordinates and zoom-level 12 quad key.  Joining that on the Retrosheet game logs equips the game log record with the same quad key and hour keys used in the smoothed weather dataset.  (Since the data is so small, we turned parallelism down to 1.)  
+
+Next, we will join against the weather data; this data is so large, it is worth making a few optimizations.  First, we will apply the guideline of "join against the smallest amount of data possible."  There are fewer than a hundred quad keys we are interested in over the whole time period of interest and the quad key breakdown only changes year by year, so rather than doing a multiscale join against the full hourly record, we will use the index that gives the quad key breakdown per year to find the specific containing quad keys for each stadium over time.  For example (TODO: find an example where a quad key was at a higher zoom level one year and a lower one a different year).  Doing the multiscale join of stadium quad keys against the weather quad key year gives (TODO: name of file).  
+
+Having done the multiscale join against the simpler index, we can proceed using the results as direct keys; no more multiscale magic is required.  Now that we know the specific quad keys and hours, we need to extract the relevant weather records.  We will describe two ways of doing this.  The straightforward way is with a join, in this case of the massive weather quad tile data against the relatively tiny set of quad key hours we are interested in.  Since we do not need multiscale matching any more, we can use Pig and Pig provides a specialized join for the specific case of joining a tiny dataset to a massive one, called the replicated join.  You can skip ahead to the Advanced Pig chapter (TODO:  REF) to learn more about it; for now, all you need to know is that you should put the words "`USING 'replicated'`" at the end of the line, and that the smallest dataset should be on the _right_. (Yes, it's backwards: for replicated joins the smallest should be on the right, while for regular joins it should be on the left.)  This type of join loads the small dataset into memory and simply streams through the larger dataset, so no Reduce is necessary.  It's always a good thing when you can avoid streaming TB of data through the network card when all you want are a few MB.  
+
+In this case, there are a few thousand lines in the small dataset, so it is reasonable to do it the honest way, as just described.  In the case where you are just trying to extract a few dozen keys, your authors have been known to cheat by inlining the keys in a filter.  Regular expression engines are much faster than most people realize and are perfectly content to accept patterns with even a few hundred alternations.  An alternative approach here is to take the set of candidate keys, staple them together into a single ludicrous regexp and template it into the PIg script you will run.  
+
+.Cheat to Win: Filtering down to only joinable keys using a regexp
+----
+huge_data = LOAD '...' AS f1, f2, f3;
+filtered_data = FILTER huge_data BY MATCH(f1, '^(012012|013000|020111| [...dozens more...])$');
+STORE filtered_data INTO '...';
+----
+
+==== Results
+
+With just the relevant records extracted, we can compare the score sheet data with the weather data.  Our script lists output columns for the NCDC weather and wind speed, the score sheet weather and wind speed, the distance from the stadium to the relevant weather station and the percentage difference for wind speed and temperature.  
+
+It would be an easy mistake to, at this point, simply evict the Retrosheet measurements and replace with the NCDC measurements; we would not argue for doing so.  First, the weather does vary, so there is some danger in privileging the measurement at a weather station some distance away (even if more precise) over a direct measurement at a correct place and time.  In fact, we have far better historical coverage of the baseball data than the weather data.  The weather data we just prepared gives a best-effort estimate of the weather at every quad tile, leaving it in your hands to decide whether to accept a reading from a weather station dozens or hundreds of miles away.  Rather, the philosophically sound action would be to flag values for which the two datasets disagree as likely outliers.
+
+The successful endpoint of most Big Data explorations is a transition to traditional statistical packages and elbow grease -- it shows you've found domain patterns worth exploring. If this were a book about baseball or forensic econometrics, we'd carry forward comparing those outliers with local trends, digging up original entries, and so forth.  Instead, we'll just label them with a scarlet "O" for outlier, drop the mic and walk off stage.  

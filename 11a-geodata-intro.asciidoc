@@ -1,4 +1,22 @@
 
+=== Geographic Data Model ===
+
+Geographic data shows up in the form of
+
+* Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
+* Paths -- an array of points `[[longitude,latitude],[longitude,latitude],...]`
+* Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
+* "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
+
+Features of Features
+[NOTE]
+===============================
+The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for only its machine learning sense.
+===============================
+
+Voronoi
+
+
 Spatial data is fundamentally important ///Go, go...!  Talk about what this is, put it in context.  And then, weave in some conceptual talk about "locality," when you're done.  Amy////
 
 
