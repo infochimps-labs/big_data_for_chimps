@@ -156,36 +156,13 @@ If, at any point, the Namenode finds a Datanode has not sent a heartbeat for sev
 
 A final prominent role the Namenode serves is to act as the public face of the HDFS.  The ‘put’ and ‘get’ commands you just ran were Java programs that made network calls to the Namenode.  There are API methods for the rest of the file system commands you would expect for use by that or any other low-level native client.  You can also access its web interface, typically by visiting port 50070 (`http://hostname.of.namenode:50070`), which gives you the crude but effective ability to view its capacity, operational status and, for the very patient, inspect the contents of the HDFS.
 
-Sitting behind the scenes is the often-misunderstood secondary Namenode; this is not, as its name implies and as you might hope, a hot standby for the Namenode.  Unless you are using the “HAnamenode” feature provided in later versions of Hadoop, if your Namenode goes down, your HDFS has gone down.  All the secondary Namenode does is perform some essential internal bookkeeping.  Apart from ensuring that it, like your Namenode, is _always_ running happily and healthily, you do not need to know anything more about the second Namenode for now.
+Sitting behind the scenes is the often-misunderstood secondary Namenode; this is not, as its name implies and as you might hope, a hot standby for the Namenode.  Unless you are using the “HA namenode” feature provided in later versions of Hadoop, if your Namenode goes down, your HDFS has gone down.  All the secondary Namenode does is perform some essential internal bookkeeping.  Apart from ensuring that it, like your Namenode, is _always_ running happily and healthily, you do not need to know anything more about the second Namenode for now.
 
 One last essential to note about the HDFS is that its contents are immutable.  On a regular file system, every time you hit “save,” the application modifies the file in place -- on Hadoop, no such thing is permitted.  This is driven by the necessities of distributed computing at high scale but it is also the right thing to do.  Data analysis should proceed by chaining reproducible syntheses of new beliefs from input data.  If the actions you are applying change, so should the output.  This casual consumption of hard drive resources can seem disturbing to those used to working within the constraints of a single machine, but the economics of data storage are clear; it costs $0.10 per GB per month at current commodity prices, or one-tenth that for archival storage, and at least $50 an hour for the analysts who will use it.
 
 Possibly the biggest rookie mistake made by those new to Big Data is a tendency to economize on the amount of data they store; we will try to help you break that habit.  You should be far more concerned with the amount of data you send over the network or to your CPU than with the amount of data you store and most of all, with the amount of time you spend deriving insight rather than acting on it.  Checkpoint often, denormalize when reasonable and preserve the full provenance of your results.
 
-=== Map-Reduce Jobs: Process Records in Context ===
-
-
-=== Olga, the Remarkable Calculating Pig
-
-JT and Nanette were enjoying the rising success of C&E Corp
-  decided to celebrate with tickets to the latest sensation -- Olga the Remarkable Calculating Pig, playing nightly to sell-out crowds at Carnegie Hall.
-
-They watched, spellbound,
-
-The second act was perhaps even more impressive as the first, as Olga performed monstrous feats of calculation.
-
-"That's some pig", Nanette said to JT as they waited outside the dressing rooms. "Terrific," JT agreed. A voice behind them said "Radiant and Humble, too, they tell me. How can I help?" -- Olga, now dressed in street clothes.
-
-"Olga, your show is amazing. The way you amortized the debentures
-But
-
-"What you're saying sounds wonderful, but I'm just one Pig. When you saw me read off all of Ford's yearly production figures and then answer questions about revenue and inventory, you might have thought I was holding all that in my head. But what I've actually got
-I can only answer questions that come from those rollups."
-
-Nanette leaned in. "We know this, Olga.
-"Well," JT said with a grin, "I hope you've got a warm jacket. We're going to take a trip up north -- way north."
-
-
-=== Pig Helps Hadoop work with Datasets, not Records
-
 We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining Olga, JT and Nannette on their trip up north.
+
+
+
