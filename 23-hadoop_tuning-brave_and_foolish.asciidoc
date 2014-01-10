@@ -1,14 +1,11 @@
-=== Hadoop System configurations ===
+== Hadoop Tuning for the Brave and Foolish
 
-
-Here first are some general themes to keep in mind:
 
 The default settings are those that satisfy in some mixture the constituencies of a) Yahoo, Facebook, Twitter, etc; and b) Hadoop developers, ie. peopl who *write* Hadoop but rarely *use* Hadoop. This means that many low-stakes settings (like keeping jobs stats around for more than a few hours) are at the values that make sense when you have a petabyte-scale cluster and a hundred data engineers; 
 
 * If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer) -- the 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
 
-
-**Memory**
+=== Memory ===
 
 Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
@@ -52,7 +49,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 * Given the number of files and amount of data you're storing, I would set the NN heap size agressively - at least 4GB to start, and keep an eye on it. Having the NN run out of memory is Not Good. Always make sure the secondary name node has the same heap setting as the name node.
 
-**Handlers and threads**
+=== Handlers and threads ===
 
 * `dfs.namenode.handler.count`: default `X`, recommended: `(0.1 to 1) * size of cluster`, depending on how many blocks your HDFS holds.
 * `tasktracker.http.threads` default `X`, recommended `X`
@@ -64,7 +61,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 * `io.file.buffer.size`: default `X` recommended `65536`; always use a multiple of `4096`.
 
-**Storage**
+=== Storage ===
   
 * `mapred.system.dir`: default `X` recommended `/hadoop/mapred/system` Note that this is a path on the HDFS, not the filesystem).
 
@@ -85,7 +82,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 * `dfs.blockreport.intervalMsec`: default 3_600_000 (1 hour); recommended 21_600_000 (6 hours)  for a large cluster.
   - 100_000 blocks per data node for a good ratio of CPU to disk
 
-**Other**
+=== Other ===
 
 * `mapred.map.output.compression.codec`: default XX, recommended ``. Enable Snappy codec for intermediate task output.
   - `mapred.compress.map.output`
@@ -112,6 +109,4 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 
 * Bump `mapreduce.job.counters.limit` -- it's not configurable per-job.
-
-
 

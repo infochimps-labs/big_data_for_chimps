@@ -1,7 +1,7 @@
 [[geographic]]
 == Geographic Data Processing
 
-===  Weather Near You:  Turning A Point Distribution Into Regions of Influence
+===  Turning Points of Measurements Into Regions of Influence
 
 Frequently, geospatial data is, for practical reasons, sampled at discrete points but should be understood to represent measurements at all points in space.  For example, the measurements in the NCDC datasets are gathered at locations chosen for convenience or value -- in some cases, neighboring stations are separated by blocks, in other cases by hundreds of miles.  It is useful to be able to reconstruct the underlying spatial distribution from point-sample measurements.  
 
@@ -17,7 +17,7 @@ This effectively precomputes the “nearest x” problem:  For any point in ques
 
 It also presents a solution to the spatial sampling problem by assigning the measurements taken at each sample location to its Voronoi region.  You can use these piece-wise regions directly or follow up with some sort of spatial smoothing as your application requires.  Let’s dive in and see how to do this in practice.  
 
-==== (TODO: section name)
+==== Finding Nearby Objects
 
 Let’s use the GeoNames dataset to create a “nearest <whatever> to you” application, one that, given a visitor’s geolocation, will return the closest hospital, school, restaurant and so forth.  We will do so by effectively pre-calculating all potential queries; this could be considered overkill for the number of geofeatures within the GeoNames dataset but we want to illustrate an approach that will scale to the number of cell towers, gas stations or anything else.   
 
@@ -61,7 +61,7 @@ To cover the entire globe at zoom level 13 requires 67 million records, each cov
 
 If the preceding considerations leave you with a range of acceptable zoom levels, choose one in the middle.  If they do not, you will need to use the multiscale decomposition approach (TODO:  REF) described later in this chapter.
 
-==== (TODO: name section)
+==== Voronoi Polygons turn Points into Regions
 
 Now, let's use the Voronoi trick to turn a distribution of measurements at discrete points into the distribution over regions it is intended to represent.  In particular, we will take the weather-station-by-weather-station measurements in the NCDC dataset and turn it into an hour-by-hour map of global data.  Spatial distribution of weather stations varies widely in space and over time; for major cities in recent years, there may be many dozens while over stretches of the Atlantic Ocean and in many places several decades ago, weather stations might be separated by hundreds of miles.  Weather stations go in and out of service, so we will have to prepare multiple Voronoi maps.  Even within their time of service, however, they can also go offline for various reasons, so we have to be prepared for missing data.  We will generate one Voronoi map for each year, covering every weather station active within that year, acknowledging that the stretch before and after its time of service will therefore appear as missing data.  
 
@@ -104,7 +104,7 @@ The payoff for all this is pretty sweet.  We only have to store and we only have
 
 NOTE:  The multiscale keys work very well in HBase too.  For the case where you are storing multiscale regions and querying on points, you will want to use a replacement character that is lexicographically after the digits, say, the letter "x."  To find the record for a given point, do a range request for one record on the interval starting with that point's quad key and extending to infinity (xxxxx…).  For a point with the finest-grain quad key of 012012, if the database had a record for 012012, that will turn up; if, instead, that region only required zoom level 4, the appropriate row (0120xx) would be correctly returned.  
 
-==== (TODO: name section)
+==== Smoothing the Distribution
 
 We now have in hand, for each year, a set of multiscale quad tile records with each record holding the weather station IDs that cover it.  What we want to produce is a dataset that has, for each hour and each such quad tile, a record describing the consensus weather on that quad tile.  If you are a meteorologist, you will probably want to take some care in forming the right weighted summarizations -- averaging the fields that need averaging, thresholding the fields that need thresholding and so forth.  We are going to cheat and adopt the consensus rule of "eliminate weather stations with missing data, then choose the weather station with the largest area coverage on the quad tile and use its data unmodified."  To assist that, we made a quiet piece of preparation and have sorted the weather station IDs from largest to smallest in area of coverage, so that the Reducer simply has to choose from among its input records the earliest one on that list.  
 
