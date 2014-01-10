@@ -1,3 +1,8 @@
+[[transform_pivot]]
+== Chimpanzee and Elephant Save Christmas ==
+
+// Say more about conceptualizing big data and tie in what readers have already learned (up to this chapter, the simple transform and first exploration material) and weave that in to help them have 'ah ha' moments and really grasp this material. Then, write your "...in this chapter..."  Finally, a good discussion of "locality" would go well anchored here.  And then you can dive into the Elves.  Amy////
+
 === Chimpanzee and Elephant Save Christmas (pt 1) ===
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just could not keep up with the scale of requests. Luckily, their friends at the Elephant & Chimpanzee Data Shipment Company were available to simplify the process.
@@ -125,4 +130,62 @@ Elves do not have the prodigious memory that elephants do, but they can easily k
 
 // You've seen that receiving all the toyforms for Dolls in a single batch make the elves more efficient. The elves requested that the toyforms be further grouped within each batch: so that all the dolls with "purple hair" arrive in a run, followed by dolls with "rosy cheeks", and so forth.
 
-=== Hadoop Reducers ===
+=== Sorted Batches ===
+
+Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
+
+This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
+
+=== The Map-Reduce Haiku ===
+
+As you recall, the bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:
+
+      data flutters by
+          elephants make sturdy piles
+        insight shuffles forth
+
+More prosaically,
+
+1. *label*      -- turn each input record into any number of labelled records
+2. *group/sort* -- hadoop groups those records uniquely under each label, in a sorted order
+3. *reduce*     -- for each group, process its records in order; emit anything you want.
+
+The trick lies in the 'group/sort' step: assigning the same label to two records in the 'label' step ensures that they will become local in the reduce step.
+
+The machines in stage 1 ('label') are allowed no locality. They see each record exactly once, but with no promises as to order, and no promises as to which one sees which record. We've 'moved the compute to the data', allowing each process to work quietly on the data in its work space.
+
+As each pile of output products starts to accumulate, we can begin to group them. Every group is assigned to its own reducer. When a pile reaches a convenient size, it is shipped to the appropriate reducer while the mapper keeps working. Once the map finishes, we organize those piles for its reducer to process, each in proper order.
+
+If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
+
+=== Hadoop's Contract ===
+
+Hadoop imposes a few seemingly-strict constraints and provides a very few number of guarantees in return. As you're starting to see, that simplicity provides great power and is not as confining as it seems. You can gain direct control over things like partitioning, input splits and input/output formats. We'll touch on a very few of those, but for the most part this book concentrates on using Hadoop from the outside -- (TODO: ref) _Hadoop: The Definitive Guide_ covers this stuff (definitively).
+
+==== The Mapper Guarantee ====
+
+The contract Hadoop presents for a map task is simple, because there isn't much of one. Each mapper will get a continuous slice (or all) of some file, split at record boundaries, and in order within the file. You won't get lines from another input file, no matter how short any file is; you won't get partial records; and though you have no control over the processing order of chunks ("file splits"), within a file split all the records are in the same order as in the original file.
+
+For a job with no reducer -- a "mapper-only" job -- you can then output anything you like; it is written straight to disk. For a Wukong job with a reducer, your output should be tab-delimited data, one record per line. You can designate the fields to use for the partition key, the sort key and the group key. (By default, the first field is used for all three.)
+
+The typical job turns each input record into zero, one or many records in a predictable manner, but such decorum is not required by Hadoop. You can read in lines from Shakespeare and emit digits of _pi_; read in all input records, ignore them and emit nothing; or boot into an Atari 2600 emulator, publish the host and port and start playing Pac-Man. Less frivolously: you can accept URLs or filenames (local or HDFS) and emit their contents; accept a small number of simulation parameters and start a Monte Carlo simulation; or accept a database query, issue it against a datastore and emit each result.
+
+==== The Group/Sort Guarantee ====
+
+When Hadoop does the group/sort, it establishes the following guarantee for the data that arrives at the reducer:
+
+* each labelled record belongs to exactly one sorted group;
+* each group is processed by exactly one reducer;
+* groups are sorted lexically by the chosen group key;
+* and records are further sorted lexically by the chosen sort key.
+
+It's very important that you understand what that unlocks, so I'm going to redundantly spell it out a few different ways:
+
+* Each mapper-output record goes to exactly one reducer, solely determined by its key.
+* If several records have the same key, they will all go to the same reducer.
+* From the reducer's perspective, if it sees any element of a group it will see all elements of the group. 
+
+You should typically think in terms of groups and not about the whole reduce set: imagine each partition is sent to its own reducer. It's important to know, however, that each reducer typically sees multiple partitions. (Since it's more efficient to process large batches, a certain number of reducer processes are started on each machine. This is in contrast to the mappers, who run one task per input split.) Unless you take special measures, the partitions are distributed arbitrarily among the reducers footnote:[Using a "consistent hash"; see (TODO: ref) the chapter on Sampling]. They are fed to the reducer in order by key.
+
+Similar to a mapper-only task, your reducer can output anything you like, in any format you like. It's typical to output structured records of the same or different shape, but you're free engage in any of the shenanigans listed above.
+

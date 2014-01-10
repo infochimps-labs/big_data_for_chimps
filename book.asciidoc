@@ -4,27 +4,23 @@ include::01-first_exploration.asciidoc[]
 
 include::02-hadoop_basics.asciidoc[]
 
-include::03-transform_pivot.asciidoc[]
+include::03-map_reduce.asciidoc[]
 
 include::04-structural_operations.asciidoc[]
 
-include::05-toolset.asciidoc[]
+include::05-hadoop_patterns.asciidoc[]
 
-include::05d-intro_to_pig.asciidoc[]
+include::06-big_data_ecosystem.asciidoc[]
 
-include::06-filesystem_mojo.asciidoc[]
+include::07-filesystem_mojo.asciidoc[]
 
-include::06a-big_data_ecosystem.asciidoc[]
-
-include::07-intro_to_storm+trident.asciidoc[]
+include::08-intro_to_storm+trident.asciidoc[]
 
 include::09-statistics.asciidoc[]
 
-include::07-event_streams.asciidoc[]
+include::10-event_streams.asciidoc[]
 
 include::11-geographic.asciidoc[]
-
-include::11-conceptual_model.asciidoc[]
 
 include::13-data_munging.asciidoc[]
 
@@ -48,6 +44,8 @@ include::22-hadoop_tuning.asciidoc[]
 include::88-storm+trident-internals.asciidoc[]
 
 include::88-storm+trident-tuning.asciidoc[]
+
+include::11-conceptual_model.asciidoc[]
 
 include::25-appendix.asciidoc[]
 

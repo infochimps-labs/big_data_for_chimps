@@ -11,8 +11,6 @@ Introduce the chapter to the reader
 
 A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant Corporation (C&E Corp for short) was born.
 
-(TODO cartoon of JT Pan, Nanette Elephas and Nim Seadragon)
-
 The publishing firm’s project was to translate the works of Shakespeare into every language known to man, so JT and Nanette devised the following scheme.  Their crew set up a large number of cubicles, each with one elephant-sized desk and one or more chimp-sized desks, and a command center where JT and Nanette can coordinate the action. As with any high-scale system, each member of the team has a single responsibility to perform. The task of a chimpanzee is simply to read a set of passages, and type out the corresponding text in a new language. The cubicle's librarian elephant maintains a neat set of scrolls, according to a scheme Nanette devised, with each scroll holding a passage to translate or some passage's translated result.
 
 JT acts as foreman for the chimpanzees. When each worker clocks in for the day, they check with JT, who hands off the day's translation manual and the name of a passage to translate. Throughout the day, as each chimp completes their assigned passage, they radio in to JT, who names the next passage to translate. Nanette, meanwhile, serves as chief librarian. She keeps a card catalog that lists, for every book, the location and essential characteristics of the various scrolls that maintain its contents.
@@ -162,7 +160,7 @@ One last essential to note about the HDFS is that its contents are immutable.  O
 
 Possibly the biggest rookie mistake made by those new to Big Data is a tendency to economize on the amount of data they store; we will try to help you break that habit.  You should be far more concerned with the amount of data you send over the network or to your CPU than with the amount of data you store and most of all, with the amount of time you spend deriving insight rather than acting on it.  Checkpoint often, denormalize when reasonable and preserve the full provenance of your results.
 
-We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining Olga, JT and Nannette on their trip up north.
+We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining JT and Nannette with their next client.
 
 
 

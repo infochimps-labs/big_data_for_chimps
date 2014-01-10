@@ -1,4 +1,4 @@
-=== Big Data Ecosystem and Toolset
+== Big Data Ecosystem and Toolset
 
 Big data is necessarily a polyglot sport.  The extreme technical challenges demand diverse technological solutions and the relative youth of this field means, unfortunately, largely incompatible languages, formats, nomenclature and transport mechanisms.  What’s more, every ecosystem niche has multiple open source and commercial contenders vying for prominence and it is difficult to know which are widely used, which are being adopted and even which of them work at all.
 
