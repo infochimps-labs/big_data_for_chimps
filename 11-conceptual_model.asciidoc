@@ -1,1 +1,10 @@
 == Conceptual Model for Data Analysis
+
+
+* lambda architecture
+* unified conceptual model
+* patterns for analytics
+* patterns for lambda architecture
+
+...
+
