@@ -47,107 +47,100 @@ A walkthrough of problem you'd use Hadoop to solve, showing the workflow and tho
 2. *Hadoop Processes Billions of Records*
 
 Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrassingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
-  - Chimpanzee and Elephant start a business
-  - Pig Latin translation
-  - Test job on commandline
-  - Load data onto HDFS
-  - Run job on cluster
-  - See progress on jobtracker, results on HDFS
+
+* Chimpanzee and Elephant start a business
+* Pig Latin translation
+* Test job on commandline
+* Load data onto HDFS
+* Run job on cluster
+* See progress on jobtracker, results on HDFS
+* Message Passing -- visit frequency
+* SQL-like Set Operations -- visit frequency II
+* Graph operations
   
-  - Message Passing -- visit frequency
-  - SQL-like Set Operations -- visit frequency II
-  - Graph operations
-  
-3. *Hadoop Derives Insight from Data in Context* -- You've already seen the first trick: processing records individually. The second trick is to form sorted context groups. There isn't a third trick. With these tiny two mustard seeds -- process and contextify -- we can reconstruct the full set of data analytic operations that turn mountains of data into gems of insight.
+3. *Hadoop Derives Insight from Data in Context* -- You've already seen the first trick: processing records individually. The second trick is to form sorted context groups. There isn't a third trick. With these tiny two mustard seeds -- process and contextify -- we can reconstruct the full set of data analytic operations that turn mountains of data into gems of insight. C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
 
-  - insight comes from data in context
-  - process and label; form context groups; process context groups
-  - 
-
-C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
-  - Locality: the central challenge of distributed computing
-  - The Hadoop Haiku
-
-Note: we will almost certainly re-arrange the content in chapters 1-3.
-They will be centered around the following 3 explorations
-(in pig and wukong)
-- Pig Latin exploration (map only job)
-- Count UFO visits by month
-	- might visit the jobtracker
-- Counting Wikipedia pageviews by hour (or whatever)
-	- should be same as UFO exploration, but:
-		- will actually require Hadoop
-		- also do a total sort at the end
+* Chimpanzee and elephant sve Christmas pt 1
+* map/reduce: count ufo sightings
+* The Hadoop Haiku
+* Hadoop vs Traditional databases
+* Chimpanzee and elephant sve Christmas pt 2
+* reducer guarantee
+* reducers in action
+* secondary sort
 
 4. *Hadoop Enables SQL-like Set Operations*
-  - ...
 
-By this point in the book  you should:
-- Have your mind blown
-- See some compelling enough data and a compelling enough question, and a wukong job that answers that job by using only a mapper
-- see some compelling enough data and a compelling enough question, which requires a map and reduce job, written in both pig and wukong
-- believe the mapreduce story, i.e. you know, in general, the high-level conceptual mechanics of a mapreduce job
+By this point in the book  you should: a) Have your mind blown; b) See some compelling enough data and a compelling enough question, and a wukong job that answers that job by using only a mapper; c) see some compelling enough data and a compelling enough question, which requires a map and reduce job, written in both pig and wukong; d) believe the mapreduce story, i.e. you know, in general, the high-level conceptual mechanics of a mapreduce job. You'll have seen whimsical & concrete explanations of mapreduce,  what’s happening as a job is born and run, and HDFS
 
-You should have:
-- whimsical & concrete explanations of mapreduce,  what’s happening as a job is born and run, and HDFS
-
-You shouldn’t have:
-a lot of words in pig
-a good feel for how to deftly use wukong yet
+* Count UFO visits by month
+  - visit jobtracker to see what Pig is doing
+* Counting Wikipedia pageviews by hour (or whatever)
+  - should be same as UFO exploration, but: will actually require Hadoop also do a total sort at the end
 
 4. *Fundamental Data Operations in Hadoop*
 
-here’s the stuff you’d like to be able to do with data, in wukong and in pig
-	- Foreach/filter operations (messing around inside a record)
-	- reading data (brief practical directions on the level of “this is what you type in”)
-		- pig schema
-		- wukong model
-		- loading TSV
-- loading generic JSON
-- storing JSON
-- loading schematized JSON
-- loading parquet or Trevni
-- (Reference the section on working with compressed files; call back to the points about splitability and performance/size tradeoffs)
-- TSV, JSON, not XML; Protobufs, Thrift, Avro; Trevni, Parquet; Sequence Files; HAR
-- compression: gz, bz2, snappy, LZO
-	- subsetting your data
-- limit
-- filter
-- sample
-- using a hash digest function to take a signature
-- top k and reservoir sampling
-- refer to subuniverse which is probably elsewhere
-- group
-- join
-- ??cogroup?? (does this go with group? Does it go anywhere?)
-- sort, etc.. : cross cube
-- total sort
-- partitioner
-- basic UDFs
-- ?using ruby or python within a pig dataflow?
+Here’s the stuff you’d like to be able to do with data, in wukong and in pig
+
+* Foreach/filter operations (messing around inside a record)
+* reading data (brief practical directions on the level of “this is what you type in”)
+* limit
+* filter
+* sample
+* using a hash digest function to take a signature
+* top k and reservoir sampling
+* refer to subuniverse which is probably elsewhere
+* group
+* join
+* ??cogroup?? (does this go with group? Does it go anywhere?)
+* sort, etc.. : cross cube
+* total sort
+* partitioner
+* basic UDFs
+* ?using ruby or python within a pig dataflow?
+
+5. *Analytic Patterns*
+
+Connect the structural operations you've seen pig do with what is happeining underneath, and flesh out your understanding of them.
 
 6. *The Hadoop Toolset and Other Practical Matters*
-  - toolset overview
-- It’s a necessarily polyglot sport
-- Pig is a language that excels at describing
-- we think you are doing it wrong if you are not using :
-- a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
--  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
-- there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
-  - launching and debugging jobs
-  - overview of Wukong
-  - overview of Pig
+
+* toolset overview
+* It’s a necessarily polyglot sport
+* Pig is a language that excels at describing
+* we think you are doing it wrong if you are not using :
+* a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
+*  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
+* there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
+* launching and debugging jobs
+* overview of Wukong
+* overview of Pig
 
 7. *Filesystem Mojo and `cat` herding*
 
-  - dumping, listing, moving and manipulating files on the HDFS and local filesystems
-  - total sort
-  - transformations from the commandline (grep, cut, wc, etc)
-  - pivots from the commandline (head, sort, etc)
-  - commandline workflow tips
-  - advanced hadoop filesystem (chmod, setrep, fsck)
+* dumping, listing, moving and manipulating files on the HDFS and local filesystems
+* total sort
+* transformations from the commandline (grep, cut, wc, etc)
+* pivots from the commandline (head, sort, etc)
+* commandline workflow tips
+* advanced hadoop filesystem (chmod, setrep, fsck)
 
+* pig schema
+* wukong model
+* loading TSV
+* loading generic JSON
+* storing JSON
+* loading schematized JSON
+* loading parquet or Trevni
+* (Reference the section on working with compressed files; call back to the points about splitability and performance/size tradeoffs)
+* TSV, JSON, not XML; Protobufs, Thrift, Avro; Trevni, Parquet; Sequence Files; HAR
+* compression: gz, bz2, snappy, LZO
+* subsetting your data
+  
 8. *Intro to Storm+Trident*
+
+* Meet Nim Seadragon
+* First Storm Job
 
 9. *Statistics*:
 

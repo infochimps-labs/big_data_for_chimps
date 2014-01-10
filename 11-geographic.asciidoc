@@ -27,9 +27,8 @@ Run the script 'examples Geo Voronoi points to polygons.pi' (TODO: fix up comman
 
 These polygons are pretty but not directly useful; we need a way to retrieve the relevant polygons for a given visitor’s location.  What we will do is store, for every quad key, the truncated Voronoi regions that lie within its quad tile.  We can then turn the position of a visitor into its corresponding quad key, retrieve the set of regions on that quad tile and find the specific region within which it lies.
 
-Pig does not have any built-in geospatial features, so we will have to use a UDF.  In fact, we will reach into the future and use one of the ones you will learn about in the Advanced Pig chapter (TODO:  REF).  
+Pig does not have any built-in geospatial features, so we will have to use a UDF.  In fact, we will reach into the future and use one of the ones you will learn about in the Advanced Pig chapter (TODO:  REF). Here is the script to
 
-Here is (TODO: finish sentence)
 ----
 Register the UDF 
 Give it an alias
@@ -53,13 +52,13 @@ It also addresses the short-tail caching problem as well.  When word does spread
 The strategies employed here -- precalculating all possible requests, identifying the nature of popular requests, identifying the nature of adjacent requests and organizing the key space to support that adjacency -- will let your database serve large-scale amounts of data with millisecond response times even under heavy load.  
 
 .Sidebar:  Choosing A Decomposition Zoom Level
-====
-
+----
 When you are decomposing spatial data onto quad tiles, you will face the question of what zoom level or zoom levels to choose.  At some point, coarser (lower indexed) zoom levels will lead to overpopulated tiles, tiles whose record size is unmanageably large; depending on your dataset, this could happen at zoom level 9 (the size of outer London), zoom level 12 (the size of Manhattan south of Central Park) or even smaller.  At the other end, finer zoom levels will produce unjustifiably many boring or empty tiles.  
 
 To cover the entire globe at zoom level 13 requires 67 million records, each covering about four kilometers; at zoom level 16, you will need four billion records, each covering about a half kilometer on a side; at zoom level 18, you will need 69 billion records, each covering a city block or so.  To balance these constraints, build a histogram of geofeature counts per quad tile at various zoom levels.  Desirable zoom levels are such that the most populous bin will have acceptable size while the number of bins with low geofeature count are not unmanageably numerous.  Quad keys up to zoom level 16 will fit within a 32-bit unsigned integer; the improved efficiency of storage and computation make a powerful argument for using zoom levels 16 and coarser, when possible.  
 
 If the preceding considerations leave you with a range of acceptable zoom levels, choose one in the middle.  If they do not, you will need to use the multiscale decomposition approach (TODO:  REF) described later in this chapter.
+----
 
 ==== Voronoi Polygons turn Points into Regions
 
@@ -81,7 +80,6 @@ Now it is time to recall how a JOIN works covered back in the Map/Reduce Pattern
 
 We can accomplish this fairly straightforwardly.  When we defined the multiscale decomposition, we a coarsest zoom level at which to begin decomposing and the finest zoom level which defined the total length of the quad key.  What we do is break the quad key into two pieces; the prefix at the coarsest zoom level (these will always have numbers, never dots) and the remainder (fixed length with some number of quad key digits then some number of dots).  We use the quad key prefix as the partition key with a secondary sort on the quad key remainder then the dataset label.  
 
-
 Explaining this will be easier with some concrete values to use, so let's say we are doing a multiscale join between two datasets partitioning on a coarsest zoom level of 4, and a total quad key length of 6, leading to the following snippet of raw reducer input. 
 
 .Snippet of Raw Reducer Input for a Multiscale Spatial Join
@@ -96,7 +94,6 @@ Explaining this will be easier with some concrete values to use, so let's say we
 0121    00   A
 0121    00   B
 ----
-
 
 As before, the reducer buffers in rows from A for a given key -- in our example, the first of these look like <0120 | 1. | A | ...>. It will then apply the join to each row that follows of the form <0120 | (ANYTHING) | B | ...>.  In this case, the 01201. record from A will be joined against the 012010, 012011, 012012 and 012013 records from B.  Watch carefully what happens next, though.  The following line, for quad key 01202. is from A and so the Reducer clears the JOIN buffer and gets ready to accept records from B to join with it.  As it turns out, though, there is no record from B of the form 01202-anything.  In this case, the 01202. key from A matches nothing in B and the 012030 key in B is matched by nothing in A (this is why it is important the replacement character is lexicographically earlier than the digits; otherwise, you would have to read past all your brothers to find out if you have a parent).  The behavior is the same as that for a regular JOIN in all respects but the one, that JOIN keys are considered to be equal whenever their digit portions match. 
 
