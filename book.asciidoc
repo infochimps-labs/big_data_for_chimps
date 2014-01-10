@@ -30,7 +30,9 @@ include::13-data_munging.asciidoc[]
 
 include::14-organizing_data.asciidoc[]
 
-include::16-machine_learning.asciidoc[]
+include::16-conceptual_model.asciidoc[]
+
+include::17-machine_learning.asciidoc[]
 
 include::18-java_api.asciidoc[]
 
