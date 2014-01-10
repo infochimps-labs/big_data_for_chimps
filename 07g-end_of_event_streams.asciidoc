@@ -1,6 +1,0 @@
-
-=== Refs ===
-
-* http://www.botsvsbrowsers.com/[Database of Robot User Agent strings]
-
-* http://research.microsoft.com/apps/pubs/default.aspx?id=67818[Improving Web Search Results Using Affinity Graph]
