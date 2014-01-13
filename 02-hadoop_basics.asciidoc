@@ -1,6 +1,54 @@
 [[simple_transform]]
 == Hadoop Basics
 
+You can think of Hadoop's processing model in a few ways
+
+The first part of this book will introduce the Hadoop toolset.
+
+- The centerpiece of the Big Data toolset is Hadoop, an open-source batch processing toolkit
+
+* This book will present several (paradigms for/ways to think about) Big Data analytics
+
+* Hadoop serves well as a distributed runner.
+* One (approach/paradigm) is record-oriented
+
+Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
+
+What everybody wants is _insight_ -- the patterns, connections, (summarizations) that lead to deeper understanding and better decisions
+
+
+1. Process records independently into a new form
+2. Assemble records into context
+3. Synthesize context groups into new forms
+4. Write the results to a datastore or external system
+
+> * Operations that apply locally to each partition and cause no network transfer
+> * Repartitioning operations that repartition a stream but otherwise don't change the contents (involves network transfer)
+> * Aggregation operations that do network transfer as part of the operation
+> * Operations on grouped streams
+> * Merges and joins
+
+data flutters by              (process and label records)
+elephants make sturdy piles   (contextify? assemble? by label)
+context yields insight        (process context groups)
+
+We'll start with an application that only requires processing records independently -- each record requires no context. 
+You'll learn the mechanics of running Hadoop jobs: how to load and retrieve data, launch your job and see its progress, and so forth.
+But Hadoop is useful for far more than such
+ so-called "embarrassingly parallel" problems.
+The second program exhibits the full map-reduce paradigm.
+The program is simple, but it's _scalable_. Slight modification of the program to 
+Count 56,000 UFO sightings by month
+  Build the analogous timeseries for the X billion Wikipedia pages.
+
+We've just seen how
+ Now let's understand a high-level picture of
+  What Hadoop is doing, and why this makes it scalable.
+(Merge sort, secondary sort)
+
+So far we've seen two paradigms: distributed work 
+Record-oriented
+
 Introduce the chapter to the reader
 * take the strands from the last chapter, and show them braided together
 * in this chapter, you'll learn .... OR ok we're done looking at that, now let's xxx
