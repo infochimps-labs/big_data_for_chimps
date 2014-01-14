@@ -43,7 +43,7 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 * `mapred.reduce.parallel.copies`: default `X`, recommended  to be in the range of `sqrt(Nw*Nm)` to `Nw*Nm/2`  You should see the shuffle/copy phase of your reduce tasks speed up.
 
-* `mapred.job.reuse.jvm.num.tasks` default `1`, recommended `-1`. If a job requires a fresh JVM for each process, you can override that in its jobconf.
+* `mapred.job.reuse.jvm.num.tasks` default `1`, recommended `10`. If a job requires a fresh JVM for each process, you can override that in its jobconf. Going to `-1` (reuse unlimited times) can fill up the dist if your input format uses "delete on exit" temporary files (as for example the S3 filesystem does), with little additional speedup.
 
 * You never want Java to be doing stop-the-world garbage collection, but for large JVM heap sizes (above 4GB) they can become especially dangerous. If a full garbage collect takes too long, sockets can time out, causing loads to increase, causing garbage collects to happen, causing... trouble, as you can guess.
 
@@ -110,3 +110,4 @@ Here's a plausible configuration for a 16-GB physical machine with 8 cores:
 
 * Bump `mapreduce.job.counters.limit` -- it's not configurable per-job.
 
+(From http://blog.cloudera.com/blog/2009/12/7-tips-for-improving-mapreduce-performance/ -- 512M block size fairly reasonable)

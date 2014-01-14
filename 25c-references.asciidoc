@@ -10,6 +10,13 @@
 * http://hadoop.apache.org/docs/mapreduce/current/streaming.html[Hadoop Streaming FAQ]
 * http://hadoop.apache.org/docs/r0.20.2/mapred-default.html[Hadoop Configuration defaults -- mapred]
 
+
+**Unreasonable Effectiveness of Data**
+
+* https://www.facebook.com/video/video.php?v=644326502463[Peter Norvig\'s Facebook Tech Talk]
+* http://www.youtube.com/watch?v=yvDCzhbjYWs[Later version of that talk at ??] -- I like the 
+* http://static.googleusercontent.com/media/research.google.com/en/us/pubs/archive/35179.pdf["On the Unreasonable effectiveness of data"]
+
 **Source material**
 
 * http://en.wikipedia.org/wiki/Lexington,_Texas[Wikipedia article on Lexington, Texas] (CC-BY-SA)
