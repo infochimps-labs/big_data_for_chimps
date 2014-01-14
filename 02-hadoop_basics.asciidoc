@@ -49,6 +49,45 @@ We've just seen how
 So far we've seen two paradigms: distributed work 
 Record-oriented
 
+
+
+
+
+The harsh realities of the laws of physics and economics prevent traditional data analysis solutions such as relational databases, supercomputing and so forth from economically scaling to arbitrary-sized data for reasons very similar to Santa's original system (see sidebar).  Hadoop's Map/Reduce paradigm does not provide complex operations, modification of existing records, fine-grain control over how the data is distributed or anything else beyond the ability to write programs that adhere to a single, tightly-constrained template.  If Hadoop were a publishing medium, it would be one that refused essays, novels, sonnets and all other literary forms beyond the haiku:
+
+      data flutters by
+          elephants make sturdy piles
+        context yields insight 
+
+    data flutters by              		(process and label records)
+        elephants make sturdy piles   	(contextify/assemble (?) by label)
+      insight shuffles forth        		(process context groups; store(?))
+
+(TODO: insight shuffles forth?)
+
+Our Map/Reduce haiku illustrates Hadoop's template:  
+
+1. The Mapper portion of your script processes records, attaching a label to each. 
+2. Hadoop assembles those records into context groups according to their label.
+3. The Reducer portion of your script processes those context groups and writes them to a data store or external system.  
+
+What is remarkable is that from this single primitive, we can construct the familiar relational operations (such as GROUPs and ROLLUPs) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.  In the next two chapters, we will demonstrate high-level relational operations and illustrate the Map/Reduce patterns they express.  In order to understand the performance and reasoning behind those patterns, let's first understand the motion of data within a Map/Reduce job.
+
+=== The Map Phase Processes and Labels Records Individually
+
+The Map phase receives 0, 1 or many records individually, with no guarantees from Hadoop about their numbering, order or allocation.  (FOOTNOTE: In special cases, you may know that your input bears additional guarantees -- for example, the MERGE/JOIN described in Chapter (TODO:  REF) requires its inputs to be in total sorted order. It is on you, however, to enforce and leverage those special properties.)  Hadoop does guarantee that every record arrives in whole to exactly one Map task and that the job will only succeed if every record is processed without error.  
+
+The Mapper receives those records sequentially -- it must fully process one before it receives the next -- and can emit 0, 1 or many inputs of any shape or size.  The chimpanzees working on the SantaCorp project received letters but dispatched toy forms.  Julia's thoughtful note produced two toy forms, one for her doll and one for Joe's robot, while the spam letter produced no toy forms.  Hadoop's 'distcp' utility, used to copy data from cluster to cluster, takes this to a useful extreme:  Each Mapper's input is a remote file to fetch.  Its action is to write that file's contents directly to the HDFS as a Datanode client and its output is a summary of what it transferred.  
+
+The right way to bring in data from an external resource is by creating a custom loader or input format (see the chapter on Advanced Pig (TODO:  REF)), which decouples loading data from processing data and allows Hadoop to intelligently manage tasks.  The poor-man's version of a custom loader, useful for one-offs, is to prepare a small number of file names, URLs, database queries or other external handles as input and emit the corresponding contents.  
+
+Please be aware, however, that it is only appropriate to access external resources from within a Hadoop job in exceptionally rare cases.  Hadoop processes data in batches, which means failure of a single record results in the retry of the entire batch.  It also means that when the remote resource is unavailable or responding sluggishly, Hadoop will spend several minutes and unacceptably many retries before abandoning the effort.  Lastly, Hadoop is designed to drive every system resource at its disposal to its performance limit.  (FOOTNOTE: We will drive this point home in the chapter on Event Log Processing (TODO:  REF), where we will stress test a web server to its performance limit by replaying its request logs at full speed.)
+
+While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.  
+
+The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF).  Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.  
+
+
 Introduce the chapter to the reader
 * take the strands from the last chapter, and show them braided together
 * in this chapter, you'll learn .... OR ok we're done looking at that, now let's xxx
@@ -165,10 +204,36 @@ Since you wouldn't want to read a whole 10GB file just to see whether the right 
 
 Here's what the head and tail of your output should contain:
 
-TODO screenshot of hadoop fs -cat ./output/latinized_magi/\* | head -n 10
-TODO screenshot of hadoop fs -tail ./output/latinized_magi/\*
+    TODO screenshot of hadoop fs -cat ./output/latinized_magi/\* | head -n 10
+    TODO screenshot of hadoop fs -tail ./output/latinized_magi/\*
+
+=== Map/Reduce
+
+As a demonstration, let's find out when aliens like to visit the planet earth. Here is a Wukong script to processes the UFO dataset to find the aggregate number of sightings per month:
+
+----
+DEFINE MODEL FOR INPUT RECORDS
+MAPPER EXTRACTS MONTHS, EMITS MONTH AS KEY WITH NO VALUE
+COUNTING REDUCER INCREMENTS ON EACH ENTRY IN GROUP AND EMITS TOTAL IN FINALIZED METHOD
+----
+
+To run the Wukong job, go into the (TODO: REF) directory and run
+
+----
+wu-run monthly_visit_counts.rb --reducers_count=1 /data_UFO_sightings.tsv /dataresults monthly_visit_counts-wu.tsv
+----
+
+The output shows (TODO:CODE: INSERT CONCLUSIONS).
+
+==== Wikipedia Visitor Counts
+
+Let’s put Pig to a sterner test.  Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
+
+EDIT TODO modified script
 
 ==== See Progress and Results
+
+EDIT Wikipedia visitor counts, summing values -- not weather, not articles
 
 Now let's run it on a corpus large enough to show off the power of distributed computing. Shakespeare's combined works are too small -- at (TODO find size) even the prolific bard's lifetime of work won't make Hadoop break a sweat. Luckily, we've had a good slice of humanity typing thoughts into wikipedia for several years, and the corpus containing every single wikipedia article is enough to warrant Hadoop's power (and tsoris footnote:[trouble and suffering]).
 
@@ -188,7 +253,7 @@ You can also estimate how large the output should be, using the "Gift of the Mag
 
 We cannot stress enough how important it is to validate that your scripts are doing what you think they are. The whole problem of Big Data is that it is impossible to see your data in its totality.  You can spot-check your data, and you should, but without independent validations like these you're vulnerable to a whole class of common defects. This habit -- of validating your prediction of the job’s execution -- is not a crutch offered to the beginner, unsure of what will occur; it is a best practice, observed most diligently by the expert, and one every practitioner should adopt.
 
-==== Sidebar: Why the HDFS? ====
+=== The HDFS: Highly Durable Storage Optimized for Analytics ===
 
 The HDFS, as we hope you’ve guessed, holds the same role within Hadoop that Nanette and her team of elephants do within C&E Corp.  It ensures that your data is always available for use, never lost or degraded and organized to support efficient Map/Reduce jobs.  Files are stored on the HDFS as blocks of limited size (128 MB is a common choice).  Each block belongs to exactly one file; a file larger than the block size is stored in multiple blocks.  The blocks are stored in cooked form as regular files on one of the Datanode’s regular volumes.  (Hadoop’s decision to use regular files rather than attempting lower-level access to the disk, as many traditional databases do, helps make it remarkably portable, promotes reliability and plays to the strengths of the operating system’s finely-tuned access mechanisms.)
 
@@ -209,6 +274,7 @@ One last essential to note about the HDFS is that its contents are immutable.  O
 Possibly the biggest rookie mistake made by those new to Big Data is a tendency to economize on the amount of data they store; we will try to help you break that habit.  You should be far more concerned with the amount of data you send over the network or to your CPU than with the amount of data you store and most of all, with the amount of time you spend deriving insight rather than acting on it.  Checkpoint often, denormalize when reasonable and preserve the full provenance of your results.
 
 We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining JT and Nannette with their next client.
+
 
 
 
