@@ -13,7 +13,7 @@ We've just seen how
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just could not keep up with the scale of requests. Luckily, their friends at the Elephant & Chimpanzee Corporation were available to simplify the process.
 
-==== A Non-scalable approach ====
+==== Overwhelmed with Letters from Little Boys and Girls  ====
 
 To meet the wishes of children from every corner of the earth, each elf specializes in a certain kind of toy, from Autobot to Pony to Yo-Yo.
 
@@ -27,9 +27,9 @@ image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
 As bags of mail arrived from every town and city, they were hung from the branches of the Bag Tree. Each time an elf was ready for the next letter, a big claw arm swung out to the right spot on the Bag Tree to retrieve it. "The locality of access is all wrong!" bellowed the chimps. "The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
 
-What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in, and from the warehouses that held completed toys. The hallways were clogged with frazzled elves running back and forth between the Bag Tree, their workbench, and the shipping center -- they spent almost as much effort on the mechanics of retrieving letters and dropping off gifts as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
+What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in and from where toys were stored. The hallways were clogged with frazzled elves running back and forth between the Bag Tree, their workbench, and the storage center -- they spent almost as much effort on the mechanics of retrieving letters and dropping off gifts as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
 
-==== Letters to Toy Requests ====
+==== Chimpanzees Turn Letters into Labeled Toy Orders ====
 
 In marched the chimps and elephants, who (singing a rather bawdy version of the Map-Reduce Haiku) built the following system.
 
@@ -70,7 +70,7 @@ The chimps' job was to take letters one-by-one from a mailbag, and fill out a to
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
-=== Chimpanzee and Elephant Save Christmas, part 2 ===
+==== Each Toy Order Goes to the Right Workbench ====
 
 So far, this looks a lot like the process for the translation project, with letters in, toyforms out, and the elephant librarians ensuring a steady supply of mail. But a simple transform isn't enough. You see, the set-up for tying ribbons on Ponies is very different from the set-up for assembling a Yo-Yo. The elves would like to process each type of toy as a group, designating a specific workbench for each type of toy. All the robots and hats might go to workbench A, while all the ponies and yo-yos go to workbench B, and all the coal orders to workbench C.
 
@@ -84,6 +84,21 @@ image::images/paper_sorter.jpg[paper sorter]
 The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
+
+==== Toy Assembly ====
+
+Each pygmy elephant carries its work orders to the workstation it serves. A workstation might handle several types of toys in a factory run, but always in a continuous batch -- the elves that handle ponies and yo-yos will see all the ponies first, and then all the yo-yos:
+
+	Doll	Julia    	Anchorage	AK, USA
+	Doll	Wei Ju		Shenzen	        China
+        Doll	Michael   	Berlin  	Germany
+	...
+	Yo-Yo	Jim		Mountain View	CA, USA
+	...
+	Robot	Joe         	Austin    	TX, USA
+	
+
+You should wonder how, from all the medley outputs of all the rambunctious chimpanzees, these organized groups are formed. The answer is very clever: the elephants accomplish _grouping_ the toyforms by _sorting_ the toyforms.
 
 === Hadoop vs Traditional Databases ===
 
@@ -102,8 +117,6 @@ The typical Hadoop operation streams large swaths of data
 The locality 
 
 === Map / Reduce: What Hadoop is doing ===
-
-
 
 ==== The Map-Reduce Haiku ====
 
@@ -158,26 +171,6 @@ You should typically think in terms of groups and not about the whole reduce set
 
 Similar to a mapper-only task, your reducer can output anything you like, in any format you like. It's typical to output structured records of the same or different shape, but you're free engage in any of the shenanigans listed above.
 
-==== Toy Assembly ====
-
-Each pygmy elephant carries its work orders to the workstation it serves. A workstation might handle several types of toys in a factory run, but always in a continuous batch -- the elves that handle ponies and yo-yos will see all the ponies first, and then all the yo-yos:
-
-	Doll	Julia    	Anchorage	AK, USA
-	Doll	Wei Ju		Shenzen	        China
-        Doll	Michael   	Berlin  	Germany
-	...
-	Yo-Yo	Jim		Mountain View	CA, USA
-	...
-	Robot	Joe         	Austin    	TX, USA
-	
-
-You should wonder how, from all the medley outputs of all the rambunctious chimpanzees, these organized groups are formed. The answer is very clever: the elephants accomplish _grouping_ the toyforms by _sorting_ the toyforms.
-
-[NOTE]
-==========
-You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number.
-==========
-
 ==== Sorted Groups ====
 
 Earlier, as I mentioned that the chimps place the toyforms into the file folders, I skipped past an important detail.
@@ -190,6 +183,8 @@ image::images/chimps_and_elves/bchm_0210.png[Secondary sort]
 
 Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy.
 
+
+
 // You've seen that receiving all the toyforms for Dolls in a single batch make the elves more efficient. The elves requested that the toyforms be further grouped within each batch: so that all the dolls with "purple hair" arrive in a run, followed by dolls with "rosy cheeks", and so forth.
 
 === Sorted Batches ===
@@ -197,6 +192,11 @@ Elves do not have the prodigious memory that elephants do, but they can easily k
 Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
 
 This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
+
+[NOTE]
+==========
+You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number.
+==========
 
 
 

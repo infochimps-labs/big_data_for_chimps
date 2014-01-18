@@ -49,8 +49,38 @@ We've just seen how
 So far we've seen two paradigms: distributed work 
 Record-oriented
 
+* Letters to toyforms
+* Toyforms to parts forms, parts and toyforms to desks
+* Toys by type and subtype
+* Toys by crate and then address
+* 
 
 
+* Map/Reduce Paradigm
+    * Elephant and Chimpanzee Save Christmas part 1
+        * Elves in Crisis
+        *  Making Toys: Children's letters Become Labelled Toy Forms
+        * Making Toys: Toy Forms Dispatched to Workbench
+    * map/reduce
+        * 
+    * part 2
+        * Shipping Toys: Cities are mapped to Crates
+        * Shipping Toys: 
+        * Tracking Inventory: 
+    * Secondary Sort
+    * part 3?
+        * Tracking Inventory: 
+        * 
+    * Aggregation
+* Structural Operations Paradigm
+    * Overview of Operation types
+    * FOREACH processes records individually
+    * FILTER 
+    * JOIN matches records in two tables
+    * Use a Replicated JOIN When One Table is Small
+    * GROUP with Aggregating Functions Summarize Related Records
+    * GROUP and COGROUP Assemble Complex
+    * After a GROUP, a FOREACH has special abilities
 
 
 The harsh realities of the laws of physics and economics prevent traditional data analysis solutions such as relational databases, supercomputing and so forth from economically scaling to arbitrary-sized data for reasons very similar to Santa's original system (see sidebar).  Hadoop's Map/Reduce paradigm does not provide complex operations, modification of existing records, fine-grain control over how the data is distributed or anything else beyond the ability to write programs that adhere to a single, tightly-constrained template.  If Hadoop were a publishing medium, it would be one that refused essays, novels, sonnets and all other literary forms beyond the haiku:
@@ -86,7 +116,6 @@ Please be aware, however, that it is only appropriate to access external resourc
 While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.  
 
 The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF).  Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.  
-
 
 Introduce the chapter to the reader
 * take the strands from the last chapter, and show them braided together
