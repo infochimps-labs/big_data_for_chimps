@@ -64,7 +64,7 @@ Record-oriented
     * map/reduce
         * 
     * part 2
-        * Shipping Toys: Cities are mapped to Crates
+        * Toy Parts: toy forms to part forms
         * Shipping Toys: 
         * Tracking Inventory: 
     * Secondary Sort
