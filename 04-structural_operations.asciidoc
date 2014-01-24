@@ -27,7 +27,7 @@ COUNT WITHIN GROUPS
 STORE INTO OUTPUT FILE
 ----
 
-Here’s what you might write in Wukong to answer the same question:
+For comparison, here's the Wukong script we wrote earlier to answer the same question:
 
 ----
 DEFINE MODEL FOR INPUT RECORDS

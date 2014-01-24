@@ -1,21 +1,47 @@
-[[transform_pivot]]
+[[map_reduce]]
 == Chimpanzee and Elephant Save Christmas ==
 
-// Say more about conceptualizing big data and tie in what readers have already learned (up to this chapter, the simple transform and first exploration material) and weave that in to help them have 'ah ha' moments and really grasp this material. Then, write your "...in this chapter..."  Finally, a good discussion of "locality" would go well anchored here.  And then you can dive into the Elves.  Amy////
+In the previous chapter, you worked with the simple-as-possible Pig Latin script, which let you learn the mechanics of running Hadoop jobs, understand the essentials of the HDFS, and appreciate its scalability. It is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files. 
 
-We've just seen how
- Now let's understand a high-level picture of
-  What Hadoop is doing, and why this makes it scalable.
-(Merge sort, secondary sort)
+Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. A map/reduce program has three phases. In the first phase, your program processes its input in any way you see fit, emitting labelled output records.
+In the second phase, Hadoop places records into groups according to their labels
+Finally, your program receives each group with its records in sorted order.
 
+The first section of this chapter is demonstrates a map/reduce program exhibiting one of Hadoop's strengths: creating managable summaries of extremely large datasets. 
+Next, we'll outline how a map/reduce dataflow works -- first with a physical analogy provided by our friends at Elephant and Chimpanzee inc, and then in moderate technical depth. 
+In Chapter 5 (REF), we'll learn about the fundamental patterns of 
+: grouping, filtering, joining records between data sets,
+
+We've found that it's easiest to understand the 
+Wenderstand how Hadoop moves data around 
+If you're the type of reader who prefers to see several examples in practice, skim that chapter and then come back.
+
+Broadly speaking, there's two ways to use Hadoop. The examples from the last chapter and this one work with individual records. The next chapter will introduce a high-level language called Pig, tha
+to use the first part of this chapter and the next to learn how to 
+
+=== Summarizing Visits using Map/Reduce===
+
+The National UFO Research Center has gathered more than 50,000 reports of UFO sightings -- with local time and date, location, type of craft and description. This can help us answer the important question of when during the day UFOs are most likely to be sighted.
+
+----
+class Sighting < Wu::Model
+  field,
+Mapper do |sighting|
+----
 
 === Chimpanzee and Elephant Save Christmas (pt 1) ===
 
-It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But this year there was a problem: the world had grown, and the elves just could not keep up with the scale of requests. Luckily, their friends at the Elephant & Chimpanzee Corporation were available to simplify the process.
+It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But one year several years ago, the world had grown just a bit too much. The elves just could not keep up with the scale of requests -- Christmas was in danger! Luckily, their friends at the Elephant & Chimpanzee Corporation were available to help. Packing their typewriters and good winter coats, JT, Nanette and the crew headed to the Santaplex, the headquarters for toy manufacture at the North Pole. Here's what they found.
 
-==== Overwhelmed with Letters from Little Boys and Girls  ====
+==== Letters Cannot be Stored with the Right Context for Toy-Making ====
 
-To meet the wishes of children from every corner of the earth, each elf specializes in a certain kind of toy, from Autobot to Pony to Yo-Yo.
+As you know, each year children from every corner of the earth write to Santa to request toys, and Santa -- knowing who's been naughty and who's been nice -- strives to meet the wishes of every good little boy and girl who writes him. He employs a regular army of toymaker elves, each of whom specializes in certain kinds of toy: some elves make Action Figures and Dolls, others make Xylophones and Yo-Yos.
+
+Under the elves' old system, as bags of mail arrived they were examined by an elven postal clerk and then hung from the branches of the Big Tree at the center of the Santaplex. Letters were organized on the tree according to the child's town, as the shipping department has a critical need to organize toys by their final delivery schedule. But the toymaker elves must know what toys to make as well, and so for each letter a postal clerk recorded its Big Tree coordinates in a ledger that was organized by type of toy. 
+
+So to retrieve a letter, a doll-making elf would look under "Doll" in the ledger to find the next letter's coordinates, then wait as teamster elves swung a big claw arm to retrieve it from the Big Tree. As JT readily observed, the mail couldn't be organized both by toy type and also by delivery location, and so this ledger system was a necessary evil. "The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
+
+What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in. The hallways were clogged with frazzled elves running from Big Tree to workbench and back, spending as much effort requesting and retrieving letters as they did making toys. "Throughput, not Latency!" trumpeted Nanette. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
 
 [[elf_workstation]]
 .The elves' workbenches are meticulous and neat.
@@ -25,17 +51,13 @@ image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 .Little boys and girls' mail is less so.
 image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
-As bags of mail arrived from every town and city, they were hung from the branches of the Bag Tree. Each time an elf was ready for the next letter, a big claw arm swung out to the right spot on the Bag Tree to retrieve it. "The locality of access is all wrong!" bellowed the chimps. "The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
+==== Chimpanzees Process Letters into Labelled Toy Requests ====
 
-What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in and from where toys were stored. The hallways were clogged with frazzled elves running back and forth between the Bag Tree, their workbench, and the storage center -- they spent almost as much effort on the mechanics of retrieving letters and dropping off gifts as they did making toys. "Throughput, not Latency!" trumpeted the elephants. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
+In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate. 
 
-==== Chimpanzees Turn Letters into Labeled Toy Orders ====
+Postal clerks still stored each letter on the Big Tree (allowing the legacy shipping system to continue unchanged), but now also handed off bags holding copies of the mail. As she did with the translation passages, Nanette distributed these mailbags across the desks just as they arrived. The overhead of recording each letter in the much-hated ledger was no more, and the hallways were no longer clogged with elves racing to and fro.
 
-In marched the chimps and elephants, who (singing a rather bawdy version of the Map-Reduce Haiku) built the following system.
-
-As you might guess from the last chapter, they set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate. Rather than the centralized Bag Tree, the elephants mustered to distribute mailbags all across the processing stations -- now they could be processed locally, rather than clogging up the hallways as the old Bag Tree required.
-
-The chimps' job was to take letters one-by-one from a mailbag, and fill out a toyform for each requested toy. A toyform has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Goodness, Location, and so forth. As with all North Pole employees, they're able to tell who is naughty and who is nice. The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms; the third one is from a kid who is not just a jerk but also a Yankees fan, and so Santa will put coal in his stocking.
+The chimps' job was to take letters one after another from a mailbag, and fill out a toyform for each request. A toyform has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Nice/Naughty Status, Location, and so forth. You can see some examples here:
 
         # Good kids, generates a toy for Julia and a toy for her brother
 
@@ -58,7 +80,7 @@ The chimps' job was to take letters one-by-one from a mailbag, and fill out a to
         transfer of a huge sum of money...
 
 
-        # Frank is a jerk. He will get coal.
+        # Frank is not only a jerk but a Yankees fan. He will get coal.
 
         HEY SANTA I WANT A YANKEES HAT AND NOT             coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
         ANY DUMB BOOKS THIS YEAR
@@ -70,39 +92,26 @@ The chimps' job was to take letters one-by-one from a mailbag, and fill out a to
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
-==== Each Toy Order Goes to the Right Workbench ====
+The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms, while the third one yields a toyform directing Santa to put coal in his stocking.
 
-So far, this looks a lot like the process for the translation project, with letters in, toyforms out, and the elephant librarians ensuring a steady supply of mail. But a simple transform isn't enough. You see, the set-up for tying ribbons on Ponies is very different from the set-up for assembling a Yo-Yo. The elves would like to process each type of toy as a group, designating a specific workbench for each type of toy. All the robots and hats might go to workbench A, while all the ponies and yo-yos go to workbench B, and all the coal orders to workbench C.
+==== Pygmy Elephants Carry Each Toyform to the Appropriate Workbench ====
 
-image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
+Here's the new wrinkle on top of the system used in the translation project. Next to every desk now stood a line of pygmy elephants, each dressed in a capes that listed the types of toy it would deliver. Each desk had a pygmy elephant for Archery Kits and Dolls, another one for Xylophones and Yo-Yos, and so forth -- matching the different specialties of toymaker elves.
 
-Here's the system C&E, Inc constructed. Next to each chimpanzee stands a line of pygmy elephants, one for each workbench. Each pygmy elephant bears a vertical file like you find on a very organized person's desk:
-
-image::images/paper_sorter.jpg[paper sorter]
-//// Perhaps a smaller sizing for the image? Amy////
-
-The chimps places their toyforms into these file folders as fast as their dexterous fingers can file. Once all the letters in a mailbag have been handled, the elephants march off to the workbench they serve, and behind them a new line of elephants trundle into place, as the chimpanzee tears into a new mailbag. What fun!
+As the chimpanzees would work through a mail bag, they'd place each toyform into the basket on the back of the pygmy elephant that matched its type. At the completion of a bag, the current line of elephants would march off to the workbenches, and behind them a new line of elephants would trundle into place. What fun!
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
-==== Toy Assembly ====
+Finally, the pygmy elephants would march through the now-quiet hallways to the toy shop floor, each reporting to the workbench that matched its toy types. So the Archery Kit/Doll workbench had a line of pygmy elephants, one for every Chimpanzee&Elephant desk; similarly the Xylophone/Yo-Yo workbench, and all the rest.
 
-Each pygmy elephant carries its work orders to the workstation it serves. A workstation might handle several types of toys in a factory run, but always in a continuous batch -- the elves that handle ponies and yo-yos will see all the ponies first, and then all the yo-yos:
+Toymaker elves now began producing a steady stream of toys, no longer constrained by the overhead of walking the hallway and waiting for Big-Tree retrieval on every toy. 
 
-	Doll	Julia    	Anchorage	AK, USA
-	Doll	Wei Ju		Shenzen	        China
-        Doll	Michael   	Berlin  	Germany
-	...
-	Yo-Yo	Jim		Mountain View	CA, USA
-	...
-	Robot	Joe         	Austin    	TX, USA
-	
+image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
-You should wonder how, from all the medley outputs of all the rambunctious chimpanzees, these organized groups are formed. The answer is very clever: the elephants accomplish _grouping_ the toyforms by _sorting_ the toyforms.
 
 === Hadoop vs Traditional Databases ===
 
-Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Bag Tree), then
+Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then
 there is no "locality of access"
 for records retrieved by, say, type of toy --
 records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the disk,
@@ -117,6 +126,55 @@ The typical Hadoop operation streams large swaths of data
 The locality 
 
 === Map / Reduce: What Hadoop is doing ===
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ==== The Map-Reduce Haiku ====
 
@@ -171,32 +229,75 @@ You should typically think in terms of groups and not about the whole reduce set
 
 Similar to a mapper-only task, your reducer can output anything you like, in any format you like. It's typical to output structured records of the same or different shape, but you're free engage in any of the shenanigans listed above.
 
-==== Sorted Groups ====
+=== Elephant and Chimpanzee Save Christmas pt 2: A Critical Bottleneck Emerges===
 
-Earlier, as I mentioned that the chimps place the toyforms into the file folders, I skipped past an important detail.
+After a day or two of the new toyform process, Mrs. Claus reported dismaying news. Even though productivity was much improved over the Big-Tree system, it wasn't going to be enough to hit the Christmas deadline.
 
-The chimpanzees actually file their toyforms into the holder in sorted order. Since the folders aren't very big, and are immediately adjacent to the chimp's dexterous fingers, this doesn't take much additional time.
+The problem was plain to see. Repeatedly throughout the day, workbenches would run out of parts for the toys they were making. The dramatically-improved efficiency of order handling, and the large built-up backlog of orders, far outstripped what the toy parts warehouse could supply. Various workbenches were clogged with Jack-in-the-boxes awaiting springs, number blocks awaiting paint and the like. Tempers were running high, and the hallways became clogged again with overloaded parts carts careening off each other.  JT and Nanette filled several whiteboards with proposed schemes, but none of them felt right.
 
-So when a pygmy elephant delivers its toyform sorter to a workbench, the forms within it are in order -- but of course there is no order across all the file folders. Elephant A might have "apple-cheeked", "cabbage patch" and "yellow-haired" dolls, elephant B "malibu", "raggedy", and "yellow-haired", and elephant C only a tall stack of "real Armenian" dolls. That's no problem though. Each elephant holds its topmost workform at the ready, and passes it to the elves once it's the next one in order to be processed. So in this case, workforms would come from elephant A, then A again, then B, and so on.
+To clear his mind, JT wandered over to the reindeer ready room, eager to join in the cutthroat games of poker Rudolph and his pals regularly ran.  During a break in the action, JT found himself idly sorting out the deck of cards by number, as you do to check that it is a regular deck of 52. (With reindeer, you never know when an extra ace or three will inexplicably appear at the table). As he did so, something in his mind flashed back to the unfinished toys on the assembly floor: mounds of number blocks, stacks of Jack-in-the-boxes, rows of dolls. Sorting the cards by number had naturally organized them into groups by kind as well: he saw all the numbers in blocks in a run, followed by all the jacks, then the queens and the kings and the aces.
 
-image::images/chimps_and_elves/bchm_0210.png[Secondary sort]
+"Sorting is equivalent to grouping!" he exclaimed to the reindeers' puzzlement.  "Sorry, boys,   you'll have to deal me out," he said, as he ran off to find Nanette.
 
-Elves do not have the prodigious memory that elephants do, but they can easily keep track of the next few dozen work orders each elephant holds. That way there is very little time spent seeking out the next work order. Elves assemble toys as fast as their hammers can fly, and the toys come out in the order Santa needs to make little children happy.
+The next day, they made several changes to the toy-making workflow.  First, they set up a delegation of elvish parts clerks at desks behind the letter-writing chimpanzees, directing the chimps to hand a carbon copy of each toy form to a parts clerk as well. On receipt of a toy form, each parts clerk would write out a set of tickets, one for each part in that toy, and note on the ticket the ID of its toyform.  These tickets were then dispatched by pygmy elephant to the corresponding section of the parts warehouse to be retrieved from the shelves.  
+
+Now, here is the truly ingenious part that JT struck upon that night. Before, the chimpanzees placed their toy forms onto the back of each pygmy elephant in no particular order. JT replaced these baskets with standing file folders -- the kind you might see on an organized person's desk. He directed the chimpanzees to insert each toy form into the file folder according to the alphabetical order of its ID. (Chimpanzees are exceedingly dextrous, so this did not appreciably impact their speed.) Meanwhile, at the parts warehouse Nanette directed a crew of elvish carpenters to add a clever set of movable set of frames to each of the part carts. She similarly prompted the parts pickers to put each cart's parts in the place properly preserving the alphabetical order of their toyform IDs.
+
+image::images/paper_sorter.jpg[paper sorter]
+//// Perhaps a smaller sizing for the image? Amy////
+
+After a double shift that night by the parts department and the chimpanzees, the toymakers arrived in the morning to find, next to each workbench, the pygmy elephants with their toy forms and a set of carts from each warehouse section holding the parts they'd need.  As work proceeded, a sense of joy and relief soon spread across the shop.  
+
+The elves were now producing a steady stream of toys as fast as their hammers could fly, with an economy of motion they'd never experienced. Since both the parts and the toy forms were in the same order by toyform ID, as the toymakers would pull the next toy form from the file they would always find the parts for it first at hand. Pull the toy form for a wooden toy train and you would find a train chassis next in the chassis cart, small wooden wheels next in the wheel cart, and magnetic bumpers next in the small parts cart. Pull the toy form for a rolling duck on a string, and you would find instead, a duck chassis, large wooden wheels and a length of string at the head of their respective carts.  
+
+Not only did work now proceed with an unbroken swing, but the previously cluttered workbenches were now clear -- their only contents were the parts immediately required to assemble the next toy. This space efficiency let Santa pull in extra temporary workers from the elves' Rivendale branch, who were bored with fighting orcs and excited to help out.
+
+Toys were soon coming off the line at a tremendous pace, far exceeding what the elves had ever been able to achieve. By the second day of the new system, Mrs. Claus excitedly reported the news everyone was hoping to hear: they were fully on track to hit the Christmas Eve deadline!
+
+And that's the story of how Elephant and Chimpanzee saved Christmas.
+
+=== How Hadoop Manages Midstream Data
+
+The first part of this chapter (TODO:  REF) described the contract Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.  
+
+==== Mappers Spill Data In Sorted Chunks
+
+As your Map task produces each labeled record, Hadoop inserts it into a memory buffer according to its order.  Like the dextrous chimpanzee, the current performance of CPU and memory means this initial ordering imposes negligible overhead compared to the rate that data can be read and processed.  When the Map task concludes or that memory buffer fills, its contents are flushed as a stream to disk.  The typical Map task operates on a single HDFS block and produces an output size not much larger.  A well-configured Hadoop cluster sets the sort buffer size accordingly (FOOTNOTE:  The chapter on Hadoop Tuning For The Brave And Foolish (TODO:  REF) shows you how); that most common case produces only a single spill.
+
+If there are multiple spills, Hadoop performs the additional action of merge/sorting the chunks into a single spill.  (FOOTNOTE:  This can be somewhat expensive, so in Chapter (TODO:  REF), we will show you how to avoid unnecessary spills.)  Whereas the pygmy elephants each belonged to a distinct workbench, a Hadoop Mapper produces only that one unified spill.  That's ok -- it is easy enough for Hadoop to direct the records as each is sent to its Reducer.  
+
+As you know, each record is sent to exactly one Reducer.  The label for each record actually consists of two important parts:  the partition key that determines which Reducer the record belongs to, and the sort key, which groups and orders those records within the Reducer's input stream.  You will notice that, in the programs we have written, we only had to supply the record's natural label and never had to designate a specific Reducer; Hadoop handles this for you by applying a partitioner to the key.  
+
+==== Partitioners Assign Each Record To A Reducer By Label
+
+The default partitioner, which we find meets almost all our needs, is called the "RandomPartitioner."  (FOOTNOTE:  In the next chapter (TODO:  REF), you will meet another partitioner, when you learn how to do a total sort.)  It aims to distribute records uniformly across the Reducers by giving each key the same chance to land on any given Reducer.  It is not really random in the sense of nondeterministic; running the same job with the same configuration will distribute records the same way.  Rather, it achieves a uniform distribution of keys by generating a cryptographic digest -- a number produced from the key with the property that any change to that key would instead produce an arbitrarily distinct number.  Since the numbers thus produced have high and uniform distribution, the digest MODULO the number of Reducers reliably balances the Reducer's keys, no matter their raw shape and size.  (FOOTNOTE:  If you will recall, x MODULO y gives the remainder after dividing x and y.  You can picture it as a clock with y hours on it:  15 MODULO 12 is 3; 4 MODULO 12 is 4; 12 MODULO 12 is 0).  
+
+NOTE
+The default partitioner aims to provide a balanced distribution of _keys_ -- which does not at all guarantee a uniform distribution of _records_ !  If 40-percent of your friends have the last name Chimpanzee and 40-percent have the last name Elephant, running a Map/Reduce job on your address book, partitioned by last name, will send all the Chimpanzees to some Reducer and all the Elephants to some Reducer (and if you are unlucky, possibly even the same one).  Those unlucky Reducers will struggle to process 80-percent of the data while the remaining Reducers race through their unfairly-small share of what is left.  This situation is far more common and far more difficult to avoid than you might think, so large parts of this book's intermediate chapters are, in effect, tricks to avoid that situation.
+
+(TODO:  Move merge/sort description here)
+
+==== Playing with Partitions: Aggregate by 
+
+Here's another version of the script to total wikipedia pageviews. We've modified the mapper to emit separate fields for the century, year, month, day and hour (you wouldn't normally do this; we're trying to prove a point). The reducer intends to aggregate the total pageviews across all pages by year and month: a count for December 2010, for January 2011, and so forth. We've also directed it to use twenty reducers, enough to illustrate a balanced distribution of reducer data.
+
+Run the script on the subuniverse pageview data with `--partition_keys=3 --sort_keys=3` (TODO check params), and you'll see it use the first three keys (century/year/month) as both partition keys and sort keys. Each reducer's output will tend to have months spread across all the years in the sample, and the data will be fairly evenly distributed across all the reducers. In our runs, the `-00000` file held the months of (TODO insert observed months), while the `-00001` file held the months of (TODO insert observed months); all the files were close to (TODO size) MB large. (TODO consider updating to "1,2,3" syntax, perhaps with a gratuitous randomizing field as well. If not, make sure wukong errors on a partition_keys larger than the sort_keys). Running with  `--partition_keys=3 --sort_keys=4` doesn't change anything: the `get_key` method in this particular reducer only pays attention to the century/year/month, so the ordering within the month is irrelevant.
+
+Running it instead with `--partition_keys=2 --sort_keys=3` tells Hadoop to _partition_ on the century/year, but do a secondary sort on the month as well. All records that share a century and year now go to the same reducer, while the reducers still see months as continuous chunks. Now there are only six (or fewer) reducers that receive data -- all of 2008 goes to one reducer, similarly 2009, 2010, and the rest of the years in the dataset. In our runs, we saw years X and Y (TODO adjust reducer count to let us prove the point, insert numbers) land on the same reducer. This uneven distribution of data across the reducers should cause the job to take slightly longer than the first run. To push that point even farther, running with  `--partition_keys=1 --sort_keys=3` now partitions on the century -- which all the records share. You'll now see 19 reducers finish promptly following the last mapper, and the job should take nearly twenty times as long as with `--partition_keys=3`.
+
+Finally, try running it with  `--partition_keys=4 --sort_keys=4`, causing records to be partitioned by century/year/month/day. Now the days in a month will be spread across all the reducers: for December 2010, we saw `-00000` receive X, Y and `-00001` receive X, Y, Z; out of 20 reducers, X of them received records from that month (TODO insert numbers). Since our reducer class is coded to aggregate by century/year/month, each of those reducers prepared its own meaningless total pageview count for December 2010, each of them a fraction of the true value. You must always ensure that all the data you'll combine in an aggregate lands on the same reducer.
+
+// ===== Exercise: Cube/Rollup Aggregation =====
+// 
+// As an exercise, modify the script to do what's called
+
+==== Reducers Receive Sorted Chunks From Mappers
+
+Partway through your job's execution, you will notice its Reducers spring to life.  Before each Map task concludes, it streams its final merged spill over the network to the appropriate Reducers (FOOTNOTE:  Note that this communication is direct; it does not use the HDFS).  Just as above, the Reducers file each record into a sort buffer, spills that buffer to disk as it fills and begins merge/sorting them once a threshold of spills is reached.  
+
+Whereas the numerous Map tasks typically skate by with a single spill to disk, you are best off running a number of Reducers, the same as or smaller than the available slots.  This generally leads to a much larger amount of data per Reducer and, thus, multiple spills.  
+
+==== Reducers Read Records With A Final Merge/Sort Pass
 
 
-
-// You've seen that receiving all the toyforms for Dolls in a single batch make the elves more efficient. The elves requested that the toyforms be further grouped within each batch: so that all the dolls with "purple hair" arrive in a run, followed by dolls with "rosy cheeks", and so forth.
-
-=== Sorted Batches ===
-
-Santa delivers presents in order as the holidays arrive, racing the sun from New Zealand, through Asia and Africa and Europe, until the finish in American Samoa.
-
-This is a literal locality: the presents for Auckland must go in a sack together, and Sydney, and Petropavlovsk, and so forth.
-
-[NOTE]
-==========
-You can try this for yourself: take a deck of cards, sort them by number, and fan the cards out in a line. You'll see that trivially separating piles where one number meets the next groups the cards by number.
-==========
-
-
-
+==== Reducers Commit Phase Writes Output Data (And Costs More Than You Might Think)
