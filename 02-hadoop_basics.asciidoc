@@ -64,7 +64,7 @@ Record-oriented
     * map/reduce
         * 
     * part 2
-        * Toy Parts: toy forms to part forms
+        * Shipping Toys: Cities are mapped to Crates
         * Shipping Toys: 
         * Tracking Inventory: 
     * Secondary Sort
@@ -115,7 +115,47 @@ Please be aware, however, that it is only appropriate to access external resourc
 
 While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.  
 
-The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF).  Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.  
+The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.  
+
+=== SIDEBAR: What's Fast At High Scale
+
+
+image::images/02-Throughput-and-Cost-for-Compute-Primitives-aka-Numbers-Every-Programmer-Should-Know.png[Throughput and Cost for Compute Primitives -- the "Numbers Every Programmer Should Know"]
+
+image::images/02-Cost-to-Host-and-Serve-1TB.png[Cost to Host and Serve One Billion 1kB Records (1 TB)]
+
+The table at the right (TODO:  REF) summarizes the 2013 values for Peter Norvig's http://norvig.com/21-days.html#answers["Numbers Every Programmer Should Know."]   -- the length of time for each computation primitive on modern hardware.  We've listed the figures several different ways: as latency (time to execute); as the number of 500-byte records that could be processed in an hour (TODO: day), if that operation were the performance bottleneck of your process; and as an amount of money to process one billion records of 500-byte each on commodity hardware.  Big Data requires high volume, high throughput computing, so our principle bound is the speed at which data can be read from and stored to disk.  What is remarkable is that with the current state of technology, most of the other operations are slammed to one limit or the other:  either bountifully unconstraining or devastatingly slow.  That lets us write down the following "rules for performance at scale:"
+
+* High throughput programs cannot run faster than x (TODO:  Insert number)
+* Data can be streamed to and from disk at x GB per hour (x records per hour, y records per hour, z dollars per billion records) (TODO:  insert numbers)
+* High throughput programs cannot run faster than that but not run an order of magnitude slower.
+* Data streams over the network at the same rate as disk.
+* Memory access is infinitely fast.
+* CPU is fast enough to not worry about except in the obvious cases where it is not.
+* Random access (seeking to individual records) on disk is unacceptably slow.
+* Network requests for data (anything involving a round trip) is infinitely slow.
+* Disk capacity is free.
+* CPU and network transfer costs are cheap.
+* Memory is expensive and cruelly finite.  For most tasks, available memory is either all of your concern or none of your concern.
+
+Now that you know how Hadoop moves data around, you can use these rules to explain its remarkable scalability.  
+
+1. Mapper streams data from disk and spills it back to disk; cannot go faster than that.
+2. In between, your code processes the data
+3. If your unwinding proteins or multiplying matrices are otherwise CPU or memory bound, Hadoop at least will not get in your way; the typical Hadoop job can process records as fast as they are streamed.
+4. Spilled records are sent over the network and spilled back to disk; again, cannot go faster than that.
+
+
+That leaves the big cost of most Hadoop jobs: the midstream merge-sort. Spilled blocks are merged in several passes (at the Reducer and sometimes at the Mapper) as follows. Hadoop begins streaming data from each of the spills in parallel.  Under the covers, what this means is that the OS is handing off the contents of each spill as blocks of memory in sequence.  It is able to bring all its cleverness to bear, scheduling disk access to keep the streams continually fed as rapidly as each is consumed.  
+
+Hadoop's actions are fairly straightforward.  Since the spills are each individually sorted, at every moment the next (lowest ordered) record to emit is guaranteed to be the next unread record from one of its streams.  It continues in this way, eventually merging each of its inputs into an unbroken output stream to disk.  The memory requirements -- the number of parallel streams times the buffer size per stream -- are manageable and the CPU burden is effectively nil, so the merge/sort as well runs at the speed of streaming to disk.  
+
+At no point does the Hadoop framework require a significant number of seeks on disk or requests over the network.  
+
+is individually sorted, the first (lowest ordered record) in the merged stream to emit is guaranteed to be the lowest ordered record in one of its input streams.  
+
+
+
 
 Introduce the chapter to the reader
 * take the strands from the last chapter, and show them braided together
@@ -303,6 +343,8 @@ One last essential to note about the HDFS is that its contents are immutable.  O
 Possibly the biggest rookie mistake made by those new to Big Data is a tendency to economize on the amount of data they store; we will try to help you break that habit.  You should be far more concerned with the amount of data you send over the network or to your CPU than with the amount of data you store and most of all, with the amount of time you spend deriving insight rather than acting on it.  Checkpoint often, denormalize when reasonable and preserve the full provenance of your results.
 
 We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining JT and Nannette with their next client.
+
+
 
 
 
