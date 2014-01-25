@@ -1,6 +1,14 @@
 [[map_reduce]]
 == Chimpanzee and Elephant Save Christmas ==
 
+// Make this less "in the previous chapter" and be "now we're learning (building on...)
+// add **more** philosophy
+
+// how **I** think about how to think about it
+// get into the mind a bit
+//
+// a cookbook: this chapter "OK let's talk about leavening agents... "When I think about leavening agents, I think""
+
 In the previous chapter, you worked with the simple-as-possible Pig Latin script, which let you learn the mechanics of running Hadoop jobs, understand the essentials of the HDFS, and appreciate its scalability. It is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files. 
 
 Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. A map/reduce program has three phases. In the first phase, your program processes its input in any way you see fit, emitting labelled output records.
@@ -18,16 +26,6 @@ If you're the type of reader who prefers to see several examples in practice, sk
 
 Broadly speaking, there's two ways to use Hadoop. The examples from the last chapter and this one work with individual records. The next chapter will introduce a high-level language called Pig, tha
 to use the first part of this chapter and the next to learn how to 
-
-=== Summarizing Visits using Map/Reduce===
-
-The National UFO Research Center has gathered more than 50,000 reports of UFO sightings -- with local time and date, location, type of craft and description. This can help us answer the important question of when during the day UFOs are most likely to be sighted.
-
-----
-class Sighting < Wu::Model
-  field,
-Mapper do |sighting|
-----
 
 === Chimpanzee and Elephant Save Christmas (pt 1) ===
 
@@ -79,7 +77,6 @@ The chimps' job was to take letters one after another from a mailbag, and fill o
         business transaction, which involves the
         transfer of a huge sum of money...
 
-
         # Frank is not only a jerk but a Yankees fan. He will get coal.
 
         HEY SANTA I WANT A YANKEES HAT AND NOT             coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
@@ -108,7 +105,6 @@ Toymaker elves now began producing a steady stream of toys, no longer constraine
 
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
-
 === Hadoop vs Traditional Databases ===
 
 Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then
@@ -126,54 +122,6 @@ The typical Hadoop operation streams large swaths of data
 The locality 
 
 === Map / Reduce: What Hadoop is doing ===
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ==== The Map-Reduce Haiku ====
@@ -256,6 +204,142 @@ Toys were soon coming off the line at a tremendous pace, far exceeding what the 
 
 And that's the story of how Elephant and Chimpanzee saved Christmas.
 
+=== Summarizing Visits using Map/Reduce===
+
+The National UFO Research Center has gathered more than 50,000 reports of UFO sightings -- with local time and date, location, type of craft and description. This can help us answer the important question of when during the day UFOs are most likely to be sighted.
+
+==== UFO Sighting Data Model
+
+The data model for a UFO sighting includes the data fields taken directly from the http://www.nuforc.org/[National UFO Reporting Center] eyewitness reports: date of sighting and of report, location, duration, shape of craft and eye-witness description. Your authors have additionally run the free-text locations -- "Merrimac, WI" or "Newark,  NJ (south of Garden State Pkwy)" -- through a geolocation service to (where possible) produce structured location records with an actual longitude, latitude and so forth.
+
+	class SimpleUfoSighting
+	  include Wu::Model
+	  field :sighted_at,   Time
+	  field :reported_at,  Time
+	  field :shape,        Symbol
+	  field :duration_str, String
+	  field :location_str, String
+	  field :place,        Wu::Geo::Place
+	  field :description,  String
+	  #
+	  field :longitude,  Float
+	  field :latitude,   Float
+	  field :quadkey,    String
+	end
+
+==== Group the UFOs by Shape
+
+The first request from the reindeer team is to organize the sightings into groups by the shape of craft, and to record how many sightings there are for each shape.
+
+===== Mapper
+
+In the Chimpanzee&Elephant world, a chimp had the following role:
+
+* reads and understand each letter
+* creates a new intermediate item having a label (the type of toy) and information about the toy (the work order)
+* hands it to the elephants for delivery to the elf responsible for making that toy type.
+
+We're going to write a Hadoop "mapper" that performs a similar purpose:
+
+* reads the raw data and parses it into a structured record
+* creates a new intermediate item having a label (the shape of craft) and information about the sighting (the original record).
+* hands it to Hadoop for delivery to the reducer responsible for that group
+
+The program looks like this:
+
+  	mapper(:count_ufo_shapes) do
+	  consumes UfoSighting, from: json
+	  #
+	  process do |ufo_sighting|      # for each record
+	    record = 1                   # create a dummy payload,
+	    label  = ufo_sighting.shape  # label with the shape,
+            yield [label, record]        # and send it downstream for processing
+	  end
+	end
+
+You can test the mapper on the commandline:
+
+        $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
+	    ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
+	    head -n25 | wu-lign
+	 disk	   1972-06-16T05:00:00Z	1999-03-02T06:00:00Z	Provo (south of), UT     	disk     	several min.   	Str...
+	 sphere	   1999-03-02T06:00:00Z	1999-03-02T06:00:00Z	Dallas, TX              	sphere  	60 seconds     	Whi...
+	 triangle  1997-07-03T05:00:00Z	1999-03-09T06:00:00Z	Bochum (Germany),       	triangle	ca. 2min       	Tri...
+	 light	   1998-11-19T06:00:00Z	1998-11-19T06:00:00Z	Phoenix (west valley), AZ	light   	15mim          	Whi...
+	 triangle  1999-02-27T06:00:00Z	1999-02-27T06:00:00Z	San Diego, CA            	triangle	10 minutes     	cha...
+	 triangle  1997-09-15T05:00:00Z	1999-02-17T06:00:00Z	Wedgefield, SC             	triangle	15 min         	Tra...
+	...
+
+The output is simply the partitioning label (UFO shape), followed by the attributes of the signing, separated by tabs. The framework uses the first field to group/sort by default; the rest is cargo.
+
+===== Reducer
+
+Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each record to the 'reducer', the second stage of our job.
+
+      reducer(:count_sightings) do
+        def process_group(label, group)
+	  count = 0
+	  group.each do |record|           # on each record,
+	    count += 1                     #   increment the count
+	    yield record                   #   re-output the record
+	  end                              #
+	  yield ['# count:', label, count] # at end of group, summarize
+        end
+      end
+
+The elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type.
+
+Test the full mapper-sort-reducer stack from the commandline:
+
+    $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json      |
+        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map    | sort |
+        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | wu-lign
+
+    1985-06-01T05:00:00Z	1999-01-14T06:00:00Z	North Tonawanda, NY  	chevron  	1 hr 	7 lights in a chevron shape not sure it was one object lighted or 7 s
+    1999-01-20T06:00:00Z	1999-01-31T06:00:00Z	Olney, IL            	chevron  	10 seconds        	Stargazing, saw a dimly lit V-shape coming overhaed from west t east,
+    1998-12-16T06:00:00Z	1998-12-16T06:00:00Z	Lubbock, TX          	chevron  	3 minutes         	Object southbound, displaying three white lights, slowed, hovered, qu
+    # count:	chevron	3
+    1999-01-16T06:00:00Z	1999-01-16T06:00:00Z	Deptford, NJ         	cigar    	2 Hours           	An aircraft of some type was seen in the sky with approximately five
+    # count:	cigar	1
+    1947-10-15T06:00:00Z	1999-02-25T06:00:00Z	Palmira,             	circle   	1 hour            	After a concert given in the small town of Palmira, Colombia,  a grou
+    1999-01-10T06:00:00Z	1999-01-11T06:00:00Z	Tyson's Corner, VA   	circle   	1 to 2 sec        	Bright green circularly shaped light moved downward and easterly thro
+    ...
+
+Great! That's enough for the reindeer to start their research. We'll come back in a bit and help them plan their summer tour. /// It's fine to say you're going to come back to it, but say just a bit more rather than totally leaving this dangling.  Give a bit more here in your preview of what's to come.  Or, you could just omit any mention of coming back to this.  But I suggest the former.  Amy////
+
+=== Close Encounters of the Reindeer Kind (pt 2)
+
+=== Secondary Sort: Organize UFOs by Shape and Location
+
+The reindeer have pored over those sightings and now want to spend the summer visiting each UFO site. They've used the counts we prepared in the first stage, along with what passes for common sense among reindeer, to assign investigative teams based on craft type and the number of sightings. (For eample, Dasher handles all sightings of "angular" spacecraft; Donner and Blitzen combine on the more numberous "roundish" spacecraft). Making the script group sightings according to this new synthetic label is easy enough.
+
+Also, the reindeer have thousands of places to visit -- not as many as their yearly trip with Santa, but enough to justify the same path-of-Z's trick to navigate. We will encode the distance along that path-of-Z's with the 'quadkey' (described <<geographic_quadkey,later>>; for now, just trust that it's a _sort-able_ encoding of the location).
+
+We'll use a 'secondary sort' -- a sub-ordering of records within each group based on progress along the path-of-Z's; in particular, 
+
+=== Partitioning, Grouping and Sorting
+
+As you've seen, the way that Hadoop forms groups is actually by sorting the records. It's time now to clearly separate the three fundamental locality operations Hadoop performs for you:
+
+* 'partition':
+  - data in the same partition must go to the same machine
+* 'group':
+  - data in the same group must be in the same partition
+* 'sort':
+
+// [[Note]]We only used Hadoop for part of the analysis -- that's fairly common. You should use
+// Hadoop to make Big Data into small data, then use traditional analytics tools to turn small
+// data into insight.
+
+the Elves' system is meant to evoke the liabilities of database and worker-queue based systems:
+
+* setup and teardown of workstation == using latency code for a throughput process
+  - running the same code in a tight loop makes life easy for the CPU cache in low level languages...
+  - and makes it easy for the interpreter in high-level languages, especially JIT 
+* swinging the mail claw out to retrieve next work order == latency of seek on disk
+* chimpanzees are dextrous == processing sorted data in RAM is very fast
+* elves pull work orders in sequence: The chimpanzees call this a "merge sort", and the elves' memory a "sort buffer"
+
 === How Hadoop Manages Midstream Data
 
 The first part of this chapter (TODO:  REF) described the contract Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.  
@@ -301,3 +385,4 @@ Whereas the numerous Map tasks typically skate by with a single spill to disk, y
 
 
 ==== Reducers Commit Phase Writes Output Data (And Costs More Than You Might Think)
+

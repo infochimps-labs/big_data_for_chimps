@@ -8,14 +8,12 @@ The first part of this book will introduce the Hadoop toolset.
 - The centerpiece of the Big Data toolset is Hadoop, an open-source batch processing toolkit
 
 * This book will present several (paradigms for/ways to think about) Big Data analytics
-
 * Hadoop serves well as a distributed runner.
 * One (approach/paradigm) is record-oriented
 
 Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
 
 What everybody wants is _insight_ -- the patterns, connections, (summarizations) that lead to deeper understanding and better decisions
-
 
 1. Process records independently into a new form
 2. Assemble records into context
@@ -53,8 +51,6 @@ Record-oriented
 * Toyforms to parts forms, parts and toyforms to desks
 * Toys by type and subtype
 * Toys by crate and then address
-* 
-
 
 * Map/Reduce Paradigm
     * Elephant and Chimpanzee Save Christmas part 1
