@@ -71,3 +71,5 @@ include::25-storm+trident-tuning.asciidoc[]
 include::25-appendix.asciidoc[]
 
 include::25f-glossary.asciidoc[]
+
+include::25c-references.asciidoc[]
