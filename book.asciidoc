@@ -36,11 +36,13 @@ include::11-geographic.asciidoc[]
 
 include::11g-end_of_geographic.asciidoc[]
 
-include::12-conceptual_model.asciidoc[]
+include::12-placeholder.asciidoc[]
 
 include::13-data_munging.asciidoc[]
 
 include::14-organizing_data.asciidoc[]
+
+include::15-placeholder.asciidoc[]
 
 include::16-conceptual_model.asciidoc[]
 

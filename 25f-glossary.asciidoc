@@ -22,8 +22,6 @@
 Questions:
 
 * "task process" or "job process" for child process?
-* 
-
 
 === Storm+Trident Glossary ===
 
@@ -31,10 +29,10 @@ Storm Execution
 
 * Worker
 * Daemons
-    * Nimbus
-    * UI
-    * Supervisor
-    * Child Process
+  - Nimbus
+  - UI
+  - Supervisor
+  - Child Process
 * Executor
 * Task
 * Trident Function
