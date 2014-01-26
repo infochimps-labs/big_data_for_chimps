@@ -34,6 +34,8 @@ include::11e-weather_near_you.asciidoc[]
 
 include::11-geographic.asciidoc[]
 
+include::11g-end_of_geographic.asciidoc[]
+
 include::12-conceptual_model.asciidoc[]
 
 include::13-data_munging.asciidoc[]
@@ -52,6 +54,8 @@ include::19a-advanced_pig.asciidoc[]
 
 include::20-hbase_data_modeling.asciidoc[]
 
+include::20a-hbase_schema.asciidoc[]
+
 include::21-hadoop_internals.asciidoc[]
 
 include::21b-hadoop_internals-map_reduce.asciidoc[]
@@ -65,3 +69,5 @@ include::24-storm+trident-internals.asciidoc[]
 include::25-storm+trident-tuning.asciidoc[]
 
 include::25-appendix.asciidoc[]
+
+include::25f-glossary.asciidoc[]

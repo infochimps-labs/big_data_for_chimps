@@ -8,9 +8,6 @@
 [[preface]]
 == Preface
 
-
-image::images/front_cover.jpg[Front Cover]
-
 === Mission Statement ===
 
 Big Data for Chimps will:
