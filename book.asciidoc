@@ -22,6 +22,14 @@ include::09-statistics.asciidoc[]
 
 include::10-event_streams.asciidoc[]
 
+include::11a-spatial_join.asciidoc[]
+
+include::11b-multiscale_join.asciidoc[]
+
+include::11c-regions_to_quadtiles.asciidoc[]
+
+include::11e-weather_near_you.asciidoc[]
+
 include::11-geographic.asciidoc[]
 
 include::12-conceptual_model.asciidoc[]
