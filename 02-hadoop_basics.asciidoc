@@ -1,6 +1,15 @@
 [[simple_transform]]
 == Hadoop Basics
 
+NOTE: This chapter and the next couple will see some reshuffling to give the following narrative flow:
+
+2. (this one) Here's how to use hadoop
+3. Here's your first map/reduce jobs, and how data moves around behind the scenes
+4. Pig lets you work with whole datasets, not record-by-record
+5. The core analytic patterns of Hadoop, as Pig scripts and as Wukong map/reduce scripts
+
+=== Pardon this digression-laden introduction
+
 You can think of Hadoop's processing model in a few ways
 
 The first part of this book will introduce the Hadoop toolset.
@@ -20,11 +29,11 @@ What everybody wants is _insight_ -- the patterns, connections, (summarizations)
 3. Synthesize context groups into new forms
 4. Write the results to a datastore or external system
 
-> * Operations that apply locally to each partition and cause no network transfer
-> * Repartitioning operations that repartition a stream but otherwise don't change the contents (involves network transfer)
-> * Aggregation operations that do network transfer as part of the operation
-> * Operations on grouped streams
-> * Merges and joins
+* Operations that apply locally to each partition and cause no network transfer
+* Repartitioning operations that repartition a stream but otherwise don't change the contents (involves network transfer)
+* Aggregation operations that do network transfer as part of the operation
+* Operations on grouped streams
+* Merges and joins
 
 data flutters by              (process and label records)
 elephants make sturdy piles   (contextify? assemble? by label)
