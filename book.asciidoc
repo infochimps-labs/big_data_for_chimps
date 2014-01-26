@@ -54,10 +54,6 @@ include::19-advanced_pig.asciidoc[]
 
 include::19a-advanced_pig.asciidoc[]
 
-include::20-hbase_data_modeling.asciidoc[]
-
-include::20a-hbase_schema.asciidoc[]
-
 include::21-hadoop_internals.asciidoc[]
 
 include::21b-hadoop_internals-map_reduce.asciidoc[]
@@ -70,7 +66,13 @@ include::24-storm+trident-internals.asciidoc[]
 
 include::25-storm+trident-tuning.asciidoc[]
 
+include::20-hbase_data_modeling.asciidoc[]
+
+include::20a-hbase_schema.asciidoc[]
+
 include::25-appendix.asciidoc[]
+
+include::LICENSE.asciidoc[]
 
 include::25f-glossary.asciidoc[]
 

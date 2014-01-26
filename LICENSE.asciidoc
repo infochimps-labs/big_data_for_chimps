@@ -11,7 +11,7 @@ ____
 
 Code is Apache licensed unless specifically labeled otherwise.
 
-
+For access to the source code, visit http://github.com/infochimps-labs/big_data_for_chimps/
 
 ==== Open Street Map ====
 
