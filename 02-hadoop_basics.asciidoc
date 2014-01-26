@@ -3,6 +3,7 @@
 
 NOTE: This chapter and the next couple will see some reshuffling to give the following narrative flow:
 
+1. (first chapter)
 2. (this one) Here's how to use hadoop
 3. Here's your first map/reduce jobs, and how data moves around behind the scenes
 4. Pig lets you work with whole datasets, not record-by-record
