@@ -1,5 +1,3 @@
-[[geographic]]
-== Geographic Data Processing
 
 ===  Turning Points of Measurements Into Regions of Influence
 

@@ -22,6 +22,8 @@ include::09-statistics.asciidoc[]
 
 include::10-event_streams.asciidoc[]
 
+include::11a-geodata-intro.asciidoc[]
+
 include::11a-spatial_join.asciidoc[]
 
 include::11b-multiscale_join.asciidoc[]
