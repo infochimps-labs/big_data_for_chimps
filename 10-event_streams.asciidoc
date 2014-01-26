@@ -62,7 +62,7 @@ It may look terrifying, but taken piece-by-piece it's not actually that bad.  Re
 That regular expression does almost all the heavy lifting, but isn't sufficient to properly extract the `requested_at` time. Wukong models provide a "security gate" for each field in the form of the `receive_(field name)` method. The setter method (`requested_at=`) applies a new value directly, but the `receive_requested_at` method is expected to appropriately validate and transform the given value. The default method performs simple 'do the right thing'-level type conversion, sufficient to (for example) faithfully load an object from a plain JSON hash. But for complicated cases you're invited to override it as we do here.
 
 ----
-include::/Users/flip/ics/book/big_data_for_chimps/code/serverlogs/models/logline--requested_at.rb[]
+include::code/serverlogs/models/logline--requested_at.rb[]
 ----
 
 There's a general lesson here for data-parsing scripts. Don't try to be a hero and get everything done in one giant method. The giant regexp just coarsely separates the values; any further special handling happens in isolated methods.

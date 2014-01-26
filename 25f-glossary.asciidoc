@@ -23,7 +23,7 @@ Questions:
 
 * "task process" or "job process" for child process?
 
-=== Storm+Trident Glossary ===
+**Storm+Trident Glossary**
 
 Storm Execution
 
