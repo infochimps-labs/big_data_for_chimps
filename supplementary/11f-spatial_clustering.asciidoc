@@ -1,0 +1,14 @@
+
+=== K-means clustering to summarize ===
+
+(TODO: section under construction)
+
+we will describe how to use clustering to form a progressive summary of point-level detail.
+
+there are X million wikipedia topics
+
+at distant zoom levels, storing them in a single record would be foolish
+
+what we can do is summarize their contents -- coalesce records into groups based on their natural spatial arrangement. If the points represented foursquare checkins, those clusters would match the population distribution. If they were wind turbine generators, they would cluster near shores and praries.
+
+K-Means Clustering is an effective way to form that summarization.
