@@ -9,11 +9,11 @@
 //
 // a cookbook: this chapter "OK let's talk about leavening agents... "When I think about leavening agents, I think""
 
-In the previous chapter, you worked with the simple-as-possible Pig Latin script, which let you learn the mechanics of running Hadoop jobs, understand the essentials of the HDFS, and appreciate its scalability. It is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files. 
+In the previous chapter, you worked with the simple-as-possible Pig Latin script, which let you learn the mechanics of running Hadoop jobs, understand the essentials of the HDFS, and appreciate its scalability. It is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files.
 
 Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. Every map/reduce job is a program with the same three phases. In the first phase, your program processes its input in any way you see fit, emitting labelled output records. In the second phase, Hadoop groups and sorts those records according to their labels. Finally, your program processes each group and Hadoop stores its output. That grouping-by-label part is where the magic lies: it ensures that no matter where the relevant records started, they arrive at the same place in a predictable manner, ready to be synthesized.
 
-We'll open the chapter with a straightforward example map/reduce program: aggregating records from a dataset of Unidentified Flying Object sightings to find out when UFOs are most likely to appear. 
+We'll open the chapter with a straightforward example map/reduce program: aggregating records from a dataset of Unidentified Flying Object sightings to find out when UFOs are most likely to appear.
 
 Next, we'll outline how a map/reduce dataflow works -- first with a physical analogy provided by our friends at Elephant and Chimpanzee inc, and then in moderate technical detail.
 
@@ -21,25 +21,25 @@ Next, we'll outline how a map/reduce dataflow works -- first with a physical ana
 
 The most important thing for you
 It's essential that you gain an innate, physical sense of how Hadoop moves data around. You can't understand
-the core 
+the core
 the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth.
 
 Assemble those patterns into the solution you seek
 
-For two good reasons, we're going to use very particular language whenever we discuss how to design a map/reduce dataflow. First, because it will help you reason by comparison as you meet more and more map/reduce patterns. The second reason is that those core patterns are not specific to the map/reduce paradigm. You'll see them in different dress but with the same essentials when we dive into the Streaming Analytics paradigm (REF) later in the book. In Chapter (REF) we'll put forth a conceptual model that explains much about how not just streaming and map/reduce dataflows are designed, but service-oriented architectures, distributed message 
+For two good reasons, we're going to use very particular language whenever we discuss how to design a map/reduce dataflow. First, because it will help you reason by comparison as you meet more and more map/reduce patterns. The second reason is that those core patterns are not specific to the map/reduce paradigm. You'll see them in different dress but with the same essentials when we dive into the Streaming Analytics paradigm (REF) later in the book, and then generalized into a conceptual model for distributed analytics in Chapter (REF). Using the terms from that conceptual model will help you see the essential core of these patterns throughout the book.
 
 
 === Summarizing UFO Sightings using Map/Reduce===
 
 Santa Claus and his elves are busy year-round, but Santa's flying reindeer have few responsibilities outside the holiday season. As flying objects themselves, they spend a good part of their multi-month break is spent pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center] data set of more than 60,000 documented UFO sightings.
 
-Sixty thousand sightings is much higher than a reindeer can count (only four hooves!), but JT and Nanette occasionally earn a little karmic bonus with Santa Claus by helping the reindeer analyzing UFO data footnote:[For our purposes, although sixty thousand records are too small to justify Hadoop on their own, it's the perfect size to learn with.]. 
+Sixty thousand sightings is much higher than a reindeer can count (only four hooves!), but JT and Nanette occasionally earn a little karmic bonus with Santa Claus by helping the reindeer analyzing UFO data footnote:[For our purposes, although sixty thousand records are too small to justify Hadoop on their own, it's the perfect size to learn with.].
 
 We can do our part by helping our reindeer friends understand when, during the day, UFOs are most likely to be sighted.
 
 ==== UFO Sighting Data Model
 
-The data model for a UFO sighting has fields for date of sighting and of report; human-entered location; duration; shape of craft; and eye-witness description. 
+The data model for a UFO sighting has fields for date of sighting and of report; human-entered location; duration; shape of craft; and eye-witness description.
 
 ----
 	class SimpleUfoSighting
@@ -141,7 +141,7 @@ Test the full mapper-sort-reducer stack from the commandline:
 
 ==== Close Encounters of the Reindeer Kind (pt 2)
 
-Since our reindeer friends want to spend their summer months visiting the locations of various UFO sighting, they would like more information to help plan their trip.  The Geonames dataset (REF) provides more than seven million well-described points of interest, so we can extend each UFO sighting whose location matches a populated place name with its longitude, latitude, population and more.  
+Since our reindeer friends want to spend their summer months visiting the locations of various UFO sighting, they would like more information to help plan their trip.  The Geonames dataset (REF) provides more than seven million well-described points of interest, so we can extend each UFO sighting whose location matches a populated place name with its longitude, latitude, population and more.
 
 Your authors have additionally run the free-text locations -- "Merrimac, WI" or "Newark,  NJ (south of Garden State Pkwy)" -- through a geolocation service to (where possible) add structured geographic information:  longitude, latitude and so forth.
 
@@ -201,7 +201,7 @@ the Elves' system is meant to evoke the liabilities of database and worker-queue
 
 * setup and teardown of workstation == using latency code for a throughput process
   - running the same code in a tight loop makes life easy for the CPU cache in low level languages...
-  - and makes it easy for the interpreter in high-level languages, especially JIT 
+  - and makes it easy for the interpreter in high-level languages, especially JIT
 * swinging the mail claw out to retrieve next work order == latency of seek on disk
 
 * chimpanzees are dextrous == processing sorted data in RAM is very fast
@@ -216,7 +216,7 @@ It was holiday time at the North Pole, and letters from little boys and little g
 
 As you know, each year children from every corner of the earth write to Santa to request toys, and Santa -- knowing who's been naughty and who's been nice -- strives to meet the wishes of every good little boy and girl who writes him. He employs a regular army of toymaker elves, each of whom specializes in certain kinds of toy: some elves make Action Figures and Dolls, others make Xylophones and Yo-Yos.
 
-Under the elves' old system, as bags of mail arrived they were examined by an elven postal clerk and then hung from the branches of the Big Tree at the center of the Santaplex. Letters were organized on the tree according to the child's town, as the shipping department has a critical need to organize toys by their final delivery schedule. But the toymaker elves must know what toys to make as well, and so for each letter a postal clerk recorded its Big Tree coordinates in a ledger that was organized by type of toy. 
+Under the elves' old system, as bags of mail arrived they were examined by an elven postal clerk and then hung from the branches of the Big Tree at the center of the Santaplex. Letters were organized on the tree according to the child's town, as the shipping department has a critical need to organize toys by their final delivery schedule. But the toymaker elves must know what toys to make as well, and so for each letter a postal clerk recorded its Big Tree coordinates in a ledger that was organized by type of toy.
 
 So to retrieve a letter, a doll-making elf would look under "Doll" in the ledger to find the next letter's coordinates, then wait as teamster elves swung a big claw arm to retrieve it from the Big Tree. As JT readily observed, the mail couldn't be organized both by toy type and also by delivery location, and so this ledger system was a necessary evil. "The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
 
@@ -232,7 +232,7 @@ image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
 ==== Chimpanzees Process Letters into Labelled Toy Requests ====
 
-In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate. 
+In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate.
 
 Postal clerks still stored each letter on the Big Tree (allowing the legacy shipping system to continue unchanged), but now also handed off bags holding copies of the mail. As she did with the translation passages, Nanette distributed these mailbags across the desks just as they arrived. The overhead of recording each letter in the much-hated ledger was no more, and the hallways were no longer clogged with elves racing to and fro.
 
@@ -242,7 +242,7 @@ The chimps' job was to take letters one after another from a mailbag, and fill o
 
         Deer SANTA                                     robot | type="optimus prime" recipient="Joe"
                                                        doll  | type="green hair"  recipient="Joe's sister Julia"
-        I wood like a doll for me and 
+        I wood like a doll for me and
         and an optimus prime robot for my
 	brother joe
 
@@ -283,7 +283,7 @@ image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
 Finally, the pygmy elephants would march through the now-quiet hallways to the toy shop floor, each reporting to the workbench that matched its toy types. So the Archery Kit/Doll workbench had a line of pygmy elephants, one for every Chimpanzee&Elephant desk; similarly the Xylophone/Yo-Yo workbench, and all the rest.
 
-Toymaker elves now began producing a steady stream of toys, no longer constrained by the overhead of walking the hallway and waiting for Big-Tree retrieval on every toy. 
+Toymaker elves now began producing a steady stream of toys, no longer constrained by the overhead of walking the hallway and waiting for Big-Tree retrieval on every toy.
 
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
@@ -298,11 +298,11 @@ and though the newer flash drives have smaller retrieval latency it's still far 
 
 What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
 
-Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested. Instead, it focuses purely on the throughput case. 
+Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested. Instead, it focuses purely on the throughput case.
 TODO explain disk is the new tape It takes X to seek but
 
-The typical Hadoop operation streams large swaths of data 
-The locality 
+The typical Hadoop operation streams large swaths of data
+The locality
 
 
 
@@ -353,7 +353,7 @@ It's very important that you understand what that unlocks, so I'm going to redun
 
 * Each mapper-output record goes to exactly one reducer, solely determined by its key.
 * If several records have the same key, they will all go to the same reducer.
-* From the reducer's perspective, if it sees any element of a group it will see all elements of the group. 
+* From the reducer's perspective, if it sees any element of a group it will see all elements of the group.
 
 You should typically think in terms of groups and not about the whole reduce set: imagine each partition is sent to its own reducer. It's important to know, however, that each reducer typically sees multiple partitions. (Since it's more efficient to process large batches, a certain number of reducer processes are started on each machine. This is in contrast to the mappers, who run one task per input split.) Unless you take special measures, the partitions are distributed arbitrarily among the reducers footnote:[Using a "consistent hash"; see (TODO: ref) the chapter on Sampling]. They are fed to the reducer in order by key.
 
@@ -369,16 +369,16 @@ To clear his mind, JT wandered over to the reindeer ready room, eager to join in
 
 "Sorting is equivalent to grouping!" he exclaimed to the reindeers' puzzlement.  "Sorry, boys,   you'll have to deal me out," he said, as he ran off to find Nanette.
 
-The next day, they made several changes to the toy-making workflow.  First, they set up a delegation of elvish parts clerks at desks behind the letter-writing chimpanzees, directing the chimps to hand a carbon copy of each toy form to a parts clerk as well. On receipt of a toy form, each parts clerk would write out a set of tickets, one for each part in that toy, and note on the ticket the ID of its toyform.  These tickets were then dispatched by pygmy elephant to the corresponding section of the parts warehouse to be retrieved from the shelves.  
+The next day, they made several changes to the toy-making workflow.  First, they set up a delegation of elvish parts clerks at desks behind the letter-writing chimpanzees, directing the chimps to hand a carbon copy of each toy form to a parts clerk as well. On receipt of a toy form, each parts clerk would write out a set of tickets, one for each part in that toy, and note on the ticket the ID of its toyform.  These tickets were then dispatched by pygmy elephant to the corresponding section of the parts warehouse to be retrieved from the shelves.
 
 Now, here is the truly ingenious part that JT struck upon that night. Before, the chimpanzees placed their toy forms onto the back of each pygmy elephant in no particular order. JT replaced these baskets with standing file folders -- the kind you might see on an organized person's desk. He directed the chimpanzees to insert each toy form into the file folder according to the alphabetical order of its ID. (Chimpanzees are exceedingly dextrous, so this did not appreciably impact their speed.) Meanwhile, at the parts warehouse Nanette directed a crew of elvish carpenters to add a clever set of movable set of frames to each of the part carts. She similarly prompted the parts pickers to put each cart's parts in the place properly preserving the alphabetical order of their toyform IDs.
 
 image::images/paper_sorter.jpg[paper sorter]
 //// Perhaps a smaller sizing for the image? Amy////
 
-After a double shift that night by the parts department and the chimpanzees, the toymakers arrived in the morning to find, next to each workbench, the pygmy elephants with their toy forms and a set of carts from each warehouse section holding the parts they'd need.  As work proceeded, a sense of joy and relief soon spread across the shop.  
+After a double shift that night by the parts department and the chimpanzees, the toymakers arrived in the morning to find, next to each workbench, the pygmy elephants with their toy forms and a set of carts from each warehouse section holding the parts they'd need.  As work proceeded, a sense of joy and relief soon spread across the shop.
 
-The elves were now producing a steady stream of toys as fast as their hammers could fly, with an economy of motion they'd never experienced. Since both the parts and the toy forms were in the same order by toyform ID, as the toymakers would pull the next toy form from the file they would always find the parts for it first at hand. Pull the toy form for a wooden toy train and you would find a train chassis next in the chassis cart, small wooden wheels next in the wheel cart, and magnetic bumpers next in the small parts cart. Pull the toy form for a rolling duck on a string, and you would find instead, a duck chassis, large wooden wheels and a length of string at the head of their respective carts.  
+The elves were now producing a steady stream of toys as fast as their hammers could fly, with an economy of motion they'd never experienced. Since both the parts and the toy forms were in the same order by toyform ID, as the toymakers would pull the next toy form from the file they would always find the parts for it first at hand. Pull the toy form for a wooden toy train and you would find a train chassis next in the chassis cart, small wooden wheels next in the wheel cart, and magnetic bumpers next in the small parts cart. Pull the toy form for a rolling duck on a string, and you would find instead, a duck chassis, large wooden wheels and a length of string at the head of their respective carts.
 
 Not only did work now proceed with an unbroken swing, but the previously cluttered workbenches were now clear -- their only contents were the parts immediately required to assemble the next toy. This space efficiency let Santa pull in extra temporary workers from the elves' Rivendale branch, who were bored with fighting orcs and excited to help out.
 
@@ -391,26 +391,26 @@ And that's the story of how Elephant and Chimpanzee saved Christmas.
 
 === How Hadoop Manages Midstream Data
 
-The first part of this chapter (TODO:  REF) described the contract Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.  
+The first part of this chapter (TODO:  REF) described the contract Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.
 
 ==== Mappers Spill Data In Sorted Chunks
 
 As your Map task produces each labeled record, Hadoop inserts it into a memory buffer according to its order.  Like the dextrous chimpanzee, the current performance of CPU and memory means this initial ordering imposes negligible overhead compared to the rate that data can be read and processed.  When the Map task concludes or that memory buffer fills, its contents are flushed as a stream to disk.  The typical Map task operates on a single HDFS block and produces an output size not much larger.  A well-configured Hadoop cluster sets the sort buffer size accordingly (FOOTNOTE:  The chapter on Hadoop Tuning For The Brave And Foolish (TODO:  REF) shows you how); that most common case produces only a single spill.
 
-If there are multiple spills, Hadoop performs the additional action of merge/sorting the chunks into a single spill.  (FOOTNOTE:  This can be somewhat expensive, so in Chapter (TODO:  REF), we will show you how to avoid unnecessary spills.)  Whereas the pygmy elephants each belonged to a distinct workbench, a Hadoop Mapper produces only that one unified spill.  That's ok -- it is easy enough for Hadoop to direct the records as each is sent to its Reducer.  
+If there are multiple spills, Hadoop performs the additional action of merge/sorting the chunks into a single spill.  (FOOTNOTE:  This can be somewhat expensive, so in Chapter (TODO:  REF), we will show you how to avoid unnecessary spills.)  Whereas the pygmy elephants each belonged to a distinct workbench, a Hadoop Mapper produces only that one unified spill.  That's ok -- it is easy enough for Hadoop to direct the records as each is sent to its Reducer.
 
-As you know, each record is sent to exactly one Reducer.  The label for each record actually consists of two important parts:  the partition key that determines which Reducer the record belongs to, and the sort key, which groups and orders those records within the Reducer's input stream.  You will notice that, in the programs we have written, we only had to supply the record's natural label and never had to designate a specific Reducer; Hadoop handles this for you by applying a partitioner to the key.  
+As you know, each record is sent to exactly one Reducer.  The label for each record actually consists of two important parts:  the partition key that determines which Reducer the record belongs to, and the sort key, which groups and orders those records within the Reducer's input stream.  You will notice that, in the programs we have written, we only had to supply the record's natural label and never had to designate a specific Reducer; Hadoop handles this for you by applying a partitioner to the key.
 
 ==== Partitioners Assign Each Record To A Reducer By Label
 
-The default partitioner, which we find meets almost all our needs, is called the "RandomPartitioner."  (FOOTNOTE:  In the next chapter (TODO:  REF), you will meet another partitioner, when you learn how to do a total sort.)  It aims to distribute records uniformly across the Reducers by giving each key the same chance to land on any given Reducer.  It is not really random in the sense of nondeterministic; running the same job with the same configuration will distribute records the same way.  Rather, it achieves a uniform distribution of keys by generating a cryptographic digest -- a number produced from the key with the property that any change to that key would instead produce an arbitrarily distinct number.  Since the numbers thus produced have high and uniform distribution, the digest MODULO the number of Reducers reliably balances the Reducer's keys, no matter their raw shape and size.  (FOOTNOTE:  If you will recall, x MODULO y gives the remainder after dividing x and y.  You can picture it as a clock with y hours on it:  15 MODULO 12 is 3; 4 MODULO 12 is 4; 12 MODULO 12 is 0).  
+The default partitioner, which we find meets almost all our needs, is called the "RandomPartitioner."  (FOOTNOTE:  In the next chapter (TODO:  REF), you will meet another partitioner, when you learn how to do a total sort.)  It aims to distribute records uniformly across the Reducers by giving each key the same chance to land on any given Reducer.  It is not really random in the sense of nondeterministic; running the same job with the same configuration will distribute records the same way.  Rather, it achieves a uniform distribution of keys by generating a cryptographic digest -- a number produced from the key with the property that any change to that key would instead produce an arbitrarily distinct number.  Since the numbers thus produced have high and uniform distribution, the digest MODULO the number of Reducers reliably balances the Reducer's keys, no matter their raw shape and size.  (FOOTNOTE:  If you will recall, x MODULO y gives the remainder after dividing x and y.  You can picture it as a clock with y hours on it:  15 MODULO 12 is 3; 4 MODULO 12 is 4; 12 MODULO 12 is 0).
 
 NOTE
 The default partitioner aims to provide a balanced distribution of _keys_ -- which does not at all guarantee a uniform distribution of _records_ !  If 40-percent of your friends have the last name Chimpanzee and 40-percent have the last name Elephant, running a Map/Reduce job on your address book, partitioned by last name, will send all the Chimpanzees to some Reducer and all the Elephants to some Reducer (and if you are unlucky, possibly even the same one).  Those unlucky Reducers will struggle to process 80-percent of the data while the remaining Reducers race through their unfairly-small share of what is left.  This situation is far more common and far more difficult to avoid than you might think, so large parts of this book's intermediate chapters are, in effect, tricks to avoid that situation.
 
 (TODO:  Move merge/sort description here)
 
-==== Playing with Partitions: Aggregate by 
+==== Playing with Partitions: Aggregate by
 
 Here's another version of the script to total wikipedia pageviews. We've modified the mapper to emit separate fields for the century, year, month, day and hour (you wouldn't normally do this; we're trying to prove a point). The reducer intends to aggregate the total pageviews across all pages by year and month: a count for December 2010, for January 2011, and so forth. We've also directed it to use twenty reducers, enough to illustrate a balanced distribution of reducer data.
 
@@ -421,24 +421,24 @@ Running it instead with `--partition_keys=2 --sort_keys=3` tells Hadoop to _part
 Finally, try running it with  `--partition_keys=4 --sort_keys=4`, causing records to be partitioned by century/year/month/day. Now the days in a month will be spread across all the reducers: for December 2010, we saw `-00000` receive X, Y and `-00001` receive X, Y, Z; out of 20 reducers, X of them received records from that month (TODO insert numbers). Since our reducer class is coded to aggregate by century/year/month, each of those reducers prepared its own meaningless total pageview count for December 2010, each of them a fraction of the true value. You must always ensure that all the data you'll combine in an aggregate lands on the same reducer.
 
 // ===== Exercise: Cube/Rollup Aggregation =====
-// 
+//
 // As an exercise, modify the script to do what's called
 
 ==== Reducers Receive Sorted Chunks From Mappers
 
-Partway through your job's execution, you will notice its Reducers spring to life.  Before each Map task concludes, it streams its final merged spill over the network to the appropriate Reducers (FOOTNOTE:  Note that this communication is direct; it does not use the HDFS).  Just as above, the Reducers file each record into a sort buffer, spills that buffer to disk as it fills and begins merge/sorting them once a threshold of spills is reached.  
+Partway through your job's execution, you will notice its Reducers spring to life.  Before each Map task concludes, it streams its final merged spill over the network to the appropriate Reducers (FOOTNOTE:  Note that this communication is direct; it does not use the HDFS).  Just as above, the Reducers file each record into a sort buffer, spills that buffer to disk as it fills and begins merge/sorting them once a threshold of spills is reached.
 
-Whereas the numerous Map tasks typically skate by with a single spill to disk, you are best off running a number of Reducers, the same as or smaller than the available slots.  This generally leads to a much larger amount of data per Reducer and, thus, multiple spills.  
+Whereas the numerous Map tasks typically skate by with a single spill to disk, you are best off running a number of Reducers, the same as or smaller than the available slots.  This generally leads to a much larger amount of data per Reducer and, thus, multiple spills.
 
 ==== Reducers Read Records With A Final Merge/Sort Pass
 
-The Reducers do not need to merge all records to a single unified spill.  The elves at each workbench pull directly from the limited number of parts carts as they work' similarly, once the number of mergeable spills is small enough, the Reducer begins processing records from those spills directly, each time choosing the next in sorted order.  
+The Reducers do not need to merge all records to a single unified spill.  The elves at each workbench pull directly from the limited number of parts carts as they work' similarly, once the number of mergeable spills is small enough, the Reducer begins processing records from those spills directly, each time choosing the next in sorted order.
 
 Your program's Reducer receives the records from each group in sorted order, outputting records as it goes.  Your reducer can output as few or as many records as you like at any time: on the start or end of its run, on any record, or on the start or end of a group. It is not uncommon for a job to produce output the same size as or larger than its input -- "Reducer" is a fairly poor choice of names.  Those output records can also be of any size, shape or format; they do not have to resemble the input records, and they do not even have to be amenable to further Map/Reduce processing.
 
 ==== Reducers Write Output Data (Which May Cost More Than You Think)
 
-As your Reducers emit records, they are streamed directly to the job output, typically the HDFS or S3.  Since this occurs in parallel with reading and processing the data, the primary spill to the Datanode typically carries minimal added overhead.  However, the data is simultaneously being replicated as well, which can extend your job's runtime by more than you might think.  
+As your Reducers emit records, they are streamed directly to the job output, typically the HDFS or S3.  Since this occurs in parallel with reading and processing the data, the primary spill to the Datanode typically carries minimal added overhead.  However, the data is simultaneously being replicated as well, which can extend your job's runtime by more than you might think.
 
 Let's consider how data flows in a job intended to remove duplicate records: for example, processing 100 GB of data with one-percent duplicates, and writing output with replication factor three. As you'll see when we describe the 'distinct' patterns in Chapter 5 (REF), the Reducer input is about the same size as the mapper input. Using what you now know, Hadoop moves roughly the following amount of data, largely in parallel:
 
@@ -456,6 +456,4 @@ If your Datanode is backed by remote volumes (common in some virtual environment
 
 As you can see, unless your cluster is undersized (producing significant merge/sort overhead), the cost of replicating the data rivals the cost of the rest of the job.  The default replication factor is 3 for two very good reasons:  it helps guarantee the permanence of your data and it allows the Job tracker to efficiently allocate Mapper-local tasks.  But in certain cases -- intermediate checkpoint data, scratch data or where backed by a remote file system with its own durability guarantee -- an expert who appreciates the risk can choose to reduce the replication factor to 2 or 1.
 
-You may wish to send your job's output not to the HDFS or S3 but to a scalable database or other external data store.  We will show an example of this in the chapter on HBase (REF), and there are a great many other output formats available.  While your job is in development, though, it is typically best to write its output directly to the HDFS (perhaps at replication factor 1), then transfer it to the external target in a separate stage.  The HDFS is generally the most efficient output target and the least likely to struggle under load.  This checkpointing also encourages the best practice of sanity-checking your output and asking questions.  
-
-
+You may wish to send your job's output not to the HDFS or S3 but to a scalable database or other external data store.  We will show an example of this in the chapter on HBase (REF), and there are a great many other output formats available.  While your job is in development, though, it is typically best to write its output directly to the HDFS (perhaps at replication factor 1), then transfer it to the external target in a separate stage.  The HDFS is generally the most efficient output target and the least likely to struggle under load.  This checkpointing also encourages the best practice of sanity-checking your output and asking questions.

@@ -53,12 +53,12 @@ data flutters by              (process and label records)
 elephants make sturdy piles   (contextify? assemble? by label)
 context yields insight        (process context groups)
 
-We'll start with an application that only requires processing records independently -- each record requires no context. 
+We'll start with an application that only requires processing records independently -- each record requires no context.
 You'll learn the mechanics of running Hadoop jobs: how to load and retrieve data, launch your job and see its progress, and so forth.
 But Hadoop is useful for far more than such
  so-called "embarrassingly parallel" problems.
 The second program exhibits the full map-reduce paradigm.
-The program is simple, but it's _scalable_. Slight modification of the program to 
+The program is simple, but it's _scalable_. Slight modification of the program to
 Count 56,000 UFO sightings by month
   Build the analogous timeseries for the X billion Wikipedia pages.
 
@@ -67,7 +67,7 @@ We've just seen how
   What Hadoop is doing, and why this makes it scalable.
 (Merge sort, secondary sort)
 
-So far we've seen two paradigms: distributed work 
+So far we've seen two paradigms: distributed work
 Record-oriented
 
 * Letters to toyforms
@@ -75,38 +75,94 @@ Record-oriented
 * Toys by type and subtype
 * Toys by crate and then address
 
-* Map/Reduce Paradigm
+
+1. Introduction
+2. Hadoop Basics
+    * Elephant and Chimpanzee Start a Business
+    * Translating Pig Latin with Hadoop
+    * Running a Hadoop Job
+        * Transfer Data to the Cluster
+        * Running and Monitoring your Job
+        * Viewing Output
+    * How the HDFS Manages Data
+3. Map/Reduce Analytics
+    * When are UFOs Most Likely to be Seen?
+        * Mappers Label Sightings by Hour
+        * Hadoop Groups Each Hour's Sightings
+        * Reducer Counts the Sightings
     * Elephant and Chimpanzee Save Christmas part 1
         * Elves in Crisis
-        *  Making Toys: Children's letters Become Labelled Toy Forms
+        * Making Toys: Children's letters Become Labelled Toy Forms
         * Making Toys: Toy Forms Dispatched to Workbench
-    * map/reduce
-        * 
-    * part 2
-        * Shipping Toys: Cities are mapped to Crates
-        * Shipping Toys: 
-        * Tracking Inventory: 
+    * Map/reduce
+        * Mapper labels records
+        * Hadoop groups records by label
+        * Reducer processes each group
+        * Default Partitioner Distributes Keys Uniformly
+        * Experimenting With Partitions
+    * Elephant and Chimpanzee Save Christmas part 2
+        * A New Scaling Bottleneck
+        * Reindeer Games
+        * The New Parts System
     * Secondary Sort
-    * part 3?
-        * Tracking Inventory: 
-        * 
-    * Aggregation
-* Structural Operations Paradigm
-    * Overview of Operation types
+        * Extend UFO Sighting Records with Geographic Info
+        * Putting Sightings and Places into Context by Location Name
+        * Secondary Sort to Match Records
+    * Repeatable Patterns We've Seen: Aggregation, Filter, Co-group
+4. Pig Gives Hadoop Full-Dataset Operations
+    * Using Pig to Count UFO Sightings
+    * Olga the Remarkable Calculating Pig
+    * Running Pig Jobs and Monitoring Progress
+    * LOAD Sources Your Data and Defines its Schema
+    * Pig Operations act on Tables
+    * Pig Functions Act on Records
+    * STORE Specifies Output Location and Triggers Execution
+    * Directives that aid development: DESCRIBE, ASSERT, LIMIT..DUMP, ILLUSTRATE, EXPLAIN
+        * DESCRIBE shows the schema of a table
+        * ASSERT checks that your data is as you think it is
+        * LIMIT..DUMP shows data on the console
+        * ILLUSTRATE magically simulates your script’s actions, except when it fails to work
+        * EXPLAIN shows Pig’s execution graph
+5. Fundamental Patterns of Map/Reduce Analytics
+    * Overview of Operations
     * FOREACH processes records individually
-    * FILTER 
+    * FILTER
+    * LIMIT
     * JOIN matches records in two tables
     * Use a Replicated JOIN When One Table is Small
-    * GROUP with Aggregating Functions Summarize Related Records
-    * GROUP and COGROUP Assemble Complex
+    * GROUP with Aggregating Functions for Summarizing
+    * GROUP or COGROUP to Reassemble Records
     * After a GROUP, a FOREACH has special abilities
+    * FLATTEN Ungroups records
+6. Big Data Ecosystem
+    * Batch Processing
+        * Sidebar: Which Hadoop Version?
+    * Streaming Data Processing
+    * Stream Analytics
+    * Online Analytic Processing (OLAP)
+    * Core Platform: Data Stores
+        * Traditional Relational Databases
+        * Billion-Record Datastores
+        * Scalable Application-Oriented Datastores
+        * Scalable Free-Text Search Engines
+        * Other Datastores
+* Programming Languages, Tools and Frameworks
 
+Frameworks
+
+7. Cat Herding
+8. .
+9. ...
+10. ...
+11. ...
+12. Hadoop Internals
+    * What's Fast at Scale
 
 The harsh realities of the laws of physics and economics prevent traditional data analysis solutions such as relational databases, supercomputing and so forth from economically scaling to arbitrary-sized data for reasons very similar to Santa's original system (see sidebar).  Hadoop's Map/Reduce paradigm does not provide complex operations, modification of existing records, fine-grain control over how the data is distributed or anything else beyond the ability to write programs that adhere to a single, tightly-constrained template.  If Hadoop were a publishing medium, it would be one that refused essays, novels, sonnets and all other literary forms beyond the haiku:
 
       data flutters by
           elephants make sturdy piles
-        context yields insight 
+        context yields insight
 
     data flutters by              		(process and label records)
         elephants make sturdy piles   	(contextify/assemble (?) by label)
@@ -114,27 +170,27 @@ The harsh realities of the laws of physics and economics prevent traditional dat
 
 (TODO: insight shuffles forth?)
 
-Our Map/Reduce haiku illustrates Hadoop's template:  
+Our Map/Reduce haiku illustrates Hadoop's template:
 
-1. The Mapper portion of your script processes records, attaching a label to each. 
+1. The Mapper portion of your script processes records, attaching a label to each.
 2. Hadoop assembles those records into context groups according to their label.
-3. The Reducer portion of your script processes those context groups and writes them to a data store or external system.  
+3. The Reducer portion of your script processes those context groups and writes them to a data store or external system.
 
 What is remarkable is that from this single primitive, we can construct the familiar relational operations (such as GROUPs and ROLLUPs) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.  In the next two chapters, we will demonstrate high-level relational operations and illustrate the Map/Reduce patterns they express.  In order to understand the performance and reasoning behind those patterns, let's first understand the motion of data within a Map/Reduce job.
 
-=== The Map Phase Processes and Labels Records Individually
+=== The Map Phase Processes Records Individually
 
-The Map phase receives 0, 1 or many records individually, with no guarantees from Hadoop about their numbering, order or allocation.  (FOOTNOTE: In special cases, you may know that your input bears additional guarantees -- for example, the MERGE/JOIN described in Chapter (TODO:  REF) requires its inputs to be in total sorted order. It is on you, however, to enforce and leverage those special properties.)  Hadoop does guarantee that every record arrives in whole to exactly one Map task and that the job will only succeed if every record is processed without error.  
+The Map phase receives 0, 1 or many records individually, with no guarantees from Hadoop about their numbering, order or allocation.  (FOOTNOTE: In special cases, you may know that your input bears additional guarantees -- for example, the MERGE/JOIN described in Chapter (TODO:  REF) requires its inputs to be in total sorted order. It is on you, however, to enforce and leverage those special properties.)  Hadoop does guarantee that every record arrives in whole to exactly one Map task and that the job will only succeed if every record is processed without error.
 
-The Mapper receives those records sequentially -- it must fully process one before it receives the next -- and can emit 0, 1 or many inputs of any shape or size.  The chimpanzees working on the SantaCorp project received letters but dispatched toy forms.  Julia's thoughtful note produced two toy forms, one for her doll and one for Joe's robot, while the spam letter produced no toy forms.  Hadoop's 'distcp' utility, used to copy data from cluster to cluster, takes this to a useful extreme:  Each Mapper's input is a remote file to fetch.  Its action is to write that file's contents directly to the HDFS as a Datanode client and its output is a summary of what it transferred.  
+The Mapper receives those records sequentially -- it must fully process one before it receives the next -- and can emit 0, 1 or many inputs of any shape or size.  The chimpanzees working on the SantaCorp project received letters but dispatched toy forms.  Julia's thoughtful note produced two toy forms, one for her doll and one for Joe's robot, while the spam letter produced no toy forms.  Hadoop's 'distcp' utility, used to copy data from cluster to cluster, takes this to a useful extreme:  Each Mapper's input is a remote file to fetch.  Its action is to write that file's contents directly to the HDFS as a Datanode client and its output is a summary of what it transferred.
 
-The right way to bring in data from an external resource is by creating a custom loader or input format (see the chapter on Advanced Pig (TODO:  REF)), which decouples loading data from processing data and allows Hadoop to intelligently manage tasks.  The poor-man's version of a custom loader, useful for one-offs, is to prepare a small number of file names, URLs, database queries or other external handles as input and emit the corresponding contents.  
+The right way to bring in data from an external resource is by creating a custom loader or input format (see the chapter on Advanced Pig (TODO:  REF)), which decouples loading data from processing data and allows Hadoop to intelligently manage tasks.  The poor-man's version of a custom loader, useful for one-offs, is to prepare a small number of file names, URLs, database queries or other external handles as input and emit the corresponding contents.
 
 Please be aware, however, that it is only appropriate to access external resources from within a Hadoop job in exceptionally rare cases.  Hadoop processes data in batches, which means failure of a single record results in the retry of the entire batch.  It also means that when the remote resource is unavailable or responding sluggishly, Hadoop will spend several minutes and unacceptably many retries before abandoning the effort.  Lastly, Hadoop is designed to drive every system resource at its disposal to its performance limit.  (FOOTNOTE: We will drive this point home in the chapter on Event Log Processing (TODO:  REF), where we will stress test a web server to its performance limit by replaying its request logs at full speed.)
 
-While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.  
+While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.
 
-The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.  
+The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.
 
 === SIDEBAR: What's Fast At High Scale
 
@@ -157,7 +213,7 @@ The table at the right (TODO:  REF) summarizes the 2013 values for Peter Norvig'
 * CPU and network transfer costs are cheap.
 * Memory is expensive and cruelly finite.  For most tasks, available memory is either all of your concern or none of your concern.
 
-Now that you know how Hadoop moves data around, you can use these rules to explain its remarkable scalability.  
+Now that you know how Hadoop moves data around, you can use these rules to explain its remarkable scalability.
 
 1. Mapper streams data from disk and spills it back to disk; cannot go faster than that.
 2. In between, your code processes the data
@@ -165,13 +221,13 @@ Now that you know how Hadoop moves data around, you can use these rules to expla
 4. Spilled records are sent over the network and spilled back to disk; again, cannot go faster than that.
 
 
-That leaves the big cost of most Hadoop jobs: the midstream merge-sort. Spilled blocks are merged in several passes (at the Reducer and sometimes at the Mapper) as follows. Hadoop begins streaming data from each of the spills in parallel.  Under the covers, what this means is that the OS is handing off the contents of each spill as blocks of memory in sequence.  It is able to bring all its cleverness to bear, scheduling disk access to keep the streams continually fed as rapidly as each is consumed.  
+That leaves the big cost of most Hadoop jobs: the midstream merge-sort. Spilled blocks are merged in several passes (at the Reducer and sometimes at the Mapper) as follows. Hadoop begins streaming data from each of the spills in parallel.  Under the covers, what this means is that the OS is handing off the contents of each spill as blocks of memory in sequence.  It is able to bring all its cleverness to bear, scheduling disk access to keep the streams continually fed as rapidly as each is consumed.
 
-Hadoop's actions are fairly straightforward.  Since the spills are each individually sorted, at every moment the next (lowest ordered) record to emit is guaranteed to be the next unread record from one of its streams.  It continues in this way, eventually merging each of its inputs into an unbroken output stream to disk.  The memory requirements -- the number of parallel streams times the buffer size per stream -- are manageable and the CPU burden is effectively nil, so the merge/sort as well runs at the speed of streaming to disk.  
+Hadoop's actions are fairly straightforward.  Since the spills are each individually sorted, at every moment the next (lowest ordered) record to emit is guaranteed to be the next unread record from one of its streams.  It continues in this way, eventually merging each of its inputs into an unbroken output stream to disk.  The memory requirements -- the number of parallel streams times the buffer size per stream -- are manageable and the CPU burden is effectively nil, so the merge/sort as well runs at the speed of streaming to disk.
 
-At no point does the Hadoop framework require a significant number of seeks on disk or requests over the network.  
+At no point does the Hadoop framework require a significant number of seeks on disk or requests over the network.
 
-is individually sorted, the first (lowest ordered record) in the merged stream to emit is guaranteed to be the lowest ordered record in one of its input streams.  
+is individually sorted, the first (lowest ordered record) in the merged stream to emit is guaranteed to be the lowest ordered record in one of its input streams.
 
 
 
@@ -362,9 +418,3 @@ One last essential to note about the HDFS is that its contents are immutable.  O
 Possibly the biggest rookie mistake made by those new to Big Data is a tendency to economize on the amount of data they store; we will try to help you break that habit.  You should be far more concerned with the amount of data you send over the network or to your CPU than with the amount of data you store and most of all, with the amount of time you spend deriving insight rather than acting on it.  Checkpoint often, denormalize when reasonable and preserve the full provenance of your results.
 
 We'll spend the next few chapters introducing these core operations from the ground up. Let's start by joining JT and Nannette with their next client.
-
-
-
-
-
-
