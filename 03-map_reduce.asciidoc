@@ -386,9 +386,6 @@ Toys were soon coming off the line at a tremendous pace, far exceeding what the 
 
 And that's the story of how Elephant and Chimpanzee saved Christmas.
 
-
-
-
 === How Hadoop Manages Midstream Data
 
 The first part of this chapter (TODO:  REF) described the contract Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.

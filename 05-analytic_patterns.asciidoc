@@ -143,8 +143,6 @@ STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
 This example digests the players table; selects only players who have more than a qualified number of plate appearances; and generates the stats we're interested in
 (If you're not a baseball fan, just take our word that "these four fields are particularly interesting")
 
-
-
 A `FOREACH` won't cause a new Hadoop job stage: it's chained onto the end of the preceding operation (and when it's on its own, like this one, there's just a single a mapper-only job). A FOREACH always produces exactly the same count of output records as input records.
 
 Within the GENERATE portion of a FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange and eliminate fields); apply the FLATTEN operator (see below); and apply Pig functions to fields. Let's look at Pig's functions.
@@ -315,7 +313,7 @@ NOTE: In a case where you mean to use the disambiguation operator (`players::yea
         park_ids_lookup: map[chararray]
         );
     team_parks = FOREACH team_park_seasons { distinct_park_ids = DISTINCT park_years.park_id; GENERATE team_id, FLATTEN(distinct_park_ids) AS park_id; }
-DUMP team_parks;
+    DUMP team_parks;
 ---- 
 
 === Ungrouping operations (FOREACH..FLATTEN) expand records
