@@ -1,6 +1,3 @@
-[[analytic_patterns]]
-== Analytic Patterns
-
 Now that you've met the fundamental analytic operations -- in both their map/reduce and table-operation form -- it's time to put them to work in an actual data exploration. 
 
 This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data.  Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
@@ -57,11 +54,6 @@ The quadkey field you see is a label for the grid cell containing an article's l
 Lexington,_Texas 023130130 Lexington is a town in Lee County, Texas ...
 ------
 
-=== Pattern: Extend Records with Uniquely Matching Records from Another Table
-
-Using a join as we just did -- to extend the records in one table with the fields from one matching record in another -- is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency. The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
-
-Another reason to split data across tables is 'vertical partitioning': storing fields that are very large or seldom used in context within different tables. That's the case with the Wikipedia article tables -- the geolocation information is only relevant for geodata analysis; the article text is both large and not always relevant. 
 
 === Summarize Wikipedia Articles
 
@@ -120,6 +112,7 @@ term_cell_freqs = FOREACH cf_g GENERATE
     SUM(cell_term_usages) AS cell_usages
     FLATTEN(cell_term_usages, term);
 ----
+
 ._"cell_freqs" result_
 ----
 023130130 7 "bbq"
@@ -156,13 +149,25 @@ global_term_info = FOREACH global_term_info_g GENERATE
 STORE global_term_info INTO '/data/work/geo_flavor/global_term_info';
 ----
 
+(The actual code is somewhat different from what you see here -- we'll explain below)
+
 ... (TODO describe term_info)
+
+=== GROUP/COGROUP To Restructure Tables
+
+This next pattern is one of the more difficult to picture but also one of the most important to master.  Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.  
+
+(TODO: describe this pattern)
+
+=== Pattern: Extend Records with Uniquely Matching Records from Another Table
+
+Using a join as we just did -- to extend the records in one table with the fields from one matching record in another -- is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency. The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
+
+Another reason to split data across tables is 'vertical partitioning': storing fields that are very large or seldom used in context within different tables. That's the case with the Wikipedia article tables -- the geolocation information is only relevant for geodata analysis; the article text is both large and not always relevant. 
 
 === Pattern: Summarizing Groups
 
 Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth.  You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation. 
-
-=== Global Statistics
 
 === Pattern: Re-injecting global totals 
 
@@ -191,14 +196,6 @@ ASSERT(global_term_info.global_usages = memoized_global_usages);
 ----
 
 (TODO: just realized the way we've done this finds global term stats on only geolocated articles. To find them on all articles will complicate the script: we have to do a left join and then filter, or we'd have to do wordbags first then join on geolocations.)
-
-
-=== GROUP/COGROUP To Restructure Tables
-
-This next pattern is one of the more difficult to picture but also one of the most important to master.  Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.  
-
-(TODO: describe this pattern)
-
 
 ==== Select a Fixed Number of Arbitrary Records (LIMIT)
 

@@ -1,7 +1,6 @@
 [[structural_operations]]
 == Structural Operations
 
-
 === Olga, the Remarkable Calculating Pig
 
 JT and Nanette were enjoying the rising success of C&E Corp. The translation and SantaCorp projects were in full production, and they'd just closed two more deals that closely resembled the SantaCorp gig.
@@ -11,8 +10,6 @@ Still, it was quite a thrill when the manager for Olga the Remarkable Calculatin
 That night they watched, spellbound, as Olga performed monstrous feats of calculation and recall. In one act, she tallied the end-of-year accounting reports for three major retailers while riding a unicycle; in another, she listed the box-office numbers for actors whose names were drawn from a hat. Needless to say, the crowd roared for more, JT and Nanette along with them. For the grand finale, a dozen audience members wrote down their favorite baseball players -- most well-known, but of course some wise guy wrote down Alamazoo Jennings, Snooks Dowd or Vinegar Bend Mizell to be intentionally obscure footnote:[Yes, these are names of real major league baseball players.]. Olga not only recited the complete career stats for every one, but the population of their hometown; every teammate they held in common; and the construction date of every stadium they played in.
 
 "I tell you, that's some pig", Nanette said to JT as they waited outside the dressing rooms. "Terrific," JT agreed. A voice behind them said "Radiant and Humble, too, they tell me." They turned to find Olga, now dressed in street clothes. "Why don't you join me for a drink? We can talk then."
-
-
 
 === Nanette and Olga Have an Idea
 

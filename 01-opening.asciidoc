@@ -1,0 +1,41 @@
+== Insight comes from Data in Context
+
+Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
+
+What's valuable is _insight_ -- summaries, patterns and connections that lead to deeper understanding and better decisions. And insight comes from synthesizing data in context. We can predict air flight delays by placing commercial flight arrival times in context with hourly global weather data (as we do in Chapter (REF)). Take the mountain of events in a large website's log files, and regroup using context defined by the paths users take through the site, and you'll illuminate articles of similar interest (see Chapter (REF)). In Chapter (REF), we'll dismantle the text of every article on Wikipedia, then reassemble the words from each article about a physical place into context groups defined by the topic's location -- and produce insights into human language not otherwise quantifiable.
+
+Within each of those examples are two competing forces that move them out of the domain of traditional data analysis and into the topic of this book: "big data" analytics: due to the volume of data, it is far too large to comfortably analyze on a single machine; and due to the comprehensiveness of the data, simple analytic methods are able to extract patterns not visible in the small.
+
+=== Big Data: Tools to Solve the Crisis of Comprehensive Data
+
+Let's take an extremely basic analytic operation: counting. To count the votes for a legislative bill, or Parent-Teacher association head, or what type of pizza to order, we gather the relevant parties into the same room at a fixed time and take a census of opintions. The logistics here are straightforward.
+
+It is impossible, however, to count votes for the President of the United States this way. No conference hall is big enough to hold 300 million people; if there were, no roads are wide enough to get people to that conference hall; and even still the processing rate would not greatly exceed the rate at which voters come of age or die.
+
+Once the volume of data required for synthesis exceeds some key limit of available computation -- limited memory, limited network bandwith, limited time to prepare a relevant answer, or such -- you're forced to fundamentally rework how you synthesize insight from data.
+
+We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far and numerous enough that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed to prepare the final result.  This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it calls in another local method (summing a table of numbers) and orchestrates the two so that the volume of people and data never exceeds what can be efficiently processed.
+
+...
+
+So our first definition of Big Data is "A collection of practical data analysis tools and processes that continue to scale even as the volume of data for justified synthesis exceeds some limit of available computation".
+
+In Chapter 6 (REF) we'll map out the riotous diversity of tools in the Big Data ecosystem,
+Hadoop is the ubiquitous choice for processing batches of data at high
+Hadoop is the tool to use when you want to understand how patterns in data from your manufacturing devices corresponds to defective merchandise returned months later, or how patterns in patients' postoperative medical records correspond to the likelihood they'll be re-admitted with complications.
+
+Earlier, we defined insight as deeper understanding and better decisions. A funny thing happens as an organization's Hadoop investigations start to pay off: they realize they don't just want a deeper understanding of the patterns, they want to act on those patterns and make prompt decisions. The factory owner will want to stop the manufacturing line when signals predict later defects; the hospital will want to have a social worker follow up with patients unlikely to fill their postoperative medications. Just in time, a remarkable new capability has entered the core Big Data toolset: Streaming Analytics.
+
+The Storm+Trident streaming analytics
+Streaming Analytics 
+gets you _fast relevant insight_ to go with Hadoop's _deep global insight_. 
+
+
+=== Big Data: Tools to Capitalize on the Opportunity of Comprehensive Data
+
+
+Peter Norvig (Google's Director of Research) calls this the "Unreasonable Effectiveness of Data" (http://static.googleusercontent.com/media/research.google.com/en/us/pubs/archive/35179.pdf["On the Unreasonable effectiveness of data"]).
+
+This proposition is sure to cause barroom brawls at scientific conferences for years to come, because it advocates another path to truth that _does not follow_ the Scientific Method. Roughly speaking, the scientific method has you (a) use a simplified model of the universe to make falsifiable predictions; (b) test those predictions in controlled circumstances; (c) use established truths to bound any discrepancies footnote:[plus (d) a secret dose of our sense of the model's elegance]. Under this paradigm, data is non-comprehensive: scientific practice demands you carefully control experimental conditions, and the whole point of the model is to strip out all but the reductionistically necessary parameter. A large part of the analytic machinery acts to account for discrepancies from sampling (too little comprehensiveness) or discrepancies from "extraneous" effects (too much comprehensiveness). If those discrepancies are modest, the model is judged to be valid. This paradigm is regarded as the only acceptably rigorous way to admit a simplified representation of the world into the canon of truth.
+
+Under the "Unreasonably Effective" paradigm, you (a) assemble comprehensive data about the system, and identify the data's structure and connectivity; (b) apply generic methods that use only that structure and connectivity, not its meaning, to expose patterns in the data; (c) interpret those patterns back in the system's domain. 

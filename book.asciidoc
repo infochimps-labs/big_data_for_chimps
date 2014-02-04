@@ -2,7 +2,7 @@
 
 include::00-preface.asciidoc[]
 
-include::01-first_exploration.asciidoc[]
+include::01-opening.asciidoc[]
 
 include::02-hadoop_basics.asciidoc[]
 

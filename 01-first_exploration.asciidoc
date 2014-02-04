@@ -1,7 +1,6 @@
 [[first_exploration]]
 == First Exploration
 
-
 ////Write an introductory paragraph that specifically plants a first seed about the conceptual way of viewing big data.  Then, write a paragraph that puts this chapter in context for the reader, introduces it ("...in this chapter we'll show you how to start with a question and arrive at an answer without coding a big, hairy, monolithic program...")  Orient your reader to big data and the goals for lassoing it.  Doing this will hook your reader and prep their mind for the chapter's main thrust, its juicy bits.  Finally, say a word or two about big data before getting into Hadoop, for context (like "...big data is to Hadoop what x is to y...") Do these things before you jump so quickly into Hadoop. Amy////
 
 Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this paragraph.
