@@ -248,15 +248,57 @@ NOTE
 A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement.  Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.  
 ----
 
-==== Grouping and Aggregating
+=== Group Elements From Multiple Tables On A Common Attribute (COGROUP)
 
-Another core procedure you will encounter is grouping and aggregating data, for example, to find statistical summaries.  
+The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation.  This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
+
+----
+sightings = LOAD('/data/gold/geo/ufo_sightings/us_ufo_sightings.tsv') AS (...);
+airports     = LOAD('/data/gold/geo/airflights/us_airports.tsv') AS (...);
+cell_sightings_airports = COGROUP 
+    sightings by quadkey(lng, lat),
+    airports  by quadkey(lng, lat);
+STORE cell_sightings_locations INTO '...';
+----
+
+In the equivalent Map/Reduce algorithm, you label each record by both the indicated key and a number based on its spot in the COGROUP statement (here, records from sightings would be labeled 0 and records from airports would be labeled 1).  Have Hadoop then PARTITION and GROUP on the COGROUP key with a secondary sort on the table index.  Here is how the previous Pig script would be done in Wukong:
+
+----
+mapper(partition_keys: 1, sort_keys: 2) do
+  recordize_by_filename(/sightings/ => Wu::Geo::UfoSighting, /airport/ => Wu::Geo::Airport)
+  TABLE_INDEXES = { Wu::Geo::UfoSighting => 0, Wu::Geo::Airport => 1 }
+  def process(record)
+    table_index = TABLE_INDEXES[record.class] or raise("Don't know how to handle records of type '{record.class}'")
+    yield( [Wu::Geo.quadkey(record.lng, record.lat), table_index, record.to_wire] )
+  end
+end
+
+reducer do
+  def recordize(quadkey, table_index, jsonized_record) ; ...; end    
+  def start(key, *) 
+    @group_key = key ; 
+    @groups = [ [], [] ]
+  end
+  def accumulate(quadkey, table_index, record)
+    @groups[table_index.to_i] << record
+  end
+  def finalize
+    yield(@group_key, *groups)
+  end 
+end
+----
+
+The Mapper loads each record as an object (using the file name to recognize which class to use) and then emits the quadkey, the table index (0 for sightings, 1 for airports) and the original record's fields.  Declaring partition keys 1, sort keys 2 insures all records with the same quadkey are grouped together on the same Reducer and all records with the same table index arrive together.  The body of the Reducer makes temporary note of the GROUP key, then accumulates each record into an array based on its type.  
+
+The result of the COGROUP statement always has the GROUP key as the first field.  Next comes the set of elements from the table named first in the COGROUP statement -- in Pig, this is a bag of tuples, in Wukong, an array of objects.  After that comes the set of elements from the next table in the GROUP BY statement and so on.  
+
+While a standalone COGROUP like this is occasionally interesting, it is also the basis for many other common patterns, as you'll see over the next chapters.
 
 // ==== Regexp matching in Pig
 
 // === Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other.
 
-==== Complex `FOREACH`
+=== Complex `FOREACH`
 
 Let's continue our example of finding the list of home ballparks for each player over their career. 
 
@@ -304,7 +346,7 @@ After the `GROUP BY` operation, the schema is `group:int, player_season_parks:ba
 
 So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ a bag of tuples (remember, bags only hold tuples!), now size-1 tuples holding only the park_id. That schema is preserved through the `DISTINCT` operation, so `home_parks` is also a bag of size-1 tuples.
 
-NOTE: In a case where you mean to use the disambiguation operator (`players::year`), it's easy to confuse yourself and use the tuple element operation (`players.year`). That leads to the baffling error message (TODO describe the screwed-up message that results).
+NOTE: Some late night under deadline, Pig will supply you with the absolutely baffling error message "scalar has more than one row in the output". You've gotten confused and used the tuple element operation (`players.year`) when you should have used the disambiguation operator (`players::year`). The dot is used to reference a tuple element, a common task following a `GROUP`. The double-colon is used to clarify which specific field is intended, common following a join of tables sharing a field name.
 
 ----
     team_park_seasons = LOAD '/tmp/team_parks.tsv' AS (
@@ -366,6 +408,8 @@ STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
 ----
 
 This script will run _two_ Hadoop jobs. One pass is a light mapper-only job to sample the sort key, necessary for Pig to balance the amount of data each reducer receives (we'll learn more about this in the next chapter (TODO ref). The next pass is the map/reduce job that actually sorts the data: output file `part-r-00000` has the earliest-ordered records, followed by `part-r-00001`, and so forth.
+
+NOTE: The custom partitioner of an `ORDER` statement subtly breaks the reducer contract: it may send records having the same key to different reducers. This will cause them to be in different output (`part-xxxxx`) files, so make sure anything using the sorted data doesn't assume keys uniquely correspond to files.
 
 === STORE operation serializes to disk
 
