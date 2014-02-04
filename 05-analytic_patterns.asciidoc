@@ -1,473 +1,255 @@
 [[analytic_patterns]]
 == Analytic Patterns
 
-=== Nanette and Olga Have an Idea
+Now that you've met the fundamental analytic operations -- in both their map/reduce and table-operation form -- it's time to put them to work in an actual data exploration. 
 
-Once settled in at a bar down the street, JT broke the ice. "Olga, your show was amazing. When you rattled off Duluth, Minnesota's daily low and high temperatures from 1973 to 1987, chills ran down my spine. But I can't quite figure out what kind of help C&E Corp can provide for you?" Nanette chimed in, "Actually, I think I have an idea -- but I'd like to hear your thoughts first, Olga."
+This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data.  Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
 
-As olga explained, "I first heard about you from my publisher -- my friend Charlotte and I wrote a book about web crawlers, and thanks to your work we're selling as many copies overseas as we are domestically. But it wasn't until I visited the translation floor that I really appreciated the scale of content you guys were moving. And that's what I'm looking for -- high scale.
+// The real goal is to learn to think strategically, to be able to look at the data you have and recognize the steps required to produce the data you want.  You do not do this, however, by thinking about how to coordinate the fundamental operations you have just learned directly into your solution any more than a general thinks about coordinating the actions of every individual soldier while preparing a battle plan.
 
-"You might know that besides my stage act I consult on the side for companies who need a calculating animal savant. I love that just as much as being on stage, but the fact is that what I can do for my clients just seems so _limited_. I've got insurance companies who want to better judge tornado risk so they can help people protect their homes; but to do this right means using the full historical weather data. I have to explain to them that I'm just one pig -- I'd melt down if I tried to work with that much information. 
+=== Geographic Flavor ===
 
-"Goldbug automakers engages me to make inventory reports based on daily factory output and dealership sales, and I can literally do this in my sleep. But they're collecting thousands of times that much data each second. For instance, they gather status reports from every automated step in their factory. If I could help Goldbug compare the manufacturing data of the cars as they're built to the maintenance records of those cars after sale, we'd be able to find patterns in the factory that match warranty claims down the road. Predicting these manufacturing defects early would enable my client to improve quality, profit and customer satisfaction.
+There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
-"I wish I could say I invited you for this drink because I knew the solution, but all I have is a problem I'd like to fix. I know your typewriter army helps companies process massive amounts of documents, so you're used to working with the amount of information I'm talking about. Is the situation hopeless, or can you help me find a way to apply my skills at a thousand times the scale I work at now?"
+The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like the University of Texas' Memorial Stadium, Snow's BBQ ("The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, home of the world's largest academic supercomputer). This lets us put not just each article, but the cloud of data around it, in geographical context.
 
-Nanette smiled. "It's not hopeless at all, and to tell you the truth your proposal sounds like the other end of a problem I've been struggling with. 
+What happens if we apply this context to not just the article, but those articles' words? Barbeque is popular all through Texas and the Southeastern US -- is the term "Barbeque" overrepresented in articles from that region? We can brainstorm a few more terms with strong place affinity, like "beach" (the coasts) or "wine" (France, Napa Valley), and ones without, like "hat" or "couch". Hadoop, combined with the Wikipedia dataset, will let us _rigorously_ identify words with this kind of geographic flavor, along with the locales they have affinity for.
 
-"We've now had several successful client deliveries, and recently JT's made some breakthroughs in what our document handling system can do -- it involves having the chimpanzees at one set of typewriters send letters to another set of chimpanzees at a different set of typewriters. One thing we're learning is that even though the actions that the chimpanzees take are different for every client, there are certain themes in how the chimpanzees structure their communication that recur across clients.
+At a high level, what we'll do is this:
 
-"Now JT here" (at this, JT rolled his eyes for effect, as he knew what was coming) "spent all his time growing up at a typewriter, and so he thinks about information flow as a set of documents. Designing a new scheme for chimpanzees to send inter-office memos is like pie for him. But where JT thinks about working with words on a page, I think about managing books and libraries. And the other thing we're learning is that our clients think like me. They want to be able to tell us the big picture, not fiddly little rules about what should happen to each document. Tell me how you describe the players-and-stadiums trick you did in the grand finale.
-
-"Well, I picture in my head the teams every player was on for each year they played, and at the same time a listing of each team's stadium by year. Then I just think 'match the players\' seasons to the teams\' seasons using the team and year', and the result pops into my head. 
-
-Nanette nodded and looked over at JT. "I see what you're getting at now," he replied. "In my head I'm thinking about the process of matching individual players and stadiums -- when I explain it you're going to think it sounds more complicated but I don't know, to me it seems simpler. I imagine that I could ask each player to write down on a yellow post-it note the team-years they played on, and ask each stadium manager to write down on blue post-it notes the team-years it served. Then I put those notes in piles -- whenever there's a pile with yellow post-it notes, I can read off the blue post-it notes it matched. 
-
-Nanette leaned in. "So here's the thing. Elephants and Pigs have amazing memories, but not Chimpanzees -- JT can barely keep track of what day of the week it is. JT's scheme never requires him to remember anything more than the size of the largest pile -- in fact, he can get by with just remembering what's on the yellow post-it notes. But 
-
-"Well," Nanette said with a grin, "Pack a suitcase with a very warm jacket. We're going to take a trip up north -- way north."
+* Divide the world into grid cells, and group all the words in wikipedia onto their article's grid cell
+* Determine the overall frequency of each word in the wikipedia corpus
+* Identify prominent (unusually frequent) words on each grid cell
+* Identify words that are prominent on a large number of grid cells -- these have strong geographic "flavor"
 
 
-=== Fundamental Data Operations
+=== Match Wikipedia Article Text with Article Geolocation
 
-Pig's operators can be grouped into several families.  
+Let's start by assembling the data we need. The wikipedia dataset has three different tables for each article: the metadata for each page (page id, title, size, last update time, and so); the full text of each article (a very large field); and the article geolocations. Below are snippets from the articles table and of the geolocations table:
 
-* Simple processing operations (FOREACH, ASSERT, STREAM, UNION) modify the contents of records individually. These become Mapper-Only jobs with exactly the same count of output records as input records.  
-* Simple filtering operations (FILTER, SAMPLE, LIMIT, SPLIT) accept or reject each record individually; these also produce Mapper-Only jobs with the same or fewer number of records and each record has the same contents and schema as its input. (SPLIT is effectively several FILTERs run simultaneously, so its total output record count is the sum of what each of its filters would produce)
-* Ungrouping operations (FOREACH..FLATTEN) turn records that have bags of tuples into records with each such tuple from the bags in combination.  It is most commonly seen after a grouping operation (and thus occurs within the Reduce) but just produces a Mapper-Only job when used on its own.  Records with empty bags will disappear in the output while, if you FLATTEN a record having one bag field with three tuples and another bag field with four tuples, you will get 12 output records, one for each of the bags in combination.
-* Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other.  They make no modifications to their input records.  You will often find them followed by a FOREACH that is able to take advantage of the group context.  These jobs require a Map and Reduce phase.  The GROUP and COGROUP yield themselves one output record per distinct GROUP value.  A JOIN is simply an optimized GROUP/FLATTEN/FOREACH sequence, so its output size follows the same logic as FLATTEN.  
-* Sorting operations (ORDER BY, RANK) perform a total sort on their input; every record in file 00000 is in sorted order and comes before all records in 00001 and so forth for the number of output files.  These require two jobs:  first, a light Mapper-Only pass to understand the distribution of sort keys, next a Map/Reduce job to perform the sort.  
-* Serialization operations (LOAD, STORE) load and store data into file systems or datastores.  
-* Directives (DESCRIBE, ILLUSTRATE, REGISTER, and others) to Pig itself. These do not modify the data, they modify Pig's execution: outputting debug information, registering external UDFs, and so forth.
+[[wp_lexington_article]]
+._Wikipedia article record for "Lexington, Texas"_
+------
+Lexington,_Texas  Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
+------
 
-That's it.  That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps. For example, a GROUP followed by a FOREACH and a FILTER will only require one map phase and one reduce phase. In that case, the FOREACH and FILTER will be done in the reduce step -- and in the right circumstances, pig will "push" part of the `FOREACH` and `FILTER` _before_ the `JOIN`, potentially eliminating a great deal of processing.
 
-In the remainder of this chapter, we'll illustrate the essentials for each family of operations, demonstrating them in actual use. In the following chapter (TODO ref), we'll learn how to implement the corresponding patterns in a plain map-reduce approach -- and therefore how to reason about their performance. Finally, the chapter on Advanced Pig (TODO ref) will cover some deeper-level topics, such as a few important optimized variants of the JOIN statement and how to endow Pig with new functions and loaders.
+[[wp_coords]]
+._Article coordinates_
+------
+Lexington,_Texas -97.01 30.41 023130130
+------
 
-We will not explore every nook and cranny of its syntax, only illustrate its patterns of use. We've omitted operations whose need hasn't arisen naturally in the explorations later, along with fancy but rarely-used options or expressions footnote:[For example, it's legal in Pig to load data without a schema -- but you shouldn't, and so we're not going to tell you how.]
-
-=== LOAD..AS gives the location and schema of your source data
-
-Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the words 'Hadoop':
+Since we want to place the words in each article in geographic context, our first step is to reunite each article with its geolocation.
 
 ----
-articles = LOAD './data/wp/articles.tsv' AS (page_id: long, namespace: int, wikipedia_id: chararray, revision_id: long, timestamp: long, title: chararray, redirect: chararray, text: chararray);
-hadoop_articles = FILTER articles BY text matches '.*Hadoop.*';
-STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
+article_text = LOAD ('...');
+article_geolocations = LOAD('...');
+articles = JOIN article_geolocations BY page_id, article_text BY page_id;
+articles = FOREACH articles GENERATE article_text::page_id, QUADKEY(lng, lat) as quadcell, text;
 ----
 
-==== Simple Types ====
+The quadkey field you see is a label for the grid cell containing an article's location; you'll learn all about them in the <<quadkey,"Geographic Data">> chapter, but for the moment just trust us that it's a clever way to divide up the world map for big data computation. Here's the result:
 
-As you can see, the `LOAD` statement not only tells pig where to find the data, it also describes the table's schema. Pig understands ten kinds of simple type. Six of them are numbers: signed machine integers, as `int` (32-bit) or `long` (64-bit); signed floating-point numbers, as `float` (32-bit) or `double` (64-bit); arbitrary-length integers as `biginteger`; and arbitrary-precision real numbers, as `bigdecimal`. If you're supplying a literal value for a long, you should append a capital 'L' to the quantity: `12345L`; if you're supplying a literal float, use an 'F': `123.45F`. 
+[[wp_lexington_wordbag_and_coords]]
+._Wordbag with coordinates_
+------
+Lexington,_Texas 023130130 Lexington is a town in Lee County, Texas ...
+------
 
-The `chararray` type loads text as UTF-8 encoded strings (the only kind of string you should ever traffic in). String literals are contained in single quotes -- `'hello, world'`. Regular expressions are supplied as string literals, as in the example above: `'.*[Hh]adoop.*'. The `bytearray` type does no interpretation of its contents whatsoever, but be careful -- the most common interchange formats (`tsv`, `xml` and `json`) cannot faithfully round-trip data that is truly freeform.
+=== Pattern: Extend Records with Uniquely Matching Records from Another Table
 
-Lastly, there are two special-purpose simple types. Time values are described with `datetime`, and should be serialised in the the ISO-8601 format: `1970-01-01T00:00:00.000+00:00`. Boolean values are described with `boolean`, and should bear the values `true` or `false`.
+Using a join as we just did -- to extend the records in one table with the fields from one matching record in another -- is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency. The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
 
-==== Complex Type 1: Tuples are fixed-length sequences of typed fields ====
+Another reason to split data across tables is 'vertical partitioning': storing fields that are very large or seldom used in context within different tables. That's the case with the Wikipedia article tables -- the geolocation information is only relevant for geodata analysis; the article text is both large and not always relevant. 
 
-Pig also has three complex types, representing collections of fields. A `tuple` is a fixed-length sequence of fields, each of which has its own schema. They're ubiquitous in the results of the various structural operations you're about to learn. We usually don't serialize tuples, but so far `LOAD` is the only operation we've taught you, so for pretend's sake here's how you'd load a listing of major-league ballpark locations:
+=== Summarize Wikipedia Articles
 
-----
-    -- The address and geocoordinates are stored as tuples. Don't do that, though.
-    ballpark_locations = LOAD 'ballpark_locations' AS (
-        park_id:chararray, park_name:chararray, 
-        address:tuple(full_street:chararray, city:chararray, state:chararray, zip:chararray),
-        geocoordinates:tuple(lng:float, lat:float)
-    );
-    ballparks_in_texas = FILTER ballpark_locations BY (address.state == 'TX');
-    STORE ballparks_in_texas INTO '/tmp/ballparks_in_texas.tsv'
-----
-
-Pig displays tuples using parentheses: it would dump a line from the input file as `BOS07,Fenway Park,(4 Yawkey Way,Boston,MA,02215),(-71.097378,42.3465909)'. As shown above, you address single values within a tuple using `tuple_name.subfield_name` -- `address.state` will have the schema `state:chararray`. You can also project fields in a tuple into a new tuple by writing `tuple_name.(subfield_a, subfield_b, ...)` -- `address.(zip, city, state)` will have schema `address_zip_city_state:tuple(zip:chararray, city:chararray, state:chararray)`. (Pig helpfully generated a readable name for the tuple).
-
-Tuples can contain values of any type, even bags and other tuples, but that's nothing to be proud of. You'll notice we follow almost every structural operation with a `FOREACH` to simplify its schema as soon as possible, and so should you -- it doesn't cost anything and it makes your code readable.
-
-==== Complex Type 2: Bags hold zero one or many tuples ====
-
-A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized tuples; but again for pretend's sake we can load a dataset listing for each team the year and park id of the ballparks it played in:
+Next, we will summarize each article by preparing its "word bag" -- a simple count of the terms on its wikipedia page. We've written a Pig UDF (User-Defined Function) to do so:
 
 ----
-    team_park_seasons = LOAD 'team_parks' AS (
-        team_id:chararray, 
-        park_years: bag{tuple(year:int, park_id:chararray)}
-        );
+REGISTER path/to/udf ...;
+wordbags = FOREACH articles {
+    wds = WORDBAG(text)
+      AS tuple(tot_usages:long, num_terms:long, num_onces:long,
+         wordbag:bag{tuple(article_term_usages,term)});
+    GENERATE page_id, quadcell, wds.tot_usages, wds.num_terms, wds.num_onces, wds.wordbag;
+};
+term_article_freqs = FOREACH wordbags GENERATE
+    page_id, quadcell, tot_usages, num_terms, FLATTEN(wordbag);
+STORE term_article_freqs INTO '/data/work/geo_flavor/term_article_freqs;
 ----
 
-You address values within a bag again using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples -- you'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
+Here's the <<wp_lexington_wordbag,output>>:
 
-==== Complex Type 3: Maps hold collections of key-value pairs for lookup ====
+[[wp_lexington_wordbag]]
+._Wordbag for "Lexington, Texas"_
+------
+Lexington,_Texas 023130130 TODO:tot_usages TODO:terms TODO:NUMONCES {(4,"texas")(2,"lexington"),(2,"best"),(2,"bbq"),(1,"barbecue"), ...}
+------
 
-Pig offers a `map` datatype to represent a collection of key-value pairs. The only context we've seen them used is for loading JSON data. A tweet from the twitter firehose has a sub-hash holding info about the user; the following snippet loads raw JSON data, immediately fixes the schema, and then describes the new schema to you:
+And the output after the flatten:
 
-----
-REGISTER piggybank.jar
-raw_tweets = LOAD '/tmp/tweets.json' USING org.apache.pig.piggybank.storage.JsonLoader(
-             'created_at:chararray, text:chararray, user:map[]');
-tweets = FOREACH raw_tweets GENERATE 
-        created_at,
-        text,
-        user#'id' AS user_id:long, 
-        user#'name' AS user_name:chararray, 
-        user#'screen_name' AS user_screen_name:chararray;
-DESCRIBE tweets;
-----
+[[wp_lexington_wordbag]]
+._"term_cell_freqs" result_
+------
+Lexington,_Texas 023130130 tot_usages num_terms 4   "texas"
+Lexington,_Texas 023130130 tot_usages num_terms 2   "lexington"
+Lexington,_Texas 023130130 tot_usages num_terms 2   "best"
+Lexington,_Texas 023130130 tot_usages num_terms 2   "bbq" 
+Lexington,_Texas 023130130 tot_usages num_terms 1   "barbecue" 
+------
 
-A `map` schema is described using square brackets: `map[value_schema]`. You can leave the value schema blank if you supply one later (as in the example that follows). The keys of a map are _always_ of type chararray; the values can be any simple type. Pig renders a map as `[key#value,key#value,...]`: my twitter user record as a hash would look like `[name#Philip Kromer,id#1554031,screen_name#mrflip]'. 
+=== Pattern: Atom-only Records
 
-Apart from loading complex data, the `map` type is surprisingly useless. You might think it would be useful to carry around a lookup-table in a map field -- a mapping from ids to names, say -- and then index into it using the value of some other field, but a) you cannot do so and b) it isn't useful. The only thing you can do with a `map` field is dereference by a constant string, as we did above (`user#'id'`). Carrying around such a lookup table would be kind of silly, anyway, as you'd be duplicating it on every row. What you most likely want is either an off-the-cuff UDF or to use Pig's "replicated" `JOIN` operation; both are described in the chapter on Advanced Pig (TODO ref).
+All of the fields in the table we've just produced are atomic -- strings, numbers and such, rather than bags or tuples -- what database wonks call "First Normal Form". There is a lot of denormalization (each article's quadcell and total term count are repeated for every term in the article), but the simplicity of each record's schema has a lot of advantages.
 
-Since the map type is mostly useless, we'll seize the teachable moment and use this space to illustrate the other way schema are constructed: using a `FOREACH`. As always when given a complex schema, we took the first available opportunity to simplify it. The `FOREACH` in the snippet above dereferences the elements of the user `map` and supplies a schema for each new field with the `AS <schema>` clauses. The `DESCRIBE` directive that follows causes Pig to dump the schema to console: in this case, you should see `tweets: {created_at: chararray,text: chararray,user_id: long,user_name: chararray,user_screen_name: chararray}`.
+Think of this atom-only form as the neutral fighting stance for your tables. From here we're ready to put each record into context of other records with the same term, same geolocation, same frequency; we can even reassemble the wordbag by grouping on the page_id. The exploration will proceed from here by reassembling these records into various context groups, operating on those groups, and then expanding the result back into atom-only form.
 
-(TODO ensure these topics are covered later: combining input splits in Pig; loading different data formats)
-
-=== FOREACH: modify the contents of records individually
-
-We can now properly introduce you to the first interesting Pig command. A `FOREACH` makes simple transformations to each record. 
-
-For example, baseball fans use a few rough-but-useful player statistics to compare players' offensive performance: batting average, slugging average, and offensive percentage. This script calculates just those statistics, along with the player's name, id and number of games played.
+=== Term Statistics by Grid Cell
 
 ----
-player_seasons = LOAD `player_seasons` AS (...);
-qual_player_seasons = FILTER player_years BY plapp > what it should be;
-player_season_stats = FOREACH qual_player_seasons GENERATE
-    player_id, name, games, 
-    hits/ab AS batting_avg, 
-    whatever AS slugging_avg, 
-    whatever AS offensive_avg, 
-    whatever+whatever AS ops
+taf_g = GROUP term_article_freqs BY quadcell, term;
+cell_freqs = FOREACH taf_g GENERATE 
+      group.quadcell AS quadcell, 
+      group.term AS term, 
+      SUM(term_article_freqs.article_term_usages) AS cell_term_usages;
+cf_g = GROUP cell_freqs BY quadcell;
+term_cell_freqs = FOREACH cf_g GENERATE
+    group AS quadcell,
+    SUM(cell_term_usages) AS cell_usages
+    FLATTEN(cell_term_usages, term);
+----
+._"cell_freqs" result_
+----
+023130130 7 "bbq"
+023130130 20 "texas" 
+----
+
+._"cf_g" result_
+----
+023130130 {(7,"bbq"),(20,"texas"),...}
+----
+
+._"term_cell_freqs" result_
+----
+023130130 95 7 "bbq"
+023130130 95 20 "texas"
+----
+
+=== Term Statistics
+
+We will be defining the prominence of a term on a grid cell by comparing its local frequency to the overall frequency of the term. The occurrence frequency of the term "the" is XX parts per million (ppm), while that of "barbeque"'s is XX ppm. However, on the quadcell surrounding Lexington, Texas, "the" occurs at XX ppm and "barbeque" at XX ppm -- a significantly elevated rate.
+
+Let's now prepare those global statistics.
+
+----
+all_terms = GROUP term_article_freqs BY term;
+term_info_1 = FOREACH all_terms GENERATE 
+    group AS term,
+    COUNT_STAR(term_article_freqs) AS num_articles,
+    SUM(article_term_usages) AS term_usages;
+global_term_info_g = GROUP term_info BY ALL;
+global_term_info = FOREACH global_term_info_g GENERATE
+    COUNT_STAR(term_info) AS num_terms,
+    SUM(term_usages) AS global_usages;
+STORE global_term_info INTO '/data/work/geo_flavor/global_term_info';
+----
+
+... (TODO describe term_info)
+
+=== Pattern: Summarizing Groups
+
+Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth.  You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation. 
+
+=== Global Statistics
+
+=== Pattern: Re-injecting global totals 
+
+We also extract two global statistics: the number of distinct terms, and the number of distinct usages. This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script. 
+
+We prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals.
+
+----
+DEFINE memoized_num_terms XXX;
+DEFINE memoized_global_usages XXX;
+all_terms = GROUP term_cell_freqs BY term;
+term_info_1 = FOREACH all_terms GENERATE 
+    group AS term,
+    COUNT_STAR(term_cell_freqs) AS num_articles,
+    SUM(article_term_usages) AS term_usages,
+    1000000 * SUM(article_term_usages)/memoized_global_usages AS term_ppm:double
     ;
-STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
+-- Validate the global term statistics
+global_term_info_g = GROUP term_info BY ALL;
+global_term_info = FOREACH global_term_info_g GENERATE
+   COUNT_STAR(term_info) AS num_terms,
+   SUM(term_usages) AS global_usages;
+STORE global_term_info INTO '/data/work/geo_flavor/global_term_info';
+ASSERT(global_term_info.num_terms = memoized_num_terms);
+ASSERT(global_term_info.global_usages = memoized_global_usages);
 ----
 
-This example digests the players table; selects only players who have more than a qualified number of plate appearances; and generates the stats we're interested in
-(If you're not a baseball fan, just take our word that "these four fields are particularly interesting")
+(TODO: just realized the way we've done this finds global term stats on only geolocated articles. To find them on all articles will complicate the script: we have to do a left join and then filter, or we'd have to do wordbags first then join on geolocations.)
 
-A `FOREACH` won't cause a new Hadoop job stage: it's chained onto the end of the preceding operation (and when it's on its own, like this one, there's just a single a mapper-only job). A FOREACH always produces exactly the same count of output records as input records.
 
-Within the GENERATE portion of a FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange and eliminate fields); apply the FLATTEN operator (see below); and apply Pig functions to fields. Let's look at Pig's functions.
+=== GROUP/COGROUP To Restructure Tables
 
-=== Pig Functions act on fields
+This next pattern is one of the more difficult to picture but also one of the most important to master.  Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.  
 
-Pig offers a sparse but essential set of built-in functions. The Pig cheatsheet (TODO ref) at the end of the book gives a full list, but here are the highlights: 
+(TODO: describe this pattern)
 
-* *Math functions* for all the things you'd expect to see on a good calculator: `LOG`/`LOG10`/`EXP`, `RANDOM`, `ROUND`/`FLOOR`/`CEIL`, `ABS`, trigonometric functions, and so forth.
-* *String comparison*:
-  - `matches` tests a value against a regular expression: 
-  - Compare strings directly using `==`. `EqualsIgnoreCase` does a case-insensitive match, while `STARTSWITH`/`ENDSWITH` test whether one string is a prefix or suffix of the other.
-  - `SIZE` returns the number of characters in a `chararray`, and the number of bytes in a `bytearray`. Be reminded that characters often occupy more than one byte: the string 'Motörhead' has nine characters, but because of its umlaut-ed 'ö' occupies ten bytes. You can use `SIZE` on other types, too; but as mentioned, use `COUNT_STAR` and not `SIZE` to find the number of elements in a bag.
-  - `INDEXOF` finds the character position of a substring within a `chararray` // `LAST_INDEX_OF`
-* *Transform strings*:
-  - `CONCAT` concatenates all its inputs into a new string
-  - `LOWER` converts a string to lowercase characters; `UPPER` to all uppercase // `LCFIRST`, `UCFIRST` 
-  - `TRIM` strips leading and trailing whitespace // `LTRIM`, `RTRIM`
-  - `REPLACE(string, 'regexp', 'replacement')` substitutes the replacement string wherever the given regular expression matches, as implemented by `java.string.replaceAll`. If there are no matches, the input string is passed through unchanged.
-  - `REGEX_EXTRACT(string, regexp, index)` applies the given regular expression and returns the contents of the indicated matched group. If the regular expression does not match, it returns NULL. The `REGEX_EXTRACT_ALL` function is similar, but returns a tuple of the matched groups.
-  - `STRSPLIT` splits a string at each match of the given regular expression
-  - `SUBSTRING` selects a portion of a string based on position
-* *Datetime Functions*, such as `CurrentTime`, `ToUnixTime`, `SecondsBetween` (duration between two given datetimes)
-* *Aggregate functions* that act on bags:
-  - `AVG`, `MAX`, `MIN`, `SUM`
-  - `COUNT_STAR` reports the number of elements in a bag, including nulls; `COUNT` reports the number of non-null elements. `IsEmpty` tests that a bag has elements. Don't use the quite-similar-sounding `SIZE` function on bags: it's much less efficient.
-  - `SUBTRACT(bag_a, bag_b)` returns a new bag with all the tuples that are in the first but not in the second, and `DIFF(bag_a, bag_b)` returns a new bag with all tuples that are in either but not in both. These are rarely used, as the bags must be of modest size -- in general us an inner JOIN as described below.
-  - `TOP(num, column_index, bag)` selects the top `num` of elements from each tuple in the given bag, as ordered by `column_index`. This uses a clever algorithm that doesn't require an expensive total sort of the data -- you'll learn about it in the Statistics chapter (TODO ref)
-* *Conversion Functions* to perform higher-level type casting: `TOTUPLE`, `TOBAG`, `TOMAP`
 
-=== FILTER: eliminate records using given criteria
+==== Select a Fixed Number of Arbitrary Records (LIMIT)
 
-The `FILTER` operation select a subset of records. This example selects all wikipedia articles that contain the word 'Hadoop':
+The Pig LIMIT operation arbitrarily selects, at most, the specified number of records from a table.
 
 ----
-articles = LOAD './data/wp/articles.tsv' AS (page_id: long, namespace: int, wikipedia_id: chararray, revision_id: long, timestamp: long, title: chararray, redirect: chararray, text: chararray);
-hadoop_articles = FILTER articles BY text matches '.*Hadoop.*';
-STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
+(TODO: example)
 ----
 
-Filter as early as possible -- and in all other ways reduce the number of records you're working with. (This may sound obvious, but in the next chapter (TODO ref) we'll highlight many non-obvious expressions of this rule).
+(TODO: Is there a non-Reduce way to do this?)
 
-It's common to want to extract a _uniform_ sample -- one where every record has an equivalent chance of being selected. Pig's `SAMPLE` operation does so by generating a random number to select records. This brings an annoying side effect: the output of your job is different on every run. A better way to extract a uniform sample is the "consistent hash digest" -- we'll describe it, and much more about sampling, in the Statistics chapter (TODO  ref). 
+In the simplest Map/Reduce equivalent, Mappers emit each record unchanged until they hit the specified limit (or reach the end of their input).  Those output records are sent to a single Reducer, which itself emits each record unchanged until it has hit the specified limit and does nothing on all subsequent records.  
 
-=== LIMIT selects only a few records === 
+(TODO: Do we want to talk about a non-single Reducer approach?)
 
-The `LIMIT` operator selects only a given number of records.
-In general, you have no guarantees about which records it will select. Changing the number of mappers or reducers, small changes in the data, and so forth can change which records are selected. However, using the `ORDER` operator before a `LIMIT` _does_ guarantee you will get the top `k` records -- not only that, it applies a clever optimization (reservoir sampling, see TODO ref) that sharply limits the amount of data sent to the reducers.
-If you truly don't care which records to select, just use one input file (`some_data/part-00000`, not all of `some_data`).
+A Combiner is helpful here in the predominant case where the specified limit is small, as it will eliminate excess records before they are sent to the Reducer and at each merge/sort pass.  
 
-=== Pig matches records in datasets using JOIN ===
+==== Top K Records (ORDER..LIMIT)
 
-For the examples in this chapter and often throughout the book, we will use the Retrosheet.org compendium of baseball data. We will briefly describe tables as we use them, but for a full explanation of its structure see the "Overview of Datasets" appendix (TODO:  REF).  
-
-The core operation you will use to put records from one table into context with data from another table is the JOIN.  A common application of the JOIN is to reunite data that has been normalized -- that is to say, where the database tables are organized to eliminate any redundancy.  For example, each Retrosheet game log lists the ballpark in which it was played but, of course, it does not repeat the full information about that park within every record.  Later in the book, (TODO:  REF) we will want to label each game with its geo-coordinates so we can augment each with official weather data measurements.  
-
-To join the game_logs table with the parks table, extracting the game time and park geocoordinates, run the following Pig command:
+The naive way to extract the top K elements from a table is simply to do an ORDER and then a LIMIT.  For example, the following script will identify the top 100 URLs from the waxy.org weblog dataset.  
 
 ----
-gls_with_parks_j = JOIN 
-    parks     BY (park_id),
-    game_logs BY (park_id);
-explain gls_with_parks_j;
-gls_with_parks = FOREACH gls_with_parks_j GENERATE
-  (game_id, gamelogs.park_id, game_time, park_lng, statium_lat);
-explain gls_with_parks;
-(TODO output of explain command)
+logs=LOAD '/data/gold/waxy/whatever.log' AS (...) USING APACHE LOG READER;
+logs=FOREACH logs GENERATE url;
+url_logs = GROUP logs BY url;
+URL_COUNTS=FOREACH url_logs GENERATE 
+    COUNT_STAR(url_logs) AS views,
+    group AS url;
+url_counts_o = ORDER url_counts BY views PARALLEL 1;
+top_url_counts = LIMIT url_counts_o 100;
+STORE top_url_counts INTO '/data/out/weblogs/top_url_counts';
 ----
 
-The output schema of the new `gls_with_parks` table has all the fields from the `parks` table first (because it's first in the join statement), stapled to all the fields from the `game_logs` table.  We only want some of the fields, so immediately following the JOIN is a FOREACH to extract what we're interested in.  Note there are now two 'park_id' columns, one from each dataset, so in the subsequent FOREACH, we need to dereference the column name with the table from which it came.  (TODO: check that Pig does push the projection of fields up above the JOIN).  If you run the script, 'examples/geo/baseball_weather/geolocate_games.pig' you will see that its output has example as many records as there are 'game_logs' because there is exactly one entry in the 'parks' table for each park.  
+There are two useful optimizations to make when K (the number of records you will keep) is much less than N (the number of records in the table).  The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.  
 
-In the general case, though, a JOIN can be many to many.  Suppose we wanted to build a table listing all the home ballparks for every player over their career.  The 'player_seasons' table has a row for each year and team over their career.  If a player changed teams mid year, there will be two rows for that player.  The 'park_years' table, meanwhile, has rows by season for every team and year it was used as a home stadium.  Some ballparks have served as home for multiple teams within a season and in other cases (construction or special circumstances), teams have had multiple home ballparks within a season.  
+==== A Foolish Optimization
 
-The Pig script (TODO: write script) includes the following JOIN:
+We will tell you about another "optimization," mostly because we want to illustrate how a naive performance estimation based on theory can lead you astray in practice.  In principle, sorting a large table in place takes 'O(N log N)' time.  In a single compute node context, you can actually find the top K elements in 'O(N log K)' time -- a big savings since K is much smaller than N.  What you do is maintain a heap structure; for every element past the Kth, if it is larger than the smallest element in the heap, remove the smallest member of the heap and add the element to the heap.  While it is true that 'O(N log K)' beats 'O(N log N)', this reasoning is flawed in two ways.  First, you are not working in a single-node context; Hadoop is going to perform that sort anyway.  Second, the fixed costs of I/O almost always dominate the cost of compute (FOOTNOTE:  Unless you are unjustifiably fiddling with a heap in your Mapper.)
 
-----
-JOIN
- player_park_years=JOIN 
-  parks(year,team_ID),
-  players(year,team_ID);
-explain_player_park_year;
-----
+The 'O(log N)' portion of Hadoop's log sort shows up in two ways:  The N memory sort that precedes a spill is 'O(N log N)' in compute time but less expensive than the cost of spilling the data.  The true 'O(N log N)' cost comes in the reducer: 'O(log N)' merge passes, each of cost 'O(N)'. footnote:[If initial spills have M records, each merge pass combines B spills into one file, and we can skip the last merge pass, the total time is `N (log_B(N/M)-1).` [TODO: double check this].  But K is small, so there should not be multiple merge passes; the actual runtime is 'O(N)' in disk bandwidth.  Avoid subtle before-the-facts reasoning about performance; run your job, count the number of merge passes, weigh your salary against the costs of the computers you are running on, and only then decide if it is worth optimizing.
 
-First notice that the JOIN expression has multiple columns in this case separated by commas; you can actually enter complex expressions here -- almost all (but not all) the things you do within a FOREACH.  If you examine the output file (TODO: name of output file), you will notice it has appreciably more lines than the input 'player' file.  For example (TODO: find an example of a player with multiple teams having multiple parks), in year x player x played for the x and the y and y played in stadiums p and q.  The one line in the 'players' table has turned into three lines in the 'players_parks_years' table.  
+==== Top K Within a Group
 
-The examples we have given so far are joining on hard IDs within closely-related datasets, so every row was guaranteed to have a match.  It is frequently the case, however, you will join tables having records in one or both tables that will fail to find a match.  The 'parks_info' datasets from Retrosheet only lists the city name of each ballpark, not its location. In this case we found a separate human-curated list of ballpark geolocations, but geolocating records -- that is, using a human-readable location name such as "Austin, Texas" to find its nominal geocoordinates (-97.7,30.2) -- is a common task; it is also far more difficult than it has any right to be, but a useful first step is match the location names directly against a gazette of populated place names such as the open source Geonames dataset. 
-
-Run the script (TODO: name of script) that includes the following JOIN:
+There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group.  Pig's 'top' function accepts a bag and returns a bag with its top K elements.  Here is an example that uses the World Cup dataset to find the top 10 URLs for each day of the tournament:
 
 ----
-park_places = JOIN
-  parks BY (location) LEFT OUTER,
-  places BY (concatenate(city, ", ", state);
-DESCRIBE park_places;
+visits = load ('worldcup'); 
+visits = FOREACH visits generate day, url;
+visits by day = GROUP visits by day;
+top visits by day = FOREACH visits url = GROUP visits by url;
+   generate GROUP as day, top (visits, top visit URLs, COUNT_STAR (visit urls), 100;
+store top visits by url into 'top visits by url';
 ----
 
-In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park.  The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match.  In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park.  Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN.  If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" JOIN instead.  If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN.  (Full JOINs are pretty rare.)  
-
-In a Pig JOIN it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (TODO:  REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
-
-----
-NOTE 
-A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement.  Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.  
-----
-
-=== Group Elements From Multiple Tables On A Common Attribute (COGROUP)
-
-The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation.  This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
-
-----
-sightings = LOAD('/data/gold/geo/ufo_sightings/us_ufo_sightings.tsv') AS (...);
-airports     = LOAD('/data/gold/geo/airflights/us_airports.tsv') AS (...);
-cell_sightings_airports = COGROUP 
-    sightings by quadkey(lng, lat),
-    airports  by quadkey(lng, lat);
-STORE cell_sightings_locations INTO '...';
-----
-
-In the equivalent Map/Reduce algorithm, you label each record by both the indicated key and a number based on its spot in the COGROUP statement (here, records from sightings would be labeled 0 and records from airports would be labeled 1).  Have Hadoop then PARTITION and GROUP on the COGROUP key with a secondary sort on the table index.  Here is how the previous Pig script would be done in Wukong:
-
-----
-mapper(partition_keys: 1, sort_keys: 2) do
-  recordize_by_filename(/sightings/ => Wu::Geo::UfoSighting, /airport/ => Wu::Geo::Airport)
-  TABLE_INDEXES = { Wu::Geo::UfoSighting => 0, Wu::Geo::Airport => 1 }
-  def process(record)
-    table_index = TABLE_INDEXES[record.class] or raise("Don't know how to handle records of type '{record.class}'")
-    yield( [Wu::Geo.quadkey(record.lng, record.lat), table_index, record.to_wire] )
-  end
-end
-
-reducer do
-  def recordize(quadkey, table_index, jsonized_record) ; ...; end    
-  def start(key, *) 
-    @group_key = key ; 
-    @groups = [ [], [] ]
-  end
-  def accumulate(quadkey, table_index, record)
-    @groups[table_index.to_i] << record
-  end
-  def finalize
-    yield(@group_key, *groups)
-  end 
-end
-----
-
-The Mapper loads each record as an object (using the file name to recognize which class to use) and then emits the quadkey, the table index (0 for sightings, 1 for airports) and the original record's fields.  Declaring partition keys 1, sort keys 2 insures all records with the same quadkey are grouped together on the same Reducer and all records with the same table index arrive together.  The body of the Reducer makes temporary note of the GROUP key, then accumulates each record into an array based on its type.  
-
-The result of the COGROUP statement always has the GROUP key as the first field.  Next comes the set of elements from the table named first in the COGROUP statement -- in Pig, this is a bag of tuples, in Wukong, an array of objects.  After that comes the set of elements from the next table in the GROUP BY statement and so on.  
-
-While a standalone COGROUP like this is occasionally interesting, it is also the basis for many other common patterns, as you'll see over the next chapters.
-
-// ==== Regexp matching in Pig
-
-// === Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other.
-
-=== Complex `FOREACH`
-
-Let's continue our example of finding the list of home ballparks for each player over their career. 
-
-----
-parks = LOAD '.../parks.tsv' AS (...); 
-team_seasons = LOAD '.../team_seasons.tsv' AS (...)
-park_seasons = JOIN parks BY park_id, team_seasons BY park_id;
-park_seasons = FOREACH park_seasons GENERATE 
-    team_seasons.team_id, team_seasons.year, parks.park_id, parks.name AS park_name;
-
-player_seasons = LOAD '.../player_seasons.tsv' AS (...);
-player_seasons = FOREACH player_seasons GENERATE 
-    player_id, name AS player_name, year, team_id;
-player_season_parks = JOIN
-    parks           BY (year, team_id),
-    player_seasons BY (year, team_id);
-player_season_parks = FOREACH player_season_parks GENERATE player_id, player_name, parks::year AS year, parks::team_id AS team_id, parks::park_id AS park_id;
-
-player_all_parks = GROUP player_season_parks BY (player_id);
-describe player_all_parks;
-Player_parks = FOREACH player_all_parks {    
-    player = FirstFromBag(players);
-    home_parks = DISTINCT(parks.park_id);
-    GENERATE group AS player_id,
-        FLATTEN(player.name),
-        MIN(players.year) AS beg_year, MAX(players.year) AS end_year,
-        home_parks; -- TODO ensure this is still tuple-ized
-}
-----
-
-Whoa! There are a few new tricks here. This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.
-
-We would like our output to have one row per player, whose fields have these different flavors:
-
-* Aggregated fields (`beg_year`, `end_year`) come from functions that turn a bag into a simple type (`MIN`, `MAX`).
-* The `player_id` is pulled from the `group` field, whose value applies uniformly to the the whole group by definition. Note that it's also in each tuple of the bagged `player_park_seasons`, but then you'd have to turn many repeated values into the one you want...
-* ... which we have to do for uniform fields (like `name`) that are not part of the group key, but are the same for all elements of the bag. The awareness that those values are uniform comes from our understanding of the data -- Pig doesn't know that the name will always be the same. The FirstFromBag (TODO fix name) function from the Datafu package grabs just first one of those values
-* Inline bag fields (`home_parks`), which continue to have multiple values. 
-
-We've applied the `DISTINCT` operation so that each home park for a player appears only once. `DISTINCT` is one of a few operations that can act as a top-level table operation, and can also act on bags within a foreach -- we'll pick this up again in the next chapter (TODO ref). For most people, the biggest barrier to mastery of Pig is to understand how the name and type of each field changes through restructuring operations, so let's walk through the schema evolution.
-
-We `JOIN`ed player seasons and team seasons on `(year, team_id)`. The resulting schema has those fields twice. To select the name, we use two colons (the disambiguate operator): `players::year`. 
-
-After the `GROUP BY` operation, the schema is `group:int, player_season_parks:bag{tuple(player_id, player_name, year, team_id, park_id, park_name)}`.  The schema of the new `group` field matches that of the `BY` clause: since `park_id` has type chararray, so does the group field. (If we had supplied multiple fields to the `BY` clause, the `group` field would have been of type `tuple`).  The second field, `player_season_parks`, is a bag of size-6 tuples. Be clear about what the names mean here: grouping on the `player_season_parks` _table_ (whose schema has six fields) produced the `player_parks` table. The second field of the `player_parks` table is a tuple of size six (the six fields in the corresponding table) named `player_season_parks` (the name of the corresponding table).
-
-So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ a bag of tuples (remember, bags only hold tuples!), now size-1 tuples holding only the park_id. That schema is preserved through the `DISTINCT` operation, so `home_parks` is also a bag of size-1 tuples.
-
-NOTE: Some late night under deadline, Pig will supply you with the absolutely baffling error message "scalar has more than one row in the output". You've gotten confused and used the tuple element operation (`players.year`) when you should have used the disambiguation operator (`players::year`). The dot is used to reference a tuple element, a common task following a `GROUP`. The double-colon is used to clarify which specific field is intended, common following a join of tables sharing a field name.
-
-----
-    team_park_seasons = LOAD '/tmp/team_parks.tsv' AS (
-        team_id:chararray, 
-        park_years: bag{tuple(year:int, park_id:chararray)},
-        park_ids_lookup: map[chararray]
-        );
-    team_parks = FOREACH team_park_seasons { distinct_park_ids = DISTINCT park_years.park_id; GENERATE team_id, FLATTEN(distinct_park_ids) AS park_id; }
-    DUMP team_parks;
----- 
-
-=== Ungrouping operations (FOREACH..FLATTEN) expand records
-
-So far, we've seen using a group to aggregate records and (in the form of `JOIN’) to match records between tables. 
-Another frequent pattern is restructuring data (possibly performing aggregation at the same time). We used this several times in the first exploration (TODO ref): we regrouped wordbags (labelled with quadkey) for quadtiles containing composite wordbags; then regrouping on the words themselves to find their geographic distribution.
-
-The baseball data is closer at hand, though, so l
-
-----
-team_player_years = GROUP player_years BY (team,year);
-FOREACH team_player_years GENERATE
-    FLATTEN(player_years.player_id), group.team, group.year, player_years.player_id;
-----
-
-In this case, since we grouped on two fields, `group` is a tuple; earlier, when we grouped on just the `player_id` field, `group` was just the simple value.
-
-The contextify / reflatten pattern can be applied even within one table. This script will find the career list of teammates for each player -- all other players with a team and year in common footnote:[yes, this will have some false positives for players who were traded mid-year. A nice exercise would be to rewrite the above script using the game log data, now defining teammate to mean "all other players they took the field with over their career".].
-
-----
-GROUP player_years BY (team,year);
-FOREACH 
-    cross all players, flatten each playerA/playerB pair AS (player_a 
-FILTER coplayers BY (player_a != player_b);
-GROUP by playerA
-FOREACH {
-    DISTINCT player B
-}
-----
-
-Here's another 
-
-The result of the cross operation will include pairing each player with themselves, but since we don't consider a player to be their own teammate we must eliminate player pairs of the form `(Aaronha, Aaronha)`. We did this with a FILTER immediate before the second GROUP (the best practice of removing data before a restructure), but a defensible alternative would be to `SUBTRACT` playerA from the bag right after the `DISTINCT` operation.
-
-=== Sorting (ORDER BY, RANK) places all records in total order
-
-To put all records in a table in order, it's not sufficient to use the sorting that each reducer applies to its input. If you sorted names from a phonebook, file `part-00000` will have names that start with A, then B, up to Z; `part-00001` will also have names from A-Z; and so on. The collection has a _partial_ order, but we want the 'total order' that Pig's `ORDER BY` operation provides. In a total sort, each record in `part-00000` is in order and precedes every records in `part-00001`; records in `part-00001` are in order and precede every record in `part-00002`; and so forth. From our earlier example to prepare topline batting statistics for players, let's sort the players in descending order by the "OPS" stat (slugging average plus offensive percent, the simplest reasonable estimator of a player's offensive contribution). 
-
-----
-player_seasons = LOAD `player_seasons` AS (...);
-qual_player_seasons = FILTER player_years BY plapp > what it should be;
-player_season_stats = FOREACH qual_player_seasons GENERATE
-    player_id, name, games, 
-    hits/ab AS batting_avg, 
-    whatever AS slugging_avg, 
-    whatever AS offensive_pct
-    ;
-player_season_stats_ordered = ORDER player_season_stats BY (slugging_avg + offensive_pct) DESC;
-STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
-----
-
-This script will run _two_ Hadoop jobs. One pass is a light mapper-only job to sample the sort key, necessary for Pig to balance the amount of data each reducer receives (we'll learn more about this in the next chapter (TODO ref). The next pass is the map/reduce job that actually sorts the data: output file `part-r-00000` has the earliest-ordered records, followed by `part-r-00001`, and so forth.
-
-NOTE: The custom partitioner of an `ORDER` statement subtly breaks the reducer contract: it may send records having the same key to different reducers. This will cause them to be in different output (`part-xxxxx`) files, so make sure anything using the sorted data doesn't assume keys uniquely correspond to files.
-
-=== STORE operation serializes to disk
-
-The STORE operation writes your data to the destination you specify (typically the HDFS). 
-
-----
-articles = LOAD './data/wp/articles.tsv' AS (page_id: long, namespace: int, wikipedia_id: chararray, revision_id: long, timestamp: long, title: chararray, redirect: chararray, text: chararray);
-hadoop_articles = FILTER articles BY matches('.*[Hh]adoop.*');
-STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
-----
-
-As with any Hadoop job, Pig creates a _directory_ (not a file) at the path you specify; each task generates a file named with its task ID into that directory. In a slight difference from vanilla Hadoop, If the last stage is a reduce, the files are named like `part-r-00000` (`r` for reduce, followed by the task ID); if a map, they are named like `part-m-00000`.
-
-Try removing the STORE line from the script above, and re-run the script. You'll see nothing happen! Pig is declarative: your statements inform Pig how it could produce certain tables, rather than command Pig to produce those tables in order. 
-
-[[checkpointing_your_data]]
-The behavior of only evaluating on demand is an incredibly useful feature for development work. One of the best pieces of advice we can give you is to checkpoint all the time. Smart data scientists iteratively develop the first few transformations of a project, then save that result to disk; working with that saved checkpoint, develop the next few transformations, then save it to disk; and so forth. Here's a demonstration:
-
-----
-    great_start = LOAD '...' AS (...);
-    -- ... 
-    -- lots of stuff happens, leading up to
-    -- ...
-    important_milestone = JOIN [...];
-
-    -- reached an important milestone, so checkpoint to disk. 
-    STORE important_milestone INTO './data/tmp/important_milestone';
-        important_milestone = LOAD './data/tmp/important_milestone' AS (...schema...);
-----
-
-In development, once you've run the job past the `STORE important_milestone` line, you can comment it out to make pig skip all the preceding steps -- since there's nothing tying the graph to an output operation, nothing will be computed on behalf of `important_milestone`, and so execution will start with the following `LOAD`. The gratuitous save and load does impose a minor cost, so in production, comment out both the `STORE` and its following `LOAD` to eliminate the checkpoint step. 
-
-These checkpoints bring two other benefits: an inspectable copy of your data at that checkpoint, and a description of its schema in the re-`LOAD` line. Many newcomers to Big Data processing resist the idea of checkpointing often. It takes a while to accept that a terabyte of data on disk is cheap -- but the cluster time to generate that data is far less cheap, and the programmer time to create the job to create the data is most expensive of all. We won't include the checkpoint steps in the printed code snippets of the book, but we've left them in the example code.
-
-=== Directives that aid development: DESCRIBE, ASSERT, EXPLAIN, LIMIT..DUMP, ILLUSTRATE
-
-==== `DESCRIBE` shows the schema of a table
-
-You've already seen the `DESCRIBE` directive, which writes a description of a table's schema to the console. It's invaluable, and even as your project goes to production you shouldn't be afraid to leave these statements in where reasonable.
-
-==== `ASSERT` checks that your data is as you think it is
-
-The `ASSERT` operation applies a test to each record as it goes by, and fails the job if the test is ever false. It doesn't create a new table, or any new map/reduce passes -- it's slipstreamed into whatever operations precede it -- but it does cause per-record work. The cost is worth it, and you should look for opportunities to add assertions wherever reasonable.
-
-==== `DUMP` shows data on the console with great peril
-
-The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. So you should never use a `DUMP` statement except as in the following stanza: `dumpable = LIMIT table_to_dump 10; DUMP dumpable;`.
-(ATTN tech reviewers: should we even discuss `DUMP`? Is there a good alternative, given `ILLUSTRATE`s flakiness?)
-
-==== `ILLUSTRATE` magically simulates your script's actions, except when it fails to work
-
-The `ILLUSTRATE` directive is one of our best-loved, and most-hated, Pig operations.
-Even if you only want to see an example line or two of your output, using a `DUMP` or a `STORE` requires passing the full dataset through the processing pipeline. You might think, "OK, so just choose a few rows at random and run on that" -- but if your job has steps that try to match two datasets using a `JOIN`, it's exceptionally unlikely that any matches will survive the limiting. (For example, the players in the first few rows of the baseball players table belonged to teams that are not in the first few rows from the baseball teams table.)  `ILLUSTRATE` walks your execution graph to intelligently mock up records at each processing stage. If the sample rows would fail to join, Pig uses them to generate fake records that will find matches. It solves the problem of running on ad-hoc subsets, and that's why we love it.
-
-However, not all parts of Pig's functionality work with ILLUSTRATE, meaning that it often fails to run. When is the `ILLUSTRATE` command is most valuable? When applied to less-widely-used operations and complex sequences of statements, of course. What parts of Pig are most likely to lack `ILLUSTRATE` support or trip it up? Well, less-widely-used operations and complex sequences of statements, of course. And when it fails, it does so with perversely opaque error messages, leaving you to wonder if there's a problem in your script or if `ILLUSTRATE` has left you short. If you, eager reader, are looking for a good place to return some open-source karma: consider making `ILLUSTRATE` into the tool it could be. Until somebody does, you should checkpoint often (described along with the `STORE` command above) and use the strategies for subuniverse sampling from the Statistics chapter (TODO ref).
-
-Lastly, while we're on the subject of development tools that don't work perfectly in Pig: the Pig shell gets confused too easily to be useful. You're best off just running your script directly.
-
-==== `EXPLAIN` shows Pig's execution graph
-
-The `EXPLAIN` directive writes the "execution graph" of your job to the console. It's extremely verbose, showing _everything_ pig will do to your data, down to the typecasting it applies to inputs as they are read. We mostly find it useful when trying to understand whether Pig has applied some of the optimizations you'll learn about in Tuning for the Wise and Lazy (TODO ref). (QUESTION for tech reviewers: move this section to advanced Pig and explain EXPLAIN?)
