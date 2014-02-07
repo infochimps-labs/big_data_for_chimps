@@ -16,26 +16,60 @@ Once the volume of data required for synthesis exceeds some key limit of availab
 
 We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far and numerous enough that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed to prepare the final result.  This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it calls in another local method (summing a table of numbers) and orchestrates the two so that the volume of people and data never exceeds what can be efficiently processed.
 
-...
+// ...
 
-So our first definition of Big Data is "A collection of practical data analysis tools and processes that continue to scale even as the volume of data for justified synthesis exceeds some limit of available computation".
+So our first definition of Big Data is a response to a crisis: "A collection of practical data analysis tools and processes that continue to scale even as the volume of data for justified synthesis exceeds some limit of available computation".
 
 In Chapter 6 (REF) we'll map out the riotous diversity of tools in the Big Data ecosystem,
 Hadoop is the ubiquitous choice for processing batches of data at high
 Hadoop is the tool to use when you want to understand how patterns in data from your manufacturing devices corresponds to defective merchandise returned months later, or how patterns in patients' postoperative medical records correspond to the likelihood they'll be re-admitted with complications.
 
-Earlier, we defined insight as deeper understanding and better decisions. A funny thing happens as an organization's Hadoop investigations start to pay off: they realize they don't just want a deeper understanding of the patterns, they want to act on those patterns and make prompt decisions. The factory owner will want to stop the manufacturing line when signals predict later defects; the hospital will want to have a social worker follow up with patients unlikely to fill their postoperative medications. Just in time, a remarkable new capability has entered the core Big Data toolset: Streaming Analytics.
+One solution to the big data crisis is high-performance supercomputing (HPC): push back the limits of computation with brute force. We could conduct our election by gathering supporters of one candidate on a set of cornfields in Iowa, supporters of the other on cornfields in Iowa, and using satellite imaging to tally the result. HPC solutions are exceptionally expensive, require the kind of technology seen only when military and industrial get complex, and though the traditional "all data is local" methods continue to work, they lose their essential straightforward flavor. A supercomputer is not one giant connected room, it's a series of largish rooms connected by very wide multidimensional hallways; HPC programmers have to constantly think about the motion of data among caches, processors, and backing store.
 
-The Storm+Trident streaming analytics
-Streaming Analytics 
-gets you _fast relevant insight_ to go with Hadoop's _deep global insight_. 
+Hadoop's approach is effectively the opposite. Instead of full control over all aspects of computation and the illusion of data locality, Hadoop revokes almost all control over the motion of data and supports only one type of program, one that fits the "map / reduce" paradigm. Imagine a publisher that banned all literary forms except the haiku:
 
+    data flutters by
+        elephants make sturdy piles
+      context yields insight
+
+Our Map/Reduce haiku illustrates Hadoop's template:
+
+1. The Mapper portion of your script processes records, attaching a label to each.
+2. Hadoop assembles those records into context groups according to their label.
+3. The Reducer portion of your script processes those context groups and writes them to a data store or external system.
+
+While it would be unworkable to have every novel, critical essay, or sonnet be composed of haikus, map/reduce is surprisingly more powerful. From this single primitive, we can construct the familiar relational operations (such as GROUPs and ROLLUPs) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.
+
+We will demonstrate map/reduce using Wukong, a thin layer atop Hadoop using the Ruby programming language. It's the most easily-readable way for us to demonstrate the patterns of data analysis, and you will be able to lift its content into the programming language of your choice footnote:[In the spirit of this book's open-source license, if an eager reader submits a "translation" of the example programs into the programming language of their choice we would love to fold it into in the example code repository and acknowledge the contribution in future printings.]. It's also a powerful tool you won't grow out of -- we perform code mixture is roughly 30% Wukong, 60% Pig (see the next paragraph) and 10% using Java to extend Pig.
+
+The high-level Pig programming language has you describe the kind of full-table transformations familiar to database programmers (selecting filtered data, groups and aggregations, joining records from multiple tables). Pig carries out those transformations using efficient map/reduce scripts in Hadoop, based on optimized algorithms you'd otherwise have to reimplement or do without. To hit the sweet spot of "common things are simple, complex things remain possible", you can extend Pig with User-Defined Functions (UDFs), covered in chapter (REF).
+
+Earlier, we defined insight as deeper understanding and better decisions. Hadoop's ability to process data of arbitrary scale, combined with our increasing ability to comprehensively instrument every aspect of an enterprise, represent a fundamental improvement in how we expose patterns and the range of human endeavors available for pattern mining.
+
+But a funny thing happens as an organization's Hadoop investigations start to pay off: they realize they don't just want a deeper understanding of the patterns, they want to act on those patterns and make prompt decisions. The factory owner will want to stop the manufacturing line when signals predict later defects; the hospital will want to have a social worker follow up with patients unlikely to fill their postoperative medications. Just in time, a remarkable new capability has entered the core Big Data toolset: Streaming Analytics.
+
+Streaming Analytics gets you _fast relevant insight_ to go with Hadoop's _deep global insight_. Storm+Trident (the clear frontrunner toolkit) can process data with low latency and exceptional throughput (we've benchmarked it at half a million events per second); it can perform complex processing in Java, Ruby and more; it can hit remote APIs or databases with high concurrency.
+
+// It's an analytic platform that should be regarded as an essential counterpart to Hadoop and scalable data stores.
+// On way to think of Trident is as a tool to do your query on the way _in_ to the database. Rather than insisting every application use the same database and same data model, 
+
+This triad -- Batch Analytics, Stream Analytics, and Scalable Datastores -- are the three legs of the Big Data toolset. Together they let you analyze data at terabytes and petabytes, data at milliseconds, and data from ponderously many sources.
 
 === Big Data: Tools to Capitalize on the Opportunity of Comprehensive Data
 
+// Besides innovations in the toolset, the Big Data revolution is driven by innovations in algorithms 
+That's the tools side of the Big Data ecosystem. What about the algorithms?
+// Mathematicians have developed remarkably powerful tools for analyzing 
+// Hyperlink connections among all the pages on Wikipedia; neurons and synapses in a brain; airline flight routes.
+// So is the mapping from retail customers to the items they purchased; from all words found in Wikipedia articles to // the categories each article falls under; or from Baseball players to other players with similar career statistics.
+// Once we've identified the organic structure of the data,
+
+One common pattern for working with Big Data is to (a) assemble comprehensive data about the system, identify the data's structure and connectivity; (b) apply generic methods that use only that structure and connectivity, not its meaning, to expose patterns in the data; (c) interpret those patterns back in the system's domain.
+
+(TODO need more here)
 
 Peter Norvig (Google's Director of Research) calls this the "Unreasonable Effectiveness of Data" (http://static.googleusercontent.com/media/research.google.com/en/us/pubs/archive/35179.pdf["On the Unreasonable effectiveness of data"]).
 
 This proposition is sure to cause barroom brawls at scientific conferences for years to come, because it advocates another path to truth that _does not follow_ the Scientific Method. Roughly speaking, the scientific method has you (a) use a simplified model of the universe to make falsifiable predictions; (b) test those predictions in controlled circumstances; (c) use established truths to bound any discrepancies footnote:[plus (d) a secret dose of our sense of the model's elegance]. Under this paradigm, data is non-comprehensive: scientific practice demands you carefully control experimental conditions, and the whole point of the model is to strip out all but the reductionistically necessary parameter. A large part of the analytic machinery acts to account for discrepancies from sampling (too little comprehensiveness) or discrepancies from "extraneous" effects (too much comprehensiveness). If those discrepancies are modest, the model is judged to be valid. This paradigm is regarded as the only acceptably rigorous way to admit a simplified representation of the world into the canon of truth.
 
-Under the "Unreasonably Effective" paradigm, you (a) assemble comprehensive data about the system, and identify the data's structure and connectivity; (b) apply generic methods that use only that structure and connectivity, not its meaning, to expose patterns in the data; (c) interpret those patterns back in the system's domain. 
+

@@ -19,12 +19,7 @@ Next, we'll outline how a map/reduce dataflow works -- first with a physical ana
 
 // The one thing we won't be doing too much of yet is actually writing lots of Hadoop programs. That will come in Chapter 5 (REF), which has example after example demonstrating core map/reduce programming patterns -- those patterns are difficult to master without a grounding in this chapter's material. But if you're the type of reader who learns best by seeing multiple examples in practice and then seeing its internal mechanics, skim that chapter and then come back.
 
-The most important thing for you
-It's essential that you gain an innate, physical sense of how Hadoop moves data around. You can't understand
-the core
-the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth.
-
-Assemble those patterns into the solution you seek
+// It's essential that you gain an innate, physical sense of how Hadoop moves data around. You can't understand the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth.
 
 For two good reasons, we're going to use very particular language whenever we discuss how to design a map/reduce dataflow. First, because it will help you reason by comparison as you meet more and more map/reduce patterns. The second reason is that those core patterns are not specific to the map/reduce paradigm. You'll see them in different dress but with the same essentials when we dive into the Streaming Analytics paradigm (REF) later in the book, and then generalized into a conceptual model for distributed analytics in Chapter (REF). Using the terms from that conceptual model will help you see the essential core of these patterns throughout the book.
 
