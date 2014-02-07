@@ -1,4 +1,10 @@
 
+Introduce the chapter to the reader
+* take the strands from the last chapter, and show them braided together
+* in this chapter, you'll learn .... OR ok we're done looking at that, now let's xxx
+* Tie the chapter to the goals of the book, and weave in the larger themes
+* perspective, philosophy, what we'll be working, a bit of repositioning, a bit opinionated, a bit personal.
+
 
 The stakeholders' opinions are the data; the subject under vote is the context; the room and time define the arena of computation; and the decision is synthesized according to the relevant organizational bylaws. 
 
