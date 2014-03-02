@@ -261,6 +261,58 @@ The cost of excessive merge passes, however, accrues directly to the total runti
 (TODO: complete)
 
 
+=== Cluster Sizing Rules of thumb
+
+Let's define
+
+* ram_total == total cluster ram = ram_per_machine * num_machines
+* cpu_bw_per_slot == actual CPU bandwidth per mapreduce slot for a highly cpu-intensive job ~= actual CPU bandwidth / cores per machine
+* disk_bw_per_slot == actual disk bandwidth per mapreduce slot ~= actual disk bandwidth / cores per machine
+* ntwk_bw_per_slot == actual ntwk bandwidth per mapreduce slot ~= actual ntwk bandwidth / cores per machine
+* X = amount of data sent to the reducers in the largest job the customer expects to run performantly.
+* max_data_under_management == amount of data stored on HDFS, not accounting for replication
+
+Consider a job that reads X data into mapper, sends X data to the reducer, and emits X data from that reducer (put another way: one of the following stages will be limiting, in which case increasing the amount of data the other stages handle won't slow down the job.)
+
+* A: mapper stage
+  - reading X data from hdfs disk for mapper via local datanode
+  - processing X data in mapper (not limiting)
+  - spilling X data to scratch disk (parallelized with mapper reading)
+  - sending X data over network to reducer (parallelized with mapper reading)
+  - writing X data to scratch disk in first-pass merge sorting (parallelized with mapper reading)
+* B: follow-on merge sort stage
+  - reading/writing (Q-2)*X data to scratch disk in follow-on merge sort passes, where Q is the total number of merge-sort passes required (somewhat parallelized with above). It goes as the log of the reduce size over the reducer child process ram size.
+* C: output stage
+  - reading X data from scratch disk for reducer
+  - processing X data in reducer (not limiting)
+  - writing X data to hdfs disk via local datanode (not limiting)
+  - sending/receiving 2*X data over network for replication (parallelized with reducing)
+  - writing 2*X data to disk for replication by local datanode (parallelized with reducing)
+
+----------
+
+
+* A well-configured cluster has disk_bw_per_slot as the limiting bottleneck.
+  - ntwk_bw_per_slot >= disk_bw_per_slot in-rack
+  - ntwk_bw_per_slot >=  80% disk_bw_per_slot between pairs of machines in different racks under full load.
+  - cpu_bw_per_slot >= disk_bw_per_slot -- it's actually really hard to find the practical job where this isn't the case
+* Thus stage A takes X / disk_bw_per_slot amount of time
+* And stage C takes 3*X / disk_bw_per_slot amount of time
+* If ram_total >= 40% X, the number of merge passes won't much exceed the runtime of the mappers. A job that sends more than two or three times ram_total to its reducers starts to really suck.
+
+----------
+
+Implications:
+
+* ram_total = 40% of the largest amount of data they care to regularly process
+* cpu = size each machine so its cpu is faster than its disk, and not faster
+* network = size each machine so its network is faster than its disk, and not too much faster
+* cross-rack switches = size the cross-rack switches so actual bandwidth between pairs of machines in different racks under full load isn't too much slower than the in-rack bandwidth (say, 80%)
+* the bigjob you've just sized the cluster against should take about (5 * X / disk_bw_per_machine) to run
+* total cluster disk capacity = size to 5 * max_data_under_management -- factor of 3 for replication, another factor of 1.5 for computing by-production, and then bump it up for overhead
+  - scratch space volume capacity >= 2 * X -- I assume that X is much less than max_data_under_management, so scratch space fits in the overhead. It's really nice to have the scratch disks and the hdfs disks held separate.  
+
+
 === Top-line Performance/Sanity Checks
 
 *  The first wave of Mappers should start simultaneously.
@@ -286,5 +338,4 @@ The cost of excessive merge passes, however, accrues directly to the total runti
 === Performance Comparison Worksheet
 
 (TODO: DL Make a table comparing performance baseline figures on AWS and fixed hardware.  reference clusters.)
-
 
