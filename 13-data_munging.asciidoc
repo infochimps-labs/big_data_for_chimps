@@ -1,3 +1,6 @@
 [[data_munging]]
 == Data Munging
 
+
+
+"The modeling is interesting and fun to do, but nearly all of the work involved collecting and assembling the data.  This will not be a surprise to you if you have worked on a project with real data. I have also emphasized this point in the course I’m teaching this semester. 'If he had known how long it would take to assemble the data,” Dan tells Co.Design, “maybe Tim would’ve told me to work on something else.'” -- http://punkrockor.wordpress.com/2014/02/09/predicting-olympic-medal-counts-per-country/

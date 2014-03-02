@@ -26,11 +26,9 @@ For two good reasons, we're going to use very particular language whenever we di
 
 === Summarizing UFO Sightings using Map/Reduce===
 
-Santa Claus and his elves are busy year-round, but Santa's flying reindeer have few responsibilities outside the holiday season. As flying objects themselves, they spend a good part of their multi-month break is spent pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center] data set of more than 60,000 documented UFO sightings.
+Santa Claus and his elves are busy year-round, but Santa's flying reindeer have few responsibilities outside the holiday season. As flying objects themselves, they spend a good part of their multi-month break is spent pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the data set of more than 60,000 documented UFO sightings we worked with in the last chapter. 
 
-Sixty thousand sightings is much higher than a reindeer can count (only four hooves!), but JT and Nanette occasionally earn a little karmic bonus with Santa Claus by helping the reindeer analyzing UFO data footnote:[For our purposes, although sixty thousand records are too small to justify Hadoop on their own, it's the perfect size to learn with.].
-
-We can do our part by helping our reindeer friends understand when, during the day, UFOs are most likely to be sighted.
+Since sixty thousand sightings is much higher than a reindeer can count (only four hooves!), JT and Nanette occasionally earn a little karmic bonus with Santa Claus by helping the reindeer analyzing UFO data. We can do our part by helping our reindeer friends understand when, during the day, UFOs are most likely to be sighted.
 
 ==== UFO Sighting Data Model
 

@@ -57,7 +57,7 @@ Large-scale geodata processing in hadoop starts with the quadtile grid system, a
 
 ==== The Quadtile Grid System ====
 
-We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it.
+We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it. footnote:[Two guides for which map projection to choose: http://www.radicalcartography.net/?projectionref http://xkcd.com/977/ . As you proceed to finer and finer zoom levels the projection distortion becomes less and less relevant, so the simplicity of Mercator or Equirectangular is appealing.]
 
 Now divide the world into four and make a Z pattern across them:
 

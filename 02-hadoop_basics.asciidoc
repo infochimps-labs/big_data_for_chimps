@@ -29,16 +29,18 @@ The other source of calm is on the part of their clients, who know that when Nan
 
 === Map-only Jobs: Process Records Individually ===
 
-We might not be as clever as JT's multilingual chimpanzees, but even we can translate text into Pig Latin. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Pig Latin]:
+We might not be as clever as JT's multilingual chimpanzees, but even we can translate text into Igpay Atinlay footnote:[aka Pig Latin. Since Pig Latin is also TODO: make sure igpay is the standard throughout book]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
 
 * If the word begins with a consonant-sounding letter or letters, move them to the end of the word adding "ay": "happy" becomes "appy-hay", "chimp" becomes "imp-chay" and "yes" becomes "es-yay".
 * In words that begin with a vowel, just append the syllable "way": "another" becomes "another-way", "elephant" becomes "elephant-way".
 
-<<pig_latin_translator>> is our first Hadoop job, a program that translates plain text files into Pig Latin. It's written in Wukong, a simple library to rapidly develop big data analyses. Like the chimpanzees, it is single-concern: there's nothing in there about loading files, parallelism, network sockets or anything else. Yet you can run it over a text file from the commandline -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
+<<pig_latin_translator>> is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. It's written in Wukong, a simple library to rapidly develop big data analyses. Like the chimpanzees, it is single-concern: there's nothing in there about loading files, parallelism, network sockets or anything else. Yet you can run it over a text file from the commandline -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
+
+// TODO: Is there a way to do this without regular expressions? eg tokenize then use matching regexp not gsub
 
 
 [[pig_latin_translator]]
-.Pig Latin translator, actual version
+.Igpay Atinlay translator, actual version
 ----
     CONSONANTS   = "bcdfghjklmnpqrstvwxz"
     UPPERCASE_RE = /[A-Z]/
@@ -60,7 +62,7 @@ We might not be as clever as JT's multilingual chimpanzees, but even we can tran
 ----
 
 [[pig_latin_translator]]
-.Pig Latin translator, pseudocode
+.Igpay Atinlay translator, pseudocode
 ----
     for each line,
       recognize each word in the line and change it as follows:
@@ -93,7 +95,9 @@ That's what it looks like when a `cat` is feeding the program data; let's see ho
 
 ==== Transfer Data to the Cluster ====
 
-_Note: this assumes you have a working Hadoop installation, however large or small, running in distributed mode. Appendix 1 (TODO REF) lists resources for acquiring one._
+TODO: clarify that if you don't have a cluster, you can (a) make your machine use pseudo-distributed mode, or (b) skip this part as the only thing it tells you about is how to use a cluster.
+
+_Note: this assumes you have a working Hadoop installation, however large or small, running in distributed mode.  Appendix 1 (TODO REF) lists resources for acquiring one._
 
 Hadoop jobs run best reading data from the Hadoop Distributed File System (HDFS). To copy the data onto the cluster, run these lines:
 
@@ -185,7 +189,7 @@ The right way to bring in data from an external resource is by creating a custom
 
 Please be aware, however, that it is only appropriate to access external resources from within a Hadoop job in exceptionally rare cases.  Hadoop processes data in batches, which means failure of a single record results in the retry of the entire batch.  It also means that when the remote resource is unavailable or responding sluggishly, Hadoop will spend several minutes and unacceptably many retries before abandoning the effort.  Lastly, Hadoop is designed to drive every system resource at its disposal to its performance limit.  (FOOTNOTE: We will drive this point home in the chapter on Event Log Processing (TODO:  REF), where we will stress test a web server to its performance limit by replaying its request logs at full speed.)
 
-While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.
+While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Igpay Atinlay translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.
 
 The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (TODO:  REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.
 
