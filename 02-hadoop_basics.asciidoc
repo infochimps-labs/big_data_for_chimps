@@ -3,16 +3,13 @@
 [NOTE]
 .Outline from outline (in Google Docs)
 ====
-
 2. Intro to Hadoop
 
-. C&E translate Shakespeare: distributed computation
-. Simple Mechanics of Using Hadoop
-. embarrassingly parallel job -- igpay atinlay
-. mappers at moderate detail
-
+* C&E translate Shakespeare: distributed computation
+* Simple Mechanics of Using Hadoop
+* embarrassingly parallel job -- igpay atinlay
+* mappers at moderate detail
 ====
-
 
 == Hadoop Basics
 
@@ -116,6 +113,7 @@ Run the following commands to copy your data to HDFS:
 These commands understand `./data/text` to be a path on the HDFS, not your local disk; the dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `wu-put` command, which takes a list of local paths and copies them to the HDFS, treats its final argument as an HDFS path by default, and all the preceding paths as being local.
 
 (Note: if you don't have access to a Hadoop cluster, Appendix 1 (REF) lists resources for acquiring one.)
+====
 
 ==== Run the Job ====
 
@@ -128,7 +126,7 @@ CODE: something about what the reader can expect to see on screen
 
 While the script outputs a bunch of happy robot-ese to your screen, open up the jobtracker in your browser window (see the sidebar REF). The job should appear on the jobtracker window within a few seconds -- likely in more time than the whole job took to complete.
 
-****
+----
 SIDEBAR:  The Jobtracker Console
 
 When you are running on a distributed Hadoop cluster, the jobtracker offers a built-in console for monitoring and diagnosing jobs. You typically access it by pointing your web browser at 'http://hostname.of.jobtracker:50030' (replace "hostname.of.jobtracker" with, you know, the hostname of your jobtracker and if that jobtracker is running on your local machine, you can use http://hostname.of.jobtracker:50030`). At the top, the cluster summary shows how many jobs are running and how many worker slots exist. Clicking on the hyperlinked value under "nodes" will take you to a screen summarizing all the task trackers in the cluster. Keep an eye out for other such hyperlinked values within the jobtracker console -- they lead to screens describing those elements in details.
@@ -150,11 +148,11 @@ Above  the job progress bar graphs is a hot mess of a table showing all sorts of
 Above that section is a smaller table giving the count of pending, running, complete, killed and failed jobs. Most of the values in that table are hyperlinks that begin the annoyingly long trip required to see your logs. Clicking on the completed tasks number takes you to a screen listing all the tasks; clicking on a task ID takes you to a screen listing the machine or machines running it. Clicking on the attempt ID shows a page describing that machine's progress through the task; and all the way on the right side of the table on that page, you will find three sets of links reading "4KB," "8KB," "All."  (TECH: check details). Those links lead, at long last, to the log files for that job on that machine. The "All" link shows you the full contents but if your job is so screwed up that the log file will flood your browser, the "8KB" link shows the truncated tale.
 
 Lastly, near the top of a page is a long URL that ends with "job.xml". Do not go there now; it is a monstrous file listing every single configuration value set by your job but keep it in mind for when you have run out of ideas as to why a job is failing.
-****
+----
 
 ...
 
-****
+----
 SIDEBAR: How a job is born, the thumbnail version
 
 Apart from one important detail, the mechanics of how a job is born should never become interesting to a Hadoop user. But since some people's brains won't really believe that the thing actually works unless we dispel some of the mystery, here's a brief synopsis.
@@ -164,7 +162,7 @@ When you run `wukong ...` or `pig ...` or otherwise launch a Hadoop job, your lo
 As you have gathered, each Hadoop worker runs a tasktracker daemon to coordinate the tasks run by that machine. Like JT's chimpanzees, those tasktrackers periodically report progress to the jobtracker, requesting new work whenever there is an idle slot. The jobtracker never makes outward contact with a task tracker -- this ensures work is only distributed to healthy machines at a rate they can handle. Just as JT strives to ensure that chimpanzees are only assigned passages held by their cubicle mates, the jobtracker schedules strives to assign each map attempt to a machine that holds its input blocks (known as "mapper-local" task). But if too many blocks of a file hotspot on a small number of datanodes, mapper slots with no remaining mapper-local blocks to handle still receive task attempts, and simply pull in their input data over the network.
 
 The one important detail to learn in all this is that _task trackers do not run your job, they only launch it_. Your job executes in a completely independent child process with its own Java settings and library dependencies. In fact, if you are using Hadoop streaming programs like Wukong, your job runs in even yet its own process, spawned by the Java child process. We've seen people increase the tasktracker memory sizes thinking it will improve cluster performance -- the only impact of doing so is to increase the likelihood of out-of-memory errors.
-****
+----
 
 You can compare its output to the earlier by running
 
