@@ -3,9 +3,9 @@
 
 Now that you've met the fundamental analytic operations -- in both their map/reduce and table-operation form -- it's time to put them to work in an actual data exploration.
 
-This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data.  Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
+This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data. Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
 
-// The real goal is to learn to think strategically, to be able to look at the data you have and recognize the steps required to produce the data you want.  You do not do this, however, by thinking about how to coordinate the fundamental operations you have just learned directly into your solution any more than a general thinks about coordinating the actions of every individual soldier while preparing a battle plan.
+// The real goal is to learn to think strategically, to be able to look at the data you have and recognize the steps required to produce the data you want. You do not do this, however, by thinking about how to coordinate the fundamental operations you have just learned directly into your solution any more than a general thinks about coordinating the actions of every individual soldier while preparing a battle plan.
 
 === Geographic Flavor ===
 
@@ -158,7 +158,7 @@ STORE global_term_info INTO '/data/work/geo_flavor/global_term_info';
 
 === GROUP/COGROUP To Restructure Tables
 
-This next pattern is one of the more difficult to picture but also one of the most important to master.  Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
+This next pattern is one of the more difficult to picture but also one of the most important to master. Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
 
 (TODO: describe this pattern)
 
@@ -170,7 +170,7 @@ Another reason to split data across tables is 'vertical partitioning': storing f
 
 === Pattern: Summarizing Groups
 
-Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth.  You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation.
+Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth. You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation.
 
 === Pattern: Re-injecting global totals
 
@@ -210,7 +210,7 @@ The Pig LIMIT operation arbitrarily selects, at most, the specified number of re
 
 (TODO: Is there a non-Reduce way to do this?)
 
-In the simplest Map/Reduce equivalent, Mappers emit each record unchanged until they hit the specified limit (or reach the end of their input).  Those output records are sent to a single Reducer, which itself emits each record unchanged until it has hit the specified limit and does nothing on all subsequent records.
+In the simplest Map/Reduce equivalent, Mappers emit each record unchanged until they hit the specified limit (or reach the end of their input). Those output records are sent to a single Reducer, which itself emits each record unchanged until it has hit the specified limit and does nothing on all subsequent records.
 
 (TODO: Do we want to talk about a non-single Reducer approach?)
 
@@ -218,7 +218,7 @@ A Combiner is helpful here in the predominant case where the specified limit is 
 
 ==== Top K Records (ORDER..LIMIT)
 
-The naive way to extract the top K elements from a table is simply to do an ORDER and then a LIMIT.  For example, the following script will identify the top 100 URLs from the waxy.org weblog dataset.
+The naive way to extract the top K elements from a table is simply to do an ORDER and then a LIMIT. For example, the following script will identify the top 100 URLs from the waxy.org weblog dataset.
 
 ----
 logs=LOAD '/data/gold/waxy/whatever.log' AS (...) USING APACHE LOG READER;
@@ -232,17 +232,17 @@ top_url_counts = LIMIT url_counts_o 100;
 STORE top_url_counts INTO '/data/out/weblogs/top_url_counts';
 ----
 
-There are two useful optimizations to make when K (the number of records you will keep) is much less than N (the number of records in the table).  The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
+There are two useful optimizations to make when K (the number of records you will keep) is much less than N (the number of records in the table). The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
 
 ==== A Foolish Optimization
 
-We will tell you about another "optimization," mostly because we want to illustrate how a naive performance estimation based on theory can lead you astray in practice.  In principle, sorting a large table in place takes 'O(N log N)' time.  In a single compute node context, you can actually find the top K elements in 'O(N log K)' time -- a big savings since K is much smaller than N.  What you do is maintain a heap structure; for every element past the Kth, if it is larger than the smallest element in the heap, remove the smallest member of the heap and add the element to the heap.  While it is true that 'O(N log K)' beats 'O(N log N)', this reasoning is flawed in two ways.  First, you are not working in a single-node context; Hadoop is going to perform that sort anyway.  Second, the fixed costs of I/O almost always dominate the cost of compute (FOOTNOTE:  Unless you are unjustifiably fiddling with a heap in your Mapper.)
+We will tell you about another "optimization," mostly because we want to illustrate how a naive performance estimation based on theory can lead you astray in practice. In principle, sorting a large table in place takes 'O(N log N)' time. In a single compute node context, you can actually find the top K elements in 'O(N log K)' time -- a big savings since K is much smaller than N. What you do is maintain a heap structure; for every element past the Kth, if it is larger than the smallest element in the heap, remove the smallest member of the heap and add the element to the heap. While it is true that 'O(N log K)' beats 'O(N log N)', this reasoning is flawed in two ways. First, you are not working in a single-node context; Hadoop is going to perform that sort anyway. Second, the fixed costs of I/O almost always dominate the cost of compute (FOOTNOTE:  Unless you are unjustifiably fiddling with a heap in your Mapper.)
 
-The 'O(log N)' portion of Hadoop's log sort shows up in two ways:  The N memory sort that precedes a spill is 'O(N log N)' in compute time but less expensive than the cost of spilling the data.  The true 'O(N log N)' cost comes in the reducer: 'O(log N)' merge passes, each of cost 'O(N)'. footnote:[If initial spills have M records, each merge pass combines B spills into one file, and we can skip the last merge pass, the total time is `N (log_B(N/M)-1).` [TODO: double check this].  But K is small, so there should not be multiple merge passes; the actual runtime is 'O(N)' in disk bandwidth.  Avoid subtle before-the-facts reasoning about performance; run your job, count the number of merge passes, weigh your salary against the costs of the computers you are running on, and only then decide if it is worth optimizing.
+The 'O(log N)' portion of Hadoop's log sort shows up in two ways:  The N memory sort that precedes a spill is 'O(N log N)' in compute time but less expensive than the cost of spilling the data. The true 'O(N log N)' cost comes in the reducer: 'O(log N)' merge passes, each of cost 'O(N)'. footnote:[If initial spills have M records, each merge pass combines B spills into one file, and we can skip the last merge pass, the total time is `N (log_B(N/M)-1).` [TODO: double check this]. But K is small, so there should not be multiple merge passes; the actual runtime is 'O(N)' in disk bandwidth. Avoid subtle before-the-facts reasoning about performance; run your job, count the number of merge passes, weigh your salary against the costs of the computers you are running on, and only then decide if it is worth optimizing.
 
 ==== Top K Within a Group
 
-There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group.  Pig's 'top' function accepts a bag and returns a bag with its top K elements.  Here is an example that uses the World Cup dataset to find the top 10 URLs for each day of the tournament:
+There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements. Here is an example that uses the World Cup dataset to find the top 10 URLs for each day of the tournament:
 
 ----
 visits = load ('worldcup');

@@ -1,5 +1,8 @@
 == Insight comes from Data in Context
 
+TODO: put in an interlude that is JT & Nanette meeting. (Told as a flashforward.)
+TODO: Get O'Reilly to do a promo version of just the interludes -- "Big Data for Babies" -- baby chimp on cover?
+
 Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
 
 What's valuable is _insight_ -- summaries, patterns and connections that lead to deeper understanding and better decisions. And insight comes from synthesizing data in context. We can predict air flight delays by placing commercial flight arrival times in context with hourly global weather data (as we do in Chapter (REF)). Take the mountain of events in a large website's log files, and regroup using context defined by the paths users take through the site, and you'll illuminate articles of similar interest (see Chapter (REF)). In Chapter (REF), we'll dismantle the text of every article on Wikipedia, then reassemble the words from each article about a physical place into context groups defined by the topic's location -- and produce insights into human language not otherwise quantifiable.
@@ -14,7 +17,7 @@ It is impossible, however, to count votes for the President of the United States
 
 Once the volume of data required for synthesis exceeds some key limit of available computation -- limited memory, limited network bandwith, limited time to prepare a relevant answer, or such -- you're forced to fundamentally rework how you synthesize insight from data.
 
-We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far and numerous enough that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed to prepare the final result.  This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it calls in another local method (summing a table of numbers) and orchestrates the two so that the volume of people and data never exceeds what can be efficiently processed.
+We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far and numerous enough that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed to prepare the final result. This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it calls in another local method (summing a table of numbers) and orchestrates the two so that the volume of people and data never exceeds what can be efficiently processed.
 
 // ...
 
@@ -51,15 +54,15 @@ But a funny thing happens as an organization's Hadoop investigations start to pa
 Streaming Analytics gets you _fast relevant insight_ to go with Hadoop's _deep global insight_. Storm+Trident (the clear frontrunner toolkit) can process data with low latency and exceptional throughput (we've benchmarked it at half a million events per second); it can perform complex processing in Java, Ruby and more; it can hit remote APIs or databases with high concurrency.
 
 // It's an analytic platform that should be regarded as an essential counterpart to Hadoop and scalable data stores.
-// On way to think of Trident is as a tool to do your query on the way _in_ to the database. Rather than insisting every application use the same database and same data model, 
+// On way to think of Trident is as a tool to do your query on the way _in_ to the database. Rather than insisting every application use the same database and same data model,
 
 This triad -- Batch Analytics, Stream Analytics, and Scalable Datastores -- are the three legs of the Big Data toolset. Together they let you analyze data at terabytes and petabytes, data at milliseconds, and data from ponderously many sources.
 
 === Big Data: Tools to Capitalize on the Opportunity of Comprehensive Data
 
-// Besides innovations in the toolset, the Big Data revolution is driven by innovations in algorithms 
+// Besides innovations in the toolset, the Big Data revolution is driven by innovations in algorithms
 That's the tools side of the Big Data ecosystem. What about the algorithms?
-// Mathematicians have developed remarkably powerful tools for analyzing 
+// Mathematicians have developed remarkably powerful tools for analyzing
 // Hyperlink connections among all the pages on Wikipedia; neurons and synapses in a brain; airline flight routes.
 // So is the mapping from retail customers to the items they purchased; from all words found in Wikipedia articles to // the categories each article falls under; or from Baseball players to other players with similar career statistics.
 // Once we've identified the organic structure of the data,
@@ -96,7 +99,7 @@ FOREACH cf_sightings GENERATE COUNTSTAR(sightings)
 STORE cf_counts INTO 'out/geo/ufo_sightings/craft_type_counts';
 ----
 
-We can make a little travel guide for the sightings by amending each sighting with the Wikipedia article about its place. The JOIN operator matches records from different tables based on a common key: 
+We can make a little travel guide for the sightings by amending each sighting with the Wikipedia article about its place. The JOIN operator matches records from different tables based on a common key:
 
 ----
 TODO pseudocode
@@ -108,5 +111,50 @@ Of course this would make a much better travel guide if it held not just the one
 
 
 
+=== Grouping and Sorting: Analyzing UFO Sightings with Pig
+
+While those embarassingly parallel, Map-only jobs are useful, Hadoop also shines when it comes to filtering, grouping, and counting items in a dataset. We can apply these techniques to build a travel guide of UFO sightings across the continental US.
+
+Whereas our last example used the wukong framework, this time around we'll use another Hadoop abstraction, called Pig. footnote:[http://pig.apache.org]  Pig's claim to fame is that it gives you full Hadoop power, using a syntax that lets you think in terms of data flow instead of pure Map and Reduce operations.
+
+The example data included with the book includes a data set from the  http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center], containing more than 60,000 documented UFO sightings footnote:[For our purposes, although sixty thousand records are too small to justify Hadoop on their own, it's the perfect size to learn with.].
+
+Now it's sad to say, but many of the sighting reports are likely to be bogus. To eliminate sightings that lack a detailed description, we can filter out records whose description Field is shorter than 80 characters:
 
 
+----
+
+TODO code
+
+----
+
+
+
+A key activity in a Big Data exploration is summarizing big datasets into a comprehensible smaller ones. Each sighting has a field giving the shape of the flying object: cigar, disk, etc. This script will tell us how many sightings there are for each craft type:
+
+
+
+----
+LOAD sightings
+GROUP sightings BY craft type
+FOREACH cf_sightings GENERATE COUNTSTAR(sightings)
+STORE cf_counts INTO 'out/geo/ufo_sightings/craft_type_counts';
+----
+
+We can make a little travel guide for the sightings by amending each sighting with the Wikipedia article about its place. The JOIN operator matches records from different tables based on a common key:
+
+----
+
+TODO pseudocode
+
+----
+
+This yields the following output:
+
+----
+
+TODO output
+
+----
+
+This travel guide is a bit lame, but of course we can come up with all sorts of ways to improve it. For instance, a proper guide would hold not just the one article about the general location, but a set of prominent nearby places of interest. These notions crop up in many different problems, so later in the book we'll show you how to do a nearby-ness query (in the Geodata chapter (REF)), and how to attach a notion of "prominence" (in the event log chapter (REF)), and much more.

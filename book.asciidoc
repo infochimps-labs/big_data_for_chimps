@@ -14,6 +14,8 @@ include::05-analytic_patterns.asciidoc[]
 
 include::06-text_data.asciidoc[]
 
+include::06b-hadoop_internals-just_enough_for_now.asciidoc[]
+
 include::07-big_data_ecosystem.asciidoc[]
 
 include::08-intro_to_storm+trident.asciidoc[]

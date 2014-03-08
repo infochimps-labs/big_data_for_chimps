@@ -40,7 +40,7 @@ Nanette leaned in. "So here's the thing. Elephants and Pigs have amazing memorie
 
 === Pig Helps Hadoop work with Tables, not Records
 
-Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts.  Its interface is similar to SQL, which makes it a great choice for folks with significant experience there.  (It’s not identical, though, and things that are efficient in SQL may not be so in Pig; we will try to highlight those traps.)
+Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts. Its interface is similar to SQL, which makes it a great choice for folks with significant experience there. (It’s not identical, though, and things that are efficient in SQL may not be so in Pig; we will try to highlight those traps.)
 
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
@@ -53,7 +53,7 @@ COUNT WITHIN GROUPS
 STORE INTO OUTPUT FILE
 ----
 
-In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping.  In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
+In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping. In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
 
 Here’s what you might write in Wukong to answer the same question:
 
@@ -79,11 +79,11 @@ wu-run monthly_visit_counts.rb --reducers_count=1 /data_UFO_sightings.tsv /datar
 
 If you consult the output, you’ll see (TODO: INSERT CONCLUSIONS).
 
-If you consult the Job Tracker Console, you should see a single Map/Reduce for each with effectively similar statistics; the dataflow Pig instructed Hadoop to run is essentially similar to the Wukong script you ran.  What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
+If you consult the Job Tracker Console, you should see a single Map/Reduce for each with effectively similar statistics; the dataflow Pig instructed Hadoop to run is essentially similar to the Wukong script you ran. What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
 
 ==== Wikipedia Visitor Counts
 
-Let’s put Pig to a sterner test.  Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
+Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
 
 ----
 LOAD SOURCE FILE
@@ -103,23 +103,23 @@ Run the script just as you did above:
 (TODO: command to run the script)
 ----
 
-Up until now, we have described Pig as authoring the same Map/Reduce job you would.  In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part.  If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although x bytes were read by the Mapper, only y bytes were output.  Pig instructed Hadoop to use a Combiner.  In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (TODO: REF), the Mapper output files have already been partitioned and sorted.  Hadoop offers you the opportunity to do pre-Aggregation on those groups.  Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
+Up until now, we have described Pig as authoring the same Map/Reduce job you would. In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part. If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although x bytes were read by the Mapper, only y bytes were output. Pig instructed Hadoop to use a Combiner. In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (TODO: REF), the Mapper output files have already been partitioned and sorted. Hadoop offers you the opportunity to do pre-Aggregation on those groups. Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
 
 ----
-SIDEBAR:  You can write Combiners in Wukong, too.  (TODO: Insert example with Combiners)
+SIDEBAR:  You can write Combiners in Wukong, too. (TODO: Insert example with Combiners)
 ----
 
-You’ll notice that, in the second script, we introduced the additional operation of instructing Pig to explicitly sort the output by minute.  We did not do that in the first example because its data was so small that we had instructed Hadoop to use a single Reducer.  As you will recall from (TODO: REF), Hadoop uses a Sort to prepare the Reducer groups, so its output was naturally ordered.  If there are multiple Reducers, however, that would not be enough to give you a Result file you can treat as ordered.  By default, Hadoop assigns partitions to Reducers using the ‘RandomPartitioner’, designed to give each Reducer a uniform chance of claiming any given partition.  This defends against the problem of one Reducer becoming overwhelmed with an unfair share of records but means the keys are distributed willy-nilly across machines.  Although each Reducer’s output is sorted, you will see records from 2008 at the top of each result file and records from 2012 at the bottom of each result file.
+You’ll notice that, in the second script, we introduced the additional operation of instructing Pig to explicitly sort the output by minute. We did not do that in the first example because its data was so small that we had instructed Hadoop to use a single Reducer. As you will recall from (TODO: REF), Hadoop uses a Sort to prepare the Reducer groups, so its output was naturally ordered. If there are multiple Reducers, however, that would not be enough to give you a Result file you can treat as ordered. By default, Hadoop assigns partitions to Reducers using the ‘RandomPartitioner’, designed to give each Reducer a uniform chance of claiming any given partition. This defends against the problem of one Reducer becoming overwhelmed with an unfair share of records but means the keys are distributed willy-nilly across machines. Although each Reducer’s output is sorted, you will see records from 2008 at the top of each result file and records from 2012 at the bottom of each result file.
 
-What we want instead is a total sort, the earliest records in the first numbered file in order, the following records in the next file in order, and so on until the last numbered file.  Pig’s ‘ORDER’ Operator does just that.  In fact, it does better than that.  If you look at the Job Tracker Console, you will see Pig actually ran three Map/Reduce jobs.  As you would expect, the first job is the one that did the grouping and summing and the last job is the one that sorted the output records.  In the last job, all the earliest records were sent to Reducer 0, the middle range of records were sent to Reducer 1 and the latest records were sent to Reducer 2.
+What we want instead is a total sort, the earliest records in the first numbered file in order, the following records in the next file in order, and so on until the last numbered file. Pig’s ‘ORDER’ Operator does just that. In fact, it does better than that. If you look at the Job Tracker Console, you will see Pig actually ran three Map/Reduce jobs. As you would expect, the first job is the one that did the grouping and summing and the last job is the one that sorted the output records. In the last job, all the earliest records were sent to Reducer 0, the middle range of records were sent to Reducer 1 and the latest records were sent to Reducer 2.
 
-Hadoop, however, has no intrinsic way to make that mapping happen.  Even if it figured out, say, that the earliest buckets were in 2008 and the latest buckets were in 2012, if we fed it a dataset with skyrocketing traffic in 2013, we would end up sending an overwhelming portion of results to that Reducer.  In the second job, Pig sampled the set of output keys, brought them to the same Reducer, and figured out the set of partition breakpoints to distribute records fairly.
+Hadoop, however, has no intrinsic way to make that mapping happen. Even if it figured out, say, that the earliest buckets were in 2008 and the latest buckets were in 2012, if we fed it a dataset with skyrocketing traffic in 2013, we would end up sending an overwhelming portion of results to that Reducer. In the second job, Pig sampled the set of output keys, brought them to the same Reducer, and figured out the set of partition breakpoints to distribute records fairly.
 
-In general, Pig offers many more optimizations beyond these and we will talk more about them in the chapter on Advanced Pig (TODO: REF).  In our experience, the only times Pig will author a significantly less-performant dataflow than would an expert comes when Pig is overly aggressive about introducing an optimization.  The chief example you’ll hit is that often, the intermediate stage in the total sort to calculate partitions has a larger time penalty than doing a bad job of partitioning would; you can disable that by (TODO: Describe how).
+In general, Pig offers many more optimizations beyond these and we will talk more about them in the chapter on Advanced Pig (TODO: REF). In our experience, the only times Pig will author a significantly less-performant dataflow than would an expert comes when Pig is overly aggressive about introducing an optimization. The chief example you’ll hit is that often, the intermediate stage in the total sort to calculate partitions has a larger time penalty than doing a bad job of partitioning would; you can disable that by (TODO: Describe how).
 
 === Group and Flatten
 
-The fundamental Map/Reduce operation is to group a set of records and operate on that group.  In fact, it’s a one-liner in Pig:
+The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
 
 ----
 BINS = Group WP_pageviews by (date, hour)
@@ -127,13 +127,13 @@ DESCRIBE BINS
 (TODO: SHOW OUTPUT)
 ----
 
-The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order.  The next field has the full input record with all its keys, even the group key.  Here’s a Wukong script that illustrates what is going on:
+The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order. The next field has the full input record with all its keys, even the group key. Here’s a Wukong script that illustrates what is going on:
 
 ----
 (TODO: Wukong script)
 ----
 
-You can group more than one dataset at the same time.  In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station.  Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
+You can group more than one dataset at the same time. In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station. Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
 
 ----
 G1=GROUP WSTNS BY (ID1, ID2), WOBS BY (ID1, ID2);
@@ -151,7 +151,7 @@ This is equivalent to the following Wukong job:
 
 ====  Join Practicalities
 
-The output of the Join job has one line for each discrete combination of A and B.  As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order.  We have to accumulate all the A records in memory so we know what rows to emit for each B record.  All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first.  In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
+The output of the Join job has one line for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order. We have to accumulate all the A records in memory so we know what rows to emit for each B record. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
 
 ==== Ready Reckoner: How fast should your Pig fly?
 
@@ -165,9 +165,9 @@ Rank, which is sugar on top of Order to produce a number, total-ordered set of r
 Split, to separate a dataset into multiple pieces; and
 Union, to produce a new dataset to have all the records from its input datasets.
 
-That’s really about it.  Pig is an extremely sparse language.  By having very few Operators and very uniform syntax (FOOTNOTE:  Something SQL users but non-enthusiasts like your authors appreciate), the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
+That’s really about it. Pig is an extremely sparse language. By having very few Operators and very uniform syntax (FOOTNOTE:  Something SQL users but non-enthusiasts like your authors appreciate), the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
 
-We won’t spend any more time introducing Pig, the language, as its usage will be fairly clear in context as you meet it later in the book.  The online Pig manual at (TODO: REF) is quite good and for a deeper exploration, consult (TODO: Add name of best Pig book here).
+We won’t spend any more time introducing Pig, the language, as its usage will be fairly clear in context as you meet it later in the book. The online Pig manual at (TODO: REF) is quite good and for a deeper exploration, consult (TODO: Add name of best Pig book here).
 
 ==== Pig Gotchas
 
@@ -181,13 +181,13 @@ Pig's operators can be grouped into several families.
 
 * Simple processing operations (FOREACH, ASSERT, STREAM, UNION) modify the contents of records individually. These become Mapper-Only jobs with exactly the same count of output records as input records.
 * Simple filtering operations (FILTER, SAMPLE, LIMIT, SPLIT) accept or reject each record individually; these also produce Mapper-Only jobs with the same or fewer number of records and each record has the same contents and schema as its input. (SPLIT is effectively several FILTERs run simultaneously, so its total output record count is the sum of what each of its filters would produce)
-* Ungrouping operations (FOREACH..FLATTEN) turn records that have bags of tuples into records with each such tuple from the bags in combination.  It is most commonly seen after a grouping operation (and thus occurs within the Reduce) but just produces a Mapper-Only job when used on its own.  Records with empty bags will disappear in the output while, if you FLATTEN a record having one bag field with three tuples and another bag field with four tuples, you will get 12 output records, one for each of the bags in combination.
-* Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other.  They make no modifications to their input records.  You will often find them followed by a FOREACH that is able to take advantage of the group context.  These jobs require a Map and Reduce phase.  The GROUP and COGROUP yield themselves one output record per distinct GROUP value.  A JOIN is simply an optimized GROUP/FLATTEN/FOREACH sequence, so its output size follows the same logic as FLATTEN.
-* Sorting operations (ORDER BY, RANK) perform a total sort on their input; every record in file 00000 is in sorted order and comes before all records in 00001 and so forth for the number of output files.  These require two jobs:  first, a light Mapper-Only pass to understand the distribution of sort keys, next a Map/Reduce job to perform the sort.
+* Ungrouping operations (FOREACH..FLATTEN) turn records that have bags of tuples into records with each such tuple from the bags in combination. It is most commonly seen after a grouping operation (and thus occurs within the Reduce) but just produces a Mapper-Only job when used on its own. Records with empty bags will disappear in the output while, if you FLATTEN a record having one bag field with three tuples and another bag field with four tuples, you will get 12 output records, one for each of the bags in combination.
+* Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other. They make no modifications to their input records. You will often find them followed by a FOREACH that is able to take advantage of the group context. These jobs require a Map and Reduce phase. The GROUP and COGROUP yield themselves one output record per distinct GROUP value. A JOIN is simply an optimized GROUP/FLATTEN/FOREACH sequence, so its output size follows the same logic as FLATTEN.
+* Sorting operations (ORDER BY, RANK) perform a total sort on their input; every record in file 00000 is in sorted order and comes before all records in 00001 and so forth for the number of output files. These require two jobs:  first, a light Mapper-Only pass to understand the distribution of sort keys, next a Map/Reduce job to perform the sort.
 * Serialization operations (LOAD, STORE) load and store data into file systems or datastores.
 * Directives (DESCRIBE, ILLUSTRATE, REGISTER, and others) to Pig itself. These do not modify the data, they modify Pig's execution: outputting debug information, registering external UDFs, and so forth.
 
-That's it.  That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps. For example, a GROUP followed by a FOREACH and a FILTER will only require one map phase and one reduce phase. In that case, the FOREACH and FILTER will be done in the reduce step -- and in the right circumstances, pig will "push" part of the `FOREACH` and `FILTER` _before_ the `JOIN`, potentially eliminating a great deal of processing.
+That's it. That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps. For example, a GROUP followed by a FOREACH and a FILTER will only require one map phase and one reduce phase. In that case, the FOREACH and FILTER will be done in the reduce step -- and in the right circumstances, pig will "push" part of the `FOREACH` and `FILTER` _before_ the `JOIN`, potentially eliminating a great deal of processing.
 
 In the remainder of this chapter, we'll illustrate the essentials for each family of operations, demonstrating them in actual use. In the following chapter (TODO ref), we'll learn how to implement the corresponding patterns in a plain map-reduce approach -- and therefore how to reason about their performance. Finally, the chapter on Advanced Pig (TODO ref) will cover some deeper-level topics, such as a few important optimized variants of the JOIN statement and how to endow Pig with new functions and loaders.
 
@@ -344,7 +344,7 @@ If you truly don't care which records to select, just use one input file (`some_
 
 For the examples in this chapter and often throughout the book, we will use the Retrosheet.org compendium of baseball data. We will briefly describe tables as we use them, but for a full explanation of its structure see the "Overview of Datasets" appendix (TODO:  REF).
 
-The core operation you will use to put records from one table into context with data from another table is the JOIN.  A common application of the JOIN is to reunite data that has been normalized -- that is to say, where the database tables are organized to eliminate any redundancy.  For example, each Retrosheet game log lists the ballpark in which it was played but, of course, it does not repeat the full information about that park within every record.  Later in the book, (TODO:  REF) we will want to label each game with its geo-coordinates so we can augment each with official weather data measurements.
+The core operation you will use to put records from one table into context with data from another table is the JOIN. A common application of the JOIN is to reunite data that has been normalized -- that is to say, where the database tables are organized to eliminate any redundancy. For example, each Retrosheet game log lists the ballpark in which it was played but, of course, it does not repeat the full information about that park within every record. Later in the book, (TODO:  REF) we will want to label each game with its geo-coordinates so we can augment each with official weather data measurements.
 
 To join the game_logs table with the parks table, extracting the game time and park geocoordinates, run the following Pig command:
 
@@ -359,9 +359,9 @@ explain gls_with_parks;
 (TODO output of explain command)
 ----
 
-The output schema of the new `gls_with_parks` table has all the fields from the `parks` table first (because it's first in the join statement), stapled to all the fields from the `game_logs` table.  We only want some of the fields, so immediately following the JOIN is a FOREACH to extract what we're interested in.  Note there are now two 'park_id' columns, one from each dataset, so in the subsequent FOREACH, we need to dereference the column name with the table from which it came.  (TODO: check that Pig does push the projection of fields up above the JOIN).  If you run the script, 'examples/geo/baseball_weather/geolocate_games.pig' you will see that its output has example as many records as there are 'game_logs' because there is exactly one entry in the 'parks' table for each park.
+The output schema of the new `gls_with_parks` table has all the fields from the `parks` table first (because it's first in the join statement), stapled to all the fields from the `game_logs` table. We only want some of the fields, so immediately following the JOIN is a FOREACH to extract what we're interested in. Note there are now two 'park_id' columns, one from each dataset, so in the subsequent FOREACH, we need to dereference the column name with the table from which it came. (TODO: check that Pig does push the projection of fields up above the JOIN). If you run the script, 'examples/geo/baseball_weather/geolocate_games.pig' you will see that its output has example as many records as there are 'game_logs' because there is exactly one entry in the 'parks' table for each park.
 
-In the general case, though, a JOIN can be many to many.  Suppose we wanted to build a table listing all the home ballparks for every player over their career.  The 'player_seasons' table has a row for each year and team over their career.  If a player changed teams mid year, there will be two rows for that player.  The 'park_years' table, meanwhile, has rows by season for every team and year it was used as a home stadium.  Some ballparks have served as home for multiple teams within a season and in other cases (construction or special circumstances), teams have had multiple home ballparks within a season.
+In the general case, though, a JOIN can be many to many. Suppose we wanted to build a table listing all the home ballparks for every player over their career. The 'player_seasons' table has a row for each year and team over their career. If a player changed teams mid year, there will be two rows for that player. The 'park_years' table, meanwhile, has rows by season for every team and year it was used as a home stadium. Some ballparks have served as home for multiple teams within a season and in other cases (construction or special circumstances), teams have had multiple home ballparks within a season.
 
 The Pig script (TODO: write script) includes the following JOIN:
 
@@ -373,9 +373,9 @@ JOIN
 explain_player_park_year;
 ----
 
-First notice that the JOIN expression has multiple columns in this case separated by commas; you can actually enter complex expressions here -- almost all (but not all) the things you do within a FOREACH.  If you examine the output file (TODO: name of output file), you will notice it has appreciably more lines than the input 'player' file.  For example (TODO: find an example of a player with multiple teams having multiple parks), in year x player x played for the x and the y and y played in stadiums p and q.  The one line in the 'players' table has turned into three lines in the 'players_parks_years' table.
+First notice that the JOIN expression has multiple columns in this case separated by commas; you can actually enter complex expressions here -- almost all (but not all) the things you do within a FOREACH. If you examine the output file (TODO: name of output file), you will notice it has appreciably more lines than the input 'player' file. For example (TODO: find an example of a player with multiple teams having multiple parks), in year x player x played for the x and the y and y played in stadiums p and q. The one line in the 'players' table has turned into three lines in the 'players_parks_years' table.
 
-The examples we have given so far are joining on hard IDs within closely-related datasets, so every row was guaranteed to have a match.  It is frequently the case, however, you will join tables having records in one or both tables that will fail to find a match.  The 'parks_info' datasets from Retrosheet only lists the city name of each ballpark, not its location. In this case we found a separate human-curated list of ballpark geolocations, but geolocating records -- that is, using a human-readable location name such as "Austin, Texas" to find its nominal geocoordinates (-97.7,30.2) -- is a common task; it is also far more difficult than it has any right to be, but a useful first step is match the location names directly against a gazette of populated place names such as the open source Geonames dataset.
+The examples we have given so far are joining on hard IDs within closely-related datasets, so every row was guaranteed to have a match. It is frequently the case, however, you will join tables having records in one or both tables that will fail to find a match. The 'parks_info' datasets from Retrosheet only lists the city name of each ballpark, not its location. In this case we found a separate human-curated list of ballpark geolocations, but geolocating records -- that is, using a human-readable location name such as "Austin, Texas" to find its nominal geocoordinates (-97.7,30.2) -- is a common task; it is also far more difficult than it has any right to be, but a useful first step is match the location names directly against a gazette of populated place names such as the open source Geonames dataset.
 
 Run the script (TODO: name of script) that includes the following JOIN:
 
@@ -386,18 +386,18 @@ park_places = JOIN
 DESCRIBE park_places;
 ----
 
-In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park.  The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match.  In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park.  Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN.  If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" JOIN instead.  If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN.  (Full JOINs are pretty rare.)
+In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" JOIN instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
 
 In a Pig JOIN it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (TODO:  REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
 
 ----
 NOTE
-A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement.  Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
+A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
 ----
 
 === Group Elements From Multiple Tables On A Common Attribute (COGROUP)
 
-The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation.  This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
+The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation. This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
 
 ----
 sightings = LOAD('/data/gold/geo/ufo_sightings/us_ufo_sightings.tsv') AS (...);
@@ -408,7 +408,7 @@ cell_sightings_airports = COGROUP
 STORE cell_sightings_locations INTO '...';
 ----
 
-In the equivalent Map/Reduce algorithm, you label each record by both the indicated key and a number based on its spot in the COGROUP statement (here, records from sightings would be labeled 0 and records from airports would be labeled 1).  Have Hadoop then PARTITION and GROUP on the COGROUP key with a secondary sort on the table index.  Here is how the previous Pig script would be done in Wukong:
+In the equivalent Map/Reduce algorithm, you label each record by both the indicated key and a number based on its spot in the COGROUP statement (here, records from sightings would be labeled 0 and records from airports would be labeled 1). Have Hadoop then PARTITION and GROUP on the COGROUP key with a secondary sort on the table index. Here is how the previous Pig script would be done in Wukong:
 
 ----
 mapper(partition_keys: 1, sort_keys: 2) do
@@ -435,9 +435,9 @@ reducer do
 end
 ----
 
-The Mapper loads each record as an object (using the file name to recognize which class to use) and then emits the quadkey, the table index (0 for sightings, 1 for airports) and the original record's fields.  Declaring partition keys 1, sort keys 2 insures all records with the same quadkey are grouped together on the same Reducer and all records with the same table index arrive together.  The body of the Reducer makes temporary note of the GROUP key, then accumulates each record into an array based on its type.
+The Mapper loads each record as an object (using the file name to recognize which class to use) and then emits the quadkey, the table index (0 for sightings, 1 for airports) and the original record's fields. Declaring partition keys 1, sort keys 2 insures all records with the same quadkey are grouped together on the same Reducer and all records with the same table index arrive together. The body of the Reducer makes temporary note of the GROUP key, then accumulates each record into an array based on its type.
 
-The result of the COGROUP statement always has the GROUP key as the first field.  Next comes the set of elements from the table named first in the COGROUP statement -- in Pig, this is a bag of tuples, in Wukong, an array of objects.  After that comes the set of elements from the next table in the GROUP BY statement and so on.
+The result of the COGROUP statement always has the GROUP key as the first field. Next comes the set of elements from the table named first in the COGROUP statement -- in Pig, this is a bag of tuples, in Wukong, an array of objects. After that comes the set of elements from the next table in the GROUP BY statement and so on.
 
 While a standalone COGROUP like this is occasionally interesting, it is also the basis for many other common patterns, as you'll see over the next chapters.
 
@@ -489,7 +489,7 @@ We've applied the `DISTINCT` operation so that each home park for a player appea
 
 We `JOIN`ed player seasons and team seasons on `(year, team_id)`. The resulting schema has those fields twice. To select the name, we use two colons (the disambiguate operator): `players::year`.
 
-After the `GROUP BY` operation, the schema is `group:int, player_season_parks:bag{tuple(player_id, player_name, year, team_id, park_id, park_name)}`.  The schema of the new `group` field matches that of the `BY` clause: since `park_id` has type chararray, so does the group field. (If we had supplied multiple fields to the `BY` clause, the `group` field would have been of type `tuple`).  The second field, `player_season_parks`, is a bag of size-6 tuples. Be clear about what the names mean here: grouping on the `player_season_parks` _table_ (whose schema has six fields) produced the `player_parks` table. The second field of the `player_parks` table is a tuple of size six (the six fields in the corresponding table) named `player_season_parks` (the name of the corresponding table).
+After the `GROUP BY` operation, the schema is `group:int, player_season_parks:bag{tuple(player_id, player_name, year, team_id, park_id, park_name)}`. The schema of the new `group` field matches that of the `BY` clause: since `park_id` has type chararray, so does the group field. (If we had supplied multiple fields to the `BY` clause, the `group` field would have been of type `tuple`). The second field, `player_season_parks`, is a bag of size-6 tuples. Be clear about what the names mean here: grouping on the `player_season_parks` _table_ (whose schema has six fields) produced the `player_parks` table. The second field of the `player_parks` table is a tuple of size six (the six fields in the corresponding table) named `player_season_parks` (the name of the corresponding table).
 
 So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ a bag of tuples (remember, bags only hold tuples!), now size-1 tuples holding only the park_id. That schema is preserved through the `DISTINCT` operation, so `home_parks` is also a bag of size-1 tuples.
 
