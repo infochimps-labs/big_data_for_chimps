@@ -1,0 +1,97 @@
+
+
+
+
+=== Reduce Logs ===
+
+TODO: need one that does reduce spills
+
+
+
+	2012-12-17 02:11:58,555 WARN org.apache.hadoop.conf.Configuration: /mnt/hadoop/mapred/local/taskTracker/flip/jobcache/job_201212070519_0013/job.xml:a attempt to override final parameter: hadoop.tmp.dir;  Ignoring.
+	...
+	2012-12-17 02:11:58,580 WARN org.apache.hadoop.conf.Configuration: /mnt/hadoop/mapred/local/taskTracker/flip/jobcache/job_201212070519_0013/job.xml:a attempt to override final parameter: mapred.tasktracker.map.tasks.maximum;  Ignoring.
+	
+These are harmless: this job has read the system .xml files into its jobconf (as it will if none are explicitly specified); some non-adjustable parameters came along for the ride
+
+	2012-12-17 02:11:58,776 INFO org.apache.hadoop.util.NativeCodeLoader: Loaded the native-hadoop library
+
+That's good news: the native libraries are much faster.
+	
+	...
+	2012-12-17 02:12:00,300 WARN org.apache.hadoop.io.compress.snappy.LoadSnappy: Snappy native library is available
+	2012-12-17 02:12:00,300 INFO org.apache.hadoop.io.compress.snappy.LoadSnappy: Snappy native library loaded
+
+Also good news: compressing midstream data is almost always a win, and the Snappy codec is a good balance of CPU and bandwidth.	
+	
+	2012-12-17 02:12:00,389 INFO org.apache.hadoop.mapred.ReduceTask: ShuffleRamManager: MemoryLimit=2040109440, MaxSingleShuffleLimit=510027360
+
+This is crucial.
+
+* The `MemoryLimit` figure should be `mapred.job.shuffle.input.buffer.percent * 2147483647` if you have more than 2GB of heap set aside for the reducer.
+* The `MaxSingleShuffleLimit` should be 25% of that.
+
+The memory used to store map outputs during shuffle is given by `(shuffle_heap_frac *
+[reduce_heap_mb, 2GB].min)` If you have more than 2GB of reducer heap size, consider increasing this
+value.  It only applies during the shuffle, and so does not compete with your reducer for heap space.
+
+default[:hadoop][:shuffle_heap_frac]                 = 0.70
+
+# The memory used to store map outputs during reduce is given by
+#   (reduce_heap_frac * [reduce_heap_mb, 2GB].min)
+# These buffers compete with your reducer code for heap space; however, many
+# reducers simply stream data through and have no real memory burden once the
+# sort/group is complete. If that is the case, or if your reducer heap size is
+# well in excess of 2GB, consider adjusting this value.
+# Tradeoffs -- Too high: crash on excess java heap. Too low: modest performance
+# hit on reduce
+default[:hadoop][:reduce_heap_frac]                  = 0.00
+
+	
+	...
+	2012-12-17 02:12:00,758 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Need another 161 map output(s) where 0 is already in progress
+	2012-12-17 02:12:00,758 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 0 outputs (0 slow hosts and0 dup hosts)
+	2012-12-17 02:12:00,767 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Thread started: Thread for polling Map Completion Events
+
+The reducer has fully started, and is ready to receive data from each mapper.
+
+	...
+	2012-12-17 02:12:05,759 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 7 outputs (0 slow hosts and0 dup hosts)
+	...
+	2012-12-17 02:13:03,350 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Need another 128 map output(s) where 0 is already in progress
+
+These roll in as each map task finishes
+	
+	2012-12-17 02:15:53,686 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000132_1'
+	...
+	2012-12-17 02:16:20,713 INFO org.apache.hadoop.mapred.ReduceTask: Ignoring obsolete output of KILLED map-task: 'attempt_201212070519_0013_m_000128_1'
+	2012-12-17 02:16:22,696 INFO org.apache.hadoop.mapred.ReduceTask: attempt_201212070519_0013_r_000019_0 Scheduled 1 outputs (0 slow hosts and0 dup hosts)
+
+The `obsolete output of KILLED map-task` lines may look dire, but they're harmless. The jobtracker specified several map tasks for speculative execution (TODO: ref), and then killed the attempts that didn't finish first. The reducers are smart enough to ignore the output of failed an killed jobs, and only proceed to the reduce when exactly one copy of the data has arrived.	
+	
+TODO: get a job that has multiple spills
+	
+	2012-12-17 02:16:23,715 INFO org.apache.hadoop.mapred.ReduceTask: GetMapEventsThread exiting
+	2012-12-17 02:16:23,715 INFO org.apache.hadoop.mapred.ReduceTask: getMapsEventsThread joined.
+
+The map tasks have all arrived, and so the final merge passes may begin.
+	
+	2012-12-17 02:16:23,717 INFO org.apache.hadoop.mapred.ReduceTask: Closed ram manager
+	2012-12-17 02:16:23,742 INFO org.apache.hadoop.mapred.ReduceTask: Interleaved on-disk merge complete: 0 files left.
+	2012-12-17 02:16:23,743 INFO org.apache.hadoop.mapred.ReduceTask: In-memory merge complete: 161 files left.
+	2012-12-17 02:16:23,744 INFO org.apache.hadoop.mapred.ReduceTask: Merging 0 files, 0 bytes from disk
+	2012-12-17 02:16:23,747 INFO org.apache.hadoop.mapred.ReduceTask: Merging 161 segments, 922060579 bytes from memory into reduce
+	2012-12-17 02:16:23,750 INFO org.apache.hadoop.mapred.Merger: Merging 161 sorted segments
+	2012-12-17 02:16:23,751 INFO org.apache.hadoop.mapred.Merger: Down to the last merge-pass, with 145 segments left of total size: 922060547 bytes
+	2012-12-17 02:16:23,762 INFO org.apache.hadoop.streaming.PipeMapRed: PipeMapRed exec [/usr/bin/ruby1.9.2-p290, /home/flip/ics/core/wukong_ng/examples/munging/wikipedia/dbpedia/unify_dbpedia.rb, --reduce, --log_interval=10000, --log_seconds=30]
+	2012-12-17 02:16:23,808 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1/0/0 in:NA [rec/s] out:NA [rec/s]
+	2012-12-17 02:16:23,809 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=10/0/0 in:NA [rec/s] out:NA [rec/s]
+	2012-12-17 02:16:23,814 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=100/0/0 in:NA [rec/s] out:NA [rec/s]
+	2012-12-17 02:16:23,834 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=1000/0/0 in:NA [rec/s] out:NA [rec/s]
+	2012-12-17 02:16:24,213 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=1746/1
+	2012-12-17 02:16:25,243 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=10000/355/0 in:10000=10000/1 [rec/s] out:355=355/1 [rec/s]
+	2012-12-17 02:16:34,232 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=82322/4975
+	2012-12-17 02:16:36,151 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=100000/5472/0 in:8333=100000/12 [rec/s] out:456=5472/12 [rec/s]
+	2012-12-17 02:16:44,241 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=154675/6964
+	2012-12-17 02:33:40,532 INFO org.apache.hadoop.streaming.PipeMapRed: Records R/W=7456136/352941
+	2012-12-17 02:33:44,878 INFO org.apache.hadoop.streaming.PipeMapRed: R/W/S=7500000/354750/0 in:7204=7500000/1041 [rec/s] out:340=354750/1041 [rec/s]
