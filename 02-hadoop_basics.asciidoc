@@ -3,7 +3,7 @@
 [NOTE]
 .Outline from outline (in Google Docs)
 ====
-2. Intro to Hadoop
+Intro to Hadoop
 
 * C&E translate Shakespeare: distributed computation
 * Simple Mechanics of Using Hadoop
