@@ -364,7 +364,6 @@ OUTLINE: 03d: specializations of the reducer
 
 TODO-qem: goal is to introduce group-sort notion first, but not overburden user with distinction of partition-group-secondarysort; then do join example; then discuss the technical part.
 
-____________________________________________
 
 ==== Close Encounters of the Reindeer Kind (part 2)
 
