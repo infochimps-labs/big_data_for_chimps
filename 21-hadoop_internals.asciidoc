@@ -49,3 +49,62 @@ If you use a cluster-local HDFS in the way described, that is, it holds no gold 
 
 As your S3 usage grows --- certainly if you find you have more than, say, a dozen terabytes of data not in monthly use -- it’s worth marking that data for storage in Glacier, not S3 (you can only do this, of course, if you’re using the `s3n` facade).  There’s a charge for migrating data and, of course, your time is valuable, but the savings can be enormous.
 
+
+=== Chimpanzee and Elephant: A Day at Work ===
+
+Each day, the chimpanzee's foreman, a gruff silverback named J.T., hands each chimp the day's translation manual and a passage to translate as they clock in. Throughout the day, he also coordinates assigning each block of pages to chimps as they signal the need for a fresh assignment.
+
+Some passages are harder than others, so it's important that any elephant can deliver page blocks to any chimpanzee -- otherwise you'd have some chimps goofing off while others are stuck translating _King Lear_ into Kinyarwanda. On the other hand, sending page blocks around arbitrarily will clog the hallways and exhaust the elephants.
+
+The elephants' chief librarian, Nanette, employs several tricks to avoid this congestion.
+
+Since each chimpanzee typically shares a cubicle with an elephant, it's most convenient to hand a new page block across the desk rather then carry it down the hall. J.T. assigns tasks accordingly, using a manifest of page blocks he requests from Nanette. Together, they're able to make most tasks be "local".
+
+Second, the page blocks of each play are distributed all around the office, not stored in one book together. One elephant might have pages from Act I of _Hamlet_, Act II of _The Tempest_, and the first four scenes of _Troilus and Cressida_ footnote:[Does that sound complicated? It is -- Nanette is able to keep track of all those blocks, but if she calls in sick, nobody can get anything done. You do NOT want Nanette to call in sick.]. Also, there are multiple 'replicas' (typically three) of each book collectively on hand. So even if a chimp falls behind, JT can depend that some other colleague will have a cubicle-local replica. (There's another benefit to having multiple copies: it ensures there's always a copy available. If one elephant is absent for the day, leaving her desk locked, Nanette will direct someone to make a xerox copy from either of the two other replicas.)
+
+Nanette and J.T. exercise a bunch more savvy optimizations (like handing out the longest passages first, or having folks who finish early pitch in so everyone can go home at the same time, and more). There's no better demonstration of power through simplicity.
+
+=== Brief Anatomy of a Hadoop Job ===
+
+We'll go into much more detail in (TODO: ref), but here are the essentials of what you just performed.
+
+==== Copying files to the HDFS ====
+
+When you ran the `hadoop fs -mkdir` command, the Namenode (Nanette's Hadoop counterpart) simply made a notation in its directory: no data was stored. If you're familiar with the term, think of the namenode as a 'File Allocation Table (FAT)' for the HDFS.
+
+When you run `hadoop fs -put ...`, the putter process does the following for each file:
+
+1. Contacts the namenode to create the file. This also just makes a note of the file; the namenode doesn't ever have actual data pass through it.
+2. Instead, the putter process asks the namenode to allocate a new data block. The namenode designates a set of datanodes (typically three), along with a permanently-unique block ID.
+3. The putter process transfers the file over the network to the first data node in the set; that datanode transfers its contents to the next one, and so forth. The putter doesn't consider its job done until a full set of replicas have acknowledged successful receipt.
+4. As soon as each HDFS block fills, even if it is mid-record, it is closed; steps 2 and 3 are repeated for the next block.
+
+==== Running on the cluster ====
+
+Now let's look at what happens when you run your job.
+
+(TODO: verify this is true in detail. @esammer?)
+
+* _Runner_: The program you launch sends the job and its assets (code files, etc) to the jobtracker. The jobtracker hands a `job_id` back (something like `job_201204010203_0002` -- the datetime the jobtracker started and the count of jobs launched so far); you'll use this to monitor and if necessary kill the job.
+* _Jobtracker_: As tasktrackers "heartbeat" in, the jobtracker hands them a set of 'task's -- the code to run and the data segment to process (the "split", typically an HDFS block). 
+* _Tasktracker_: each tasktracker launches a set of 'mapper child processes', each one an 'attempt' of the tasks it received. (TODO verify:) It periodically reassures the jobtracker with progress and in-app metrics.
+* _Jobtracker_: the Jobtracker continually updates the job progress and app metrics. As each tasktracker reports a complete attempt, it receives a new one from the jobtracker.
+* _Tasktracker_: after some progress, the tasktrackers also fire off a set of reducer attempts, similar to the mapper step.
+* _Runner_: stays alive, reporting progress, for the full duration of the job. As soon as the job_id is delivered, though, the Hadoop job itself doesn't depend on the runner -- even if you stop the process or disconnect your terminal the job will continue to run.
+
+[WARNING]
+===============================
+Please keep in mind that the tasktracker does _not_ run your code directly -- it forks a separate process in a separate JVM with its own memory demands. The tasktracker rarely needs more than a few hundred megabytes of heap, and you should not see it consuming significant I/O or CPU.
+===============================
+
+=== Chimpanzee and Elephant: Splits ===
+
+I've danced around a minor but important detail that the workers take care of. For the Chimpanzees, books are chopped up into set numbers of pages -- but the chimps translate _sentences_, not pages, and a page block boundary might happen mid-sentence.
+//// Provide a real world analogous example here to help readers correlate this story to their world and data analysis needs, "...This example is similar to..."  Amy////
+
+The Hadoop equivalent of course is that a data record may cross and HDFS block boundary. (In fact, you can force map-reduce splits to happen anywhere in the file, but the default and typically most-efficient choice is to split at HDFS blocks.)
+
+A mapper will skip the first record of a split if it's partial and carry on from there. Since there are many records in each split, that's no big deal. When it gets to the end of the split, the task doesn't stop processing until is completes the current record -- the framework makes the overhanging data seamlessley appear.
+//// Again, here, correlate this example to a real world scenario; "...so if you were translating x, this means that..."  Amy////
+
+In practice, Hadoop users only need to worry about record splitting when writing a custom `InputFormat` or when practicing advanced magick. You'll see lots of reference to it though -- it's a crucial subject for those inside the framework, but for regular users the story I just told is more than enough detail.

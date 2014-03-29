@@ -172,3 +172,5 @@ ASSERT(global_term_info.global_usages = memoized_global_usages);
 ----
 
 (TODO: just realized the way we've done this finds global term stats on only geolocated articles. To find them on all articles will complicate the script: we have to do a left join and then filter, or we'd have to do wordbags first then join on geolocations.)
+
+

@@ -27,19 +27,20 @@ best-case scenario:
 Raw ingredients:
 
 * _scripts_:
-  - nullify	 --
-  - identity	 --
-  - faker	 -- generates address records _deterministically_.
-    - should have a partition key we can make dance (see below)
-    - should have a total-ordered line number
+  - faker	-- generates apache weblog records _deterministically_. Ensure the timestamp will require no complicated parsing to use in Pig.
+  - swallow-m	-- mapper emits 0.01% (one out of every 10_000) records, no reduce
+  - most-m	-- mapper emits 99.99% of records, no reduce
+  - swallow-r	-- mapper emits all records, reducer emits  0.01% of records
+  - most-r	-- mapper emits all records, reducer emits 99.99% of records
+
+  - url-group	-- project only URL and timestamp fields; group on URL; emit URL and bag of timestamps that URL was visited
    
 * _files_:
-  - zeros	 -- 512 zero-byte files
-  - oneline	 -- 512 files, each with only its index 
-  - fakered	 -- faker.rb-generated 64-GB dataset as 1 64-GB file, 8 8-GB, 64 1-GB, 512 128-MB files. Re-running faker script will recreate fakered dataset.
-  -
+  - oneline	-- 512 files, each with only its index
+  - fakered	-- faker.rb-generated 64-GB dataset as 1 64-GB file, 8 8-GB, 64 1-GB, 512 128-MB files. Re-running faker script will recreate fakered dataset.
+
 * _setups_:
-  - free-shuf 	-- set up reduce-slotted-only workers, with max-sized shuffle buffers, no shuffle flush (i.e as close as we can get to zero shuffle)
+  - max-shuffle	-- workers with only reduce-slots, having max-sized shuffle buffers, no shuffle flush (i.e as close as we can get to zero shuffle)
   - baseline    -- large output block size, replication factor 1
 
 * setup
@@ -141,7 +142,7 @@ For data that will be read much more often than it's written,
 
 === Happy Mappers ===
 
-==== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**. =====
+==== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**
 
 ==== A Happy Mapper is Well-fed
 
@@ -167,8 +168,9 @@ Pig can use the combine splits setting to make this intelligently faster. Watch 
 
 If you're reading from S3, dial up the min split size as large as 1-2 GB (but not 
 
-==== A Happy Mapper has no Reducer =====
+==== A Mapper with no Reducer is Typically Quite Happy
 
+Any time you can turn a job with a reduce phase into a job without one (for instance, by using a HashMap replication join), do so. Any reduce phase involves shipping the full midstream data size over the network.
 
 ==== Match the reducer heap size to the data it processes ====
   
@@ -253,8 +255,6 @@ Test these with a file size equal to your HDFS block size.
 Tuning your cluster to your job makes life simple
 * If you are hitting a hard constraint (typically, not enough RAM)
 
-
-
 === Physics of Tuning constants
 
 
@@ -267,7 +267,6 @@ That is, however, from intra-cluster traffic. By contrast, flume connections are
 === Pig settings ===
 
 see `-Dpig.exec.nocombiner=true` if using combiners badly. (You'll want to use this for a rollup job).
-
 
 === Tuning pt 2 ===
 

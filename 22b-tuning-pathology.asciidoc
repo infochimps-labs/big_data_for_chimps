@@ -1,6 +1,5 @@
 == Pathology of Tuning (aka "when you should touch that dial") ==
 
-
 === Mapper ===
 
 ==== A few map tasks take noticably longer than all the rest

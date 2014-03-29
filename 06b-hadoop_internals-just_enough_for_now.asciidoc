@@ -107,3 +107,5 @@ If your Datanode is backed by remote volumes (common in some virtual environment
 * 300 GB sent over the network to the remote file store
 
 As you can see, unless your cluster is undersized (producing significant merge/sort overhead), the cost of replicating the data rivals the cost of the rest of the job.  The default replication factor is 3 for two very good reasons:  it helps guarantee the permanence of your data and it allows the Job tracker to efficiently allocate Mapper-local tasks.  But in certain cases -- intermediate checkpoint data, scratch data or where backed by a remote file system with its own durability guarantee -- an expert who appreciates the risk can choose to reduce the replication factor to 2 or 1.
+
+
