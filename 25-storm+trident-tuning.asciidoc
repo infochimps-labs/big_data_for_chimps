@@ -7,15 +7,18 @@ Our approach for Storm+Trident, as it is for Hadoop, is to use it from the "outs
 Along the way, we can also illuminate how Storm+Trident acheives its breakthroughs -- its ability to do exactly-once processing is a transformative improvement over transfer-oriented systems (such as Flume or S4) and wall street-style Complex Event Processing (CEP) systems (such as Esper). 
 
 
-Because Storm+Trident has not reached Hadoop's relative maturity, it's important for the regular data scientist to under 
+Because Storm+Trident has not reached Hadoop's relative maturity, it's far more important for the regular data scientist to understand its internals than for Hadoop.
 
+In this chapter, we'll cover:
 
 * Tuning constraints -- refer to earlier discussion on acceptable delay, thruput, horizon of compute, et
 * Process for initial tuning
 * General recommendations
 * cloud tuning
 
-Tuning a dataflow system is easy:
+=== The Dataflow Tuning Rules
+
+Tuning a dataflow system is, in principle, easy:
 
 ----
 The Dataflow Tuning Rules:
