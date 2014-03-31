@@ -1,10 +1,317 @@
 TODO-qem: review patterns, confirm discussion is cogent. Want to make sure each example makes sense on its own, that it fits, and also ensure narrative flow throughout the chapter.
+"Lots of data into less data"
 
+TODO: find biz applications for the fancy ones
+TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid for both MySQL and Postgres
+
+=== FOREACH to transform records individually
+
+* modify the contents of records individually with FOREACH
+  - ba, slg, ops by season
+* Writing Strings That Include Quotes or Special Characters Section 
+* Preparing table in Atom-only form
+ 
+=== eliminating records or fields
+
+* Testing String Equality or Relative Ordering; Decomposing or Combining Strings; Checking Whether a String Contains a Substring; Matching with Regular Expressions
+* Filter: 
+    * players after 1900; players for Red Sox
+    * players with a nickname? (Or some Regex match)
+* Select Fixed Number of Arbitrary Records (LIMIT)
+  - note: Limit doesn't stop reading so only supply a few filenames
+* Select only the fields you need ("projection") using a FOREACH
+  - project just the core stats -- Specifying Which Columns to Display and Giving Names to Output Columns
+* Sample: see statistics chapter
+* Note: JOINs are often used to filter items in one table using fields from another table -- se below
+* Note: To select the top K items from a table or from groups of records is covered below
+
+=== Splitting into pieces
+
+* Split using filter: Bill James' black ink metric?
+    * Write into named files: game logs by position
+    * Combine small files: find the worst offender and repair it
+    * case statement
+* splitting into uniform chunks (records, bytes)
+* splitting into files by criterion
+* Named for key using Piggybank multistorage
+* Named for explicit filter
+
+
+=== Blowing up data
+
+* String/Collection decomposition
+* Enumerating pairs
+* Enumerating sets
+* Discrete interval sampling
+* Ungrouping operations (FOREACH..FLATTEN) expand records
+* Blowing Up records: Wordbag, Flatten
+* Data Generation
+* Make Reproducible Random Data - Varying Distribution
+
+=== Aggregation for summary statistics
+
+* Group and agg: 
+    * Top HR Count
+    * distribution of career games (something more long tail-ish?)
+    * (something slightly more advanced statistically?)
+* Group and agg with Fancy FOREACH: batting average, slg and OPS for career
+ * Complex `FOREACH` lets you  operate on bags
+ * Summarizing with COUNT(), MIN(), MAX(), SUM(), AVG(), byte size, character size, line / word count
+ * Counting
+ * Count vs COUNTSTAR 
+ * Sum, sumsq, Entropy, Standard Deviation, variance, moments (eg GINI)
+ * Streaming moments (see Alon, Matias, and Szegedy)
+* Dividing a Summary into Subgroups
+* Cube and rollup
+* Summaries and NULL Values
+* Re-injecting global totals
+* Correlation /covariance: what rate stats go with game time temp?
+* Histogram
+  - quantiles
+  - Median (approx, exact)
+* Number of Distinct elements (Cardinality)
+* Heavy hitters -- Count-Min sketch
+* Running averages
+* note: see below for Graph summaries
+* Section 7.12. Grouping by Expression Results
+* Section 7.13. Categorizing Non-Categorical Data
+
+=== Putting tables in context with JOIN and friends
+
+* Combine tables with UNION
+* Join Practicalities
+* Extend Records with Uniquely Matching Records from Another Table
+* Join is a Group and Flatten
+* Direct Join: reattach names etc
+* Many-to-many join: teams to stadiums; players to teams
+* Sparse join for matching: geo names for stadiums
+* Sparse join for filtering: hall of famers? All-stars?
+* Self-join
+* Distinct: players with a unique first name (once again we urge you: crawl through your data. Big data is a collection of stories; the power of its unusual effectiveness mode comes from the comprehensiveness of those stories. even if you aren't into baseball this celebration of the diversity of our human race and the exuberance of identity should fill you with wonder.)
+* bag left outer join from DataFu
+* Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
+* Sparse joins for filtering
+    * HashMap (replicated) join
+    * bloom filter join
+* (add note) Joins on null values are dropped even when both are null. Filter nulls.
+* Range query
+    * using cross
+    * using prefix and UDFs
+* Semi-join
+* Bitmap index
+* Combining Rows in One Table with Rows in Another
+* Finding Rows in One Table That Match Rows in Another
+* Finding Rows with No Match in Another Table
+* Section 12-10 Using a Join to Fill in Holes in a List
+* Enumerating a Many-to-Many Relationship
+* Comparing a Table to Itself
+* Eliminating Duplicates from a Query Result:
+    * and from a Self-Join Result Section
+    * Eliminating Duplicates from a Table
+
+=== Set Operations
+
+* Union (make sure to note it doesn't dedupe and doesn't order)
+* Intersect
+* Distinct
+* Difference (in a but not in b)
+* Equality (use symmetric difference)
+* Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
+* http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html
+* http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
+
+* Using DISTINCT to Eliminate Duplicates
+* Eliminating rows that have a duplicated value (ie you're not comparing the whole thing) 
+* Finding Values Associated with Minimum and Maximum Values
+* Selecting Only Groups with Certain Characteristics
+* Determining Whether Values are Unique
+
+=== Structural Group Operations (ie non aggregating)
+
+* Group flatten regroup
+    * OPS+ -- group on season, normalize, reflatten
+    * player's highest OPS+: season, normalize, flatten, group on player, top
+* Group Elements From Multiple Tables On A Common Attribute (COGROUP)
+* GROUP/COGROUP To Restructure Tables
+* Self join of table on its next row (eg timeseries at regular sample)
+* Working with NULL Values: Negating a Condition on a Column That Contains NULL Values Section; Writing Comparisons Involving NULL in Programs; Mapping NULL Values to Other Values
+* Using DISTINCT to Eliminate Duplicates
+* Finding Values Associated with Minimum and Maximum Values
+* Selecting Only Groups with Certain Characteristics
+* Determining Whether Values are Unique
+* Finding Rows Containing Per-Group Minimum or Maximum Values
+* Computing Team Standings
+* Producing Master-Detail Lists and Summaries
+* Find Overlapping Rows
+* Find Gaps in Time-Series..
+* Find Missing Rows in Series / Count all Values
+* Normalize Denormalized 
+* Denormalize Normalized 
+* Transpose Numeric Data
+* Calculating Differences Between Successive Rows
+* Finding Cumulative Sums and Running Averages
+* Section 13.3. Per-Group Descriptive Statistics Section 
+* Counting Missing Values
+
+=== Sorting and Ordering
+
+* Top K: 
+    * whole table: most hr in a season
+    * most hr season-by-season
+* Operations on the order of records: Sorting, Shuffling, Ranking and Numbering
+    * ORDER
+    * RANK: Dense, not dense
+* Top K Records within a table using ORDER..LIMIT
+    * Top K Within a Group using GROUP...FOREACH GENERATE TOP
+* Number records with a serial or unique index
+* Running total http://en.wikipedia.org/wiki/Prefix_sum
+* prefix sum value; by combining list ranking, prefix sums, and Euler tours, many important problems on trees may be solved by efficient parallel algorithms.[3]
+* Shuffle a set of records
+    * See notes on random numbers.
+    * Don't use the pig ORDER operation for this (two passes) (can you count on the built-in sort?)
+* Sorting a Result Set
+* Selecting Records from the Beginning or End of a Result Set
+* Pulling a Section from the Middle of a Result Set
+* Calculating LIMIT Values from Expressions
+* What to Do When LIMIT Requires the "Wrong" Sort Order
+* Sorting with Order by; Sorting and NULL Values; Controlling Case Sensitivity of String Sorts
+* Sorting Subsets of a Table;
+* Displaying One Set of Values While Sorting by Another
+* Controlling Summary Display Order
+* Finding Smallest or Largest Summary Values
+* Randomizing a Set of Rows
+* Assigning Ranks
+* Counting and Identifying Duplicates
+
+=== Graph Operatioms
+
+* Neighborhood extraction
+* Graph statistics: degree, clustering coefficient
+* symmetrize a graph
+* Triangles
+* Eulerian Walk
+* Connected components, Union find
+* Graph matching
+* Minimum spanning tree
+* Pagerank
+* label propagation
+* k-means clustering
+* Layout / Lgl
+* List all children of AAA
+
+=== Time Series Operations
+
+* Interval coalesce: given a set of intervals, what is the smallest set of intervals that covers all of them?
+    * for each team, what is the smallest number of stints (continuous player for team) needed so that every player was a teammate of one of them for that team? http://www.dba-oracle.com/t_sql_patterns_interval_coalesce.htm
+* Turn player-seasons into stints (like the sessionize operation I think)
+* Sessionize
+
+=== Statistics
+
+* Calculating Linear Regressions or Correlation Coefficients
+
+  
+=== Advanced Patterns
+
+* True if NONE Match: Find all rows in TABLE1 where there are no rows in TABLE2 that have a T2C value equal to the current T1A value in the TABLE1 table:
+* True if ten match: Find all rows in TABLE1 where there are exactly ten rows in TABLE2 that have a T2B value equal to the current T1A value in the TABLE1 table
+* Entity-Attribute-Value: bad idea in SQL
+* Vertical and horizontal partitioning
+* Serial ids -- natural ids
+* Composite keys, foreign keys
+* Small record with large blob (eg video file and metadata)
+* Using float data type when you should use fixed point
+* Group by has functionally dependent value (ie we know all elements of bag have same value for group)
+
+* Pivot
+* Histogram
+* Skyline query (elements not dominated)
+    * eliminate all players with no claim to be the best ever: their full set of core stats are less than some other player's full set of core stats. Related to convex hull http://www.cs.umd.edu/class/spring2005/cmsc828s/slides/skyline.pdf
+    * like the hipmunk "agony" ranking
+    * http://projekter.aau.dk/projekter/files/77335632/Scientific_Article.pdf - do this with quad keys
+* Relational division
+    * for each job listing (table of name, qualification pairs), find applicants who have all job qualifications (table is listing if, qualification pairs)
+    * an applicant who is not qualified has one (listing, qual) pair missing
+    * or use counting?
+* Outer union
+* Complex constraint
+* Nested intervals
+* Transitive closure
+* Hierarchical total
+* Small result set from a few tables with specific criteria applied to those tables
+* Small result set based on criteria applied to tables other than the data source tables
+* Small result set based on the intersection of several broad criteria
+* Small result set from one table, determined by broad selection criteria applied to two or more additional tables 
+* Large result set
+* Result set obtained by self-joining on one table
+* Result set obtained on the basis of aggregate function(s)
+* Result set obtained by simple searching or by range searching on dates
+* Result set predicated on the absence of other data
+
+Credits
+
+* Art of SQL
+* SQL patterns
+* Baseball hacks
+* MySQL patterns
+* http://www.nocoug.org/download/2006-11/sql_patterns.ppt
+* DB2 cookbook
+* Patterns for improving runtime: http://www.idi.ntnu.no/~noervaag/papers/VLDBJ2013_MapReduceSurvey.pdf
+
+Instead of counting with the count( ) function, we can, at the
+same time as we compute the total count, add 1 if amount_diff is not 0, and 0 otherwise.
+
+==== combining into fewer files
+
+==== Sampling
+
+We'll cover sampling in the chapter on statistics, but so you know what to look for there:
+
+* Random sampling using the traditional pseudo-random number generators (which can be dangerous; we'll tell you how to do it right) (use input filename as seed)
+* Consistent sampling returns a fraction of records by _key_: if a record with the key "chimpanzee" is selected into the sample, all records with that key are selected into the sample.
+* (with/without replacement; weighted)
+* Reservoir sampling selects a given number of records. A uniform reservoir sample with count 100, say, would return 100 records, each with the same chance of being selected, regardless of the size of the dataset.
+* Subuniverse sampling selects a set of records and all associated records with it -- useful when you want to be able to joins on the sampled data, or to select a dense subgraph of a network. (TECH: is "dense subgraph" right?)
+* Stratified sampling: sampling from groups/bins/strata/whatever - http://en.wikipedia.org/wiki/Stratified_sampling
+* Sampling into multiple groups eg for bootstrapping
+* Note that pig sample is mathematically lame (see Datafu for why)
+* Note that pig sample is nice about eliminating records while loading (find out if Datafu does too)
+* Warning I may have written lies about reservoir sampling make sure to review
+* Spatial Sampling
+* Also: generating distributions (use the random.org data set and generate a column for each dist using it)
+* Expand the random.org by taking each r.o number as seed
+
+=== SQL-to-Pig-to-Hive
+
+* SELECT..WHERE
+* SELECT...LIMit
+* GROUP BY...HAVING
+* SELECT WHERE... ORDER BY
+* SELECT WHERE... SORT BY (just use reducer sort) ~~ (does reducer in Pig guarantee this?)
+* SELECT … DISTRIBUTE BY … SORT BY ...
+* SELECT ... CLUSTER BY (equiv of distribute by X sort by X)
+* Indexing tips
+* CASE...when...then
+* Block Sampling / Input pruning
+* SELECT country_name, indicator_name, `2011` AS trade_2011 FROM wdi WHERE (indicator_name = 'Trade (% of GDP)' OR indicator_name = 'Broad money (% of GDP)') AND `2011` IS NOT NULL CLUSTER BY indicator_name;
+
+SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVING condition ORDER BY column  [ASC | DESC] LIMIT offset,count;
+
+==== A Foolish Optimization --> probably a sidebar, late in the chapter
+
+Make this be more generally "don't use the O(N) algorithm that works locally" -- fisher-yates and top-k-via-heap being two examples
+
+=== Pig Functions act on fields --> chapter 4
+ 
+* Add all the DataFu operations: http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html and coalesce http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html and maybe others
+
+==== Ready Reckoner: How fast should your Pig fly? --> not sure what this is
+
+ah. yes this should move to the first tuning chapter. The idea is to have you run through a set of pig scripts with datasets of defined size, measuring the throughput of the core operations. The result is a ready reckoner that lets you estimate how long your job _should_ take (and how many map-reduce stages it will use).
+
+==== Pig Gotchas --> probably a sidebar, halfway through the chapter
 
 [[analytic_patterns]]
-
-
-
 
 === FILTER: eliminate records using given criteria
 
@@ -508,7 +815,3 @@ TODO-flip: this is covered elsewhere in this chapter, as a note under "Complex F
 
 
 Where to look to see that Pig is telling you have either nulls, bad fields, numbers larger than your type will hold or a misaligned schema.
-
-
-
-
