@@ -3,89 +3,108 @@ TODO-qem: review patterns, confirm discussion is cogent. Want to make sure each 
 
 TODO: find biz applications for the fancy ones
 TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid for both MySQL and Postgres
+TODO-qem: better to show a fuller example using an operation we haven't mentioned yet? (Eg listing team pairs: do the group-and-count when we talk about listing pairs)? Or postpone and call ahead to it?
+
+== Pipeline Operations
+
+All of the following operations require no reduce phase of their own. Standing alone, they lead to map-only jobs. When combined with the grouping / sorting operations you're about to meet, they become additional pipeline stages of the mapper or reducer (depending on whether they come before or after).
+
+=== Somewhere
+
+* Strings That Include Quotes or Special Characters
 
 === FOREACH to transform records individually
 
 * modify the contents of records individually with FOREACH
-  - ba, slg, ops by season
-* Writing Strings That Include Quotes or Special Characters Section 
-* Preparing table in Atom-only form
- 
-=== eliminating records or fields
-
-* Testing String Equality or Relative Ordering; Decomposing or Combining Strings; Checking Whether a String Contains a Substring; Matching with Regular Expressions
-* Filter: 
-    * players after 1900; players for Red Sox
-    * players with a nickname? (Or some Regex match)
-* Select Fixed Number of Arbitrary Records (LIMIT)
-  - note: Limit doesn't stop reading so only supply a few filenames
-* Select only the fields you need ("projection") using a FOREACH
-  - project just the core stats -- Specifying Which Columns to Display and Giving Names to Output Columns
-* Sample: see statistics chapter
-* Note: JOINs are often used to filter items in one table using fields from another table -- se below
-* Note: To select the top K items from a table or from groups of records is covered below
-
-=== Splitting into pieces
-
-* Split using filter: Bill James' black ink metric?
-    * Write into named files: game logs by position
-    * Combine small files: find the worst offender and repair it
-    * case statement
-* splitting into uniform chunks (records, bytes)
-* splitting into files by criterion
-* Named for key using Piggybank multistorage
-* Named for explicit filter
+  - ba, slg, from rate stats
+* Binning records (See Statistics Chapter for more)
+* coalesce
+* ternary
+* String Relative Ordering
+  - Generate pairs of teams, use ternary to choose lexicographic firstmost
 
 
 === Blowing up data
 
-* String/Collection decomposition
-* Enumerating pairs
-* Enumerating sets
-* Discrete interval sampling
+* String/Collection decomposition Decomposing or Combining Strings
+  - generating chars: str.split("(?!^)")
 * Ungrouping operations (FOREACH..FLATTEN) expand records
-* Blowing Up records: Wordbag, Flatten
-* Data Generation
-* Make Reproducible Random Data - Varying Distribution
+  - call ahead to Section on Tidy data by FLATTENing an inline record
+* See time series chapter: Discrete interval sampling (convert value-over-range to date-value)
+* See text chapter: Wordbag, Flatten
+* See statistics chapter: generating data
+* See statistics chapter: Transpose data
+
+=== eliminating records or fields
+
+* Filter: 
+  - players after 1900
+  - Testing String Equality: players for Red Sox
+  - Substring or Regular Expressions: players named Q.* OR .*lip.* OR Die.*
+  - Select at-bats with three straight caught-looking strikes (the most ignominious of outcomes)
+  - isNull, isEmpty, vs Boolean test
+  - Caution on Floating Point comparisons
+* Select Fixed Number of Arbitrary Records (LIMIT)
+  - note: Limit doesn't stop reading so only supply a few filenames
+  - no "OFFSET" like there is in SQL.
+* Note: To select the top K items from a table or from groups of records is covered below
+* Select only the fields you need ("projection") using a FOREACH
+  - project just the core stats -- Specifying Which Columns to Display and Giving Names to Output Columns
+* Sample: see statistics chapter
+* Ssee below: JOINs are often used to filter items in one table using fields from another table
+
+=== Splitting into pieces
+
+* Split using filter: Bill James' black ink metric?
+    * Write into named files: game logs by team. Warn about files count.
+    * Combine small files: (find the worst offender and repair it)
+    * case statement?
+* splitting into uniform chunks
+  - records: use RANK then group on rank mod record size
+  - byte size: use HDFS block size?
+  - fraction: approximate -- use sort and N reducers
+* Files named for key using Piggybank multistorage
+* Files Named for explicit filter: Pitchers vs Non-pitchers; hofPlayers, All-stars, all qualified
+  - note that it does not short-circuit and their is no "else" clause
+  - call ahead to the transpose part of the summarizinator in statistics chapter
+* Combine tables with UNION
+
+For sort note a udf to unique (distinct) won't work because keys can be split
+
+
+== Structural Operations
 
 === Aggregation for summary statistics
 
 * Group and agg: 
-    * Top HR Count
-    * distribution of career games (something more long tail-ish?)
-    * (something slightly more advanced statistically?)
-* Group and agg with Fancy FOREACH: batting average, slg and OPS for career
- * Complex `FOREACH` lets you  operate on bags
- * Summarizing with COUNT(), MIN(), MAX(), SUM(), AVG(), byte size, character size, line / word count
- * Counting
- * Count vs COUNTSTAR 
- * Sum, sumsq, Entropy, Standard Deviation, variance, moments (eg GINI)
- * Streaming moments (see Alon, Matias, and Szegedy)
-* Dividing a Summary into Subgroups
-* Cube and rollup
-* Summaries and NULL Values
+    * career stats
+    * HR Stats by year
+* Summarizing with MIN(), MAX(), SUM(), AVG(), STDDEV, COUNT(), count star, count distinct, byte size, character size, line / word count
+* Count vs COUNTSTAR 
+   - number of missing values using countstar-count
+* Fancy `FOREACH` lets you  operate on bags
+  - batting average, slg and OPS for career
+* GROUP BY ALL
+  - explain algebraic aggregators make this ok (but disaster if not algebraic)
+  - season-by-season trends
+* Note: HAVING not needed, just use a filter after the group by.
 * Re-injecting global totals
-* Correlation /covariance: what rate stats go with game time temp?
 * Histogram
-  - quantiles
-  - Median (approx, exact)
-* Number of Distinct elements (Cardinality)
-* Heavy hitters -- Count-Min sketch
-* Running averages
-* note: see below for Graph summaries
-* Section 7.12. Grouping by Expression Results
-* Section 7.13. Categorizing Non-Categorical Data
+  - histogram of home runs per season (doesn't need bin)
+  - histogram of career games
+  - categorical bins for non-categorical data
+* Cube and rollup
+  - stats by team, division and league
 
 === Putting tables in context with JOIN and friends
 
-* Combine tables with UNION
-* Join Practicalities
-* Extend Records with Uniquely Matching Records from Another Table
 * Join is a Group and Flatten
-* Direct Join: reattach names etc
+* Direct Join: Extend Records with Uniquely Matching Records from Another Table
+  - hang full names off records from master file
 * Many-to-many join: teams to stadiums; players to teams
+  - parks: team seasons and count; distinct teams and count
 * Sparse join for matching: geo names for stadiums
-* Sparse join for filtering: hall of famers? All-stars?
+* Sparse join for filtering: all-star table (hall of fame table?)
 * Self-join
 * Distinct: players with a unique first name (once again we urge you: crawl through your data. Big data is a collection of stories; the power of its unusual effectiveness mode comes from the comprehensiveness of those stories. even if you aren't into baseball this celebration of the diversity of our human race and the exuberance of identity should fill you with wonder.)
 * bag left outer join from DataFu
@@ -99,6 +118,7 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
     * using prefix and UDFs
 * Semi-join
 * Bitmap index
+* Self-join for successive row differences
 * Combining Rows in One Table with Rows in Another
 * Finding Rows in One Table That Match Rows in Another
 * Finding Rows with No Match in Another Table
@@ -108,6 +128,7 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
 * Eliminating Duplicates from a Query Result:
     * and from a Self-Join Result Section
     * Eliminating Duplicates from a Table
+* Getting the duplicated values -- group by, then emit bags with more than one size
 
 === Set Operations
 
@@ -135,6 +156,7 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
 * GROUP/COGROUP To Restructure Tables
 * Self join of table on its next row (eg timeseries at regular sample)
 * Working with NULL Values: Negating a Condition on a Column That Contains NULL Values Section; Writing Comparisons Involving NULL in Programs; Mapping NULL Values to Other Values
+* Cogroup and aggregate (vs SQL Cookbook 3.10)
 * Using DISTINCT to Eliminate Duplicates
 * Finding Values Associated with Minimum and Maximum Values
 * Selecting Only Groups with Certain Characteristics
@@ -155,14 +177,20 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
 
 === Sorting and Ordering
 
+* Operations on the order of records: Sorting, Shuffling, Ranking and Numbering
+  - ORDER: multiple fields
+  - (how do NULLs sort?)
+  - RANK: Dense, not dense
+  - ASC / DESC 
+  - in SQL you can omit the sort expression from the table; fields must be there in Pig
+* Note
 * Top K: 
     * whole table: most hr in a season
     * most hr season-by-season
-* Operations on the order of records: Sorting, Shuffling, Ranking and Numbering
-    * ORDER
-    * RANK: Dense, not dense
+
 * Top K Records within a table using ORDER..LIMIT
     * Top K Within a Group using GROUP...FOREACH GENERATE TOP
+  - middle K (LIMIT..OFFSET)
 * Number records with a serial or unique index
 * Running total http://en.wikipedia.org/wiki/Prefix_sum
 * prefix sum value; by combining list ranking, prefix sums, and Euler tours, many important problems on trees may be solved by efficient parallel algorithms.[3]
@@ -205,12 +233,45 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
     * for each team, what is the smallest number of stints (continuous player for team) needed so that every player was a teammate of one of them for that team? http://www.dba-oracle.com/t_sql_patterns_interval_coalesce.htm
 * Turn player-seasons into stints (like the sessionize operation I think)
 * Sessionize
+  - sessionize web logs
+  - Continuous game streak
 
 === Statistics
 
+* Data Generation
+* Make Reproducible Random Data - Varying Distribution
 * Calculating Linear Regressions or Correlation Coefficients
 
+* Calculate the summary statistics
+  - Transpose (datafu) and flatten
+  - group on attribute
+  - calculate statistics
+  - unionize
+* Sniff through the data: extrema, mountweazels, exemplars
+* Make a histogram
+  - by scale and mod
+  - by log scale and mod
+  - by lookup table
+  - by Z-score
+  - equal-width
+* Plot it: time series, trellis plot
   
+* Summarizing with COUNT(), count star, count distinct, MIN(), MAX(), SUM(), AVG(), byte size, character size, line / word count
+* Number of Distinct elements (Cardinality)
+  - count distinct
+  - hyperloglog
+* Sum, sumsq, Entropy, Standard Deviation, variance, moments (eg GINI)
+  - Correlation /covariance: what rate stats go with game time temp?
+* Streaming moments (see Alon, Matias, and Szegedy)
+* Histogram
+  - quantiles
+  - Median (approx, exact)
+* Heavy hitters -- Count-Min sketch
+* Running averages
+* note: see below for Graph summaries
+
+
+
 === Advanced Patterns
 
 * True if NONE Match: Find all rows in TABLE1 where there are no rows in TABLE2 that have a T2C value equal to the current T1A value in the TABLE1 table:
@@ -228,7 +289,7 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
 * Skyline query (elements not dominated)
     * eliminate all players with no claim to be the best ever: their full set of core stats are less than some other player's full set of core stats. Related to convex hull http://www.cs.umd.edu/class/spring2005/cmsc828s/slides/skyline.pdf
     * like the hipmunk "agony" ranking
-    * http://projekter.aau.dk/projekter/files/77335632/Scientific_Article.pdf - do this with quad keys
+    * http://projekter.aau.dk/projekter/files/77335632/Scientific_Article.pdf - do this with quad keys - http://www.vldb.org/pvldb/vol6/p2002-shim.pdf
 * Relational division
     * for each job listing (table of name, qualification pairs), find applicants who have all job qualifications (table is listing if, qualification pairs)
     * an applicant who is not qualified has one (listing, qual) pair missing
@@ -248,13 +309,90 @@ TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid fo
 * Result set obtained by simple searching or by range searching on dates
 * Result set predicated on the absence of other data
 
+
+* Chapter 1 - Counting in SQL
+    * List of patterns 
+    * Introduction to SQL Counting 
+    * Counting Ordered Rows 
+    * Conditional Summation with CASE Operator 
+    * Indicator and Step Functions 
+    * A Case for the CASE Operator 
+    * Summarizing by more than one Relation 
+    * Interval Coalesce
+* Chapter 2 - Integer Generators in SQL
+    * Integers Relation 
+    * Recursive With 
+    * Big Table 
+    * Table Function 
+    * Cube 
+    * Hierarchical Query 
+    * String Decomposition 
+    * Enumerating Pairs 
+    * Enumerating Sets of Integers 
+    * Discrete Interval Sampling
+* Chapter 3 - Exotic Operators in SQL
+    * Introduction to SQL exotic operators 
+    * List Aggregate 
+    * Product 
+    * Factorial 
+    * Interpolation 
+    * Pivot 
+    * Symmetric Difference 
+    * Histograms in SQL 
+    * Equal-Width Histogram 
+    * Equal-Height Histogram 
+    * Logarithmic Buckets 
+    * Skyline Query 
+    * Relational Division 
+    * Outer Union
+* Chapter 4 - SQL Constraints
+    * Function Based Constraints 
+    * Symmetric Functions 
+    * Materialized View Constraints 
+    * Disjoint Sets 
+    * Disjoint Intervals 
+    * Temporal Foreign Key Constraint 
+    * Cardinality Constraint 
+* Chapter 5 - Trees in SQL
+    * Materialized Path 
+    * Nested Sets 
+    * Interval Halving 
+    * From Binary to N-ary Trees 
+    * Matrix Encoding 
+    * Parent and Children Query 
+    * Nested Intervals 
+    * Descendants Query 
+    * Ancestor Criteria 
+    * Ancestors Query 
+    * Converting Matrix to Path 
+    * Inserting Nodes 
+    * Relocating Tree Branches 
+    * Ordering 
+    * Exotic Labeling Schemas 
+    * Dietz Encoding 
+    * Pre-order – Depth Encoding 
+    * Reversed Nesting 
+    * Ordered Partitions
+* Chapter 6 - Graphs in SQL
+    * Schema Design 
+    * Tree Constraint 
+    * Transitive Closure 
+    * Recursive SQL 
+    * Connect By 
+    * Incremental Evaluation 
+    * Hierarchical Weighted Total 
+    * Generating Baskets 
+    * Comparing Hierarchies
+
+
+
 Credits
 
 * Art of SQL
 * SQL patterns
 * Baseball hacks
 * MySQL patterns
-* http://www.nocoug.org/download/2006-11/sql_patterns.ppt
+* SQL Design Patterns http://www.rampant-books.com/book_0601_sql_coding_styles.htm http://www.nocoug.org/download/2006-11/sql_patterns.ppt
 * DB2 cookbook
 * Patterns for improving runtime: http://www.idi.ntnu.no/~noervaag/papers/VLDBJ2013_MapReduceSurvey.pdf
 
