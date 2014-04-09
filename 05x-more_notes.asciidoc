@@ -79,3 +79,28 @@ store	No
 stream	No	stream is opaque to Pig, so it cannot know whether pushing will be safe.
 union	Yes	 
 Also, consider adding filters that are implicit in your script. For example, all of the records with null values in the key will be thrown out by an inner join. If you know that more than a few hundred of your records have null key values, put a filter input by key is not null before the join. This will enhance the performance of your join.
+
+
+
+SELECT COUNT(*), SUM(IF(stint = 1, 1, 0)), SUM(IF(stint =0, 1, 0)), SUM(IF(stint = 2, 1, 0)) FROM batting WHERE stint <= 99
+;
+
+SELECT tot_bl_stints, tot_bl_seasons, tot_bw_stints, COUNT(*), COUNT(*)/tot_bl_seasons FROM
+  (SELECT COUNT(*) AS tot_bl_seasons FROM bat_season) t4,
+  (SELECT COUNT(*) AS tot_bw_stints FROM bat_war) t2,
+  (SELECT COUNT(*) AS tot_bl_stints FROM batting) t3,
+  (SELECT COUNT(*) AS n_stints FROM batting GROUP BY playerID, yearID HAVING n_stints > 1) stintful
+  ;
+
+SELECT COUNT(*), stints FROM 
+(SELECT GROUP_CONCAT(stint) AS stints FROM batting GROUP BY playerID, yearID) t1
+GROUP BY stints;
+
+SELECT * FROM bat_war WHERE playerID LIKE "%purceda01%";
+SELECT GROUP_CONCAT(stint) AS stints, batting.*  FROM batting GROUP BY playerID, yearID HAVING stints = "2" OR stints = "3";
+
+
+SELECT bw.*
+FROM bat_war bw
+LEFT JOIN batting bl ON bw.playerID = bl.playerID AND bw.yearID = bl.yearID AND bw.stint = bl.stint
+WHERE bl.playerID IS NULL AND bw.yearID != 2013

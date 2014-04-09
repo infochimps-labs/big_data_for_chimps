@@ -15,6 +15,42 @@ Other statistical summaries require assembling context that grows with the size 
 
 TODO: content to come
 
+=== Sampling
+
+==== Sample Records Consistently
+
+
+----
+-- Consistent sample of events
+SELECT ev.event_id,
+    LEFT(MD5(CONCAT(ev.game_id, ev.event_id)), 4) AS evid_hash,
+    ev.*
+  FROM events ev WHERE LEFT(MD5(CONCAT(ev.game_id, ev.event_id)), 2) = '00';
+----
+
+----
+-- Consistent sample of games -- all events from the game are retained
+-- FLO200310030 has gid_hash 0000... but evid_hash 0097 and so passes both
+SELECT ev.event_id,
+    LEFT(MD5(ev.game_id),4) AS gid_hash,
+    ev.*
+  FROM events ev WHERE LEFT(MD5(ev.game_id),2) = '00';
+----
+
+Out of 1962193 events in the 2010, 7665 expected (1/256th of the total);
+got 8159 by game, 7695 by event
+
+----
+SELECT n_events, n_events/256, n_by_game, n_by_event
+  FROM
+    (SELECT COUNT(*) AS n_events    FROM events) ev,
+    (SELECT COUNT(*) AS n_by_event  FROM events WHERE LEFT(MD5(CONCAT(game_id,event_id)),2) = '00') ev_e,
+    (SELECT COUNT(*) AS n_by_game   FROM events WHERE LEFT(MD5(game_id),2) = '00') ev_g
+    ;
+----
+
+
+
 === Overflow, Underflow and other Dangers
 
 TODO: content to come

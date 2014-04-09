@@ -1,0 +1,259 @@
+
+Nate Silver calls Baseball the "perfect data set".  There are not many human-centered systems for which this comprehensive degree of detail is available, and no richer set of tables for truly demonstrating the full range of analytic patterns.
+
+For those who aren't familiar with baseball: we've endeavored to provide good-enough definitions for the statistics we'll use.
+
+For fellow baseball nerds: please pretend those definitions each have "apart from a few weird but technically important details" attached to it. You know where to find precise definitions footnote:[For instance, in the O'Reilly books "Baseball Hacks" or "TODO the one with Baseball and R"].
+
+For those who consider sporting events to be the dull province of jocks, holding no interest at all: when we say the "On-Base Percentage" is a simple matter of finding `(H + BB + HBP) / AB`, just trust us that (a) it's a useful statistic; (b) that's how you find its value; and then (c) pretend it's the kind of numbers-in-a-table example abstracted from the real world that many books use.
+
+* `G`, 'Games'
+* `PA`: 'Plate Appearances', the number of completed chances to contribute offensively
+* `H`: 'Hits', either singles (`1B`), doubles (`2B`), triples (`3B`) or home runs (`HR`)
+* `BB`: 'Walks', pitcher presented too many unsuitable pitches
+* `HBP`: 'Hit by Pitch', like a walk but more painful
+* `OBP`: 'On-base Percentage', indicates effectiveness at becoming a potential run
+* `SLG`: 'Slugging Percentage', indicates effectiveness at converting potential runs into runs
+* `OPS`: 'On-base-plus-Slugging', a reasonable estimate of overall offensive contribution
+// * `ISO`: Isolated power, indicates players who clobber the ball for extra bases on hits
+// * `SB`: Stolen Bases,
+
+=== Eliminating Data
+
+==== Filter Selected Rows Based on an Expression
+
+We've prepared the players' offensive stats in per-season (`bat_season`) and career (`bat_career`) forms. The `people` table gives personal stats such as height and weight, birth year, and so forth. Additionally, there are tables for each team season (`teams`), the stadiums they played in (`park_team_years`), and individual games (`games`).
+
+The stats go back to 1871 (!), but it took a few decades for the game to reach its modern form. Here's how to select only seasons since 1900:
+
+----
+SELECT bat_season.* FROM bat_season WHERE yearID >= 1900;
+----
+
+You can use an expression in the FILTER statement. This operation uses a regular expression to select players whose names are similar to your authors':
+
+----
+SELECT people.* FROM people
+  WHERE nameFirst RLIKE "^Q.*" OR nameFirst RLIKE ".*lip.*"; -- TODO maybe a more interesting regexp?
+----
+
+Java (and therefore Pig) is case sensitive for string operations. It also implicitly anchors regular expressions to match the full string: `"lip"` will only match the string `"lip"`. We used `".*lip.*"`, which will match anything with `lip` as a substring. As an additional caution, we'll remind you to be careful comparing floating-point numbers for equality: use `ABS( (val1 - val2)/val1 ) < tol`, not `val1 = val2`.
+
+==== Project Only Chosen Columns by Name
+
+----
+	Major League Baseball teams play a game nearly every single day from the start of April to the end of September (currently, 162 per season). The team on offense sends its players to bat in order, with the goal of having its players reach base and advance the full way around the diamond (first base, second base, third base and back to home). Each time a player makes it all the way to home, their team scores a run, and at the end of the game, the team with the most runs wins. We count these events as `G` (games), `PA` (plate appearances on offense) and `R` (runs).
+
+	The best way to reach base is by hitting the ball back to the fielders and reaching base safely before they can retrieve the ball and chase you down -- a hit (`H`) . You can also reach base on a 'walk' (`BB`) if the pitcher presents too many unsuitable pitches, or from a 'hit by pitch' (`HBP`) which is like a walk but more painful. You advance on the basepaths when your teammates hit the ball or reach base; the reason a hit is valuable is that you can advance as many bases as you can run in time. Most hits are singles (1B), stopping safely at first base. Even better are doubles (`2B`: two bases), triples (`3B`: three bases, which are rare and require very fast running), or home runs (`HR`: reaching all the way home, usually by clobbering the ball out of the park).
+
+	So your goal as a batter is both becomes a potential run and helps to convert players on base into runs. If the batter does not reach base it counts as an out, and after three outs, all the players on base lose their chance to score and the other team comes to bat. (This threshold dynamic is what makes a baseball game exciting: a single pitch can swing the score by or squander the offensive efforts
+---
+
+While a FILTER selects rows based on an expression, you can use FOREACH to project only columns chosen by name footnote:[The fancy word for this simple action is 'projection'. It's useful to have precise terms for choosing columns ('project'), choosing rows ('select'), and specifically choosing rows by expression ('filter')].
+
+The tables we're using come with an overwhelming wealth of stats, but we will be able to do quite sophisticated explorations using only a few of them. This selects our core set of stats:
+
+----
+SELECT
+    playerID, yearID, teamID,
+    G,  PA, R,
+    H,  BB, HBP,
+    2B, 3B, HR
+  FROM bat_season bat
+  WHERE PA > 60 AND year > 1900
+  ;
+----
+
+==== Retrieve a fixed number of Rows (LIMIT)
+
+If you only want a few records and don't care which ones, use `LIMIT` on its own:
+
+----
+SELECT bat_season.* FROM bat_season LIMIT 25 ;
+----
+
+In the big data regime, where your data is striped across many machines, there's no intrinsic
+notion of a row order, and so you should not depend on which rows the LIMIT returns.
+
+==== Select Rows with the Top-K Values for a Field
+
+Select the top 20 seasons by number of hits:
+
+----
+SELECT H FROM bat_season WHERE PA > 60 AND yearID > 1900 ORDER BY H  DESC LIMIT 10
+----
+
+==== Select Rows using a Limit and Offset
+
+Find the 95th percentile values for our topline stats:
+
+We'll call a season "significant" if it is post-1900 and more than 60 plate appearances
+
+----
+SELECT H FROM bat_season WHERE PA > 60 AND yearID > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
+----
+
+Here are the results for players with
+
+----
+-- %ile	  Row	H	 BB	HBP	2B	3B	HR	 G	 PA	OBP	SLG	OPS
+-- 95th	 2052	175	75	7	34	9	25	155	669	0.394	0.519	0.895
+-- 75th	10260	124	41	3	21	4	9	132	520	0.347	0.422	0.765
+-- 50th	20521	66	22	1	11	1	3	93	294	0.313	0.359	0.676
+----
+
+Be really careful doing this.
+
+As opposed to the `ORDER BY .. LIMIT` pattern, Pig must do a total sort on the full table.
+
+=== Transforming Records
+
+==== Transform Records Individually using `FOREACH`
+
+The above are all "counting stats", and generally the more games the more hits and runs and so forth. For comparing players, it's better to use "rate stats" normalized against plate appearances.
+
+For historical reasons, some stats use a restricted subset of PA called AB (At Bats). You should generally prefer PA to AB.
+
+'On-base percentage' (`OBP`) indicates how well the player becomes a potential run, given as the fraction of plate appearances that are successful: (`(H + BB + HBP) / PA`) footnote:[Although known as percentages, OBP and SLG are always given as fractions to 3 decimal places]. An `OBP` over 0.420 is very good (better than 95% of significant seasons).
+
+'Slugging Percentage' (`SLG`) indicates how well the player converts potential runs into runs. It is given by the total bases gained in hitting (one for a single, two for a double, etc) divided by the number of at bats: (`(H + 2B + 2*3B + 3*HR) / AB`). An `SLG` over 0.520 is very good.
+
+'On-base-plus-slugging' (`OPS`) combines on-base and slugging percentages to give a simple and useful estimate of overall offensive contribution: (`OBP + SLG`). Anything above 0.900 is very good.
+
+Foreach: transforming fields and naming them
+Note that the `FILTER` eliminates both 0 and NULL
+
+SELECT
+  playerID, yearID, teamIDs,
+  G, PA, H, HR,
+  (H + 2B + 2*3B + 3*HR) / AB)     AS SLG,
+  (H + BB + IFNULL(HBP,0))   / PA) AS OBP
+  (H + 2B + 2*3B + 3*HR) / AB) + ((H + BB + IFNULL(HBP,0))/PA) AS OPS
+  FROM bat_season bat
+  WHERE PA > 0 AND AB > 0
+  ;
+
+==== A Fancy `FOREACH` Allows Intermediate Expressions
+
+Doing all the calculations in one statement leads to duplicated expressions and is hard to read. You can also write a fancier form of `FOREACH` that allows intermediate expressions:
+
+----
+core_stats = FOREACH bat_season {
+    v1B  = H - v2B - v3B - HR;
+    vHBP = ifNull(HBP) ? 0 : HBP;
+    vTB  = v1B + 2*v2B + 3*v3B + 4*HR;
+    OBP  = (H + BB + HBP) / PA;
+    SLG  = TB / AB;
+    OPS  = SLG + OBP;
+    GENERATE playerID, yearID, teamIDs, G, PA, H, HR, SLG, OBP, OPS;
+};
+----
+
+----
+SELECT
+    playerID, yearID, teamIDs, G, PA, H, HR, SLG, OBP, SLG,
+    @1B  := (H - 2B - 3B - HR)         AS 1B,
+    @HBP := IFNULL(HBP, 0)             AS HBP,
+    @TB  := (@1B + 2*2B + 3*3B + 4*HR) AS TB,
+    @OBP := (H + BB + HBP)/PA          AS OBP,
+    @SLG := (@TB / AB)                 AS SLG,
+    @OPS := (@SLG + @OBP)              AS OPS,
+    @ISO := ((@TB - H) / AB)           AS ISO
+  FROM bat_season bat
+  WHERE PA > 0 AND AB > 0
+  ;
+----
+
+
+==== Place Values into Categorical Bins With a `FOREACH`
+
+Binning records:
+
+SELECT 100*CEIL(H / 100) AS H_bin, COUNT(*), nameCommon
+  FROM bat_career bat
+  GROUP BY H_bin
+  ;
+
+
+
+==== Generating Data
+
+A table of integers -- 1, 2, 3, ... each on subsequent rows -- is surprisingly useful and surprisingly annoying to generate.
+We'll use it below to fill holes in a dataset
+and also as a seed to generate other datasets!
+
+
+
+==== Generating Pairs
+
+is there a way to do the SQL version more elegantly?
+
+SELECT
+    IF(home_team_id <= away_team_id, home_team_id, away_team_id) AS team_a,
+    IF(home_team_id <= away_team_id, away_team_id, home_team_id) AS team_b,
+    COUNT(*)
+  FROM events ev
+GROUP BY home_team_id, away_team_id
+ORDER BY home_team_id, away_team_id
+;
+
+You'll see a more elaborate version of this
+
+COALESCE requires datafu:
+define COALESCE datafu.pig.util.Coalesce();
+or use ternary: eg (isEmpty(A) ? 0 : First(A))
+
+* Working with NULL Values: Negating a Condition on a Column That Contains NULL Values Section; Writing Comparisons Involving NULL in Programs; Mapping NULL Values to Other Values
+concatenating bag
+https://github.com/jeromatron/pygmalion/blob/master/udf/src/main/java/org/pygmalion/udf/RangeBasedStringConcat.java
+
+
+=== Splitting a Table Into Pieces
+
+
+We can extract player careers 
+
+----
+SPLIT bat_season
+  INTO hof     IF hofYear > 0,
+  INTO allstar IF G_allstar > 0
+  ;
+STORE hof     INTO '/data/out/baseball/hof_careers';
+STORE allstar INTO '/data/out/baseball/allstar_careers';
+----
+
+The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files. There is also no "else" clause to trap records that did not match a condition; you'll have to 
+
+
+If all you'd like to do
+
+To write into files named for key, use Piggybank multistorage. This will divide the event files up into file sets named for the away team:
+
+----
+    STORE ... multistorage;
+----
+
+The output has a directory for each key, and within that the same `part-NNNNN` files of any map-reduce job. The count of output files is the number of keys times the number of output slots. Hadoop does very badly with many small files
+(described in more detail later REF)
+
+To split a table into a fixed number of lines, use `RANK` then `GROUP BY` on the sequence number divided by the chunk size. The HDFS naturally splits a file into blocks of fixed size, but to do so explicitly you'll need to use a UDF.
+
+
+-- * Split using filter: Bill James' black ink metric?
+--     * Write into named files: game logs by team. Warn about files count.
+--     * Combine small files: (find the worst offender and repair it)
+--     * case statement?
+-- * splitting into uniform chunks
+--   - records: use RANK then group on rank mod record size
+--   - byte size: use HDFS block size?
+--   - fraction: approximate -- use sort and N reducers
+-- * Files Named for explicit filter: Pitchers vs Non-pitchers; hofPlayers, All-stars, all qualified
+--   - note that it does not short-circuit and their is no "else" clause
+--   - call ahead to the transpose part of the summarizinator in statistics chapter
+
+-- * Combine tables with UNION
+--   - if you want to read from multiple files, do that in the load
+--   - Don't do a UNION-then-GROUP, do a COGROUP
+-- For sort note a udf to unique (distinct) won't work because keys can be split
+
+The integer table above has only a billion entries
