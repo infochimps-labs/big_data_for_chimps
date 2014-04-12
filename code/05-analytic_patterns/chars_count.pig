@@ -20,15 +20,21 @@ people = LIMIT people 1;
 
 typed_strings = FOREACH people {
   fields_bag = {('fn', nameFirst), ('ln', nameLast), ('ct', birthCity), ('ct', deathCity)};
-  GENERATE FLATTEN(fields_bag) AS (type:chararray, str:chararray);
+  GENERATE FLATTEN(fields_bag) AS (type:chararray, str:chararray),
+    (deathCity IS NULL ? 'none' : deathCity)
+    ;
   };
 typed_strings = FILTER typed_strings BY str != '';
+
+-- Output:
+-- ('fn',Hank)
+-- ('ln',Aaron)
+-- ...
 
 typed_chars = FOREACH typed_strings {
   chars_bag = STRSPLITBAG(LOWER(str), '(?!^)');
   GENERATE type, FLATTEN(chars_bag) AS token;
   };
-DESCRIBE typed_chars;
 DESCRIBE typed_chars;
 
 chars_g  = GROUP typed_chars BY (type, token);
