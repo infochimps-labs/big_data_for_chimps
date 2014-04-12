@@ -15,9 +15,63 @@ Other statistical summaries require assembling context that grows with the size 
 
 TODO: content to come
 
+
+
+-- Group on year; find COUNT(), count distinct, MIN(), MAX(), SUM(), AVG(), STDEV(), byte size
+
+SELECT
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+;
+
+SELECT
+    MIN(nameFirst)                     AS nameFirst_min,
+    MAX(nameFirst)                     AS nameFirst_max,
+    --
+    MIN(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_min,
+    MAX(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_max,
+    MIN(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+    MAX(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+    AVG(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_avg,
+    STDDEV_POP(CHAR_LENGTH(nameFirst)) AS nameFirst_strlen_stddev,
+    LEFT(GROUP_CONCAT(nameFirst),25)   AS nameFirst_examples,
+    SUM(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_sum,
+    --
+    COUNT(*)                           AS n_recs,
+    COUNT(*) - COUNT(nameFirst)        AS nameFirst_n_nulls,
+    COUNT(DISTINCT nameFirst)          AS nameFirst_n_distinct
+  FROM bat_career bat
+;
+
+SELECT
+  playerID,
+  MIN(yearID) AS yearBeg,
+  MAX(yearID) AS yearEnd,
+  COUNT(*)    AS n_years,
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+  GROUP BY playerID
+  ORDER BY hr_max DESC
+;
 ==== Transpose Columns Into `field name, field value` Pairs
 
 Our next pattern is to transpose fields from each row into records having a column with the field name and a column with the field value, sometimes called attribute-value form.
+
+
 
 === Sampling
 
@@ -130,6 +184,17 @@ FROM
     # in mapper, read N and generate `(0 .. 99).map{|offset| 100 * N + offset }`
 ----
 
+
+==== Season leaders
+
+-- * Selecting top-k Records within Group
+-- GROUP...FOREACH GENERATE TOP
+-- most hr season-by-season
+
+==== Transpose record into attribute-value pairs
+
+Group by season, transpose, and take the top 10 for each season, attribute pair
+
 === Overflow, Underflow and other Dangers
 
 TODO: content to come
@@ -137,6 +202,20 @@ TODO: content to come
 === Quantiles and Histograms
 
 TODO: content to come
+
+==== Median
+
+----
+SELECT COUNT(*), CEIL(COUNT(*)/2) AS midrow
+  FROM bat_career
+ ;
+SELECT G, cols.*
+  FROM bat_career bat,
+    (SELECT COUNT(*) AS n_entries, CEIL(COUNT(*)/2) AS midrow FROM bat_career) cols
+  ORDER BY HR
+  LIMIT 1 OFFSET 8954
+;
+----
 
 === Algebraic vs Holistic Aggregations
 
