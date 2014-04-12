@@ -15,7 +15,28 @@ Other statistical summaries require assembling context that grows with the size 
 
 TODO: content to come
 
+==== Transpose Columns Into `field name, field value` Pairs
+
+Our next pattern is to transpose fields from each row into records having a column with the field name and a column with the field value, sometimes called attribute-value form.
+
 === Sampling
+
+
+We'll cover sampling in the chapter on statistics, but so you know what to look for there:
+
+* Random sampling using the traditional pseudo-random number generators (which can be dangerous; we'll tell you how to do it right) (use input filename as seed)
+* Consistent sampling returns a fraction of records by _key_: if a record with the key "chimpanzee" is selected into the sample, all records with that key are selected into the sample.
+* (with/without replacement; weighted)
+* Reservoir sampling selects a given number of records. A uniform reservoir sample with count 100, say, would return 100 records, each with the same chance of being selected, regardless of the size of the dataset.
+* Subuniverse sampling selects a set of records and all associated records with it -- useful when you want to be able to joins on the sampled data, or to select a dense subgraph of a network. (TECH: is "dense subgraph" right?)
+* Stratified sampling: sampling from groups/bins/strata/whatever - http://en.wikipedia.org/wiki/Stratified_sampling
+* Sampling into multiple groups eg for bootstrapping
+* Note that pig sample is mathematically lame (see Datafu for why)
+* Note that pig sample is nice about eliminating records while loading (find out if Datafu does too)
+* Warning I may have written lies about reservoir sampling make sure to review
+* Spatial Sampling
+* Also: generating distributions (use the random.org data set and generate a column for each dist using it)
+* Expand the random.org by taking each r.o number as seed
 
 ==== Sample Records Consistently
 
@@ -50,6 +71,64 @@ SELECT n_events, n_events/256, n_by_game, n_by_event
 ----
 
 
+=== Generating Data
+
+
+
+-- === Generating an Integers table
+
+DROP TABLE IF EXISTS numbers1k;
+CREATE TABLE `numbers1k` (
+  `idx`  INT(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `ix0`  INT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `ixN`  INT(20) UNSIGNED          DEFAULT '0',
+  `ixS`  INT(20) SIGNED   NOT NULL DEFAULT '0',
+  `zip`  INT(1)  UNSIGNED NOT NULL DEFAULT '0',
+  `uno`  INT(1)  UNSIGNED NOT NULL DEFAULT '1'
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
+
+INSERT INTO numbers1k (ix0, ixN, ixS, zip, uno)
+SELECT
+  (@row := @row + 1) - 1 AS ix0,
+  IF(@row=1, NULL, @row-2) AS ixN,
+  (@row - 500) AS ixS,
+  0 AS zip, 1 AS uno
+ FROM
+(select 0 union all select 1 union all select 3 union all select 4 union all select 5 union all select 6 union all select 6 union all select 7 union all select 8 union all select 9) t,
+(select 0 union all select 1 union all select 3 union all select 4 union all select 5 union all select 6 union all select 6 union all select 7 union all select 8 union all select 9) t2,
+(select 0 union all select 1 union all select 3 union all select 4 union all select 5 union all select 6 union all select 6 union all select 7 union all select 8 union all select 9) t3,
+(SELECT @row:=0) r
+;
+
+DROP TABLE IF EXISTS numbers;
+CREATE TABLE `numbers` (
+  `idx`  INT(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `ix0`  INT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `ixN`  INT(20) UNSIGNED          DEFAULT '0',
+  `ixS`  INT(20) SIGNED   NOT NULL DEFAULT '0',
+  `zip`  INT(1)  UNSIGNED NOT NULL DEFAULT '0',
+  `uno`  INT(1)  UNSIGNED NOT NULL DEFAULT '1'
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
+
+INSERT INTO numbers (ix0, ixN, ixS, zip, uno)
+SELECT
+  (@row := @row + 1) - 1 AS ix0,
+  IF(@row=1, NULL, @row-2) AS ixN,
+  (@row - 500000) AS ixS,
+  0 AS zip, 1 AS uno
+FROM
+(SELECT zip FROM numbers1k) t1,
+(SELECT zip FROM numbers1k) t2,
+(SELECT @row:=0) r
+;
+
+
+----
+    # generate 100 files of 100,000 integers each; takes about 15 seconds to run
+    time ruby -e '10_000_000.times.map{|num| puts num }' | gsplit -l 100000 -a 2 --additional-suffix .tsv -d - numbers
+
+    # in mapper, read N and generate `(0 .. 99).map{|offset| 100 * N + offset }`
+----
 
 === Overflow, Underflow and other Dangers
 
