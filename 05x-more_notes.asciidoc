@@ -1,3 +1,19 @@
+-- EXERCISE: find the Bill James' "Gray Ink" score for each player: four points
+--   per season they were in the top ten for HR, RBI or AVG; three points for R,
+--   H, SLG; two points for 2B, BB or SB, and one point for each season in the
+--   top ten for G, AB or 3B.  (See
+--   http://baseball-reference.com/about/leader_glossary.shtml[Baseball
+--   Reference] for a bit more of a description and the pitching equivalent).
+--   uses GROUP-TOP-FOREACH (isEmpty ? 1 : 0)-GROUP-FOREACH (summing and
+--   weighting the composite pieces of ink.
+
+
+
+==== Flatten a Tuple of `field name, field value` pairs
+
+If you want to simultaneously apply a dataflow to a large number of columns,
+skip ahead to the statistics chapter, where we'll show how to use a UDF to transpose columns Into `field name, field value` pairs
+
 
 === (notes for later) 
 
