@@ -1,34 +1,15 @@
- 
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- Expanding Data
---
+=== Grouping Operations
 
--- === Flatten
-
--- See text chapter: Wordbag
--- See statistics chapter: transpose data
--- See eventlog chapter: dividing intervals
--- See statistics chapter: Generating data
-
--- === Generating an Integers table
-
-To generate all the three-letter combinations of a-z,
+==== Find Aggregate Statistics of a Group
 
 ----
-intstable_all = LOAD '.../intstable.tsv' AS (num:long);
-intstable = FILTER intstable_all BY num < (10000);
-char3s = FOREACH intstable GENERATE num * num;
-
-Also do the file name trickc
-
-in pig, just use FLATTEN and do the counting trick
-
-
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- Aggregation
---
+SELECT
+  teamID, COUNT(*) AS n_seasons, MIN(yearID) as yearBeg, MAX(yearID) as yearEnd
+  FROM teams tm
+  GROUP BY teamID
+  ORDER BY n_seasons DESC, teamID ASC
+;
+----
 
 -- Group on year; find COUNT(), count distinct, MIN(), MAX(), SUM(), AVG(), STDEV(), byte size
 
@@ -89,36 +70,41 @@ SELECT
   ORDER BY n_seasons DESC, teamID ASC
 ;
 
--- Histogram of Stolen Bases per season
+
+
+Finding a median (or other quantiles) is quite difficult at large scale; we'll discuss why and what to do about it in the Statistics chapter (REF).
+==== Distribution of Values Using a Histogram
+
+Histogram of Hits per season
 
 SELECT
-  SB, COUNT(*) AS n_SB
+  10 * CEIL(H/10), COUNT(*) AS n_H
   FROM bat_season bat
   GROUP BY SB
   ORDER BY SB DESC
 ;
 
--- Median
+In this case, we knew what bins to apply.
 
--- This is hard at scale. Use approximate median
+=== Putting tables in context with JOIN and friends
 
-SELECT COUNT(*), CEIL(COUNT(*)/2) AS midrow
-  FROM bat_career
- ;
+==== Direct Join: Extend Records with Uniquely Matching Records from Another Table
 
-SELECT G, cols.*
-  FROM bat_career bat,
-    (SELECT COUNT(*) AS n_entries, CEIL(COUNT(*)/2) AS midrow FROM bat_career) cols
-  ORDER BY HR
-  LIMIT 1 OFFSET 8954
-;
+hang weight, height and BMI off of their OPS (overall hitting); ISO ("isolated power");
+and number of stolen bases per time on base (loosely tied to speed)
 
--- won-loss record by teams (sorted pair, home_win_a, away_win_a, home_win_b, away_win_b, other__check
-* Selecting Only Groups with Certain Characteristics
+SELECT bat.playerID, peep.nameCommon, begYear,
+    peep.weight, peep.height,
+    703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
+    PA, OPS, ISO
+  FROM bat_career bat
+  JOIN people peep ON bat.playerID = peep.playerID
+  WHERE PA > 500 AND begYear > 1910
+  ORDER BY BMI DESC
+  ;
 
-
--- === Counting on multiple levels
--- fraction of people with multiple stints per year (about 7%)
+(add note) Joins on null values are dropped even when both are null. Filter nulls. (I can't come up with a good example of this)
+(add note) in contrast, all elements with null in a group _will_ be grouped as null. This can be dangerous when large number of nulls: all go to same reducer
 
 -- don't do this (needs two group-bys):
 SELECT n_seasons, COUNT(*), COUNT(*)/n_seasons
@@ -128,55 +114,26 @@ SELECT n_seasons, COUNT(*), COUNT(*)/n_seasons
 -- instead use the summing trick (needs only one group-by):
 SELECT COUNT(*), (COUNT(*)-SUM(IF(stint = 1, 1, 0)))/COUNT(*), COUNT(*) FROM batting WHERE stint <= 2;
 
---
--- === Putting tables in context with JOIN and friends
---
 
--- Direct Join: Extend Records with Uniquely Matching Records from Another Table
--- hang weight, height and BMI off of their OPS (overall hitting); ISO ("isolated power");
--- and number of stolen bases per time on base (loosely tied to speed)
---
-SELECT bat.playerID, peep.nameCommon, begYear,
-    peep.weight, peep.height,
-    703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
-    PA, OPS, ISO, IF(OBP*PA>0,SB/(OBP*PA),0) AS SBrate
-  FROM bat_career bat
-  JOIN people peep ON bat.playerID = peep.playerID
-  WHERE PA > 500 AND begYear > 1910
-  ORDER BY SBrate DESC
-  ;
 
--- (add note) Joins on null values are dropped even when both are null. Filter nulls. (I can't come up with a good example of this)
--- (add note) in contrast, all elements with null in a group _will_ be grouped as null. This can be dangerous when large number of nulls: all go to same reducer
+==== Fill in Holes in a List with a Join on an integer table
 
--- ==== Join against an integer table to Fill in Holes in a List
+If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, we can join on the integer table:
 
--- Take the a histogram showing stolen bases by season and make it have an entry for each row
 
-SELECT idx, SB, n_SB
-  FROM      (SELECT idx FROM numbers WHERE idx <= 138) nums
-  LEFT JOIN (SELECT SB AS SB, COUNT(*) AS n_SB
-    FROM bat_season bat GROUP BY SB) hist
-  ON hist.SB = nums.idx
-  ORDER BY idx ASC
+----
+SET @Hbsz = 10;
+SELECT bin, H, IFNULL(n_H,0)
+  FROM      (SELECT @Hbsz * idx AS bin FROM numbers WHERE idx <= 430) nums
+  LEFT JOIN (SELECT @Hbsz*CEIL(H/@Hbsz) AS H, COUNT(*) AS n_H
+    FROM bat_career bat GROUP BY H) hist
+  ON hist.H = nums.bin
+  ORDER BY bin DESC
 ;
+----
 
--- To keep also the count of rows with NULL values for SB, use the has-a-null column of the numbers table:
+Comparing a Table to Itself (Self-join)
 
-SELECT ixN, SB, n_SB
-  FROM      (SELECT ixN FROM numbers WHERE ixN <= 138) nums
-  LEFT JOIN (SELECT SB AS SB, COUNT(*) AS n_SB
-    FROM bat_season bat GROUP BY SB) hist
-  ON hist.SB = nums.ixN OR (hist.SB IS NULL AND nums.ixN IS NULL)
-  ORDER BY ixN ASC
-;
-
--- You might also enjoy the random number table, holding 350 million 64-bit numbers directly from random.org (7 GB of 20-digit decimal numbers)
--- * 160-bit numbers in hexadecimal form
--- * 32 64-bit numbers (2048-bits per row)
---
-
--- Comparing a Table to Itself (Self-join)
 -- teammates (played for same team same season, discarding second and later
 -- stints; players half table?)  note that we're cheating a bit: players may
 -- change teams during the season (happens in about 7% of player seasons). We're
@@ -215,27 +172,7 @@ SELECT b1.playerID, b1.nameCommon, GROUP_CONCAT(b2.playerID), b1.teamID, b1.year
   ORDER BY yearID DESC, playerID ASC
  ;
 
--- === Sparse join for matching: geo names for stadiums
---     using a left join so you can fix up remnants
---     note: haven't actually run this, need to load geonames
-
-SELECT pk.*
-  FROM      parks pk
-  LEFT JOIN geonames.places gn
-    ON (pk.city = gn.city AND pk.state = gn.region1)
-    OR (pk.parkname = gn.placename)
-;
-
--- See advanced joins: bag left outer join from DataFu
--- See advanced joins: Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
--- See Time-series: Range query using cross
--- See Time-series: Range query using prefix and UDFs
--- See advanced joins: Sparse joins for filtering, with a HashMap (replicated)
--- Out of scope: Bitmap index
--- Out of scope: Bloom filter joins
--- See time-series: Self-join for successive row differences
-
--- === Enumerating a Many-to-Many Relationship
+==== Enumerating a Many-to-Many Relationship
 
 -- Every stadium a player has played in. (We're going to cheat on the detail of
 -- multiple stints and credit every player with all stadiums visited by the team
@@ -274,7 +211,6 @@ SELECT bat.playerID, bat.nameCommon,
   ORDER BY n_parks DESC, playerID ASC
   ;
 
-
 --
 -- So now we disclose the most important thing that SQL experts need to break
 -- their brains of:
@@ -289,76 +225,81 @@ SELECT bat.playerID, bat.nameCommon,
 --
 -- (show pig, including a DISTINCT in the fancy-style FOREACH)
 
+==== Join Against Another Table Without Discarding Non-Matches
 
-==== Distinct Bag Elements based on a field
+using a left join so you can fix up remnants
+note: haven't actually run this, need to load geonames
 
-Use DistinctBy
+----
+SELECT pk.*
+  FROM      parks pk
+  LEFT JOIN geonames.places gn
+    ON (pk.city = gn.city AND pk.state = gn.region1)
+    OR (pk.parkname = gn.placename)
+;
+----
+
+-- See advanced joins: bag left outer join from DataFu
+-- See advanced joins: Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
+-- See Time-series: Range query using cross
+-- See Time-series: Range query using prefix and UDFs
+-- See advanced joins: Sparse joins for filtering, with a HashMap (replicated)
+-- Out of scope: Bitmap index
+-- Out of scope: Bloom filter joins
+-- See time-series: Self-join for successive row differences
+
+==== Find rows with a match in another table (semi-join)
+
+Semi-join: just care about the match, don't keep joined table; anti-join is where you keep the non-matches and also don't keep the joined table. Again, use left or right so that the small table occurs first in the list. Note that a semi-join has only one row per row in dominant table -- so needs to be a cogroup and sum or a join to distinct'ed table (extra reduce, but lets you do a fragment replicate join.)
+
+Select player seasons where they made the all-star team.
+You might think you could do this with a join:
+
+----
+-- Don't do this... produces duplicates!
+bats_g    = JOIN allstar BY (playerID, yearID), bats BY (playerID, yearID);
+bats_as   = FOREACH bats_g GENERATE bats::playerID .. bats::HR;
+----
+
+The result is wrong, and even a diligent spot-check will probably fail to notice. You see, from 1959-1962 there were multiple All-Star games (!), and so each singular row in the `bat_season` table became two rows in the result for players in those years.
+
+Instead, use a `COGROUP` and filter:
+
+----
+ast     = FOREACH allstar GENERATE playerID, yearID;
+bats_g  = COGROUP ast     BY (playerID, yearID), bats BY (playerID, yearID);
+bats_f  = FILTER  bats_g  BY NOT IsEmpty(ast);
+bats_as = FOREACH bats_f  GENERATE FLATTEN(bats);
+----
+
+In our case there was only one row per player/year, but in the general case where the dominant table has more than one row for a key, the `FLATTEN` operation will generate just that many rows in the output.
+
+To finding rows with no match in another table -- known as an anti-join -- simply use `FILTER BY IsEmpty()` instead of `FILTER BY NOT IsEmpty()`
 
 
+==== Counting on multiple levels
 
---
--- === Finding rows with a match in another table (semi-join)
---
---     Semi-join: just care about the match, don't keep joined table; anti-join
---     is where you keep the non-matches and also don't keep the joined
---     table. Again, use left or right so that the small table occurs first in
---     the list.  note that a semi-join has only one row per row in dominant
---     table -- so needs to be a cogroup and sum or a join to distinct'ed table
---     (extra reduce, but lets you do a fragment replicate join.)
---
+-- fraction of people with multiple stints per year (about 7%)
 
-This is called a _semi-join_ when you want to keep the records that match, and an _anti-join_ when you want to keep the records that don't match
-
--- Earlier we selected players who made the all-star team based on their career totals.
-
--- Select player seasons where they made the all-star team.
--- You might think you could do this with a join:
---
--- !! Don't do this !! generates extra rows
-SELECT bats.*
-  FROM       bat_season  bats
-  INNER JOIN allstarfull ast
-  ON (bats.`playerID` = ast.`playerID` AND bats.`yearID` = ast.`yearID`)
+-- don't do this (needs two group-bys):
+SELECT n_seasons, COUNT(*), COUNT(*)/n_seasons
+  FROM (SELECT COUNT(*) AS n_seasons FROM batting) t1,
+  (SELECT COUNT(*) AS n_stints FROM batting GROUP BY playerID, yearID HAVING n_stints > 1) stintful
   ;
--- but there were multiple All-Star games (!) in 1959-1962
---
--- In pig, you do
---
--- FOREACH allstarfull GENERATE playerID;
--- COGROUP bat_season BY playerID and allstarfull BY playerID;
--- FILTER BY NOT isEmpty(allstarfull);
--- FOREACH GENERATE FLATTEN(bat_season)
---
--- ... although you might do a distinct-then-fragment join if the discarded table is small
-SELECT bats.*
-  FROM bat_season bats
-  INNER JOIN (SELECT DISTINCT playerID, yearID FROM allstarfull) ast
-  ON (bats.`playerID` = ast.`playerID` AND bats.`yearID` = ast.`yearID`)
-  ;
+-- instead use the summing trick (needs only one group-by):
+SELECT COUNT(*), (COUNT(*)-SUM(IF(stint = 1, 1, 0)))/COUNT(*), COUNT(*) FROM batting WHERE stint <= 2;
 
--- === Finding rows with no match in another table (anti-join)
---     .... same as semi-join, but discard matches
---
-SELECT bats.*
-  FROM      bat_season bats
-  LEFT JOIN (SELECT DISTINCT playerID, yearID FROM allstarfull) ast
-    ON (bats.`playerID` = ast.`playerID` AND bats.`yearID` = ast.`yearID`)
-  WHERE ast.playerID IS NULL
-  ;
---
--- FOREACH allstarfull GENERATE playerID;
--- COGROUP bat_season BY playerID and allstarfull BY playerID;
--- FILTER BY isEmpty(allstarfull);
---
+==== Cube and rollup
+-- stats by team, division and league
+=== Handling duplicates
 
--- === Handling duplicates
-
--- === Eliminating Duplicates from a Table
+==== Eliminating Duplicates from a Table
 
 -- Every team a player has played for
 SELECT DISTINCT playerID, teamID from batting;
 
--- Eliminating Duplicates from a Query Result:
+==== Eliminating Duplicates from a Query Result:
+
 --
 -- All parks a team has played in
 --
@@ -368,28 +309,7 @@ SELECT teamID, GROUP_CONCAT(DISTINCT parkID ORDER BY parkID) AS parkIDs
   ORDER BY teamID, parkID DESC
   ;
 
--- Finding records with a duplicated field
--- group by, then emit bags with more than one size; call back to the won-loss example
-
--- Teams who played in more than one stadium in a year
-SELECT COUNT(*) AS n_parks, pty.*
-  FROM park_team_years pty
-  GROUP BY teamID, yearID
-  HAVING n_parks > 1
-
--- Eliminating rows that have a duplicated value (ie the whole row isn't distinct,
--- just the field you're distinct-ing on.
--- Note: this chooses an arbitrary value from each group
-SELECT COUNT(*) AS n_asg, ast.*
-  FROM allstarfull ast
-  GROUP BY yearID, playerID
-  HAVING n_asg > 1
-  ;
-
--- * Selecting Only Groups with Certain Characteristics
--- * Determining Whether Values are Unique
-
--- Unique first names
+==== Identifying unique records for a key
 
 -- * Distinct: players with a unique first name (once again we urge you: crawl through your data. Big data is a collection of stories; the power of its unusual effectiveness mode comes from the comprehensiveness of those stories. even if you aren't into baseball this celebration of the diversity of our human race and the exuberance of identity should fill you with wonder.)
 --
@@ -413,7 +333,34 @@ SELECT nameFirst, nameLast, COUNT(*) AS n_usages
 * Counting and Identifying Duplicates
 * Determining Whether Values are Unique
 
--- === Set Operations
+==== Identifying duplicated records for a key
+
+-- group by, then emit bags with more than one size; call back to the won-loss example
+
+Once again, what starts out looking like one of the high-level operations turns into a GROUP BY.
+
+Up above, the allstar table almost led us astray due to the little-known fact that some years featured multiple All-Star games. We can pull out the rows matching those fields:
+
+
+
+-- Teams who played in more than one stadium in a year
+SELECT COUNT(*) AS n_parks, pty.*
+  FROM park_team_years pty
+  GROUP BY teamID, yearID
+  HAVING n_parks > 1
+==== Eliminating rows that have a duplicated value
+
+ (ie the whole row isn't distinct,
+-- just the field you're distinct-ing on.
+-- Note: this chooses an arbitrary value from each group
+SELECT COUNT(*) AS n_asg, ast.*
+  FROM allstarfull ast
+  GROUP BY yearID, playerID
+  HAVING n_asg > 1
+  ;
+
+
+=== Set Operations
 
 -- Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
 -- Find the Union of Sets UNION-then-DISTINCT
@@ -426,31 +373,125 @@ SELECT nameFirst, nameLast, COUNT(*) AS n_usages
 -- * Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
 -- * http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html
 -- * http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
---
--- === Structural Group Operations (ie non aggregating)
+
+=== Structural Group Operations (ie non aggregating)
+
 --
 -- * GROUP/COGROUP To Restructure Tables
 -- * Group Elements From Multiple Tables On A Common Attribute (COGROUP)
 -- * Denormalize Normalized
 --   - roll up stints
 --   - Normalize Denormalized (flatten)
--- * Join is a Group and Flatten
--- * So sometimes you want a group
--- * Group flatten regroup
+
+
+
+==== Group flatten regroup
+
 --     * OPS+ -- group on season, normalize, reflatten
 --     * player's highest OPS+: season, normalize, flatten, group on player, top
--- * See statistics chapter: Transpose Numeric Data
---
--- === Sorting and Ordering
---
--- * Operations on the order of records: Sorting, Shuffling, Ranking and Numbering
+
+
+
+
+
+==== Generate a won-loss record
+
+footnote:[we're skipping some details such as forfeited games, so the numbers won't agree precisely with the combined team numbers.]
+
+----
+-- generate a summable value for each game, once for home and once for away:
+home_games = FOREACH games GENERATE
+  home_teamID AS teamID, yearID,
+  IF (home_runs_ct > away_runs_ct, 1,0) AS win,
+  IF (home_runs_ct < away_runs_ct, 1,0) AS loss
+  ;
+away_games = FOREACH games GENERATE
+  away_teamID AS teamID, yearID,
+  IF (home_runs_ct < away_runs_ct, 1,0) AS win,
+  IF (home_runs_ct > away_runs_ct, 1,0) AS loss
+  ;
+----
+
+Now you might be tempted (especially if you are coming from SQL land) to follow this with a UNION of `home_games` and `away_games`. Don't! Instead, use a COGROUP. Once you've wrapped your head around it, it's simpler and more efficient.
+
+----
+team_games = COGROUP home_games BY (teamID, yearID), away_games BY (teamID, yearID);
+----
+
+Each combination of team and year creates one row with the following fields:
+
+* `group`, a tuple with the `teamID` and `yearID`
+* `home_games`, a bag holding tuples with `teamID`, `yearID`, `win` and `loss`
+* `away_games`, a bag holding tuples with `teamID`, `yearID`, `win` and `loss`
+
+----
+team_games:
+((BOS,2004),  {(BOS,2004,1,0),(BOS,2004,1,0),...}, {(BOS,2004,0,1),(BOS,2004,1,0),...})
+...
+----
+
+You should notice a few things:
+
+* The group values go in a single field (the first one) called `group`.
+* Since we grouped on two fields, the group value is a tuple; if we had grouped on one field it would have the same schema as that field
+* The name of the _table_ in the COGROUP BY statement became the name of the _field_ in the result
+* The group values appear redundantly in each tuple of the bag. That's OK, we're about to project them out.
+
+The next step is to calculate the answer:
+
+----
+winloss_record = FOREACH team_games {
+  wins   = SUM(home_games.win)    + SUM(away_games.win);
+  losses = SUM(home_games.loss)   + SUM(away_games.loss);
+  G      = COUNT_STAR(home_games) + COUNT_STAR(away_games);
+  G_home = COUNT_STAR(home_games);
+  ties   = G - (wins + losses);
+  GENERATE group.teamID, group.yearID, G, G_home, wins, losses, ties;
+};
+----
+
+Exercise: Do this instead with a single GROUP. Hint: the first FOREACH should have a FLATTEN.
+
+
+=== Sorting Operations
+
+
+* RANK: Dense, not dense
+* Number records with a serial or unique index
+  - use rank with (the dense that give each a number)
+  - use file name index and row number in mapper (ruby UDF)
+* Sorting Subsets of a Table (order inside cogroup)
+* Controlling Summary Display Order
+* Sorting and NULL Values; Controlling Case Sensitivity of String Sorts
+*
+Note: ORDER BY is NOT stable; can't guarantee that records with same keys will keep same order
+Note about ORDER BY and keys across reducers -- for example, you can't do the sort | uniq trick
+
+
+-- ==== Season leaders
+
+-- * Selecting top-k Records within Group
+-- GROUP...FOREACH GENERATE TOP
+-- most hr season-by-season
+
+-- ==== Transpose record into attribute-value pairs
+--      Group by season, transpose, and take the top 10 for each season, attribute pair
+
+
+=== Sorting and Ordering Operations
+
+==== Sorting Records by Key
+
+
+==== Numbering Records by Sorted Rank
+
 --   - ORDER by multiple fields: sort on OPS to three places then use games then playerid
 --   - note value of stabilizing list
 -- - (how do NULLs sort?)
 -- - ASC / DESC: fewest strikeouts per plate appearance
 
 
--- Finding Values Associated with Maximum Values
+==== Finding Values Associated with Maximum Values
 
 -- For each season by a player, select the team they played the most games for.
 -- In SQL, this is fairly clumsy (involving a self-join and then elimination of
@@ -472,7 +513,7 @@ SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT playerID, ye
 -- TOP(topN, sort_column_idx, bag_of_tuples)
 -- must have an explicit field -- can't use an expression
 
--- Leaderboard By Season-and-league
+Leaderboard By Season-and-league
 
 -- GROUP BY yearID, lgID
 
@@ -480,44 +521,10 @@ SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT playerID, ye
 -- EXERCISE: make a "BTM" UDF, having the same signature as the "TOP" operation,
 -- to return the lowest-n tuples from a bag.
 
--- EXERCISE: find the Bill James' "Gray Ink" score for each player: four points
---   per season they were in the top ten for HR, RBI or AVG; three points for R,
---   H, SLG; two points for 2B, BB or SB, and one point for each season in the
---   top ten for G, AB or 3B.  (See
---   http://baseball-reference.com/about/leader_glossary.shtml[Baseball
---   Reference] for a bit more of a description and the pitching equivalent).
---   uses GROUP-TOP-FOREACH (isEmpty ? 1 : 0)-GROUP-FOREACH (summing and
---   weighting the composite pieces of ink.
+==== Top K Records within a table using ORDER..LIMIT
 
-
---
--- === Sorting Operations
---
-
-
-
-* RANK: Dense, not dense
-* Number records with a serial or unique index
-  - use rank with (the dense that give each a number)
-  - use file name index and row number in mapper (ruby UDF)
-* Sorting Subsets of a Table (order inside cogroup)
-* Controlling Summary Display Order
-* Sorting and NULL Values; Controlling Case Sensitivity of String Sorts
-*
--- ==== Top K Records within a table using ORDER..LIMIT
 --      Most hr in a season
 --      Describe pigs optimization of order..limit
-
-
--- ==== Season leaders
-
--- * Selecting top-k Records within Group
--- GROUP...FOREACH GENERATE TOP
--- most hr season-by-season
-
--- ==== Transpose record into attribute-value pairs
---      Group by season, transpose, and take the top 10 for each season, attribute pair
-
 
 * Pulling a Section from the Middle of a Result Set: rank and filter? Modify the quantile/median code?
 
@@ -525,16 +532,16 @@ SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT playerID, ye
 --  - can only ORDER BY an explicit field. In SQL you can omit the sort expression from the table (use expression to sort by)
 * Sorting a Result Set (when can you count on reducer order?)
 
--- ====  Shuffle a set of records
---         See notes on random numbers.
+====  Shuffle a set of records
 
--- Note: ORDER BY is NOT stable; can't guarantee that records with same keys will keep same order
--- * Note about ORDER BY and keys across reducers -- for example, you can't do the sort | uniq trick
+See notes on random numbers.
 
--- === In statistics Chapter
---
--- ==== Cube and rollup
--- stats by team, division and league
+
+You might also enjoy the random number table, holding 350 million 64-bit numbers directly from random.org (7 GB of 20-digit decimal numbers)
+* 160-bit numbers in hexadecimal form
+* 32 64-bit numbers (2048-bits per row)
+
+
 
 --
 -- TODO
@@ -542,13 +549,55 @@ SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT playerID, ye
 -- cogroup events by teamID
 -- ... there's a way to do this in one less reduce in M/R -- can you in Pig?
 
--- === in Time-series chapter
+
+
+
+=== SQL-to-Pig-to-Hive Cheatsheet
+
+* SELECT..WHERE
+* SELECT...LIMit
+* GROUP BY...HAVING
+* SELECT WHERE... ORDER BY
+* SELECT WHERE... SORT BY (just use reducer sort) ~~ (does reducer in Pig guarantee this?)
+* SELECT … DISTRIBUTE BY … SORT BY ...
+* SELECT ... CLUSTER BY (equiv of distribute by X sort by X)
+* Indexing tips
+* CASE...when...then
+* Block Sampling / Input pruning
+* SELECT country_name, indicator_name, `2011` AS trade_2011 FROM wdi WHERE (indicator_name = 'Trade (% of GDP)' OR indicator_name = 'Broad money (% of GDP)') AND `2011` IS NOT NULL CLUSTER BY indicator_name;
+
+SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVING condition ORDER BY column  [ASC | DESC] LIMIT offset,count;
+
+
+
+// ------------- CRUFT -------------------------
+// ------------- CRUFT -------------------------
+// ------------- CRUFT -------------------------
+// ------------- CRUFT -------------------------
+
+// Ignore below.
+
+
+
+=== In statistics Chapter
+
+==== Cube and rollup
+stats by team, division and league
+
+TODO
+
+cogroup events by teamID
+... there's a way to do this in one less reduce in M/R -- can you in Pig?
+
+==== in Time-series chapter
+
+* Running total http://en.wikipedia.org/wiki/Prefix_sum
+* prefix sum value; by combining list ranking, prefix sums, and Euler tours, many important problems on trees may be solved by efficient parallel algorithms.[3]
+* Self join of table on its next row (eg timeseries at regular sample)
+
 --
--- * Running total http://en.wikipedia.org/wiki/Prefix_sum
--- * prefix sum value; by combining list ranking, prefix sums, and Euler tours, many important problems on trees may be solved by efficient parallel algorithms.[3]
--- * Self join of table on its next row (eg timeseries at regular sample)
---
--- === how to do these
+=== Don't know how to do these
+
 --
 -- * Computing Team Standings
 -- * Producing Master-Detail Lists and Summaries
@@ -557,8 +606,6 @@ SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT playerID, ye
 -- * Find Missing Rows in Series / Count all Values
 -- * Calculating Differences Between Successive Rows
 -- * Finding Cumulative Sums and Running Averages
-
-
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --

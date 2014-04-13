@@ -1,13 +1,9 @@
 NOTE-flip: strikeout text refers to content that was moved from this file into "05b_analytic_patterns_v2-pipeline_operations," I will mark it here using.  What remains here is the list of analytic patterns, such as JOIN and COGROUP, for which we need new examples based on the baseball dataset.
 
+NOTE-for-qem: I will remove text you have outstruck 
 
 What you are looking at: (a) a giant scratchpad of titles for every analytic pattern I could find; (b) the prose content of the draft 05-analytic_patterns
 
-TODO: ask Meghan if we can plagiarize the table of contents from one of the SQL/MySQL cookbooks
-
-TODO: discuss having a pig style guide as a spinoff pamphlet thing
-
-TODO: make example code repo submodule in the UDFs
 
 TODO-qem: review patterns, confirm discussion is cogent. Want to make sure each example makes sense on its own, that it fits, and also ensure narrative flow throughout the chapter.
 "Lots of data into less data"
@@ -15,15 +11,6 @@ TODO-qem: review patterns, confirm discussion is cogent. Want to make sure each 
 TODO: find biz applications for the fancy ones
 TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid for both MySQL and Postgres
 TODO-qem: better to show a fuller example using an operation we haven't mentioned yet? (Eg listing team pairs: do the group-and-count when we talk about listing pairs)? Or postpone and call ahead to it?
-
-== Pipeline Operations
-
-All of the following operations require no reduce phase of their own. Standing alone, they lead to map-only jobs. When combined with the grouping / sorting operations you're about to meet, they become additional pipeline stages of the mapper or reducer (depending on whether they come before or after).
-
-. A Foolish Optimization
-****
-TODO: Make this be more generally "don't use the O(N) algorithm that works locally" -- fisher-yates and top-k-via-heap being two examples
-****
 
 
 === Pig Functions act on fields
@@ -43,74 +30,7 @@ The idea is to have you run through a set of pig scripts with datasets of define
 
 
 
-==== Pig Gotchas --> probably a sidebar, halfway through the chapter
-
 [[analytic_patterns]]
-
-=== FILTER: eliminate records using given criteria
-
-The `FILTER` operation select a subset of records. This example selects all wikipedia articles that contain the word 'Hadoop':
-
-----
-articles = LOAD './data/wp/articles.tsv' AS (page_id: long, namespace: int, wikipedia_id: chararray, revision_id: long, timestamp: long, title: chararray, redirect: chararray, text: chararray);
-hadoop_articles = FILTER articles BY text matches '.*Hadoop.*';
-STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
-----
-
-Filter as early as possible -- and in all other ways reduce the number of records you're working with. (This may sound obvious, but in the next chapter (TODO ref) we'll highlight many non-obvious expressions of this rule).
-
-It's common to want to extract a _uniform_ sample -- one where every record has an equivalent chance of being selected. Pig's `SAMPLE` operation does so by generating a random number to select records. This brings an annoying side effect: the output of your job is different on every run. A better way to extract a uniform sample is the "consistent hash digest" -- we'll describe it, and much more about sampling, in the Statistics chapter (TODO  ref).
-
-=== LIMIT selects only a few records
-
-The `LIMIT` operator selects only a given number of records.
-In general, you have no guarantees about which records it will select. Changing the number of mappers or reducers, small changes in the data, and so forth can change which records are selected. However, using the `ORDER` operator before a `LIMIT` _does_ guarantee you will get the top `k` records -- not only that, it applies a clever optimization (reservoir sampling, see TODO ref) that sharply limits the amount of data sent to the reducers.
-If you truly don't care which records to select, just use one input file (`some_data/part-00000`, not all of `some_data`).
-
-TODO: map-reduce example
-
-
-
-
-
-=== FOREACH: modify the contents of records individually
-
-We can now properly introduce you to the first interesting Pig command. A `FOREACH` makes simple transformations to each record.
-
-For example, baseball fans use a few rough-but-useful player statistics to compare players' offensive performance: batting average, slugging average, and offensive percentage. This script calculates just those statistics, along with the player's name, id and number of games played.
-
-----
-player_seasons = LOAD `player_seasons` AS (...);
-qual_player_seasons = FILTER player_years BY plapp > what it should be;
-player_season_stats = FOREACH qual_player_seasons GENERATE
-   player_id, name, games,
-   hits/ab AS batting_avg,
-   whatever AS slugging_avg,
-   whatever AS offensive_avg,
-   whatever+whatever AS ops
-   ;
-STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
-----
-
-This example digests the players table; selects only players who have more than a qualified number of plate appearances; and generates the stats we're interested in
-(If you're not a baseball fan, just take our word that "these four fields are particularly interesting")
-
-A `FOREACH` won't cause a new Hadoop job stage: it's chained onto the end of the preceding operation (and when it's on its own, like this one, there's just a single a mapper-only job). A FOREACH always produces exactly the same count of output records as input records.
-
-Within the GENERATE portion of a FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange and eliminate fields); apply the FLATTEN operator (see below); and apply Pig functions to fields. Let's look at Pig's functions.
-
-TODO: map reduce demonstration
-
-
-
-=== Select only the fields you need ("projection") using a FOREACH
-
-TODO-qem: leave this here, or merge back in to FOREACH section
-TODO: projection (using only a subset of fields) -- either here, or with limit/filter/sample
-
-
-
-
 
 
 === Group and Flatten
@@ -425,63 +345,6 @@ We also extract two global statistics: the number of distinct terms, and the num
 
 We prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals.
 
-==== Select a Fixed Number of Arbitrary Records (LIMIT)
-
-The Pig LIMIT operation arbitrarily selects, at most, the specified number of records from a table.
-
-----
-(TODO: example)
-----
-
-(TODO: Is there a non-Reduce way to do this?)
-
-In the simplest Map/Reduce equivalent, Mappers emit each record unchanged until they hit the specified limit (or reach the end of their input). Those output records are sent to a single Reducer, which itself emits each record unchanged until it has hit the specified limit and does nothing on all subsequent records.
-
-(TODO: Do we want to talk about a non-single Reducer approach?)
-
-A Combiner is helpful here in the predominant case where the specified limit is small, as it will eliminate excess records before they are sent to the Reducer and at each merge/sort pass.
-
-==== Top K Records (ORDER..LIMIT)
-
-The naive way to extract the top K elements from a table is simply to do an ORDER and then a LIMIT. For example, the following script will identify the top 100 URLs from the waxy.org weblog dataset.
-
-----
-logs=LOAD '/data/gold/waxy/whatever.log' AS (...) USING APACHE LOG READER;
-logs=FOREACH logs GENERATE url;
-url_logs = GROUP logs BY url;
-URL_COUNTS=FOREACH url_logs GENERATE
-    COUNT_STAR(url_logs) AS views,
-    group AS url;
-url_counts_o = ORDER url_counts BY views PARALLEL 1;
-top_url_counts = LIMIT url_counts_o 100;
-STORE top_url_counts INTO '/data/out/weblogs/top_url_counts';
-----
-
-There are two useful optimizations to make when K (the number of records you will keep) is much less than N (the number of records in the table). The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
-
-==== Top K Within a Group
-
-There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements. Here is an example that uses the World Cup dataset to find the top 10 URLs for each day of the tournament:
-
-----
-visits = load ('worldcup');
-visits = FOREACH visits generate day, url;
-visits by day = GROUP visits by day;
-top visits by day = FOREACH visits url = GROUP visits by url;
-   generate GROUP as day, top (visits, top visit URLs, COUNT_STAR (visit urls), 100;
-store top visits by url into 'top visits by url';
-----
-
-
-== TODO: need to sort out where following sections go
-
-==== A Foolish Optimization
-
-TODO: make this a sidebar?
-
-We will tell you about another "optimization," mostly because we want to illustrate how a naive performance estimation based on theory can lead you astray in practice. In principle, sorting a large table in place takes 'O(N log N)' time. In a single compute node context, you can actually find the top K elements in 'O(N log K)' time -- a big savings since K is much smaller than N. What you do is maintain a heap structure; for every element past the Kth, if it is larger than the smallest element in the heap, remove the smallest member of the heap and add the element to the heap. While it is true that 'O(N log K)' beats 'O(N log N)', this reasoning is flawed in two ways. First, you are not working in a single-node context; Hadoop is going to perform that sort anyway. Second, the fixed costs of I/O almost always dominate the cost of compute (FOOTNOTE:  Unless you are unjustifiably fiddling with a heap in your Mapper.)
-
-The 'O(log N)' portion of Hadoop's log sort shows up in two ways:  The N memory sort that precedes a spill is 'O(N log N)' in compute time but less expensive than the cost of spilling the data. The true 'O(N log N)' cost comes in the reducer: 'O(log N)' merge passes, each of cost 'O(N)'. footnote:[If initial spills have M records, each merge pass combines B spills into one file, and we can skip the last merge pass, the total time is `N (log_B(N/M)-1).` [TODO: double check this]. But K is small, so there should not be multiple merge passes; the actual runtime is 'O(N)' in disk bandwidth. Avoid subtle before-the-facts reasoning about performance; run your job, count the number of merge passes, weigh your salary against the costs of the computers you are running on, and only then decide if it is worth optimizing.
 
 
 === Pig Functions act on fields
@@ -525,15 +388,4 @@ Union, to produce a new dataset to have all the records from its input datasets.
 That’s really about it. Pig is an extremely sparse language. By having very few Operators and very uniform syntax (FOOTNOTE:  Something SQL users but non-enthusiasts like your authors appreciate), the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
 
 We won’t spend any more time introducing Pig, the language, as its usage will be fairly clear in context as you meet it later in the book. The online Pig manual at (TODO: REF) is quite good and for a deeper exploration, consult (TODO: Add name of best Pig book here).
-
-
-
-==== Pig Gotchas
-
-That one error where you use the dot or the colon when you should use the other. 
-TODO-flip: this is covered elsewhere in this chapter, as a note under "Complex FOREACH"; we should move that here
-
-
-Where to look to see that Pig is telling you have either nulls, bad fields, numbers larger than your type will hold or a misaligned schema.
-
 
