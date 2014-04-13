@@ -2,9 +2,12 @@ allstar = LOAD '/tmp/simple_allstar.tsv' AS (
   playerID:chararray, yearID:int,
   gameNum:int, gameID:chararray, teamID:chararray, lgID:chararray, GP: int, startingPos:int
   );
+
 bats    = LOAD '/tmp/simple_bats.tsv'    AS (
   playerID:chararray, yearID:int, teamID:chararray,
-    G:int, PA:int, AB:int, H:int, h1B:int, h2B:int, h3B:int, HR:int
+  G:int,     PA:int,    AB:int,    H:int,     BB:int,
+  h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
+  OBP:float, SLG:float, ISO:float, OPS:float
   );
 
 -- Project just what we need

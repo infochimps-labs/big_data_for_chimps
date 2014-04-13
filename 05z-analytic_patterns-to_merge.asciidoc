@@ -1,9 +1,6 @@
 NOTE-flip: strikeout text refers to content that was moved from this file into "05b_analytic_patterns_v2-pipeline_operations," I will mark it here using.  What remains here is the list of analytic patterns, such as JOIN and COGROUP, for which we need new examples based on the baseball dataset.
 
-NOTE-for-qem: I will remove text you have outstruck 
-
-What you are looking at: (a) a giant scratchpad of titles for every analytic pattern I could find; (b) the prose content of the draft 05-analytic_patterns
-
+NOTE-for-qem: I removed the text you outstruck. The remainder can now be merged into 06-analytic_patterns-structural_operations
 
 TODO-qem: review patterns, confirm discussion is cogent. Want to make sure each example makes sense on its own, that it fits, and also ensure narrative flow throughout the chapter.
 "Lots of data into less data"
@@ -12,58 +9,7 @@ TODO: find biz applications for the fancy ones
 TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid for both MySQL and Postgres
 TODO-qem: better to show a fuller example using an operation we haven't mentioned yet? (Eg listing team pairs: do the group-and-count when we talk about listing pairs)? Or postpone and call ahead to it?
 
-
-=== Pig Functions act on fields
-
-TODO: move to chapter 4
- 
-* Add all the DataFu operations: http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html and coalesce http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html and maybe others
-
-
-
-==== Ready Reckoner: How fast should your Pig fly? --> not sure what this is
-
-TODO: move to the first tuning chapter. 
-
-The idea is to have you run through a set of pig scripts with datasets of defined size, measuring the throughput of the core operations. The result is a ready reckoner that lets you estimate how long your job _should_ take (and how many map-reduce stages it will use).
-
-
-
-
 [[analytic_patterns]]
-
-
-=== Group and Flatten
-
-The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
-
-----
-BINS = Group WP_pageviews by (date, hour)
-DESCRIBE BINS
-(TODO: SHOW OUTPUT)
-----
-
-The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order. The next field has the full input record with all its keys, even the group key. Here’s a Wukong script that illustrates what is going on:
-
-----
-(TODO: Wukong script)
-----
-
-You can group more than one dataset at the same time. In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station. Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
-
-----
-G1=GROUP WSTNS BY (ID1, ID2), WOBS BY (ID1, ID2);
-G2=FLATTEN G1…
-G3=FOR EACH G2 …
-----
-
-This is equivalent to the following Wukong job:
-
-----
-(TODO: Wukong job)
-----
-
-(TODO: replace with an example where you would use a pure code group).
 
 
 
@@ -126,189 +72,10 @@ NOTE
 A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
 ----
 
-
 ==== Join Practicalities
 
 The output of the Join job has one line for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order. We have to accumulate all the A records in memory so we know what rows to emit for each B record. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
 
-
-
-
-
-=== Group Elements From Multiple Tables On A Common Attribute (COGROUP)
-
-The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation. This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
-
-----
-sightings = LOAD('/data/gold/geo/ufo_sightings/us_ufo_sightings.tsv') AS (...);
-airports     = LOAD('/data/gold/geo/airflights/us_airports.tsv') AS (...);
-cell_sightings_airports = COGROUP
-   sightings by quadkey(lng, lat),
-   airports  by quadkey(lng, lat);
-STORE cell_sightings_locations INTO '...';
-----
-
-In the equivalent Map/Reduce algorithm, you label each record by both the indicated key and a number based on its spot in the COGROUP statement (here, records from sightings would be labeled 0 and records from airports would be labeled 1). Have Hadoop then PARTITION and GROUP on the COGROUP key with a secondary sort on the table index. Here is how the previous Pig script would be done in Wukong:
-
-----
-mapper(partition_keys: 1, sort_keys: 2) do
- recordize_by_filename(/sightings/ => Wu::Geo::UfoSighting, /airport/ => Wu::Geo::Airport)
- TABLE_INDEXES = { Wu::Geo::UfoSighting => 0, Wu::Geo::Airport => 1 }
- def process(record)
-   table_index = TABLE_INDEXES[record.class] or raise("Don't know how to handle records of type '{record.class}'")
-   yield( [Wu::Geo.quadkey(record.lng, record.lat), table_index, record.to_wire] )
- end
-end
-
-reducer do
- def recordize(quadkey, table_index, jsonized_record) ; ...; end
- def start(key, *)
-   @group_key = key ;
-   @groups = [ [], [] ]
- end
- def accumulate(quadkey, table_index, record)
-   @groups[table_index.to_i] << record
- end
- def finalize
-   yield(@group_key, *groups)
- end
-end
-----
-
-The Mapper loads each record as an object (using the file name to recognize which class to use) and then emits the quadkey, the table index (0 for sightings, 1 for airports) and the original record's fields. Declaring partition keys 1, sort keys 2 insures all records with the same quadkey are grouped together on the same Reducer and all records with the same table index arrive together. The body of the Reducer makes temporary note of the GROUP key, then accumulates each record into an array based on its type.
-
-The result of the COGROUP statement always has the GROUP key as the first field. Next comes the set of elements from the table named first in the COGROUP statement -- in Pig, this is a bag of tuples, in Wukong, an array of objects. After that comes the set of elements from the next table in the GROUP BY statement and so on.
-
-While a standalone COGROUP like this is occasionally interesting, it is also the basis for many other common patterns, as you'll see over the next chapters.
-
-// ==== Regexp matching in Pig
-
-// === Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other.
-
-=== Complex `FOREACH`
-
-Let's continue our example of finding the list of home ballparks for each player over their career.
-
-----
-parks = LOAD '.../parks.tsv' AS (...);
-team_seasons = LOAD '.../team_seasons.tsv' AS (...)
-park_seasons = JOIN parks BY park_id, team_seasons BY park_id;
-park_seasons = FOREACH park_seasons GENERATE
-   team_seasons.team_id, team_seasons.year, parks.park_id, parks.name AS park_name;
-
-player_seasons = LOAD '.../player_seasons.tsv' AS (...);
-player_seasons = FOREACH player_seasons GENERATE
-   player_id, name AS player_name, year, team_id;
-player_season_parks = JOIN
-   parks           BY (year, team_id),
-   player_seasons BY (year, team_id);
-player_season_parks = FOREACH player_season_parks GENERATE player_id, player_name, parks::year AS year, parks::team_id AS team_id, parks::park_id AS park_id;
-
-player_all_parks = GROUP player_season_parks BY (player_id);
-describe player_all_parks;
-Player_parks = FOREACH player_all_parks {
-   player = FirstFromBag(players);
-   home_parks = DISTINCT(parks.park_id);
-   GENERATE group AS player_id,
-       FLATTEN(player.name),
-       MIN(players.year) AS beg_year, MAX(players.year) AS end_year,
-       home_parks; -- TODO ensure this is still tuple-ized
-}
-----
-
-Whoa! There are a few new tricks here. This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.
-
-We would like our output to have one row per player, whose fields have these different flavors:
-
-* Aggregated fields (`beg_year`, `end_year`) come from functions that turn a bag into a simple type (`MIN`, `MAX`).
-* The `player_id` is pulled from the `group` field, whose value applies uniformly to the the whole group by definition. Note that it's also in each tuple of the bagged `player_park_seasons`, but then you'd have to turn many repeated values into the one you want...
-* ... which we have to do for uniform fields (like `name`) that are not part of the group key, but are the same for all elements of the bag. The awareness that those values are uniform comes from our understanding of the data -- Pig doesn't know that the name will always be the same. The FirstFromBag (TODO fix name) function from the Datafu package grabs just first one of those values
-* Inline bag fields (`home_parks`), which continue to have multiple values.
-
-We've applied the `DISTINCT` operation so that each home park for a player appears only once. `DISTINCT` is one of a few operations that can act as a top-level table operation, and can also act on bags within a foreach -- we'll pick this up again in the next chapter (TODO ref). For most people, the biggest barrier to mastery of Pig is to understand how the name and type of each field changes through restructuring operations, so let's walk through the schema evolution.
-
-We `JOIN`ed player seasons and team seasons on `(year, team_id)`. The resulting schema has those fields twice. To select the name, we use two colons (the disambiguate operator): `players::year`.
-
-After the `GROUP BY` operation, the schema is `group:int, player_season_parks:bag{tuple(player_id, player_name, year, team_id, park_id, park_name)}`. The schema of the new `group` field matches that of the `BY` clause: since `park_id` has type chararray, so does the group field. (If we had supplied multiple fields to the `BY` clause, the `group` field would have been of type `tuple`). The second field, `player_season_parks`, is a bag of size-6 tuples. Be clear about what the names mean here: grouping on the `player_season_parks` _table_ (whose schema has six fields) produced the `player_parks` table. The second field of the `player_parks` table is a tuple of size six (the six fields in the corresponding table) named `player_season_parks` (the name of the corresponding table).
-
-So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ a bag of tuples (remember, bags only hold tuples!), now size-1 tuples holding only the park_id. That schema is preserved through the `DISTINCT` operation, so `home_parks` is also a bag of size-1 tuples.
-
-
-
-----
-   team_park_seasons = LOAD '/tmp/team_parks.tsv' AS (
-       team_id:chararray,
-       park_years: bag{tuple(year:int, park_id:chararray)},
-       park_ids_lookup: map[chararray]
-       );
-   team_parks = FOREACH team_park_seasons { distinct_park_ids = DISTINCT park_years.park_id; GENERATE team_id, FLATTEN(distinct_park_ids) AS park_id; }
-   DUMP team_parks;
-----
-
-=== Ungrouping operations (FOREACH..FLATTEN) expand records
-
-So far, we've seen using a group to aggregate records and (in the form of `JOIN’) to match records between tables.
-Another frequent pattern is restructuring data (possibly performing aggregation at the same time). We used this several times in the first exploration (TODO ref): we regrouped wordbags (labelled with quadkey) for quadtiles containing composite wordbags; then regrouping on the words themselves to find their geographic distribution.
-
-The baseball data is closer at hand, though, so l
-
-----
-team_player_years = GROUP player_years BY (team,year);
-FOREACH team_player_years GENERATE
-   FLATTEN(player_years.player_id), group.team, group.year, player_years.player_id;
-----
-
-In this case, since we grouped on two fields, `group` is a tuple; earlier, when we grouped on just the `player_id` field, `group` was just the simple value.
-
-The contextify / reflatten pattern can be applied even within one table. This script will find the career list of teammates for each player -- all other players with a team and year in common footnote:[yes, this will have some false positives for players who were traded mid-year. A nice exercise would be to rewrite the above script using the game log data, now defining teammate to mean "all other players they took the field with over their career".].
-
-----
-GROUP player_years BY (team,year);
-FOREACH
-   cross all players, flatten each playerA/playerB pair AS (player_a
-FILTER coplayers BY (player_a != player_b);
-GROUP by playerA
-FOREACH {
-   DISTINCT player B
-}
-----
-
-Here's another
-
-The result of the cross operation will include pairing each player with themselves, but since we don't consider a player to be their own teammate we must eliminate player pairs of the form `(Aaronha, Aaronha)`. We did this with a FILTER immediate before the second GROUP (the best practice of removing data before a restructure), but a defensible alternative would be to `SUBTRACT` playerA from the bag right after the `DISTINCT` operation.
-
-=== Sorting (ORDER BY, RANK) places all records in total order
-
-To put all records in a table in order, it's not sufficient to use the sorting that each reducer applies to its input. If you sorted names from a phonebook, file `part-00000` will have names that start with A, then B, up to Z; `part-00001` will also have names from A-Z; and so on. The collection has a _partial_ order, but we want the 'total order' that Pig's `ORDER BY` operation provides. In a total sort, each record in `part-00000` is in order and precedes every records in `part-00001`; records in `part-00001` are in order and precede every record in `part-00002`; and so forth. From our earlier example to prepare topline batting statistics for players, let's sort the players in descending order by the "OPS" stat (slugging average plus offensive percent, the simplest reasonable estimator of a player's offensive contribution).
-
-----
-player_seasons = LOAD `player_seasons` AS (...);
-qual_player_seasons = FILTER player_years BY plapp > what it should be;
-player_season_stats = FOREACH qual_player_seasons GENERATE
-   player_id, name, games,
-   hits/ab AS batting_avg,
-   whatever AS slugging_avg,
-   whatever AS offensive_pct
-   ;
-player_season_stats_ordered = ORDER player_season_stats BY (slugging_avg + offensive_pct) DESC;
-STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
-----
-
-This script will run _two_ Hadoop jobs. One pass is a light mapper-only job to sample the sort key, necessary for Pig to balance the amount of data each reducer receives (we'll learn more about this in the next chapter (TODO ref). The next pass is the map/reduce job that actually sorts the data: output file `part-r-00000` has the earliest-ordered records, followed by `part-r-00001`, and so forth.
-
-NOTE: The custom partitioner of an `ORDER` statement subtly breaks the reducer contract: it may send records having the same key to different reducers. This will cause them to be in different output (`part-xxxxx`) files, so make sure anything using the sorted data doesn't assume keys uniquely correspond to files.
-
-
-
-== Core Analytic Patterns
-
-TODO: parts of this have been uncarefully split into 05-first_exploration, so the plot won't make sense in some places.
-
-Now that you've met the fundamental analytic operations -- in both their map/reduce and table-operation form -- it's time to put them to work in an actual data exploration.
-
-This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data. Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
-
-// The real goal is to learn to think strategically, to be able to look at the data you have and recognize the steps required to produce the data you want. You do not do this, however, by thinking about how to coordinate the fundamental operations you have just learned directly into your solution any more than a general thinks about coordinating the actions of every individual soldier while preparing a battle plan.
 
 === Pattern: Atom-only Records
 
@@ -316,76 +83,9 @@ All of the fields in the table we've just produced are atomic -- strings, number
 
 Think of this atom-only form as the neutral fighting stance for your tables. From here we're ready to put each record into context of other records with the same term, same geolocation, same frequency; we can even reassemble the wordbag by grouping on the page_id. The exploration will proceed from here by reassembling these records into various context groups, operating on those groups, and then expanding the result back into atom-only form.
 
-=== Pattern: Blowing Up records: Wordbag, Flatten
+==== Ready Reckoner: How fast should your Pig fly? --> not sure what this is
 
-TODO: flatten
+TODO: move to the first tuning chapter. 
 
-TODO: wordbag
-
-
-=== GROUP/COGROUP To Restructure Tables
-
-This next pattern is one of the more difficult to picture but also one of the most important to master. Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
-
-(TODO: describe this pattern)
-
-=== Pattern: Extend Records with Uniquely Matching Records from Another Table
-
-Using a join as we just did -- to extend the records in one table with the fields from one matching record in another -- is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency. The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
-
-Another reason to split data across tables is 'vertical partitioning': storing fields that are very large or seldom used in context within different tables. That's the case with the Wikipedia article tables -- the geolocation information is only relevant for geodata analysis; the article text is both large and not always relevant.
-
-=== Pattern: Summarizing Groups
-
-Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth. You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation.
-
-=== Pattern: Re-injecting global totals
-
-We also extract two global statistics: the number of distinct terms, and the number of distinct usages. This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
-
-We prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals.
-
-
-
-=== Pig Functions act on fields
-
-TODO-qem: decide whether to leave this inline, or sidebar? (rule of thumb for sidebar: "is it an aside/distraction from the main text?")
-
-Pig offers a sparse but essential set of built-in functions -- the Pig cheatsheet (TODO ref) at the end of the book gives a full list. The whole middle of the book is devoted to examples of Pig and map/reduce programs in practice (and in particular a chapter on Statistics), so we'll just list the highlights here:
-
-* *Math functions* for all the things you'd expect to see on a good calculator: `LOG`/`LOG10`/`EXP`, `RANDOM`, `ROUND`/`FLOOR`/`CEIL`, `ABS`, trigonometric functions, and so forth.
-* *String comparison*:
- - `matches` tests a value against a regular expression:
- - Compare strings directly using `==`. `EqualsIgnoreCase` does a case-insensitive match, while `STARTSWITH`/`ENDSWITH` test whether one string is a prefix or suffix of the other.
- - `SIZE` returns the number of characters in a `chararray`, and the number of bytes in a `bytearray`. Be reminded that characters often occupy more than one byte: the string 'Motörhead' has nine characters, but because of its umlaut-ed 'ö' the string occupies ten bytes. You can use `SIZE` on other types, too; but as mentioned, use `COUNT_STAR` and not `SIZE` to find the number of elements in a bag.
- - `INDEXOF` finds the character position of a substring within a `chararray` // `LAST_INDEX_OF`
-* *Transform strings*:
- - `CONCAT` concatenates all its inputs into a new string
- - `LOWER` converts a string to lowercase characters; `UPPER` to all uppercase // `LCFIRST`, `UCFIRST`
- - `TRIM` strips leading and trailing whitespace // `LTRIM`, `RTRIM`
- - `REPLACE(string, 'regexp', 'replacement')` substitutes the replacement string wherever the given regular expression matches, as implemented by `java.string.replaceAll`. If there are no matches, the input string is passed through unchanged.
- - `REGEX_EXTRACT(string, regexp, index)` applies the given regular expression and returns the contents of the indicated matched group. If the regular expression does not match, it returns NULL. The `REGEX_EXTRACT_ALL` function is similar, but returns a tuple of the matched groups.
- - `STRSPLIT` splits a string at each match of the given regular expression
- - `SUBSTRING` selects a portion of a string based on position
-* *Datetime Functions*, such as `CurrentTime`, `ToUnixTime`, `SecondsBetween` (duration between two given datetimes)
-* *Aggregate functions* that act on bags:
- - `AVG`, `MAX`, `MIN`, `SUM`
- - `COUNT_STAR` reports the number of elements in a bag, including nulls; `COUNT` reports the number of non-null elements. `IsEmpty` tests that a bag has elements. Don't use the quite-similar-sounding `SIZE` function on bags: it's much less efficient.
- - `SUBTRACT(bag_a, bag_b)` returns a new bag with all the tuples that are in the first but not in the second, and `DIFF(bag_a, bag_b)` returns a new bag with all tuples that are in either but not in both. These are rarely used, as the bags must be of modest size -- in general us an inner JOIN as described below.
- - `TOP(num, column_index, bag)` selects the top `num` of elements from each tuple in the given bag, as ordered by `column_index`. This uses a clever algorithm that doesn't require an expensive total sort of the data -- you'll learn about it in the Statistics chapter (TODO ref)
-* *Conversion Functions* to perform higher-level type casting: `TOTUPLE`, `TOBAG`, `TOMAP`
-
-====  More
-
-TODO: move this section to Chapter 4, "Fundamental Data Operations"
-
-There are a few more Operators we will use later in the book:
-Cube, which produces aggregations at multiple levels within a Group;
-Rank, which is sugar on top of Order to produce a number, total-ordered set of records;
-Split, to separate a dataset into multiple pieces; and
-Union, to produce a new dataset to have all the records from its input datasets.
-
-That’s really about it. Pig is an extremely sparse language. By having very few Operators and very uniform syntax (FOOTNOTE:  Something SQL users but non-enthusiasts like your authors appreciate), the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
-
-We won’t spend any more time introducing Pig, the language, as its usage will be fairly clear in context as you meet it later in the book. The online Pig manual at (TODO: REF) is quite good and for a deeper exploration, consult (TODO: Add name of best Pig book here).
+The idea is to have you run through a set of pig scripts with datasets of defined size, measuring the throughput of the core operations. The result is a ready reckoner that lets you estimate how long your job _should_ take (and how many map-reduce stages it will use).
 
