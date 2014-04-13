@@ -76,8 +76,6 @@ Our next pattern is to transpose fields from each row into records having a colu
 === Sampling
 
 
-We'll cover sampling in the chapter on statistics, but so you know what to look for there:
-
 * Random sampling using the traditional pseudo-random number generators (which can be dangerous; we'll tell you how to do it right) (use input filename as seed)
 * Consistent sampling returns a fraction of records by _key_: if a record with the key "chimpanzee" is selected into the sample, all records with that key are selected into the sample.
 * (with/without replacement; weighted)
@@ -91,6 +89,7 @@ We'll cover sampling in the chapter on statistics, but so you know what to look 
 * Spatial Sampling
 * Also: generating distributions (use the random.org data set and generate a column for each dist using it)
 * Expand the random.org by taking each r.o number as seed
+
 
 ==== Sample Records Consistently
 
