@@ -1,15 +1,6 @@
-%declare dsfp_dir         '/Users/flip/ics/data_science_fun_pack';
-register    '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank.jar';
+IMPORT 'common_macros.pig';
 
-DEFINE Stitch org.apache.pig.piggybank.evaluation.Stitch();
-DEFINE Over   org.apache.pig.piggybank.evaluation.Over();
-
-bats    = LOAD '/tmp/simple_bats.tsv'    AS (
-  playerID:chararray, yearID:int, teamID:chararray,
-  G:int,     PA:int,    AB:int,    H:int,     BB:int,
-  h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
-  OBP:float, SLG:float, ISO:float, OPS:float
-  );
+bats = load_bats();
 
 player_seasons = GROUP bats BY playerID;
 

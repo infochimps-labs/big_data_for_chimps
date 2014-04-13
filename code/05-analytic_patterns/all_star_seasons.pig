@@ -1,14 +1,6 @@
-allstar = LOAD '/tmp/simple_allstar.tsv' AS (
-  playerID:chararray, yearID:int,
-  gameNum:int, gameID:chararray, teamID:chararray, lgID:chararray, GP: int, startingPos:int
-  );
-
-bats    = LOAD '/tmp/simple_bats.tsv'    AS (
-  playerID:chararray, yearID:int, teamID:chararray,
-  G:int,     PA:int,    AB:int,    H:int,     BB:int,
-  h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
-  OBP:float, SLG:float, ISO:float, OPS:float
-  );
+IMPORT 'common_macros.pig';
+bats    = load_bats();
+allstar = load_allstar();
 
 -- Project just what we need
 ast       = FOREACH allstar GENERATE playerID, yearID;
@@ -22,9 +14,6 @@ bats_as   = FOREACH bats_f  GENERATE FLATTEN(bats);
 
 rmf                 /data/out/baseball/bats_as;
 STORE bats_as INTO '/data/out/baseball/bats_as';
-
-
-EXPLAIN bats_as;
 
 -- --
 -- -- !!! Don't do this with a join !!!

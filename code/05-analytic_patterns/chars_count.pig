@@ -1,21 +1,6 @@
-%declare dsfp_dir         '/Users/flip/ics/data_science_fun_pack';
-register    '$dsfp_dir/pig/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
-register    '$dsfp_dir/pig/datafu/dist/datafu-1.2.1-SNAPSHOT.jar';
+IMPORT 'common_macros.pig';
 
-DEFINE TransposeTupleToBag datafu.pig.util.TransposeTupleToBag();
-DEFINE STRSPLITBAG         pigsy.text.STRSPLITBAG();
-
-people = LOAD '/data/rawd/sports/baseball/baseball_databank/csv/Master.csv' USING PigStorage(',') AS (
-        playerID:chararray,
-        birthYear:int,        birthMonth:int,       birthDay: int,
-        birthCtry: chararray, birthState:chararray, birthCity:chararray,
-        deathYear:int,        deathMonth:int,       deathDay: int,
-        deathCtry: chararray, deathState:chararray, deathCity:chararray,
-        nameFirst:chararray,  nameLast:chararray,   nameGiven:chararray,
-        weight:float,         height:float,
-        bats:chararray,       throws:chararray,
-        debut:chararray,      finalGame:chararray,
-        retroID:chararray,    bbrefID:chararray );
+people = load_people();
 people = LIMIT people 1;
 
 typed_strings = FOREACH people {

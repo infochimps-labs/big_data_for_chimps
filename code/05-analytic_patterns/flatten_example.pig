@@ -1,5 +1,7 @@
-%declare data_dir         '/data/rawd';
-    
+IMPORT 'common_macros.pig';
+
+franchises = load_franchises();
+
 -- ==== Generate a Record for Each Word in a Text Field
 -- 
 -- The TOKENIZE command
@@ -9,10 +11,6 @@
 -- FLATTEN turns that into one record per word.
 -- 
 -- Washington's bad habit of losing franchises makes it the most common token. 
-
-franchises = LOAD '$data_dir/sports/baseball/baseball_databank/csv/TeamsFranchises.csv' USING PigStorage(',') AS (
-  franchID:chararray, franchName:chararray, active:chararray, NAassoc:chararray
-);
 
 tn_toks    = FOREACH franchises GENERATE FLATTEN(TOKENIZE(franchName)) AS token;
 tn_toks_g  = GROUP tn_toks BY token;

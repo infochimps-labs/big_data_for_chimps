@@ -1,7 +1,6 @@
+IMPORT 'common_macros.pig';
 
-games = LOAD '/tmp/games_2004.tsv' AS (
-  away_teamID:chararray, home_teamID:chararray, gameID:chararray, yearID:int,
-  home_runs_ct:int, away_runs_ct:int);
+games = load_simple_games();
 
 --
 -- Use the summable trick:
