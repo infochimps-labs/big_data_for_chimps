@@ -51,9 +51,9 @@ SELECT
 ;
 
 SELECT
-  playerID,
-  MIN(yearID) AS yearBeg,
-  MAX(yearID) AS yearEnd,
+  player_id,
+  MIN(year_id) AS yearBeg,
+  MAX(year_id) AS yearEnd,
   COUNT(*)    AS n_years,
     MIN(HR)              AS hr_min,
     MAX(HR)              AS hr_max,
@@ -64,7 +64,7 @@ SELECT
     COUNT(*) - COUNT(HR) AS hr_n_nulls,
     COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
   FROM bat_season bat
-  GROUP BY playerID
+  GROUP BY player_id
   ORDER BY hr_max DESC
 ;
 ==== Transpose Columns Into `field name, field value` Pairs

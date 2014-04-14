@@ -1,20 +1,132 @@
 === Grouping Operations
 
+==== TOC
+
+group for groups sake
+Teams a player player for by year
+inner-bag operations -- distinct teams in order by year(?)
+Use the games table for this?
+Group and aggregate:
+group & summarize number (H by season) and string (names)
+group all (H)
+nested FOREACH (obp, slg, ops from counting stats)
+Move content from cogrpup at bottom describing how group works up here
+Histogram:
+Games
+binned games
+multiple fields, (?reinject global totals)
+summing trick:
+win-loss record
+?? HoF standards test: 1pt batting over .300, 1-10 pts for each 0.025 pts of SLG above .300; 1-10 pts for each 0.010 of OBP over 0.300; 1-5 pts for each 200 walks over 300; 1 pt for each 200 HR. (And about a dozen more)
+Join:
+Direct join on foreign key -- ages for each player season
+vertical partitioned (Wikipedia articles and metadata; just call this out as an example)
+sparse join (left join) --
+filling holes in a list -- histogram of career hits
+many-to-many join --  ballparks a player has played in
+self join -- teammates -- team-year pla-plb
+Cogroup:
+semi-join/anti-join --
+(move some stuff from below distinct to here);
+cogroup for cogroups sake?
+Distinct: eliminate dupes; (eliminate dupes in-bag); find unique / duplicated elements; keep one record from many distinct'ed by a field
+Sorting: sort; (inner bag sort); rank; top-k overall, in-bag; tuple with maximum element; shuffling
+Cogroup-decorate-regroup;
+?Cube?
+Rollup Summary Statistics at Multiple Levels
+Show m/r job doing both summaries at same time, and using summaries directly.
+Introduce notion of holistic?
+(but not cube)
+Set operations summary
+SQL-hive-pig cheatsheet
+Check against MySQL cookbook patterns
+
+
+Join      pl-yr on pk-te-yr: pl-pk-te-yr
+Group   ppty on pl: pl-g-pks-tes-yrs
+Agg       pgty on pk and yr: pl-g-tes-stadia
+Flatten  pgty on pk and yr: pl-te-stadia
+Teammates: pl-yr to tm-yr-g-pls; cross to tm-yr-g-plaplbs; project to plas-plbs-gs
+    flatten to pla-plbs group to pla-g-plbs
+    distinct to pla-d-plbs (or pl[teammates])
+    flatten to pla-plb (or teammates)
+
+
+
+Weather stations: wstn-info ws-dt-hr[obs]
+Wp: art[text] art[info] art-dt-h[views]
+Server Logs: ip-url-time[reqs]
+UFOs: sightings[plc-dt-tm]
+airports: ap-tm[alid,flid,dest,flights]
+
+
+Criteria for here / not here: in remainder of book,(a) there's only one way to do it; (b) we don't talk about how it's done.
+
+Later or here or at all demonstrate combiners in m-r?
+
+(In section on eliminating records call forward to distinct as another such pattern; describe why it needs a context operation)
+
+(Move this snippet to 05-...pipeline: This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.)
+
+(Move this sniper to statistics: in the structural operations chapter, we brought up the subject of calculating quantiles (an equal-width histogram), but postponed the discussion, judging it to be fiendishly hard. Calculating even an exact median -- the simplest case -- in a single map-reduce flow is not just hard, it's provably impossible (REF cormode paper).
+
+The issue is that you need to get all candidates for the edge of a bin onto the same reducer, and know the number of elements that precede the candidates on your reducer. From the mapper, however, it's impossible to know what keys to assign without knowing the global distribution -- the very thing we want to calculate! /end move to statistics)
+
+==== Exact median using RANK
+
+Well, we've met another operation with this problem, namely the sort (ORDER BY) operation. It does a first pass to sample the global distribution of keys, then a full map-reduce to place ordered values on the same reducer. Its numerate younger brother, RANK, will do what we need. The quartiles -- the boundaries of the four bins bins each holding 25% of the values -- ...
+
+(Show using RANK and then filter; use the "pre-inject and assert global values" trick for the bin size. Handle the detail of needing to average two values when boundary splits an index, eg median of a table with even number of rows)
+
+==== Approximate median & quantiles using DataFu
+ (get better title)
+
+
 ==== Find Aggregate Statistics of a Group
 
-Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth. We will devote a whole chapter to statistical summaries and aggregation later in the book, but here are the basics.
-
-
+Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth. You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation.
 
 ----
-bat_all = GROUP bat_season ALL;
-hr_stats = FOREACH bat_all GENERATE
-    MIN(HR)            AS hr_min,   MAX(HR)              AS hr_max,
-    AVG(HR)            AS hr_avg,   STDDEV_POP(HR)       AS hr_stddev,
-    SUM(HR)            AS hr_sum,
-    COUNT(*)           AS n_recs,   COUNT(*) - COUNT(HR) AS hr_n_nulls,
-    COUNT(DISTINCT HR) AS hr_card
-  ;
+SELECT
+  team_id, COUNT(*) AS n_seasons, MIN(year_id) as yearBeg, MAX(year_id) as yearEnd
+  FROM teams tm
+  GROUP BY team_id
+  ORDER BY n_seasons DESC, team_id ASC
+;
+----
+
+-- Group on year; find COUNT(), count distinct, MIN(), MAX(), SUM(), AVG(), STDEV(), byte size
+
+
+bat_all  = GROUP bats ALL;
+hr_stats = FOREACH bat_all {
+  hrs_distinct = DISTINCT bats.HR;
+  GENERATE
+    MIN(bats.HR)        AS hr_min,
+    MAX(bats.HR)        AS hr_max,
+    AVG(bats.HR)        AS hr_avg,
+    SQRT(VAR(bats.HR))  AS hr_stddev,
+    SUM(bats.HR)        AS hr_sum,
+    COUNT_STAR(bats)    AS n_recs,
+    COUNT_STAR(bats) - COUNT(bats.HR) AS hr_n_nulls,
+    COUNT(hrs_distinct) AS hr_card,
+    hrs_distinct
+    ;
+  }
+
+
+
+SELECT
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+;
 
 SELECT
     MIN(nameFirst)                     AS nameFirst_min,
@@ -36,9 +148,9 @@ SELECT
 ;
 
 SELECT
-  playerID,
-  MIN(yearID) AS yearBeg,
-  MAX(yearID) AS yearEnd,
+  player_id,
+  MIN(year_id) AS yearBeg,
+  MAX(year_id) AS yearEnd,
   COUNT(*)    AS n_years,
     MIN(HR)              AS hr_min,
     MAX(HR)              AS hr_max,
@@ -49,28 +161,30 @@ SELECT
     COUNT(*) - COUNT(HR) AS hr_n_nulls,
     COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
   FROM bat_season bat
-  GROUP BY playerID
+  GROUP BY player_id
   ORDER BY hr_max DESC
 ;
 
 -- Count seasons per team
 SELECT
-  teamID, COUNT(*) AS n_seasons, MIN(yearID) as yearBeg, MAX(yearID) as yearEnd
+  team_id, COUNT(*) AS n_seasons, MIN(year_id) as yearBeg, MAX(year_id) as yearEnd
   FROM teams tm
-  GROUP BY teamID
-  ORDER BY n_seasons DESC, teamID ASC
+  GROUP BY team_id
+  ORDER BY n_seasons DESC, team_id ASC
 ;
 
 Finding a median (or other quantiles) is quite difficult at large scale; we'll discuss why and what to do about it in the Statistics chapter (REF).
 
-=== Group and Flatten
+==== Group Records into a Collection
 
 The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
 
+We can use `GROUP` to assemble an inline list of the stadiums each team played for by year:
+
 ----
-BINS = Group WP_pageviews by (date, hour)
-DESCRIBE BINS
-(TODO: SHOW OUTPUT)
+team_parks_g = Group team_park_years BY team_id;
+team_parks     = FOREACH team_parks_g GENERATE
+  group as team_id, team_park_years.(year_id, park_id);
 ----
 
 The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order. The next field has the full input record with all its keys, even the group key. Here’s a Wukong script that illustrates what is going on:
@@ -78,37 +192,21 @@ The result is always a tuple whose first field is named “Group” -- holding t
 ----
 (TODO: Wukong script)
 ----
-
-You can group more than one dataset at the same time. In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station. Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
-
-----
-G1=GROUP WSTNS BY (ID1, ID2), WOBS BY (ID1, ID2);
-G2=FLATTEN G1…
-G3=FOR EACH G2 …
-----
-
-This is equivalent to the following Wukong job:
-
-----
-(TODO: Wukong job)
-----
-
-(TODO: replace with an example where you would use a pure code group).
-
-// === Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other.
-
-=== Complex `FOREACH`
+==== Nested `FOREACH`
 
 Let's continue our example of finding the list of home ballparks for each player over their career.
 
+(Yikes just skip this section for now)
+
 ----
 parks = LOAD '.../parks.tsv' AS (...);
-team_seasons = LOAD '.../team_seasons.tsv' AS (...)
+player_seasons = LOAD '.../player_seasons.tsv' AS (...);
+team_seasons = LOAD '.../team_seasons.tsv' AS (...);
+
 park_seasons = JOIN parks BY park_id, team_seasons BY park_id;
 park_seasons = FOREACH park_seasons GENERATE
    team_seasons.team_id, team_seasons.year, parks.park_id, parks.name AS park_name;
 
-player_seasons = LOAD '.../player_seasons.tsv' AS (...);
 player_seasons = FOREACH player_seasons GENERATE
    player_id, name AS player_name, year, team_id;
 player_season_parks = JOIN
@@ -128,7 +226,7 @@ Player_parks = FOREACH player_all_parks {
 }
 ----
 
-Whoa! There are a few new tricks here. This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.
+Whoa! There are a few new tricks here.
 
 We would like our output to have one row per player, whose fields have these different flavors:
 
@@ -139,13 +237,13 @@ We would like our output to have one row per player, whose fields have these dif
 
 We've applied the `DISTINCT` operation so that each home park for a player appears only once. `DISTINCT` is one of a few operations that can act as a top-level table operation, and can also act on bags within a foreach -- we'll pick this up again in the next chapter (TODO ref). For most people, the biggest barrier to mastery of Pig is to understand how the name and type of each field changes through restructuring operations, so let's walk through the schema evolution.
 
+Nested FOREACH allows CROSS, DISTINCT, FILTER, FOREACH, LIMIT, and ORDER BY (as of Pig 0.12).
+
 We `JOIN`ed player seasons and team seasons on `(year, team_id)`. The resulting schema has those fields twice. To select the name, we use two colons (the disambiguate operator): `players::year`.
 
 After the `GROUP BY` operation, the schema is `group:int, player_season_parks:bag{tuple(player_id, player_name, year, team_id, park_id, park_name)}`. The schema of the new `group` field matches that of the `BY` clause: since `park_id` has type chararray, so does the group field. (If we had supplied multiple fields to the `BY` clause, the `group` field would have been of type `tuple`). The second field, `player_season_parks`, is a bag of size-6 tuples. Be clear about what the names mean here: grouping on the `player_season_parks` _table_ (whose schema has six fields) produced the `player_parks` table. The second field of the `player_parks` table is a tuple of size six (the six fields in the corresponding table) named `player_season_parks` (the name of the corresponding table).
 
 So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ a bag of tuples (remember, bags only hold tuples!), now size-1 tuples holding only the park_id. That schema is preserved through the `DISTINCT` operation, so `home_parks` is also a bag of size-1 tuples.
-
-
 
 ----
    team_park_seasons = LOAD '/tmp/team_parks.tsv' AS (
@@ -157,45 +255,85 @@ So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ 
    DUMP team_parks;
 ----
 
-
 ==== Distribution of Values Using a Histogram
 
-Histogram of Hits per season
+One of the most common uses of a group-and-aggregate is to create a histogram showing how often each value (or range of values) of a field occur. We can prepare a histogram of how many times each home-run total was met:
 
-SELECT
-  10 * CEIL(H/10), COUNT(*) AS n_H
-  FROM bat_season bat
-  GROUP BY SB
-  ORDER BY SB DESC
-;
+----
+G_vals = FOREACH pl_yr_stats GENERATE G;
+G_hist = FOREACH (GROUP G_vals BY G) GENERATE
+  group AS G, COUNT(G_vals) AS n_seasons;
+----
 
-In this case, we knew what bins to apply.
+----
+SELECT G, COUNT(*) AS n_seasons
+  FROM bat_season bat GROUP BY G;
+----
 
+A team starts 9 players but has 25 roster spots so most players see very few games. There are cutoff points at 154 (the length of a full season until 1961) and 162 (the current length of a full season), and in the 30's (starting pitchers typically only play every fifth day).
+
+So the pattern here is to
+
+* project only the values,
+* Group by the values,
+* Produce the group as key and the count as value.
+
+
+----
+H_vals = FOREACH pl_yr_stats GENERATE 10 * CEIL(H/10) AS H_bin;
+H_hist = FOREACH (GROUP H_vals BY H_bin) GENERATE
+  group AS H_bin, COUNT(H_vals) AS n_seasons;
+----
+
+In this case, we prescribed the bins in advance and each bin had uniform width -- answering the question ""How many records fell into each bin?". Another approach is to find an 'equal-height' histogram, answering the question "How should we size the bins so that each has the same values?" (Effectively the same question as finding quantiles.) Do you see why this is fiendishly hard? You can find out the answer to why it's hard, and what to do about it, in the Statistics chapter (REF)
+
+==== Histogram on Multiple Fields Simultaneously
+
+(Pick up the chars count from previous chapter)
 ==== Re-injecting global totals
 
-We also extract two global statistics: the number of distinct terms, and the number of distinct usages. This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
+To calculate a relative frequency
+Requires total count of records,
+a global statistic.
 
-We prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals.
+
+. This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
+
+If the global statistic is relatively static, we prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals
+
+==== Cogroup regroup, maybe
+
+Move this below to be with cogroup-regroup section.
+
+An exceptionally useful table for understanding baseball is the run expectancy table.
+
+That's the same analysis used to determine whether to go for it on fourth down in American football, and a useful model for predicting asset prices and other "Bayesian" analysis (TECH am I using the right term): given a discrete assessment of the current state, what future outcomes result?
+
+To do this, we need to first determine the final inning and final game outcome for each event, and then determine the distribution of outcomes across all events for each game state. The first requires placing all events into context by inning and game; the second requires placing them into context by event type.
+
+(Shoot this won't work for demonstrating the cogroup-regroup I think)
+
+TODO for geographic count example use the Datafu udf to do the document counts
 
 === Putting tables in context with JOIN and friends
 
 ==== Direct Join: Extend Records with Uniquely Matching Records from Another Table
 
+Using a join to extend the records in one table with the fields from one matching record in another is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency.
 
-Using a join as we just did -- to extend the records in one table with the fields from one matching record in another -- is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency. The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
+(Replace with the 'people' table)
 
-Another reason to split data across tables is 'vertical partitioning': storing fields that are very large or seldom used in context within different tables. That's the case with the Wikipedia article tables -- the geolocation information is only relevant for geodata analysis; the article text is both large and not always relevant.
-
+The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
 
 hang weight, height and BMI off of their OPS (overall hitting); ISO ("isolated power");
 and number of stolen bases per time on base (loosely tied to speed)
 
-SELECT bat.playerID, peep.nameCommon, begYear,
+SELECT bat.player_id, peep.nameCommon, begYear,
     peep.weight, peep.height,
     703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
     PA, OPS, ISO
   FROM bat_career bat
-  JOIN people peep ON bat.playerID = peep.playerID
+  JOIN people peep ON bat.player_id = peep.player_id
   WHERE PA > 500 AND begYear > 1910
   ORDER BY BMI DESC
   ;
@@ -206,69 +344,48 @@ SELECT bat.playerID, peep.nameCommon, begYear,
 -- don't do this (needs two group-bys):
 SELECT n_seasons, COUNT(*), COUNT(*)/n_seasons
   FROM (SELECT COUNT(*) AS n_seasons FROM batting) t1,
-  (SELECT COUNT(*) AS n_stints FROM batting GROUP BY playerID, yearID HAVING n_stints > 1) stintful
+  (SELECT COUNT(*) AS n_stints FROM batting GROUP BY player_id, year_id HAVING n_stints > 1) stintful
   ;
 -- instead use the summing trick (needs only one group-by):
 SELECT COUNT(*), (COUNT(*)-SUM(IF(stint = 1, 1, 0)))/COUNT(*), COUNT(*) FROM batting WHERE stint <= 2;
 
+==== Reassemble a Vertically Partitioned Table
 
+Another reason to split data across tables is 'vertical partitioning': storing fields that are very large or seldom used in context within different tables. That's the case with the Wikipedia article tables -- the geolocation information is only relevant for geodata analysis; the article text is both large and not always relevant.
 
+Use the pitchers and batters table
+
+Call forward to the merge join
 ==== Fill in Holes in a List with a Join on an integer table
 
-If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, we can join on the integer table:
-
+If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, do an outer join on the integer table. (See, we told you the integers table was surprisingly useful.)
 
 ----
-SET @Hbsz = 10;
+SET @H_binsize = 10;
 SELECT bin, H, IFNULL(n_H,0)
-  FROM      (SELECT @Hbsz * idx AS bin FROM numbers WHERE idx <= 430) nums
-  LEFT JOIN (SELECT @Hbsz*CEIL(H/@Hbsz) AS H, COUNT(*) AS n_H
+  FROM      (SELECT @H_binsize * idx AS bin FROM numbers WHERE idx <= 430) nums
+  LEFT JOIN (SELECT @H_binsize*CEIL(H/@H_binsize) AS H, COUNT(*) AS n_H
     FROM bat_career bat GROUP BY H) hist
   ON hist.H = nums.bin
   ORDER BY bin DESC
 ;
 ----
-
-Comparing a Table to Itself (Self-join)
+==== Join a table with itself (self-join)
 
 -- teammates (played for same team same season, discarding second and later
 -- stints; players half table?)  note that we're cheating a bit: players may
--- change teams during the season (happens in about 7% of player seasons). We're
--- only going to use the first stint of a season.
-
--- need to do this off combined table (batting only right now)
-SELECT b1.playerID, b2.playerID, b1.nameCommon, b2.nameCommon, b1.teamID, b1.yearID
-  FROM bat_war b1, bat_war b2
-  WHERE b1.teamID = b2.teamID          -- same team
-    AND b1.yearID = b2.yearID          -- same season
-    AND b1.stint = 1 AND b2.stint = 1  -- don't match players to multiple teams per year
-    AND b1.playerID != b2.playerID     -- reject self-teammates
-  ORDER BY yearID DESC, teamID ASC, b1.playerID ASC
+-- change teams during the season (happens in about 7% of player seasons).
 
 -- note the explosion: 90k player-seasons lead to 3,104,324 teammate-year pairs.
 -- the distinct pairing is 2 million
 
-SELECT DISTINCT b1.playerID, b2.playerID, b1.nameCommon, b2.nameCommon
-  FROM bat_war b1, bat_war b2
-  WHERE b1.teamID = b2.teamID          -- same team
-    AND b1.yearID = b2.yearID          -- same season
-    AND b1.stint = 1 AND b2.stint = 1  -- don't match players to multiple teams per year
-    AND b1.playerID != b2.playerID     -- reject self-teammates
-  ORDER BY b1.playerID ASC, b2.playerID ASC
+SELECT DISTINCT b1.player_id, b2.player_id
+  FROM bat_season b1, bat_season b2
+  WHERE b1.team_id = b2.team_id          -- same team
+    AND b1.year_id = b2.year_id          -- same season
+    AND b1.player_id != b2.player_id     -- reject self-teammates
+  GROUP BY b1.player_id
   ;
-
--- Grouping the teammate pairs
---
-SELECT b1.playerID, b1.nameCommon, GROUP_CONCAT(b2.playerID), b1.teamID, b1.yearID
-  FROM bat_war b1, bat_war b2
-  WHERE b1.teamID = b2.teamID          -- same team
-    AND b1.yearID = b2.yearID          -- same season
-    AND b1.stint = 1 AND b2.stint = 1  -- don't match players to multiple teams per year
-    AND b1.playerID != b2.playerID     -- reject self-teammates
-  GROUP BY b1.yearID, b1.playerID
-  ORDER BY yearID DESC, playerID ASC
- ;
-
 ==== Enumerating a Many-to-Many Relationship
 
 -- Every stadium a player has played in. (We're going to cheat on the detail of
@@ -280,12 +397,12 @@ SELECT b1.playerID, b1.nameCommon, GROUP_CONCAT(b2.playerID), b1.teamID, b1.year
 -- table expands to only 91904 player-park-years. But it's a cross product, so
 -- beware.
 SELECT COUNT(*) FROM batting bat WHERE bat.stint = 1;
-SELECT bat.playerID, bat.teamID, bat.yearID, pty.parkID
+SELECT bat.player_id, bat.team_id, bat.year_id, pty.park_id
   FROM       batting bat
   INNER JOIN park_team_years pty
-    ON bat.yearID = pty.yearID AND bat.teamID = pty.teamID
+    ON bat.year_id = pty.year_id AND bat.team_id = pty.team_id
   WHERE bat.stint = 1
-  ORDER BY playerID
+  ORDER BY player_id
   ;
 
 --
@@ -295,17 +412,17 @@ SELECT bat.playerID, bat.teamID, bat.yearID, pty.parkID
 
 -- DON'T DO THE (pig equivalent) OF THIS to find the distinct teams, years and parks;
 -- it's an extra reduce.
-SELECT bat.playerID, bat.nameCommon,
-    GROUP_CONCAT(DISTINCT pty.parkID) AS parkIDs, COUNT(DISTINCT pty.parkID) AS n_parks,
-    GROUP_CONCAT(DISTINCT bat.teamID) AS teamIDs,
-    MIN(bat.yearID) AS begYear, MAX(bat.yearID) AS endYear
+SELECT bat.player_id, bat.nameCommon,
+    GROUP_CONCAT(DISTINCT pty.park_id) AS park_ids, COUNT(DISTINCT pty.park_id) AS n_parks,
+    GROUP_CONCAT(DISTINCT bat.team_id) AS team_ids,
+    MIN(bat.year_id) AS begYear, MAX(bat.year_id) AS endYear
   FROM       bat_war bat
   INNER JOIN park_team_years pty
-    ON bat.yearID = pty.yearID AND bat.teamID = pty.teamID
-  WHERE bat.stint = 1 AND playerID IS NOT NULL
-  GROUP BY playerID
+    ON bat.year_id = pty.year_id AND bat.team_id = pty.team_id
+  WHERE bat.stint = 1 AND player_id IS NOT NULL
+  GROUP BY player_id
   HAVING begYear > 1900
-  ORDER BY n_parks DESC, playerID ASC
+  ORDER BY n_parks DESC, player_id ASC
   ;
 
 --
@@ -322,6 +439,7 @@ SELECT bat.playerID, bat.nameCommon,
 --
 -- (show pig, including a DISTINCT in the fancy-style FOREACH)
 
+Now introduce cogroup
 ==== Join Against Another Table Without Discarding Non-Matches
 
 using a left join so you can fix up remnants
@@ -354,8 +472,8 @@ You might think you could do this with a join:
 
 ----
 -- Don't do this... produces duplicates!
-bats_g    = JOIN allstar BY (playerID, yearID), bats BY (playerID, yearID);
-bats_as   = FOREACH bats_g GENERATE bats::playerID .. bats::HR;
+bats_g    = JOIN allstar BY (player_id, year_id), bats BY (player_id, year_id);
+bats_as   = FOREACH bats_g GENERATE bats::player_id .. bats::HR;
 ----
 
 The result is wrong, and even a diligent spot-check will probably fail to notice. You see, from 1959-1962 there were multiple All-Star games (!), and so each singular row in the `bat_season` table became two rows in the result for players in those years.
@@ -363,8 +481,8 @@ The result is wrong, and even a diligent spot-check will probably fail to notice
 Instead, use a `COGROUP` and filter:
 
 ----
-ast     = FOREACH allstar GENERATE playerID, yearID;
-bats_g  = COGROUP ast     BY (playerID, yearID), bats BY (playerID, yearID);
+ast     = FOREACH allstar GENERATE player_id, year_id;
+bats_g  = COGROUP ast     BY (player_id, year_id), bats BY (player_id, year_id);
 bats_f  = FILTER  bats_g  BY NOT IsEmpty(ast);
 bats_as = FOREACH bats_f  GENERATE FLATTEN(bats);
 ----
@@ -373,7 +491,6 @@ In our case there was only one row per player/year, but in the general case wher
 
 To finding rows with no match in another table -- known as an anti-join -- simply use `FILTER BY IsEmpty()` instead of `FILTER BY NOT IsEmpty()`
 
-
 ==== Counting on multiple levels
 
 -- fraction of people with multiple stints per year (about 7%)
@@ -381,29 +498,42 @@ To finding rows with no match in another table -- known as an anti-join -- simpl
 -- don't do this (needs two group-bys):
 SELECT n_seasons, COUNT(*), COUNT(*)/n_seasons
   FROM (SELECT COUNT(*) AS n_seasons FROM batting) t1,
-  (SELECT COUNT(*) AS n_stints FROM batting GROUP BY playerID, yearID HAVING n_stints > 1) stintful
+  (SELECT COUNT(*) AS n_stints FROM batting GROUP BY player_id, year_id HAVING n_stints > 1) stintful
   ;
 -- instead use the summing trick (needs only one group-by):
-SELECT COUNT(*), (COUNT(*)-SUM(IF(stint = 1, 1, 0)))/COUNT(*), COUNT(*) FROM batting WHERE stint <= 2;
-
+SELECT COUNT(*), (COUNT(*)-SUM(IF(stint = 1, 1, 0)))/COUNT(*), SUM(IF(stint = 1, 1, 0)) FROM batting WHERE stint <= 2;
 ==== Cube and rollup
+
 -- stats by team, division and league
+
+http://joshualande.com/cube-rollup-pig-data-science/
+https://cwiki.apache.org/confluence/display/Hive/Enhanced+Aggregation,+Cube,+Grouping+and+Rollup#EnhancedAggregation,Cube,GroupingandRollup-CubesandRollups
+
+From manual: "Handling null values in dimensions
+Since null values are used to represent subtotals in cube and rollup operation, in order to differentiate the legitimate null values that already exists as dimension values, CUBE operator converts any null values in dimensions to "unknown" value before performing cube or rollup operation. For example, for CUBE(product,location) with a sample tuple (car,null) the output will be
+{(car,unknown), (car,null), (null,unknown), (null,null)}"
+
+http://labs.opendns.com/2013/04/08/pig-jruby/?referred=1 -- pairs_r = FOREACH (GROUP raw BY client_ip) {
+  client_queries = FOREACH raw GENERATE ts, name;
+  client_queries = ORDER client_queries BY ts, name;
+  GENERATE client_queries;
+};
 === Handling duplicates
 
 ==== Eliminating Duplicates from a Table
 
 -- Every team a player has played for
-SELECT DISTINCT playerID, teamID from batting;
+SELECT DISTINCT player_id, team_id from batting;
 
 ==== Eliminating Duplicates from a Query Result:
 
 --
 -- All parks a team has played in
 --
-SELECT teamID, GROUP_CONCAT(DISTINCT parkID ORDER BY parkID) AS parkIDs
+SELECT team_id, GROUP_CONCAT(DISTINCT park_id ORDER BY park_id) AS park_ids
   FROM park_team_years
-  GROUP BY teamID
-  ORDER BY teamID, parkID DESC
+  GROUP BY team_id
+  ORDER BY team_id, park_id DESC
   ;
 
 ==== Identifying unique records for a key
@@ -439,24 +569,23 @@ Once again, what starts out looking like one of the high-level operations turns 
 Up above, the allstar table almost led us astray due to the little-known fact that some years featured multiple All-Star games. We can pull out the rows matching those fields:
 
 
-
 -- Teams who played in more than one stadium in a year
 SELECT COUNT(*) AS n_parks, pty.*
   FROM park_team_years pty
-  GROUP BY teamID, yearID
+  GROUP BY team_id, year_id
   HAVING n_parks > 1
+
+(Do this with games table?)
 ==== Eliminating rows that have a duplicated value
 
- (ie the whole row isn't distinct,
+(ie the whole row isn't distinct,
 -- just the field you're distinct-ing on.
 -- Note: this chooses an arbitrary value from each group
 SELECT COUNT(*) AS n_asg, ast.*
   FROM allstarfull ast
-  GROUP BY yearID, playerID
+  GROUP BY year_id, player_id
   HAVING n_asg > 1
   ;
-
-
 === Set Operations
 
 -- Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
@@ -471,7 +600,7 @@ SELECT COUNT(*) AS n_asg, ast.*
 -- * http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html
 -- * http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
 
-=== Structural Group Operations (ie non aggregating)
+==== Structural Group Operations (ie non aggregating)
 
 --
 -- * GROUP/COGROUP To Restructure Tables
@@ -480,6 +609,21 @@ SELECT COUNT(*) AS n_asg, ast.*
 --   - roll up stints
 --   - Normalize Denormalized (flatten)
 
+You can group more than one dataset at the same time. In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station. Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
+
+----
+G1=GROUP WSTNS BY (ID1,ID2), WOBS BY (ID1,ID2);
+G2=FLATTEN G1…
+G3=FOR EACH G2 …
+----
+
+This is equivalent to the following Wukong job:
+
+----
+(TODO: Wukong job)
+----
+
+(TODO: replace with an example where you would use a pure code group).
 
 === Group Elements From Multiple Tables On A Common Attribute (COGROUP)
 
@@ -528,7 +672,7 @@ The result of the COGROUP statement always has the GROUP key as the first field.
 While a standalone COGROUP like this is occasionally interesting, it is also the basis for many other common patterns, as you'll see over the next chapters.
 
 
-=== GROUP/COGROUP To Restructure Tables
+==== GROUP/COGROUP To Restructure Tables
 
 This next pattern is one of the more difficult to picture but also one of the most important to master. Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
 
@@ -536,22 +680,59 @@ This next pattern is one of the more difficult to picture but also one of the mo
 
 ==== Group flatten regroup
 
+
 --     * OPS+ -- group on season, normalize, reflatten
---     * player's highest OPS+: season, normalize, flatten, group on player, top
+--     * player's highest OPS+: regroup on player, top
+
+Words/tiles:
+
+(Word tile wd_doc_ct doc_tot)
+Group on word find total word count, total doc count
+(Word tile
+    doc-usg:val(wd,doc)
+    doc-tot_usgs:sum(u|*,doc)   doc-n_wds:count(w|*,doc)
+    wd-tot_usgs:sum(u|wd,*)                                                wd-n_docs:count(d|wd,*)
+    tot-usgs:sum(*,*)                  n_wds:count(w|*,*)            ct-docs:count(d|*,*)
+
+   usgs    tile-ct-wds     tile-ct-docs
+
+    pl-yr-ops:val(pl,yr)
+    yr-tot-ops:sum(ops|*,yr)            yr-n-pl:count(pl|*,yr)   yr-avg-ops:avg(ops|*,yr)
+    pl-yr-oz:(pl-yr-ops/yr-avg-ops)
+    pl-max-oz:max(pl-yr-oz|p,*)
+
+    yr-g:(*,y)
+    te-yr-g:(*,te,y)
+
+Name tables for dominating primary keys. If a value is subsumed, omit. Keys are x_id always
+              pl-yr[te,ops]  pk-te-yr[]
+              pl-info[...] -- vertical partition on any other func(pl)
+If Non unique key, assumed that table xx has id xx_id
+
+
+
+
+
+ Do not get join happy: find year averages, join all on year, group on player
+Just group on year then flatten with records.
+
+
+Style: n_H, ct_H, H_ct? n_H because the n_* have same schema, and because ^^^
 
 ==== Generate a won-loss record
 
-footnote:[we're skipping some details such as forfeited games, so the numbers won't agree precisely with the combined team numbers.]
+Using the summing trick footnote:[we're skipping some details such as forfeited games, so the numbers won't agree precisely with the combined team numbers.]
 
 ----
 -- generate a summable value for each game, once for home and once for away:
 home_games = FOREACH games GENERATE
-  home_teamID AS teamID, yearID,
+  home_team_id AS team_id, year_id,
   IF (home_runs_ct > away_runs_ct, 1,0) AS win,
-  IF (home_runs_ct < away_runs_ct, 1,0) AS loss
+  IF (home_runs_ct < away_runs_ct, 1,0) AS loss,
+  If (forfeit == ...) as forf_w, ...
   ;
 away_games = FOREACH games GENERATE
-  away_teamID AS teamID, yearID,
+  away_team_id AS team_id, year_id,
   IF (home_runs_ct < away_runs_ct, 1,0) AS win,
   IF (home_runs_ct > away_runs_ct, 1,0) AS loss
   ;
@@ -560,14 +741,14 @@ away_games = FOREACH games GENERATE
 Now you might be tempted (especially if you are coming from SQL land) to follow this with a UNION of `home_games` and `away_games`. Don't! Instead, use a COGROUP. Once you've wrapped your head around it, it's simpler and more efficient.
 
 ----
-team_games = COGROUP home_games BY (teamID, yearID), away_games BY (teamID, yearID);
+team_games = COGROUP home_games BY (team_id, year_id), away_games BY (team_id, year_id);
 ----
 
 Each combination of team and year creates one row with the following fields:
 
-* `group`, a tuple with the `teamID` and `yearID`
-* `home_games`, a bag holding tuples with `teamID`, `yearID`, `win` and `loss`
-* `away_games`, a bag holding tuples with `teamID`, `yearID`, `win` and `loss`
+* `group`, a tuple with the `team_id` and `year_id`
+* `home_games`, a bag holding tuples with `team_id`, `year_id`, `win` and `loss`
+* `away_games`, a bag holding tuples with `team_id`, `year_id`, `win` and `loss`
 
 ----
 team_games:
@@ -582,16 +763,20 @@ You should notice a few things:
 * The name of the _table_ in the COGROUP BY statement became the name of the _field_ in the result
 * The group values appear redundantly in each tuple of the bag. That's OK, we're about to project them out.
 
+This is one of those things to think back on when you're looking at a script and saying "man, I just have this feeling this script has more reduce steps than it deserves".
+
 The next step is to calculate the answer:
 
 ----
+...
+team_games = COGROUP home_games BY....
 winloss_record = FOREACH team_games {
   wins   = SUM(home_games.win)    + SUM(away_games.win);
   losses = SUM(home_games.loss)   + SUM(away_games.loss);
   G      = COUNT_STAR(home_games) + COUNT_STAR(away_games);
   G_home = COUNT_STAR(home_games);
   ties   = G - (wins + losses);
-  GENERATE group.teamID, group.yearID, G, G_home, wins, losses, ties;
+  GENERATE group.team_id, group.year_id, G, G_home, wins, losses, ties;
 };
 ----
 
@@ -645,17 +830,15 @@ Note: ORDER BY is NOT stable; can't guarantee that records with same keys will k
 Note about ORDER BY and keys across reducers -- for example, you can't do the sort | uniq trick
 
 
--- ==== Season leaders
+==== Season leaders
 
 -- * Selecting top-k Records within Group
 -- GROUP...FOREACH GENERATE TOP
 -- most hr season-by-season
 
--- ==== Transpose record into attribute-value pairs
---      Group by season, transpose, and take the top 10 for each season, attribute pair
+==== Transpose record into attribute-value pairs
 
-
-=== Sorting and Ordering Operations
+Group by season, transpose, and take the top 10 for each season, attribute pair
 
 
 ==== Sorting (ORDER BY, RANK) places all records in total order
@@ -690,32 +873,38 @@ Sorting records by key
 -- - (how do NULLs sort?)
 -- - ASC / DESC: fewest strikeouts per plate appearance
 
+==== Rank records in a group using Stitch/Over
 
-==== Finding Values Associated with Maximum Values
+==== Finding Records Associated with Maximum Values
+
+For each player, find their best significant season by OPS:
+
+----
+
 
 -- For each season by a player, select the team they played the most games for.
 -- In SQL, this is fairly clumsy (involving a self-join and then elimination of
 -- ties) In Pig, we can ORDER BY within a foreach and then pluck the first
 -- element of the bag.
 
-SELECT bat.playerID, bat.yearID, bat.teamID, MAX(batmax.Gmax), MAX(batmax.stints), MAX(teamIDs), MAX(Gs)
+SELECT bat.player_id, bat.year_id, bat.team_id, MAX(batmax.Gmax), MAX(batmax.stints), MAX(team_ids), MAX(Gs)
   FROM       batting bat
-  INNER JOIN (SELECT playerID, yearID, COUNT(*) AS stints, MAX(G) AS Gmax, GROUP_CONCAT(teamID) AS teamIDs, GROUP_CONCAT(G) AS Gs FROM batting bat GROUP BY playerID, yearID) batmax
-  ON bat.playerID = batmax.playerID AND bat.yearID = batmax.yearID AND bat.G = batmax.Gmax
-  GROUP BY playerID, yearID
+  INNER JOIN (SELECT player_id, year_id, COUNT(*) AS stints, MAX(G) AS Gmax, GROUP_CONCAT(team_id) AS team_ids, GROUP_CONCAT(G) AS Gs FROM batting bat GROUP BY player_id, year_id) batmax
+  ON bat.player_id = batmax.player_id AND bat.year_id = batmax.year_id AND bat.G = batmax.Gmax
+  GROUP BY player_id, year_id
   -- WHERE stints > 1
   ;
 
 -- About 7% of seasons have more than one stint; only about 2% of seasons have
 -- more than one stint and more than a half-season's worth of games
-SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT playerID, yearID, IF(COUNT(*) > 1 AND SUM(G) > 77, 1, 0) AS mt1stint FROM batting GROUP BY playerID, yearID) bat
+SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT player_id, year_id, IF(COUNT(*) > 1 AND SUM(G) > 77, 1, 0) AS mt1stint FROM batting GROUP BY player_id, year_id) bat
 
 -- TOP(topN, sort_column_idx, bag_of_tuples)
 -- must have an explicit field -- can't use an expression
 
 Leaderboard By Season-and-league
 
--- GROUP BY yearID, lgID
+-- GROUP BY year_id, lg_id
 
 -- There is no good way to find the tuples associated with the minimum value.
 -- EXERCISE: make a "BTM" UDF, having the same signature as the "TOP" operation,
@@ -741,16 +930,8 @@ You might also enjoy the random number table, holding 350 million 64-bit numbers
 * 160-bit numbers in hexadecimal form
 * 32 64-bit numbers (2048-bits per row)
 
-
-
---
--- TODO
---
--- cogroup events by teamID
--- ... there's a way to do this in one less reduce in M/R -- can you in Pig?
-
-
-
+cogroup events by team_id
+... there's a way to do this in one less reduce in M/R -- can you in Pig?
 
 === SQL-to-Pig-to-Hive Cheatsheet
 
@@ -777,16 +958,12 @@ SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVIN
 
 // Ignore below.
 
-
 === In statistics Chapter
 
 ==== Cube and rollup
 stats by team, division and league
 
-
-TODO
-
-cogroup events by teamID
+cogroup events by team_id
 ... there's a way to do this in one less reduce in M/R -- can you in Pig?
 
 === in Time-series chapter
@@ -823,7 +1000,7 @@ cogroup events by teamID
   among old white journalists) are elected to the Hall of Fame (hof).
 
 
-* playerID: unique identifier for each player, built from their name and an ascending index
-* teamID: three-letter unique identifier for a team
-* parkID: five-letter unique identifier for a park (stadium)
+* player_id: unique identifier for each player, built from their name and an ascending index
+* team_id: three-letter unique identifier for a team
+* park_id: five-letter unique identifier for a park (stadium)
 * G (Games): the number of

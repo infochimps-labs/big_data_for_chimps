@@ -8,7 +8,13 @@ TODO: make example code repo submodule in the UDFs
 TODO: ask Meghan whether we could offer this chapter as an extract (paid? free?)
 
 
-== Pipeline Operations
+== Analytic Patterns part 1: Pipeline Operations
+
+Now that you've met the fundamental analytic operations -- in both their map/reduce and table-operation form -- it's time to put them to work in an actual data exploration.
+
+This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data. Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
+
+// The real goal is to learn to think strategically, to be able to look at the data you have and recognize the steps required to produce the data you want. You do not do this, however, by thinking about how to coordinate the fundamental operations you have just learned directly into your solution any more than a general thinks about coordinating the actions of every individual soldier while preparing a battle plan.
 
 Most of the operations in this chapter require no reduce phase of their own. When they stand alone, they lead to map-only jobs. When they are combined with the grouping / sorting operations you'll meet in the next chapter, they become additional pipeline stages of the mapper or reducer (depending on whether they come before or after).
 
@@ -18,7 +24,7 @@ Most of the examples in this chapter will involve our baseball dataset, for whic
 
 === Eliminating Data
 
-For this first round, we'll focus on patterns that somehow shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally get to work with the entire population, not a sample thereof, so why should we scale down our data?
+For this first round, we'll focus on patterns that somehow shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally get to work with the entire population, not a sample thereof, so why should we scale down our data?  
 
 Truth be told, even if you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research.  For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.]  Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
 
@@ -34,7 +40,7 @@ We've prepared the players' offensive stats in per-season (`bat_season`) and car
 The stats go back to 1871 (!), but it took a few decades for the game to reach its modern form.  Let's say we're only interested in seasons since 1900.  If we were using a relational database, we'd use the handy `SELECT` statement such as:
 
 ----
-SELECT bat_season.* FROM bat_season WHERE yearID >= 1900;
+SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;
 ----
 
 In Pig, the equivalent `FILTER` syntax would be:
@@ -73,7 +79,7 @@ Experienced software developers will invoke a "seeding" function -- such as R's 
 
 While a `FILTER` selects _rows_ based on an expression, Pig's `FOREACH` selects specific _fields_ chosen by name. footnote:[The fancy word for this simple action is 'projection'. It's useful to have precise terms for choosing columns ('project'), choosing rows ('select'), and specifically choosing rows by expression ('filter')].
 
-The tables we're using come with an overwhelming wealth of stats, but we will be able to do quite sophisticated explorations using only a few of them.
+The tables we're using come with an overwhelming wealth of stats, but we will be able to do quite sophisticated explorations using only a few of them. 
 
 Major League Baseball teams play a game nearly every single day from the start of April to the end of September (currently, 162 per season). The team on offense sends its players to bat in order, with the goal of having its players reach base and advance the full way around the diamond. Each time a player makes it all the way to home, their team scores a run, and at the end of the game, the team with the most runs wins. We count these events as `G` (games), `PA` (plate appearances on offense) and `R` (runs).
 
@@ -85,7 +91,7 @@ TODO: Pig code
 
 ----
 SELECT
-    playerID, yearID, teamID,
+    player_id, year_id, team_id,
     G,  PA, AB, R,
     H,  BB, HBP,
     h2B, h3B, HR
@@ -137,7 +143,7 @@ TODO: Pig code
 In SQL, this would be:
 
 ----
-SELECT H FROM bat_season WHERE PA > 60 AND yearID > 1900 ORDER BY H  DESC LIMIT 10
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 10
 ----
 
 // TODO: not sure what is the second optimization here?
@@ -170,7 +176,7 @@ TODO: Pig code
 ----
 
 ----
-SELECT H FROM bat_season WHERE PA > 60 AND yearID > 1900 ORDER BY H  DESC LIMIT 2052
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 2052
 ----
 
 Instead of fetching all of the records in a given percentile, we sometimes just want to know which is the lowest-ranked record of that percentile.  This tells us which record is the boundary between the ranges above and below the percentile marking.  Calculating this requires an additional step, that both Pig and SQL call `OFFSET`.  To find the 95th percentile values for our topline stats -- assuming a post-1900 game, and players with more than 60 plate appearances -- then, we would run:
@@ -180,7 +186,7 @@ TODO: Pig code
 ----
 
 ----
-SELECT H FROM bat_season WHERE PA > 60 AND yearID > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
 ----
 
 If you repeat those steps for the 75th and 50th percentiles, Pig should return the following:
@@ -201,7 +207,7 @@ WARNING: Be really careful doing this.  As opposed to the `ORDER BY .. LIMIT` pa
 
 You may want to select rows from a table by whether each record's key matches a one in a separate table. The general case, using a join, is described in the next chapter (REF) under "Selecting Records that Match Records in Another".
 
-If the list is static and of modest size, you might just use a case statement in your code, or match against a set-membership data structure footnote:[By the way, the fastest and cleanest way to load a large-ish table in a dynamic language is often to reformat the table into the language itself. Loading the table is now a one-liner (`require "lookup_table"`), and there's no faster way for the Ruby interpreter to make a data structure than by interpreting Ruby.].
+If the list is static and of modest size, you might just use a case statement in your code, or match against a set-membership data structure footnote:[By the way, the fastest and cleanest way to load a large-ish table in a dynamic language is often to reformat the table into the language itself. Loading the table is now a one-liner (`require "lookup_table"`), and there's no faster way for the Ruby interpreter to make a data structure than by interpreting Ruby.]. 
 
 In keeping with its "keep the grammar light" philosophy, however, Pig has no equivalent of a case statement -- you must apply the ternary operator (`cond ? t_val : f_val`) repeatedly. The best advice we can give is to use lots of parentheses and whitespace, and to use a UDFs if the case is really severe.
 
@@ -209,14 +215,14 @@ In keeping with its "keep the grammar light" philosophy, however, Pig has no equ
 
 ==== Transform Records Individually using `FOREACH`
 
-A `FOREACH` lets you make simple transformations to each record.
+A `FOREACH` lets you make simple transformations to each record. 
 
 For example, baseball stats don't list the number of singles, only the number of total hits and the number of non-singles (doubles, triples, home runs). This `FOREACH` statement generates the number of singles as its own field:
 
 ----
-core_stats = FOREACH bat_season GENERATE
-    playerID, yearID, teamID,
-    G, PA, AB, H,
+core_stats = FOREACH bat_season GENERATE 
+    player_id, year_id, team_id, 
+    G, PA, AB, H, 
     H - h2B - h3B - HR AS h1B,
     h2B, h3B, HR
   ;
@@ -226,8 +232,8 @@ Here's the corresponding SQL command:
 
 ----
 SELECT
-    playerID, yearID, teamID,
-    G, PA, AB, H,
+    player_id, year_id, team_id,
+    G, PA, AB, H, 
     H - h2B - h3B - HR AS h1B,
     h2B, h3B, HR
   FROM bat_season
@@ -236,7 +242,7 @@ SELECT
 
 A `FOREACH` won't cause a new Hadoop job stage: it's chained onto the end of the preceding operation (and when it's on its own, like this one, there's just a single a mapper-only job). A FOREACH always produces exactly the same count of output records as input records.
 
-Within the GENERATE portion of a normal FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange, rename and eliminate fields); and apply the FLATTEN operator (see below).
+Within the GENERATE portion of a normal FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange, rename and eliminate fields); and apply the FLATTEN operator (see below). 
 
 ==== A nested `FOREACH` Allows Intermediate Expressions
 
@@ -261,8 +267,8 @@ core_stats = FOREACH bat_season {
     OBP  = (H + BB + HBP) / PA;
     SLG  = TB / AB;
     OPS  = SLG + OBP;
-    GENERATE
-      playerID, yearID, teamIDs,
+    GENERATE 
+      player_id, year_id, team_ids, 
       G, PA, H, HR, SLG, OBP, OPS;
 };
 ----
@@ -278,7 +284,7 @@ Note: We sneakily did two things with the filter above: eliminated rows where `P
 
 TODO-qem: find that word he had in mind for "ranges"
 
-One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth.
+One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth. 
 
 The SQL version might look like this:
 
@@ -292,7 +298,7 @@ In Pig we'll use a `FOREACH` to determine the bin for each record, and then use 
 
 ----
 bat_season = LOAD '...' AS (...);
-season_binned = FOREACH bat_season GENERATE
+season_binned = FOREACH bat_season GENERATE 
     50*CEIL(H / 50) AS H_bin;
 season_grouped = GROUP season_binned BY H_bin;
 FOREACH season_grouped GENERATE group AS H_bin, COUNTSTAR(season_binned) AS ct;
@@ -348,7 +354,7 @@ https://github.com/jeromatron/pygmalion/blob/master/udf/src/main/java/org/pygmal
 
 TODO describe using, call ahead to acquiring, Piggybank, Datafu, Pigsy, Pygmalion, and Sounder
 
-TODO submodule in Datafu, Pigsy, Pygmalion, and Sounder
+TODO submodule in Datafu, Pigsy, Pygmalion, and Sounder 
 
 === Expanding Data
 
@@ -475,19 +481,19 @@ If instead you're looking to write directly into files named for a key, use the 
 
 ----
     bat_season = LOAD 'bat_season' AS (...);
-    STORE bat_season INTO '/data/out/baseball/seasons_by_team' USING MultiStorage('/data/out/baseball/seasons_by_team', '10'); -- teamID, field 10
+    STORE bat_season INTO '/data/out/baseball/seasons_by_team' USING MultiStorage('/data/out/baseball/seasons_by_team', '10'); -- team_id, field 10
     STORE ... multistorage;
 ----
 
-The output has a directory for each key, and within directory that the same `part-NNNNN` files of any map-reduce job.
+The output has a directory for each key, and within directory that the same `part-NNNNN` files of any map-reduce job. 
 
-This means the count of output files is the number of keys times the number of output slots, which can lead to severe many small files problem. As mentioned in Chapter 3 (REF), many small files is Not Good. If you precede the STORE operation by a `GROUP BY` on the key, the reducer guarantee provides that each subdirectory will only have one output file.
+This means the count of output files is the number of keys times the number of output slots, which can lead to severe many small files problem. As mentioned in Chapter 3 (REF), many small files is Not Good. If you precede the STORE operation by a `GROUP BY` on the key, the reducer guarantee provides that each subdirectory will only have one output file. 
 
 ==== Splitting a Table into Uniform Chunks
 
-We won't go into much detail, but one final set of patterns is to split a table into uniform chunks. If you don't need the chunks to be exactly sized, you can apply a final `ORDER BY` operation on a uniformly-distributed key -- see the section on "Shuffling the Records in a Table" in the next chapter (REF).
+We won't go into much detail, but one final set of patterns is to split a table into uniform chunks. If you don't need the chunks to be exactly sized, you can apply a final `ORDER BY` operation on a uniformly-distributed key -- see the section on "Shuffling the Records in a Table" in the next chapter (REF). 
 
-To split into chunks with an exact number of lines, first use `RANK` to number each line, then prepare a chunk key using the line number modulo the chunk size, and store into chunks using MultiStorage. Since the rank operation's reducers number their records sequentially, only a few reducers are involved with each chunk, and so you won't hit the small files problem. Splitting a table into blocks of fixed _size_ is naturally provided by the HDFS block size parameter, but we're not aware of a good way to do so explicitly.
+To split into chunks with an exact number of lines, first use `RANK` to number each line, then prepare a chunk key using the line number modulo the chunk size, and store into chunks using MultiStorage. Since the rank operation's reducers number their records sequentially, only a few reducers are involved with each chunk, and so you won't hit the small files problem. Splitting a table into blocks of fixed _size_ is naturally provided by the HDFS block size parameter, but we're not aware of a good way to do so explicitly. 
 
 === Treat the Union of Several Tables as a Single Table
 
@@ -495,7 +501,7 @@ The counterpart to splitting a table into pieces is to treat many pieces as a si
 
 ==== Load Multiple Files as One Table
 
-The easiest way to unify several tables is to simply load them as one. Hadoop will expand a comma-separated list of paths into multiple paths, and perform simple 'glob-style' filename expansion. This snippet will load all the teams whose teamID starts with a "B" or ends with an "N":
+The easiest way to unify several tables is to simply load them as one. Hadoop will expand a comma-separated list of paths into multiple paths, and perform simple 'glob-style' filename expansion. This snippet will load all the teams whose team_id starts with a "B" or ends with an "N":
 
 ===== Demonstration in Pig
 
@@ -511,13 +517,13 @@ b_and_n_teams = LOAD '/data/out/baseball/seasons_by_team/B*,/data/out/baseball/s
 
 ==== Treat Several Pig Relation Tables as a Single Table
 
-In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and ID of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
+In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and id of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
 
 ----
 bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
 pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
-bat_names = FOREACH bat_career GENERATE playerID, nameFirst, nameLast;
-pit_names = FOREACH pit_career GENERATE playerID, nameFirst, nameLast;
+bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
+pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
 names_in_both = UNION bat_names, pit_names;
 player_names = DISTINCT names_in_both;
 ----
@@ -526,9 +532,9 @@ The `UNION` operation does not remove duplicate rows as a set-wise union would. 
 
 ==== Clean Up Many Small Files by Merging into Fewer Files
 
-The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files.
+The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files. 
 
-One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs.
+One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs. 
 
 Sorting is a fairly expensive operation, though; luckily, Pig can do this reasonably well with a mapper-only job by setting the `pig.splitCombination` configuration to true and setting `pig.maxCombinedSplitSize` to the size of the input divided by the number of files you'd like to produce.
 
