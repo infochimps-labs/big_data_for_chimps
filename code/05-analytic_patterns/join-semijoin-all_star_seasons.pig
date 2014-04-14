@@ -1,5 +1,5 @@
-IMPORT 'common_macros.pig';
-bats    = load_bats();
+IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
+bats    = load_bat_seasons();
 allstar = load_allstar();
 
 -- Project just what we need
@@ -12,11 +12,11 @@ bats_f    = FILTER  bats_g  BY NOT IsEmpty(ast);
 -- Project only the batting table fields. One row in the batting table => One row in the result
 bats_as   = FOREACH bats_f  GENERATE FLATTEN(bats);
 
-rmf                 /data/out/baseball/bats_as;
-STORE bats_as INTO '/data/out/baseball/bats_as';
+rmf                 $out_dir/all_star_seasons;
+STORE bats_as INTO '$out_dir/all_star_seasons';
 
 -- --
--- -- !!! Don't do this with a join !!!
+-- -- !!! Don't use a join for this !!!
 -- --
 -- -- From 1959-1962 there were _two_ all-star games, and so the allstar table has multiple entries;
 -- -- this means that players will appear twice in the results
@@ -26,6 +26,6 @@ STORE bats_as INTO '/data/out/baseball/bats_as';
 -- bats_g    = JOIN ast BY (player_id, year_id), bats BY (player_id, year_id);
 -- bats_as   = FOREACH bats_g GENERATE bats::player_id .. bats::HR;
 -- 
--- rmf                 /data/out/baseball/bats_as_bad;
--- STORE bats_as INTO '/data/out/baseball/bats_as_bad';
+-- rmf                 $out_dir/all_star_seasons-bad;
+-- STORE bats_as INTO '$out_dir/all_star_seasons-bad';
 

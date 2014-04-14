@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig';
+IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
 
 games = load_simple_games();
 
@@ -35,8 +35,8 @@ winloss_record2 = FOREACH (GROUP game_wls BY (team_id, year_id)) {
 };
 --- (BOS,2004,162,81,98,64,0)
 
-rmf                         /data/out/baseball/won_loss_record2;
-STORE winloss_record2 INTO '/data/out/baseball/won_loss_record2';
+rmf                         $out_dir/won_loss_record2;
+STORE winloss_record2 INTO '$out_dir/won_loss_record2';
 
 
 -- ***************************************************************************
@@ -88,5 +88,5 @@ STORE winloss_record2 INTO '/data/out/baseball/won_loss_record2';
 --   };
 -- --- (BOS,2004,162,81,98,64,0)
 -- 
--- rmf                        /data/out/baseball/won_loss_record;
--- STORE winloss_record INTO '/data/out/baseball/won_loss_record';
+-- rmf                        $out_dir/won_loss_record;
+-- STORE winloss_record INTO '$out_dir/won_loss_record';

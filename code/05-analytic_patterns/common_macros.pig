@@ -11,15 +11,15 @@ DEFINE Stitch       org.apache.pig.piggybank.evaluation.Stitch();
 DEFINE Over         org.apache.pig.piggybank.evaluation.Over();
 DEFINE STRSPLITBAG  pigsy.text.STRSPLITBAG();
 
-DEFINE load_pl_yr_allstars() RETURNS loaded {
-  $loaded = LOAD '/tmp/simple_allstar.tsv' AS (
+DEFINE load_allstars() RETURNS loaded {
+  $loaded = LOAD '/tmp/allstars.tsv' AS (
     player_id:chararray, year_id:int,
     game_seq:int, game_id:chararray, team_id:chararray, lg_id:chararray, GP: int, startingPos:int
     );
 };
 
-DEFINE load_pl_yr_bat() RETURNS loaded {
-  $loaded = LOAD '/tmp/pl-yr-batting.tsv'    AS (
+DEFINE load_bat_seasons() RETURNS loaded {
+  $loaded = LOAD '/tmp/bat_seasons.tsv'    AS (
     player_id:chararray, year_id:int, team_id:chararray,
     G:int,     PA:int,    AB:int,    H:int,     BB:int, HBP:int,
     h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
@@ -27,7 +27,22 @@ DEFINE load_pl_yr_bat() RETURNS loaded {
     );
 };
 
-DEFINE load_team_yrs() RETURNS loaded {
+DEFINE load_bat_stints() RETURNS loaded {
+  $loaded = LOAD '/tmp/bat_stints.tsv'    AS (
+    player_id:chararray, year_id:int, team_id:chararray,
+    G:int,     PA:int,    AB:int,    H:int,     BB:int, HBP:int,
+    h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
+    OBP:float, SLG:float, ISO:float, OPS:float
+    );
+};
+
+DEFINE load_games() RETURNS loaded {
+  $loaded = LOAD '/tmp/games_2004.tsv' AS (
+    away_team_id:chararray, home_team_id:chararray, game_id:chararray, year_id:int,
+    home_runs_ct:int, away_runs_ct:int);
+};
+
+DEFINE load_teams() RETURNS loaded {
   $loaded = LOAD '/data/rawd/sports/baseball/baseball_databank/csv/Teams.csv' USING PigStorage(',') AS (
     year_id: int, lg_id:chararray, team_id:chararray, franch_id:chararray,              -- 1-4
     div_id:chararray, Rank:int,
@@ -39,12 +54,6 @@ DEFINE load_team_yrs() RETURNS loaded {
     teamname:chararray, park_name:chararray, attendance:int,  BPF:int,  PPF:int,    -- 41-45
     team_id_BR:chararray, team_id_lahman45:chararray, team_id_retro:chararray       -- 46-48
     );
-};
-
-DEFINE load_simple_games() RETURNS loaded {
-  $loaded = LOAD '/tmp/games_2004.tsv' AS (
-    away_team_id:chararray, home_team_id:chararray, game_id:chararray, year_id:int,
-    home_runs_ct:int, away_runs_ct:int);
 };
 
 DEFINE load_people() RETURNS loaded {

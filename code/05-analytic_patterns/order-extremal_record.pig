@@ -1,9 +1,9 @@
-IMPORT 'common_macros.pig';
+IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
 
 -- http://pig.apache.org/docs/r0.12.0/api/org/apache/pig/piggybank/evaluation/ExtremalTupleByNthField.html
 DEFINE biggestBag org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('1', 'max');
 
-bats = load_bats();
+bats = load_bat_seasons();
 
 player_seasons = GROUP bats BY player_id;
 

@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig';
+IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
 
 franchises = load_franchises();
 
@@ -12,12 +12,16 @@ franchises = load_franchises();
 -- 
 -- Washington's bad habit of losing franchises makes it the most common token. 
 
-tn_toks    = FOREACH franchises GENERATE FLATTEN(TOKENIZE(franchName)) AS token;
-tn_toks_g  = GROUP tn_toks BY token;
-tn_toks_ct = FOREACH tn_toks_g GENERATE group AS token, COUNT(tn_toks.token) AS ct;
+tn_toks    = FOREACH franchises
+  GENERATE FLATTEN(TOKENIZE(franchName)) AS token;
+tn_toks_ct = FOREACH (GROUP tn_toks BY token)
+  GENERATE group AS token,
+  COUNT(tn_toks.token) AS tok_ct;
 
-tn_toks_ct = ORDER tn_toks_ct BY ct ASC;
-DUMP tn_toks_ct;
+team_toks  = ORDER tn_toks_ct BY tok_ct ASC;
+
+rmf                   $out_dir/team_toks;
+STORE team_toks INTO '$out_dir/team_toks';
 
 
 

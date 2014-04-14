@@ -1,6 +1,6 @@
-IMPORT 'common_macros.pig';
+IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
 
-bats = load_bats();
+bats = load_bat_seasons();
 
 player_seasons = GROUP bats BY player_id;
 
@@ -20,5 +20,5 @@ running_seasons = FOREACH player_seasons {
     AS (year_id, G, next_G, cume_G, H, next_H, cume_H, HR, next_HR, cume_HR);
 };
 
-rmf                         /data/out/baseball/running_seasons;
-STORE running_seasons INTO '/data/out/baseball/running_seasons';
+rmf                         $out_dir/running_seasons;
+STORE running_seasons INTO '$out_dir/running_seasons';
