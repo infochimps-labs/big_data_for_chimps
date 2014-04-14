@@ -2,22 +2,22 @@ IMPORT 'common_macros.pig';
 
 bats = load_bats();
 
-player_seasons = GROUP bats BY playerID;
+player_seasons = GROUP bats BY player_id;
 
 --
 -- Produce for each stat the running total by season, and the next season's value
 -- 
 running_seasons = FOREACH player_seasons {
-  seasons = ORDER bats BY yearID;
+  seasons = ORDER bats BY year_id;
   GENERATE
-    group AS playerID,
+    group AS player_id,
     FLATTEN(Stitch(
-      seasons.yearID,
+      seasons.year_id,
       seasons.G,  Over(seasons.G,  'SUM(int)'), Over(seasons.G,  'lead', 0, 1, 1, -1), 
       seasons.H,  Over(seasons.H,  'SUM(int)'), Over(seasons.H,  'lead', 0, 1, 1, -1), 
       seasons.HR, Over(seasons.HR, 'SUM(int)'), Over(seasons.HR, 'lead', 0, 1, 1, -1)
       ))
-    AS (yearID, G, next_G, cume_G, H, next_H, cume_H, HR, next_HR, cume_HR);
+    AS (year_id, G, next_G, cume_G, H, next_H, cume_H, HR, next_HR, cume_HR);
 };
 
 rmf                         /data/out/baseball/running_seasons;

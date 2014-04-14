@@ -5,15 +5,15 @@ DEFINE biggestBag org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('1
 
 bats = load_bats();
 
-player_seasons = GROUP bats BY playerID;
+player_seasons = GROUP bats BY player_id;
 
 best_stats = FOREACH player_seasons GENERATE
-  group AS playerID,
-  biggestBag(bats.(H,   yearID, teamID)),
-  biggestBag(bats.(HR,  yearID, teamID)),
-  biggestBag(bats.(OBP, yearID, teamID)),
-  biggestBag(bats.(SLG, yearID, teamID)),
-  biggestBag(bats.(OPS, yearID, teamID))
+  group AS player_id,
+  biggestBag(bats.(H,   year_id, team_id)),
+  biggestBag(bats.(HR,  year_id, team_id)),
+  biggestBag(bats.(OBP, year_id, team_id)),
+  biggestBag(bats.(SLG, year_id, team_id)),
+  biggestBag(bats.(OPS, year_id, team_id))
   ;
 
 DESCRIBE best_stats;
@@ -24,5 +24,5 @@ DUMP best_stats;
 
 best_stats2 = FOREACH player_seasons {
   by_HR = ORDER bats BY HR DESC;
-  GENERATE playerID, 
+  GENERATE player_id, 
   };

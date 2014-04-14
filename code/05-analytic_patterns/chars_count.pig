@@ -9,26 +9,22 @@ typed_strings = FOREACH people {
     (deathCity IS NULL ? 'none' : deathCity)
     ;
   };
-typed_strings = FILTER typed_strings BY str != '';
 
 -- Output:
 -- ('fn',Hank)
 -- ('ln',Aaron)
 -- ...
 
-typed_chars = FOREACH typed_strings {
+typed_chars = FOREACH (FILTER typed_strings BY str != '') {
   chars_bag = STRSPLITBAG(LOWER(str), '(?!^)');
   GENERATE type, FLATTEN(chars_bag) AS token;
   };
 DESCRIBE typed_chars;
 
-chars_g  = GROUP typed_chars BY (type, token);
-chars_ct = FOREACH chars_g GENERATE group.type, group.token, COUNT(typed_chars) AS ct;
+chars_ct = FOREACH (GROUP typed_chars BY (type, token)) GENERATE
+  group.type, group.token, COUNT(typed_chars) AS ct;
 
-chars_type_g = GROUP chars_ct BY type;
-DESCRIBE chars_type_g;
-
-chars_freq = FOREACH chars_type_g {
+chars_freq = FOREACH (GROUP chars_ct BY type) {
   tot = SUM(chars_ct.ct);
   GENERATE group AS type, tot, FLATTEN(chars_ct.(token, ct));
 };

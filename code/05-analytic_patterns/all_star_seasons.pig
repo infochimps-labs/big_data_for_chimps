@@ -3,10 +3,10 @@ bats    = load_bats();
 allstar = load_allstar();
 
 -- Project just what we need
-ast       = FOREACH allstar GENERATE playerID, yearID;
+ast       = FOREACH allstar GENERATE player_id, year_id;
 
 -- Cogroup; players without an entry in the ast table will have an empty ast bag
-bats_g    = COGROUP ast     BY (playerID, yearID), bats BY (playerID, yearID);
+bats_g    = COGROUP ast     BY (player_id, year_id), bats BY (player_id, year_id);
 bats_f    = FILTER  bats_g  BY NOT IsEmpty(ast);
 
 -- Project only the batting table fields. One row in the batting table => One row in the result
@@ -23,8 +23,8 @@ STORE bats_as INTO '/data/out/baseball/bats_as';
 -- --
 -- 
 -- -- This will eliminate the non-allstars... but also produce duplicates!
--- bats_g    = JOIN ast BY (playerID, yearID), bats BY (playerID, yearID);
--- bats_as   = FOREACH bats_g GENERATE bats::playerID .. bats::HR;
+-- bats_g    = JOIN ast BY (player_id, year_id), bats BY (player_id, year_id);
+-- bats_as   = FOREACH bats_g GENERATE bats::player_id .. bats::HR;
 -- 
 -- rmf                 /data/out/baseball/bats_as_bad;
 -- STORE bats_as INTO '/data/out/baseball/bats_as_bad';
