@@ -24,7 +24,7 @@ chars_freq = FOREACH (GROUP chars_ct BY type) {
   tot_ct = SUM(chars_ct.ct);
   GENERATE group AS type, tot_ct AS tot_ct, FLATTEN(chars_ct.(ct, token));
   };
-chars_freq = FOREACH chars_freq GENERATE type, token, ct, ct/tot_ct;
+chars_freq = FOREACH chars_freq GENERATE type, token, ct, (int)ROUND(1e6f*ct/tot_ct) AS freq:int;
 DESCRIBE chars_freq;
 
 rmf                    $out_dir/chars_freq;

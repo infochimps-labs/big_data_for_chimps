@@ -1,6 +1,6 @@
 IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
 bats    = load_bat_seasons();
-allstar = load_allstar();
+allstar = load_allstars();
 
 -- Project just what we need
 ast       = FOREACH allstar GENERATE player_id, year_id;

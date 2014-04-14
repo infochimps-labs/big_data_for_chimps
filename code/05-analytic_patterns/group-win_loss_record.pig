@@ -1,6 +1,6 @@
 IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
 
-games = load_simple_games();
+games = load_games();
 
 -- ***************************************************************************
 -- ** Generate both halves with a FLATTEN
@@ -25,7 +25,7 @@ game_wls = FOREACH games {
 -- (2004,BAL,0,1,1)
 -- (2004,BOS,1,0,0)
 
-winloss_record2 = FOREACH (GROUP game_wls BY (team_id, year_id)) {
+team_yr_win_loss = FOREACH (GROUP game_wls BY (team_id, year_id)) {
   wins   = SUM(game_wls.win);
   losses = SUM(game_wls.loss);
   G_home = SUM(game_wls.is_home);
@@ -35,8 +35,8 @@ winloss_record2 = FOREACH (GROUP game_wls BY (team_id, year_id)) {
 };
 --- (BOS,2004,162,81,98,64,0)
 
-rmf                         $out_dir/won_loss_record2;
-STORE winloss_record2 INTO '$out_dir/won_loss_record2';
+rmf                          $out_dir/team_yr_win_loss;
+STORE team_yr_win_loss INTO '$out_dir/team_yr_win_loss';
 
 
 -- ***************************************************************************
@@ -78,7 +78,7 @@ STORE winloss_record2 INTO '$out_dir/won_loss_record2';
 -- 
 -- -- ((BOS,2004),  {(BOS,2004,1,0),(BOS,2004,1,0),...}, {(BOS,2004,0,1),(BOS,2004,1,0),...})
 -- 
--- winloss_record = FOREACH team_games {
+-- team_yr_win_loss = FOREACH team_games {
 --   wins   = SUM(home_games.win)    + SUM(away_games.win);
 --   losses = SUM(home_games.loss)   + SUM(away_games.loss);
 --   G      = COUNT_STAR(home_games) + COUNT_STAR(away_games);
@@ -88,5 +88,5 @@ STORE winloss_record2 INTO '$out_dir/won_loss_record2';
 --   };
 -- --- (BOS,2004,162,81,98,64,0)
 -- 
--- rmf                        $out_dir/won_loss_record;
--- STORE winloss_record INTO '$out_dir/won_loss_record';
+-- rmf                          $out_dir/team_yr_win_loss;
+-- STORE team_yr_win_loss INTO '$out_dir/team_yr_win_loss';

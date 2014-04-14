@@ -32,7 +32,7 @@ SELECT
   INTO OUTFILE '/tmp/bat_stints.tsv'
   ;
 
-SELECT * FROM allstar
+SELECT * FROM allstars
   INTO OUTFILE '/tmp/allstars.tsv'
   ;
 
