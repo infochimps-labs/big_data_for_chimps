@@ -1,76 +1,144 @@
 === Grouping Operations
 
+TODO in part on groups note As Jon Covent says, "Bags are what makes Pig Awesome". SQL doesn't have them, and they bring extraordinary power. They can be of arbitrarily large size, present an ad-hoc object representation, and within limits can themselves be limited, transformed, ordered, threaded, and joined.
+They can't be indexed into, and unless you explicitly say so are not ordered.
+
+TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
+TODO add flatten example that crosses the data.
+
+
+
+=== Grouping Operations
+==== Group Records into a Collection
+==== Nested `FOREACH`
+==== Distribution of Values Using a Histogram
+==== Re-injecting global totals
+=== Putting tables in context with JOIN and friends
+==== Direct Join: Extend Records with Uniquely Matching Records from Another Table
+==== Fill in Holes in a List with a Join on an integer table
+==== Join a table with itself (self-join)
+==== Enumerating a Many-to-Many Relationship
+==== Join Against Another Table Without Discarding Non-Matches
+==== Find rows with a match in another table (semi-join)
+==== Counting on multiple levels
+==== Cube and rollup
+=== Handling duplicates
+==== Eliminating Duplicates from a Table
+==== Eliminating Duplicates from a Query Result:
+==== Identifying unique records for a key
+==== Identifying duplicated records for a key
+==== Eliminating rows that have a duplicated value
+=== Set Operations
+==== Structural Group Operations (ie non aggregating)
+=== Group Elements From Multiple Tables On A Common Attribute (COGROUP)
+==== GROUP/COGROUP To Restructure Tables
+==== Group flatten regroup
+==== Generate a won-loss record
+==== Ungrouping operations (FOREACH..FLATTEN) expand records
+=== Sorting Operations
+==== Season leaders
+==== Transpose record into attribute-value pairs
+==== Sorting (ORDER BY, RANK) places all records in total order
+==== Sorting Records by Key
+==== Numbering Records by Sorted Rank
+==== Rank records in a group using Stitch/Over
+==== Finding Records Associated with Maximum Values
+==== Top K Records within a table using ORDER..LIMIT
+====  Shuffle a set of records
+=== SQL-to-Pig-to-Hive Cheatsheet
+
+
+
 ==== TOC
 
-group for groups sake
-Teams a player player for by year
-inner-bag operations -- distinct teams in order by year(?)
-Use the games table for this?
-Group and aggregate:
-group & summarize number (H by season) and string (names)
-group all (H)
-nested FOREACH (obp, slg, ops from counting stats)
-Move content from cogrpup at bottom describing how group works up here
-Histogram:
-Games
-binned games
-multiple fields, (?reinject global totals)
-summing trick:
-win-loss record
-?? HoF standards test: 1pt batting over .300, 1-10 pts for each 0.025 pts of SLG above .300; 1-10 pts for each 0.010 of OBP over 0.300; 1-5 pts for each 200 walks over 300; 1 pt for each 200 HR. (And about a dozen more)
-Join:
-Direct join on foreign key -- ages for each player season
-vertical partitioned (Wikipedia articles and metadata; just call this out as an example)
-sparse join (left join) --
-filling holes in a list -- histogram of career hits
-many-to-many join --  ballparks a player has played in
-self join -- teammates -- team-year pla-plb
-Cogroup:
-semi-join/anti-join --
-(move some stuff from below distinct to here);
-cogroup for cogroups sake?
-Distinct: eliminate dupes; (eliminate dupes in-bag); find unique / duplicated elements; keep one record from many distinct'ed by a field
-Sorting: sort; (inner bag sort); rank; top-k overall, in-bag; tuple with maximum element; shuffling
-Cogroup-decorate-regroup;
-?Cube?
-Rollup Summary Statistics at Multiple Levels
-Show m/r job doing both summaries at same time, and using summaries directly.
-Introduce notion of holistic?
-(but not cube)
-Set operations summary
-SQL-hive-pig cheatsheet
-Check against MySQL cookbook patterns
+
+* Analytic Patterns part 1: Pipeline Operations
+* Eliminating Data
+  - Filter Selected Rows Based on an Expression
+  - Select a Random Sample of Rows
+  - Project Only Chosen Columns by Name
+  - Retrieve a fixed number of Rows (LIMIT)
+  - Select Rows with the Top-K Values for a Field (move?)
+  - Top K Within a Group
+  - Select Rows using a Limit and Offset
+* Transforming Records
+  - Transform Records Individually using `FOREACH`
+  - A nested `FOREACH` Allows Intermediate Expressions
+  - Place Values into Categorical Bins With a `FOREACH` (move?)
+  - Generating Data
+  - (Concatenate Multiple Strings?) by Applying a User-Defined Function
+    -
+* Expanding Data
+  - Flatten on a Bag Generates Many Records from a Field with Many Elements
+  - Flatten on a Tuple Folds it into its Parent
+  - Other Similar Patterns
+* Splitting a Table
+* Splitting into Multiple Data Flows using `SPLIT`
+  - Splitting into files by key by using a Pig Storefunc UDF
+  - Splitting a Table into Uniform Chunks
+* Treat the Union of Several Tables as a Single Table
+  - Load Multiple Files as One Table
+  - Treat Several Pig Relation Tables as a Single Table
+  - Clean Up Many Small Files by Merging into Fewer Files
+* A Quick Look into Baseball
 
 
-Join      pl-yr on pk-te-yr: pl-pk-te-yr
-Group   ppty on pl: pl-g-pks-tes-yrs
-Agg       pgty on pk and yr: pl-g-tes-stadia
-Flatten  pgty on pk and yr: pl-te-stadia
-Teammates: pl-yr to tm-yr-g-pls; cross to tm-yr-g-plaplbs; project to plas-plbs-gs
-    flatten to pla-plbs group to pla-g-plbs
-    distinct to pla-d-plbs (or pl[teammates])
-    flatten to pla-plb (or teammates)
+* Group
+  - group for groups sake
+  - Teams a player player for by year
+  - inner-bag operations -- distinct teams in order by year(?)
+  - Use the games table for this?
+
+* Group and aggregate:
+  - group & summarize number (H by season) and string (names)
+  - group all (H)
+  - nested FOREACH (obp, slg, ops from counting stats)
+  - Move content from cogrpup at bottom describing how group works up here
+  - Histogram:
+    - Games
+    - binned games
+    - multiple fields, (?reinject global totals)
+  - summing trick:
+    - win-loss record
+    - ?? HoF standards test: 1pt batting over .300, 1-10 pts for each 0.025 pts of SLG above .300; 1-10 pts for each 0.010 of OBP over 0.300; 1-5 pts for each 200 walks over 300; 1 pt for each 200 HR. (And about a dozen more)
+
+* Join:
+  - Direct join on foreign key -- ages for each player season
+  - vertical partitioned (Wikipedia articles and metadata; just call this out as an example)
+  - sparse join (left join) --
+  - filling holes in a list -- histogram of career hits
+  - many-to-many join --  ballparks a player has played in
+  - self join -- teammates -- team-year pla-plb
+
+* Cogroup:
+  - semi-join/anti-join --
+  - (move some stuff from below distinct to here);
+  - cogroup for cogroups sake?
+* Distinct:
+  - eliminate dupes;
+  - (eliminate dupes in-bag);
+  - find unique / duplicated elements;
+  - keep one record from many distinct'ed by a field
+* Sorting:
+  - sort;
+  - (inner bag sort);
+  - rank;
+  - top-k overall, in-bag;
+  - tuple with maximum element;
+  - shuffling
+* Cogroup-decorate-regroup;
+  - ?Cube?
+  - Rollup Summary Statistics at Multiple Levels
+    - Show m/r job doing both summaries at same time, and using summaries directly.
+    - Introduce notion of holistic?
+    - (but not cube)
+* Set operations summary
+* SQL-hive-pig cheatsheet
+
+TODO Check against MySQL cookbook patterns
 
 
 
-Weather stations: wstn-info ws-dt-hr[obs]
-Wp: art[text] art[info] art-dt-h[views]
-Server Logs: ip-url-time[reqs]
-UFOs: sightings[plc-dt-tm]
-airports: ap-tm[alid,flid,dest,flights]
-
-
-Criteria for here / not here: in remainder of book,(a) there's only one way to do it; (b) we don't talk about how it's done.
-
-Later or here or at all demonstrate combiners in m-r?
-
-(In section on eliminating records call forward to distinct as another such pattern; describe why it needs a context operation)
-
-(Move this snippet to 05-...pipeline: This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.)
-
-(Move this sniper to statistics: in the structural operations chapter, we brought up the subject of calculating quantiles (an equal-width histogram), but postponed the discussion, judging it to be fiendishly hard. Calculating even an exact median -- the simplest case -- in a single map-reduce flow is not just hard, it's provably impossible (REF cormode paper).
-
-The issue is that you need to get all candidates for the edge of a bin onto the same reducer, and know the number of elements that precede the candidates on your reducer. From the mapper, however, it's impossible to know what keys to assign without knowing the global distribution -- the very thing we want to calculate! /end move to statistics)
 
 ==== Exact median using RANK
 
