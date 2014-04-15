@@ -1,13 +1,3 @@
-OPEN TO-DOs:
-
-
-TODO: add level 5 subheaders for "Here's a new Pig Operation" "How to Do it In M+R / Pig / Ruby", "What to know about the pattern in use".
-TODO: ask Meghan if we can plagiarize the table of contents from one of the SQL/MySQL cookbooks
-TODO: discuss having a pig style guide as a spinoff pamphlet thing
-TODO: make example code repo submodule in the UDFs
-TODO: ask Meghan whether we could offer this chapter as an extract (paid? free?)
-
-
 == Analytic Patterns part 1: Pipeline Operations
 
 Now that you've met the fundamental analytic operations -- in both their map/reduce and table-operation form -- it's time to put them to work in an actual data exploration.
@@ -26,7 +16,7 @@ Most of the examples in this chapter will involve our baseball dataset, for whic
 
 For this first round, we'll focus on patterns that somehow shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally get to work with the entire population, not a sample thereof, so why should we scale down our data?  
 
-Truth be told, even if you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research.  For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.]  Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
+Truth be told, even if you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research.  For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are first provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.]  Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
 
 If you're uncomfortable with the notion of _eliminating_ data, then consider these techniques for being _selective_ about your data.
 
@@ -67,7 +57,7 @@ Java (and therefore Pig) is case sensitive for string operations. It also implic
 
 This is an important point, so we'll repeat something we said earlier in the chapter: _filter (and otherwise scale down your dataset) as early as possible._  This may sound obvious, but in the next chapter (TODO ref) we'll highlight many non-obvious expressions of this rule.
 
-==== Select Rows at Random
+==== Select a Random Sample of Rows
 
 Another common operation is to extract a _uniform_ sample -- one where every record has an equivalent chance of being selected.  For example, you could use this to test new code before running it against the entire dataset (and possibly having a long-running job fail due to a large number of mis-handled records).  By calling the `SAMPLE`operator, you ask Pig to pluck out some records at random.
 
@@ -201,7 +191,7 @@ If you repeat those steps for the 75th and 50th percentiles, Pig should return t
 
 WARNING: Be really careful doing this.  As opposed to the `ORDER BY .. LIMIT` pattern, Pig must do a total sort on the full table to calculate percentiles this way.
 
-(TODO call ahead to other "Eliminating Data" things like sparse join)
+(TODO call ahead to other "Eliminating Data" things like sparse join and DISTINCT)
 
 ==== Selecting Records with a Static Lookup Table
 
@@ -272,6 +262,9 @@ core_stats = FOREACH bat_season {
       G, PA, H, HR, SLG, OBP, OPS;
 };
 ----
+
+This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.)
+
 
 In addition to applying arithmetic expressions, projecting and renaming fields, and FLATTENing records, there are a set of Pig operations you can also apply within a nested FOREACH -- you'll see many examples in the next chapter (REF).
 
