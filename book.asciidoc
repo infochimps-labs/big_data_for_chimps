@@ -10,11 +10,13 @@ include::03-map_reduce.asciidoc[]
 
 include::04-structural_operations.asciidoc[]
 
-include::05-analytic_patterns.asciidoc[]
+include::05-analytic_patterns-pipeline_operations.asciidoc[]
 
-include::05b-first_exploration-text_data.asciidoc[]
+include::06-analytic_patterns-structural_operations.asciidoc[]
 
 include::06b-hadoop_internals-just_enough_for_now.asciidoc[]
+
+include::07-first_exploration.asciidoc[]
 
 include::07-big_data_ecosystem.asciidoc[]
 
