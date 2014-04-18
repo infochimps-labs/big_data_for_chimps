@@ -448,11 +448,12 @@ The chapter on text data (REF) shows how to tokenize free text into a "word bag"
 
 === Splitting a Table
 
-=== Splitting into Multiple Data Flows using `SPLIT`
+==== Splitting into Multiple Data Flows using `SPLIT`
 
 The careers table gives the number of times each player was elected to the All-Star game (indicating extraordinary performance during a season) and whether they were elected to the Hall of Fame (indicating a truly exceptional career).
 
 ===== Demonstration in Pig
+
 Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
 
 ----
