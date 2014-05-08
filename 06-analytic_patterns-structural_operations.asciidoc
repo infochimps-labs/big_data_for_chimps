@@ -1,14 +1,61 @@
 === Grouping Operations
 
+==== Grouping Records into a Bag by Key
+
+The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
+
+We can use `GROUP` to assemble an inline list of the stadiums each team played for by year:
+
+----
+team_parks_g = Group team_park_years BY team_id;
+team_parks     = FOREACH team_parks_g GENERATE 
+  group as team_id, team_park_years.(year_id, park_id);
+----
+
+The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order. The next field has the full input record with all its keys, even the group key. Here’s a Wukong script that illustrates what is going on:
+
+----
+(TODO: Wukong script)
+----
+
+* Group
+  - not often used on its own, but forms the basis for most structural operation patterns.
+  - Group Records by common Key or Keys
+    - Each team a player played for in career -- for single key field, first field (`group`) is that value; next is the original record, _not omitting the group key_.
+    - each team a player played for by year — grouped on team, year. For multiple keys, first field is a tuple of keys, next is the original record, _not omitting the group keys_
+    - if you want to group by an expression, synthesize a new field and use that.
+    - group players by team and decade
+  - Applying Operations to Bags
+    - you can use a nested FOREACH to apply a subset of Pig's operations to a bag: DISTINCT, ORDER, nested FOREACH, FILTER
+    - demonstrate with distinct teams in career.
+    - we'll demonstrate the others  as we go.
+  - group		Creating a Delimited List Within a Field from Table Rows
+    - one use is denormalizing multiple values into one field.
+    - use the pig 0.12 CONCAT to string them together
+    - in the flatten section we showed how to undo this
+
 TODO in part on groups note As Jon Covent says, "Bags are what makes Pig Awesome". SQL doesn't have them, and they bring extraordinary power. They can be of arbitrarily large size, present an ad-hoc object representation, and within limits can themselves be limited, transformed, ordered, threaded, and joined.
 They can't be indexed into, and unless you explicitly say so are not ordered.
 
 TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
-TODO add flatten example that crosses the data.
 
-==== Find Aggregate Statistics of a Group
+==== Summarizing Aggregate Statistics of a Group
 
 Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth. You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation.
+
+
+* Calculating Summary Statistics on Groups with Aggregate Functions
+  - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
+    - there are a core set of aggregate functions that we use to summarize the 
+    - Use COUNT_STAR() to count Records in a Group; MIN() and MAX() to find the single largest / smallest values in a group; SUM() to find the total of all values in a group. The built-in AVG() function returns the arithmetic mean. To find the standard deviation, use the (double check the name) function from Datafu.
+    - describe difference between count and count_star. Note that the number of null values is (count_star - count). Recommend to always use COUNT_STAR unless you are explicitly conveying that you want to exclude nulls. Make sure we follow that advice.
+    - demonstrate this for summarizing players' weight and height by year. Show a stock-market style candlestick graph of weight and of height (min, avg-STDEV, avg, avg+STDEV, max), with graph of "volume" (count, count distinct and count_star) below it. Players are getting bigger and stronger; more of them as league and roster size grows; more data (fewer nulls) after early days.
+    - the median is hard and so we will wait until stats chapter.
+    - other summary stats (kurtosis, other higher-moments), no built-in function
+    - nested FOREACH (in the previous chapter we found obp, slg, ops from counting stats; now do it but for career.
+    - Aggregating Nullable Columns (NULL values don't get counted in an average. To have them be counted, ternary NULL values into a zero)
+
+
 
 ----
 SELECT
@@ -96,26 +143,78 @@ SELECT
 ;
 ----
 
-Finding a median (or other quantiles) is quite difficult at large scale; we'll discuss why and what to do about it in the Statistics chapter (REF).
+Finding an exact median (or other quantiles) is quite difficult at large scale. We'll have much more to say about why it is difficult and how to succeed in spite of the difficulty in the Statistics chapter (REF).
 
-==== Group Records into a Collection
+==== Summarizing Full-Table Aggregate Statistics
 
-The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
+  - repeat example snippets but using GROUP ALL. note that there's no I in TEAM and no BY in GROUP ALL.
 
-We can use `GROUP` to assemble an inline list of the stadiums each team played for by year:
+==== Testing for Existence of a Value Within a Group: the Summing Trick
+
+* players who have ever reached figure-of-merit thresholds in a season: 30 HR, 150 hits, 350 OBP, 500 SLG, 800 OPS (check values)
+  - graph: HoF score vs HOF actual
+  - exercise: find and tune a good predictor; refer to Bill James' version. win-loss record; HoF standards test: 1pt batting over .300, 1-10 pts for each 0.025 pts of SLG above .300; 1-10 pts for each 0.010 of OBP over 0.300; 1-5 pts for each 200 walks over 300; 1 pt for each 200 HR. (And about a dozen more)
+* players who _have ever_ played for the Red Sox: filter, distinct.
+* players who have _never_ played for the Red Sox: can't do that, it would give you "players who have played for a team that is not the redsox". Make a synthetic field and use MAX on it. If there is year where there is a "1" in the is_redsox field, this is true, meeting he goal
+
+==== Distribution of Values Using a Histogram
+
+  - Histogram:
+    - Games
+    - binned games
+    - multiple fields, (?reinject global totals)
+  - Place Values into Categorical Bins
+  - (Injecting global values)
+    - Calculating Percent Relative to Total (use "scalar projection", or cheat.)
+  - Finding the Multiplicity of Each Item in a Bag (use datafu.CountEach)
+
+One of the most common uses of a group-and-aggregate is to create a histogram showing how often each value (or range of values) of a field occur. We can prepare a histogram of how many times each home-run total was met:
 
 ----
-team_parks_g = Group team_park_years BY team_id;
-team_parks     = FOREACH team_parks_g GENERATE 
-  group as team_id, team_park_years.(year_id, park_id);
+G_vals = FOREACH pl_yr_stats GENERATE G;
+G_hist = FOREACH (GROUP G_vals BY G) GENERATE 
+  group AS G, COUNT(G_vals) AS n_seasons;
 ----
 
-The result is always a tuple whose first field is named “Group” -- holding the individual group keys in order. The next field has the full input record with all its keys, even the group key. Here’s a Wukong script that illustrates what is going on:
+----
+SELECT G, COUNT(*) AS n_seasons
+  FROM bat_season bat GROUP BY G;
+----
+
+A team starts 9 players but has 25 roster spots so most players see very few games. There are cutoff points at 154 (the length of a full season until 1961) and 162 (the current length of a full season), and in the 30's (starting pitchers typically only play every fifth day).
+
+So the pattern here is to 
+
+* project only the values,
+* Group by the values,
+* Produce the group as key and the count as value.
 
 ----
-(TODO: Wukong script)
+H_vals = FOREACH pl_yr_stats GENERATE 10 * CEIL(H/10) AS H_bin;
+H_hist = FOREACH (GROUP H_vals BY H_bin) GENERATE 
+  group AS H_bin, COUNT(H_vals) AS n_seasons;
 ----
-==== Nested `FOREACH`
+
+In this case, we prescribed the bins in advance and each bin had uniform width -- answering the question ""How many records fell into each bin?". Another approach is to find an 'equal-height' histogram, answering the question "How should we size the bins so that each has the same values?" (Effectively the same question as finding quantiles.) Do you see why this is fiendishly hard? You can find out the answer to why it's hard, and what to do about it, in the Statistics chapter (REF)
+
+==== Histogram on Multiple Fields Simultaneously
+
+(Pick up the chars count from previous chapter)
+==== Calculating Percent Relative to Total
+
+...
+
+==== Re-injecting global totals
+
+To calculate a relative frequency
+Requires total count of records, 
+a global statistic.
+
+This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
+
+If the global statistic is relatively static, we prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals
+
+==== Co-Grouping Elements from Multiple Tables
 
 Let's continue our example of finding the list of home ballparks for each player over their career.
 
@@ -178,67 +277,79 @@ So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ 
    DUMP team_parks;
 ----
 
-==== Distribution of Values Using a Histogram
-
-One of the most common uses of a group-and-aggregate is to create a histogram showing how often each value (or range of values) of a field occur. We can prepare a histogram of how many times each home-run total was met:
-
-----
-G_vals = FOREACH pl_yr_stats GENERATE G;
-G_hist = FOREACH (GROUP G_vals BY G) GENERATE 
-  group AS G, COUNT(G_vals) AS n_seasons;
-----
-
-----
-SELECT G, COUNT(*) AS n_seasons
-  FROM bat_season bat GROUP BY G;
-----
-
-A team starts 9 players but has 25 roster spots so most players see very few games. There are cutoff points at 154 (the length of a full season until 1961) and 162 (the current length of a full season), and in the 30's (starting pitchers typically only play every fifth day).
-
-So the pattern here is to 
-
-* project only the values,
-* Group by the values,
-* Produce the group as key and the count as value.
-
-----
-H_vals = FOREACH pl_yr_stats GENERATE 10 * CEIL(H/10) AS H_bin;
-H_hist = FOREACH (GROUP H_vals BY H_bin) GENERATE 
-  group AS H_bin, COUNT(H_vals) AS n_seasons;
-----
-
-In this case, we prescribed the bins in advance and each bin had uniform width -- answering the question ""How many records fell into each bin?". Another approach is to find an 'equal-height' histogram, answering the question "How should we size the bins so that each has the same values?" (Effectively the same question as finding quantiles.) Do you see why this is fiendishly hard? You can find out the answer to why it's hard, and what to do about it, in the Statistics chapter (REF)
-
-==== Histogram on Multiple Fields Simultaneously
-
-(Pick up the chars count from previous chapter)
-==== Re-injecting global totals
-
-To calculate a relative frequency
-Requires total count of records, 
-a global statistic.
-
-This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
-
-If the global statistic is relatively static, we prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals
-
-==== Cogroup regroup, maybe
-
-Move this below to be with cogroup-regroup section.
-
-An exceptionally useful table for understanding baseball is the run expectancy table.
-
-That's the same analysis used to determine whether to go for it on fourth down in American football, and a useful model for predicting asset prices and other "Bayesian" analysis (TECH am I using the right term): given a discrete assessment of the current state, what future outcomes result?
-
-To do this, we need to first determine the final inning and final game outcome for each event, and then determine the distribution of outcomes across all events for each game state. The first requires placing all events into context by inning and game; the second requires placing them into context by event type. 
-
-(Shoot this won't work for demonstrating the cogroup-regroup I think)
-
-TODO for geographic count example use the Datafu udf to do the document counts
+TODO add flatten example that crosses the data.
 
 === Putting tables in context with JOIN and friends
 
+=== Pig matches records in datasets using JOIN
+
+TODO: a JOIN is used for: direct foreign key join; matching records on a criterion, possibly sparsely; set intersection.
+
+For the examples in this chapter and often throughout the book, we will use the Retrosheet.org compendium of baseball data. We will briefly describe tables as we use them, but for a full explanation of its structure see the "Overview of Datasets" appendix (TODO:  REF).
+
+The core operation you will use to put records from one table into context with data from another table is the JOIN. A common application of the JOIN is to reunite data that has been normalized -- that is to say, where the database tables are organized to eliminate any redundancy. For example, each Retrosheet game log lists the ballpark in which it was played but, of course, it does not repeat the full information about that park within every record. Later in the book, (TODO:  REF) we will want to label each game with its geo-coordinates so we can augment each with official weather data measurements.
+
+To join the game_logs table with the parks table, extracting the game time and park geocoordinates, run the following Pig command:
+
+----
+gls_with_parks_j = JOIN
+   parks     BY (park_id),
+   game_logs BY (park_id);
+explain gls_with_parks_j;
+gls_with_parks = FOREACH gls_with_parks_j GENERATE
+ (game_id, gamelogs.park_id, game_time, park_lng, statium_lat);
+explain gls_with_parks;
+(TODO output of explain command)
+----
+
+The output schema of the new `gls_with_parks` table has all the fields from the `parks` table first (because it's first in the join statement), stapled to all the fields from the `game_logs` table. We only want some of the fields, so immediately following the JOIN is a FOREACH to extract what we're interested in. Note there are now two 'park_id' columns, one from each dataset, so in the subsequent FOREACH, we need to dereference the column name with the table from which it came. (TODO: check that Pig does push the projection of fields up above the JOIN). If you run the script, 'examples/geo/baseball_weather/geolocate_games.pig' you will see that its output has example as many records as there are 'game_logs' because there is exactly one entry in the 'parks' table for each park.
+
+In the general case, though, a JOIN can be many to many. Suppose we wanted to build a table listing all the home ballparks for every player over their career. The 'player_seasons' table has a row for each year and team over their career. If a player changed teams mid year, there will be two rows for that player. The 'park_years' table, meanwhile, has rows by season for every team and year it was used as a home stadium. Some ballparks have served as home for multiple teams within a season and in other cases (construction or special circumstances), teams have had multiple home ballparks within a season.
+
+The Pig script (TODO: write script) includes the following JOIN:
+
+----
+JOIN
+player_park_years=JOIN
+ parks(year,team_ID),
+ players(year,team_ID);
+explain_player_park_year;
+----
+
+First notice that the JOIN expression has multiple columns in this case separated by commas; you can actually enter complex expressions here -- almost all (but not all) the things you do within a FOREACH. If you examine the output file (TODO: name of output file), you will notice it has appreciably more lines than the input 'player' file. For example (TODO: find an example of a player with multiple teams having multiple parks), in year x player x played for the x and the y and y played in stadiums p and q. The one line in the 'players' table has turned into three lines in the 'players_parks_years' table.
+
+The examples we have given so far are joining on hard IDs within closely-related datasets, so every row was guaranteed to have a match. It is frequently the case, however, you will join tables having records in one or both tables that will fail to find a match. The 'parks_info' datasets from Retrosheet only lists the city name of each ballpark, not its location. In this case we found a separate human-curated list of ballpark geolocations, but geolocating records -- that is, using a human-readable location name such as "Austin, Texas" to find its nominal geocoordinates (-97.7,30.2) -- is a common task; it is also far more difficult than it has any right to be, but a useful first step is match the location names directly against a gazette of populated place names such as the open source Geonames dataset.
+
+Run the script (TODO: name of script) that includes the following JOIN:
+
+----
+park_places = JOIN
+ parks BY (location) LEFT OUTER,
+ places BY (concatenate(city, ", ", state);
+DESCRIBE park_places;
+----
+
+In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" JOIN instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
+
+TODO: discuss use of left join for set intersection.
+
+In a Pig JOIN it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (TODO:  REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
+
+----
+NOTE
+A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
+----
+
+==== Join Practicalities
+
+The output of the Join job has one line for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order. We have to accumulate all the A records in memory so we know what rows to emit for each B record. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
 ==== Direct Join: Extend Records with Uniquely Matching Records from Another Table
+
+* Direct Join:
+  - Direct Join: Extend Records with Uniquely Matching Records from Another Table
+  - Direct join on foreign key -- ages for each player season
+  - join		Combining Related Records by Foreign Key (The solution is an example of a join, or more accurately an equi-join, which is a type of inner join. A join is an operation that combines rows from two tables into one. An equi-join is one in which the join condition is based on an equality condition (e.g., where one department number equals another). An inner join is the original type of join; each row returned contains data from each table.)
+
 
 Using a join to extend the records in one table with the fields from one matching record in another is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency. 
 
@@ -280,7 +391,47 @@ Another reason to split data across tables is 'vertical partitioning': storing f
 Use the pitchers and batters table
 
 Call forward to the merge join
+
+Note: You Can do any Join as Long as It's an Equi-join
+
+==== Join Against Another Table Without Discarding Non-Matches
+
+* Outer Join
+  - join		Join Against Another Table Without Discarding Non-Matches
+  - join	left	Identifying and Removing Mismatched or Unattached Records
+* Sparse Join
+  - join		Matching Records
+
+
+using a left join so you can fix up remnants
+note: haven't actually run this, need to load geonames
+
+----
+SELECT pk.*
+  FROM      parks pk
+  LEFT JOIN geonames.places gn
+    ON (pk.city = gn.city AND pk.state = gn.region1)
+    OR (pk.parkname = gn.placename)
+;
+----
+
+* See advanced joins: bag left outer join from DataFu
+* See advanced joins: Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
+* See Time-series: Range query using cross
+* See Time-series: Range query using prefix and UDFs
+* See advanced joins: Sparse joins for filtering, with a HashMap (replicated)
+* Out of scope: Bitmap index
+* Out of scope: Bloom filter joins
+* See time-series: Self-join for successive row differences
+
 ==== Fill in Holes in a List with a Join on an integer table
+
+* Fill Gaps
+  - join		filling holes in a list -- histogram of career hits
+  - join		Fill in Holes in a List with a Join on an integer table
+  - join		Using a Join to Identify or Fill Holes in a List
+  - join	fill	Filling in Missing Values in a Range of Values
+
 
 If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, do an outer join on the integer table. (See, we told you the integers table was surprisingly useful.)
 
@@ -294,27 +445,15 @@ SELECT bin, H, IFNULL(n_H,0)
   ORDER BY bin DESC
 ;
 ----
-==== Join a table with itself (self-join)
 
-teammates (played for same team same season, discarding second and later
-stints; players half table?)  note that we're cheating a bit: players may
-change teams during the season (happens in about 7% of player seasons).
 
-note the explosion: 90k player-seasons lead to 3,104,324 teammate-year pairs.
-the distinct pairing is 2 million
-
-----
-SELECT DISTINCT b1.player_id, b2.player_id
-  FROM bat_season b1, bat_season b2
-  WHERE b1.team_id = b2.team_id          -- same team
-    AND b1.year_id = b2.year_id          -- same season
-    AND b1.player_id != b2.player_id     -- reject self-teammates
-  GROUP BY b1.player_id
-  ;
-----
 
 ==== Enumerating a Many-to-Many Relationship
 
+* Many-to-Many
+  - join		many-to-many join --  ballparks a player has played in
+  - join		Enumerating a Many-to-Many Relationship
+  - join	Mnymny	Enumerating a Many-to-Many Relationship
 
 Every stadium a player has played in. (We're going to cheat on the detail of
 multiple stints and credit every player with all stadiums visited by the team
@@ -368,32 +507,63 @@ In this case, if you start by thinkingn of the group, you'll see you can elimina
 
 (show pig, including a DISTINCT in the fancy-style FOREACH)
 
-Now introduce cogroup
+==== Join a table with itself (self-join)
 
-==== Join Against Another Table Without Discarding Non-Matches
 
-using a left join so you can fix up remnants
-note: haven't actually run this, need to load geonames
+* Self-Join
+  - join		self join -- teammates -- team-year pla-plb (see below for just in-year teammates -- we can do the group-flatten-flatten trick because team subsumes player-a)
+  - join		Join a table with itself (self-join)
+  - join	selfjn	Comparing a Table to Itself
+
+teammates (played for same team same season, discarding second and later
+stints; players half table?)  note that we're cheating a bit: players may
+change teams during the season (happens in about 7% of player seasons).
+
+note the explosion: 90k player-seasons lead to 3,104,324 teammate-year pairs.
+the distinct pairing is 2 million
 
 ----
-SELECT pk.*
-  FROM      parks pk
-  LEFT JOIN geonames.places gn
-    ON (pk.city = gn.city AND pk.state = gn.region1)
-    OR (pk.parkname = gn.placename)
-;
+SELECT DISTINCT b1.player_id, b2.player_id
+  FROM bat_season b1, bat_season b2
+  WHERE b1.team_id = b2.team_id          -- same team
+    AND b1.year_id = b2.year_id          -- same season
+    AND b1.player_id != b2.player_id     -- reject self-teammates
+  GROUP BY b1.player_id
+  ;
 ----
 
-* See advanced joins: bag left outer join from DataFu
-* See advanced joins: Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
-* See Time-series: Range query using cross
-* See Time-series: Range query using prefix and UDFs
-* See advanced joins: Sparse joins for filtering, with a HashMap (replicated)
-* Out of scope: Bitmap index
-* Out of scope: Bloom filter joins
-* See time-series: Self-join for successive row differences
+=== Set operations summary
+
+==== Find rows with no match in another table (anti-join)
+
+  - group2	setops	Intersect: semi-join (allstars)
+
+* Anti-Join
+  - join	antijn	Retrieving Records from One Table That Do Not Correspond to Records in Another (non-allstars: can do this with an outer join, because cross product won't screw you up)
+  - join	antijn	Finding Records with No Match in Another Table
+
+* Set operations summary
+  - group2	setops	Determining Whether Two Tables Have the Same Data (is symmetric difference empty)  -
+  - group2	setops	Retrieving Values from One Table That Do Not Exist in Another (set difference; players in batting but not pitching -- or in one but not other (symmetric difference)
+  - group2	setops	Group Elements From Multiple Tables On A Common Attribute (COGROUP)
+  - group2	setops	GROUP/COGROUP To Restructure Tables
+  - group2	setops	Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
+  - group2	setops	Union of Sets UNION-then-DISTINCT, or COGROUP (note that it doesn't dedupe, doesn't order, and doesn't check for same schema. career stats tables; do it with cogroup, not union-distinct)
+  - group2	setops	Prepare a Distinct Set from a Collection of Records: DISTINCT
+  - group2	setops	Difference (in a but not in b): cogroup keep only empty (non-allstars)
+  - group2	setops	Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
+  - group2	setops	Equality (use symmetric difference): result should be empty
+  - group2	setops	http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html and http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
+
 
 ==== Find rows with a match in another table (semi-join)
+
+
+* Semi-Join
+  - group2	semijn	Finding Records in One Table That Match Records in Another
+  - group2	intsct	Finding Records in Common Between Two Tables
+  - cogroup		Find rows with a match in another table (semi-join)
+
 
 Semi-join: just care about the match, don't keep joined table; anti-join is where you keep the non-matches and also don't keep the joined table. Again, use left or right so that the small table occurs first in the list. Note that a semi-join has only one row per row in dominant table -- so needs to be a cogroup and sum or a join to distinct'ed table (extra reduce, but lets you do a fragment replicate join.)
 
@@ -453,7 +623,7 @@ pairs_r = FOREACH (GROUP raw BY client_ip) {
   GENERATE client_queries;
 };
 ----
-=== Handling duplicates
+=== Finding Duplicate and Unique Records
 
 ==== Eliminating Duplicates from a Table
 
@@ -757,7 +927,6 @@ Here's another
 
 The result of the cross operation will include pairing each player with themselves, but since we don't consider a player to be their own teammate we must eliminate player pairs of the form `(Aaronha, Aaronha)`. We did this with a FILTER immediate before the second GROUP (the best practice of removing data before a restructure), but a defensible alternative would be to `SUBTRACT` playerA from the bag right after the `DISTINCT` operation.
 
-
 === Sorting Operations
 
 
@@ -809,6 +978,38 @@ NOTE: The custom partitioner of an `ORDER` statement subtly breaks the reducer c
 
 Sorting records by key
 
+==== Select Rows with the Top-K Values for a Field
+
+On its own, `LIMIT` will return the first records it finds.  What if you want to _rank_ the records -- sort by some criteria -- so you don't just return the first ones, but the _top_ ones?
+
+Use the `ORDER` operator before a `LIMIT` to guarantee this "top _K_" ordering.  This technique also applies a clever optimization (reservoir sampling, see TODO ref) that sharply limits the amount of data sent to the reducers.
+
+Let's say you wanted to select the top 20 seasons by number of hits:
+
+----
+TODO: Pig code
+----
+
+In SQL, this would be:
+
+----
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 10
+----
+
+// TODO: not sure what is the second optimization here?
+// TODO: remove the term "N" if it is not used elsewhere in this section.
+
+
+There are two useful optimizations to make when the number of records you will keep (_K_) is much smaller than the number of records in the table (_N_). The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
+
+NOTE: We've cheated on the theme of this chapter (pipeline-only operations) -- sharp eyes will note that `ORDER … LIMIT` will in fact trigger a reduce operation.  We still feel that top-_K_ belongs with the other data elimination pattern, though, so we've included it here.
+
+==== Top K Within a Group
+
+There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements.
+
+TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
+
 ==== Numbering Records by Sorted Rank
 
 * ORDER by multiple fields: sort on OPS to three places then use games then playerid
@@ -817,6 +1018,16 @@ Sorting records by key
 * ASC / DESC: fewest strikeouts per plate appearance
 
 ==== Rank records in a group using Stitch/Over
+
+
+### ???
+
+* Over / Stitch
+  - Calculating Successive-Record Differences
+  - Generating a Running Total (over and stitch)
+  - Finding Cumulative Sums and Running Averages
+  - age vs y-o-y performance change
+
 
 ==== Finding Records Associated with Maximum Values
 
@@ -873,6 +1084,103 @@ You might also enjoy the random number table, holding 350 million 64-bit numbers
 cogroup events by team_id
 ... there's a way to do this in one less reduce in M/R -- can you in Pig?
 
+
+==== Decorate-Flatten-Redecorate
+
+The patterns we've introduced so far  looking at baseball's history
+
+That's the same analysis used to determine whether to go for it on fourth down in American football, and a useful model for predicting asset prices and other "Bayesian" analysis (TECH am I using the right term): given a discrete assessment of the current state, what future outcomes result?
+
+To do this, we need to first determine the final inning and final game outcome for each event, and then determine the distribution of outcomes across all events for each game state. The first requires placing all events into context by inning and game; the second requires placing them into context by event type. 
+
+For each combination of <ocuppied bases, game score, outs, inning, game over>, we want to find
+
+* how often that situation crops up -- how often is the home team down 3-0, with two outs in the bottom of the final inning with the bases loaded? In this situation every pitch could result in immediate victory or immediate defeat.
+* from the given situation, how likely is the team to finally prevail? How often does the mighty Casey come through with a four-run "grand-slam" home run, and how often does he 
+* on average, how many additional runs will be scored by that team by the end of the inning
+* the number of times a team in that situation has won, lost, or tied.
+
+    inn inn_home beg_outs beg_1b beg_2b beg_3b  beg_score end_inn_score end_gm_score
+
+http://www.baseball-almanac.com/poetry/po_case.shtml
+
+Exercise: the chief promise of big data is to replace ad-hoc reasoning and conventional wisdom with clear direction based on reason and experience. The chief peril of big data is to only analyze what you can measure, discarding expert knowledge in favor of shallow patterns. The "bunt" tactic is a case in point. A batter "bunts" by putting down a difficult-to-field little squib hit. The base runners, who can get a head start, usually advance; the batter, who has to finish the batting motion, is usually thrown out. In effect, a successful bunt exchanges one out for a single-base advance of each base runner, scoring a run if there was someone on third base.
+Suppose bunts were always successful. For each game state with base runners and zero or one outs, what is the difference in expected runs scored in that inning compared to the state with one more out and each runner advanced by a slot, plus one run if there was a base runner on third?
+
+The data very clearly shows that, all things being equal, a bunt is a bad tactic
+
+The consensus is that (a) traditional managers use the bunt far more often than is justified; (b) factors of game theory, psychology, and others that are difficult to quantify say that it should be employed somewhat more often than the data-driven analysis would indicate. But any sport writer looking to kick up a good ol' jocks-vs-nerds donnybrook can reliably do so by claiming that bunts are, or are not, a sound strategy. http://www.lookoutlanding.com/2013/8/5/4589844/the-evolution-of-the-sacrifice-bunt-part-1
+
+We have, thanks to Retrosheet, the record of the more than 9 million plays from 1950-present. 
+The game event files have many many fields, but 
+     
+SELECT 
+  game_id, LEFT(game_id,3) AS home_team_id, away_team_id, event_id, DATE(SUBSTRING(game_id, 4,8)) AS game_date, 0+RIGHT(game_id, 1) AS game_seq,
+  inn_ct AS inn, bat_home_id AS inn_home, outs_ct AS beg_outs_ct, 				-- inning and outs
+  IF(inn_end_fl = 'T', 1, 0) AS is_end_inn, IF(game_end_fl = 'T', 1, 0) AS is_end_game,
+  event_outs_ct + outs_ct AS end_outs_ct,
+  -- @runs_on_play := IF(bat_dest_id > 3, 1, 0) + IF(run1_dest_id > 3, 1, 0) + IF(run2_dest_id > 3, 1, 0) + IF(run3_dest_id > 3, 1, 0) AS runs_on_play,
+  @runs_on_play := event_runs_ct AS runs_on_play,
+  event_cd, h_cd, ab_fl, 
+  home_score_ct, away_score_ct,
+  @beg_scdiff    := home_score_ct - away_score_ct AS beg_scdiff,		-- score differential
+  @end_scdiff    := @beg_scdiff + IF(bat_home_id = 1, @runs_on_play, -@runs_on_play) AS end_scdiff,
+  pit_id, bat_id, base1_run_id, base2_run_id, base3_run_id,			-- bases state
+  bat_dest_id, run1_dest_id, run2_dest_id, run3_dest_id
+ FROM events
+WHERE (game_id LIKE 'BOS2012%')
+  AND bat_event_fl != 'T'
+  -- AND inn_ct > 6  
+ORDER BY game_id, inn, inn_home, outs_ct  
+;
+
+    event type.  There are 25 different numeric codes to describe
+             the type of event.  They are:
+
+          Code Meaning
+
+          0    Unknown event
+          1    No event
+          2    Generic out
+          3    Strikeout
+          4    Stolen base
+          5    Defensive indifference
+          6    Caught stealing
+          7    Pickoff error
+          8    Pickoff
+          9    Wild pitch
+          10   Passed ball
+          11   Balk
+          12   Other advance
+          13   Foul error
+          14   Walk
+          15   Intentional walk
+          16   Hit by pitch
+          17   Interference
+          18   Error
+          19   Fielder's choice
+          20   Single
+          21   Double
+          22   Triple
+          23   Home run
+          24   Missing play
+
+
+
+
+
+
+
+
+
+
+
+group by game, decorate; flatten by game+inning, decorate; flatten
+
+(Shoot this won't work for demonstrating the cogroup-regroup I think)
+
+TODO for geographic count example use the Datafu udf to do the document counts
+
 === SQL-to-Pig-to-Hive Cheatsheet
 
 * SELECT..WHERE
@@ -888,6 +1196,7 @@ cogroup events by team_id
 * SELECT country_name, indicator_name, `2011` AS trade_2011 FROM wdi WHERE (indicator_name = 'Trade (% of GDP)' OR indicator_name = 'Broad money (% of GDP)') AND `2011` IS NOT NULL CLUSTER BY indicator_name;
 
 SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVING condition ORDER BY column  [ASC | DESC] LIMIT offset,count;
+
 
 
 
@@ -946,41 +1255,31 @@ cogroup events by team_id
 * G (Games): the number of
 
 
-=== More and TODOs
 
-TODO in part on groups note As Jon Covent says, "Bags are what makes Pig Awesome". SQL doesn't have them, and they bring extraordinary power. They can be of arbitrarily large size, present an ad-hoc object representation, and within limits can themselves be limited, transformed, ordered, threaded, and joined. 
-They can't be indexed into, and unless you explicitly say so are not ordered.
-Really strengthen the cautions around over-using joins. SQL makes you go thru all kinds of gymnastics, and has lots of optimizations to (if you're lucky) turn them back into the cogroup you should just ask for directly.
+TODO-qem: review patterns, confirm discussion is cogent. Want to make sure each example makes sense on its own, that it fits, and also ensure narrative flow throughout the chapter.
+"Lots of data into less data"
+
+TODO: find biz applications for the fancy ones
+TODO: find SQL and Hive equivalents for the core ops; the SQL should be valid for both MySQL and Postgres
+TODO-qem: better to show a fuller example using an operation we haven't mentioned yet? (Eg listing team pairs: do the group-and-count when we talk about listing pairs)? Or postpone and call ahead to it?
+
+[[analytic_patterns]]
 
 
-Todo in performance part on eliminating data : don't be afraid to filter out things you know won't be in there (and use assert) -- eg if you were finding players who hit most or tied for most HR in a year, reject players with fewer than 10 HR.
 
-TODO extremal value where ties are possible (you need to do that heinous find-max-val then join on the _value_)
 
-TODO make examples use .pig_schema
 
-TODO for assigning a unique id in the mapper: If-tagsource is specified, PigStorage will prepend input split path to each Tuple/row. User DOES NOT need to ensure pig.splitCombination is set to false (this was fixed post 0.10). Usage: A = LOAD 'input' using PigStorage(',','-tagschema'); B = foreach A generate INPUT_FILE_NAME; The first field in each Tuple will contain input path (INPUT_FILE_NAME)
 
-Make a macro to rmf / store with -schema flag
+=== Pattern: Atom-only Records
 
-TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
-TODO add flatten example that crosses the data.
- 
-TODO mention "vertical partitioning" (multiple files sorted on a key) s another eliminating data pattern
- 
-On a dominated dimension (eg league / division / team) can group on dominating only then flatten on dominated.
+All of the fields in the table we've just produced are atomic -- strings, numbers and such, rather than bags or tuples -- what database wonks call "First Normal Form". There is a lot of denormalization (each article's quadcell and total term count are repeated for every term in the article), but the simplicity of each record's schema has a lot of advantages.
 
-Flatten / project tuple: player game positions?
+Think of this atom-only form as the neutral fighting stance for your tables. From here we're ready to put each record into context of other records with the same term, same geolocation, same frequency; we can even reassemble the wordbag by grouping on the page_id. The exploration will proceed from here by reassembling these records into various context groups, operating on those groups, and then expanding the result back into atom-only form.
 
-Players who played in all X :
-Answering Questions Involving “Any” or “All”
-Queries involving “any” or “all” typically require you to find rows that satisfy one or
-more conditions completely. For example, if you are asked to find people who eat all
-vegetables, you are essentially looking for people for whom there is no vegetable that
-they do not eat. This type of problem statement is typically categorized as relational
-division. With questions regarding “any,” it is crucial you pay close attention to how
-the question is phrased. Consider the difference between these two requirements: “a
-student who takes any class” and “a plane faster than any train.” The former implies,
-“find a student who takes at least one class,” while the latter implies “find a plane
-that is faster than all trains.”
-tripitaka-2 ~/ics/book/big_data_for_chimps$  
+==== Ready Reckoner: How fast should your Pig fly? --> not sure what this is
+
+TODO: move to the first tuning chapter. 
+
+The idea is to have you run through a set of pig scripts with datasets of defined size, measuring the throughput of the core operations. The result is a ready reckoner that lets you estimate how long your job _should_ take (and how many map-reduce stages it will use).
+
+

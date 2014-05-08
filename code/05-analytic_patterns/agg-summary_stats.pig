@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
+IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball';
 
 
 pl_yr_stats = load_bat_seasons();

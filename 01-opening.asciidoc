@@ -43,6 +43,58 @@ Our Map/Reduce haiku illustrates Hadoop's template:
 
 While it would be unworkable to have every novel, critical essay, or sonnet be composed of haikus, map/reduce is surprisingly more powerful. From this single primitive, we can construct the familiar relational operations (such as GROUPs and ROLLUPs) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.
 
+If you've ever  probably written a map-reduce script
+
+    # CODE validate script, column number, file naming
+    cat ufo_sightings.tsv		      | \
+      egrep "\w+\tUnited States of America\t" | \
+      cut -f 11				      | \
+      sort				      | \
+      uniq -c > /tmp/state_sightings_ct_sh.tsv
+
+    SELECT COUNT(*), `state`
+      FROM `ufo_sightings`.sightings ufos
+      WHERE (`country` = 'United States of America') AND (`state` != '')
+      GROUP BY `ufos`.`state`
+      INTO OUTFILE '/tmp/state_sightings_ct_sql.tsv';
+
+    outfile = File.open('/tmp/state_sightings_ct_rb.tsv', "w");
+    File.open('ufo_sightings.tsv').
+      select{|line| line =~ /\w+\tUnited States of America\t/ }.
+      map{|line| line.split("\t")[10] }.
+      sort.chunk(&:to_s).
+      map{|key,grp| [grp.count, key] }.
+      each{|ct,key| outfile << [ct, key].join("\t") << "\n" }
+    outfile.close
+
+
+We simply _load_ a table, _project_ one field from its contents, _sort_ the values (and in so doing, group each state name's occurrences in a contiguous run), _aggregate_ each group into value and count, and _store_ them into an output file.
+
+----
+    mapper(:tsv) do |_,_,_,_,_,_,_,_,_,state,country,*_|
+      yield state if country = "United States of America"
+    end
+
+    reducer do |state, grp|
+      yield [state, grp.count]
+    end
+----
+
+In Pig:
+
+----
+    sightings = LOAD '/Users/flip/ics/core/wukong/data/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+      sighted_at: chararray, reported_at: chararray, location_str: chararray, shape: chararray,
+      duration_str: chararray, description: chararray, lng: float, lat: float,
+      city: chararray, county: chararray, state: chararray, country: chararray, duration: chararray);
+    sightings_us       = FILTER sightings BY (country == 'United States of America') AND (state != '');
+    states             = FOREACH sightings_us GENERATE state;
+    state_sightings_ct = FOREACH (GROUP states BY state)
+      GENERATE COUNT_STAR(states), group;
+    STORE state_sightings_ct INTO '$out_dir/state_sightings_ct_pig';
+----
+
+
 We will demonstrate map/reduce using Wukong, a thin layer atop Hadoop using the Ruby programming language. It's the most easily-readable way for us to demonstrate the patterns of data analysis, and you will be able to lift its content into the programming language of your choice footnote:[In the spirit of this book's open-source license, if an eager reader submits a "translation" of the example programs into the programming language of their choice we would love to fold it into in the example code repository and acknowledge the contribution in future printings.]. It's also a powerful tool you won't grow out of -- we perform code mixture is roughly 30% Wukong, 60% Pig (see the next paragraph) and 10% using Java to extend Pig.
 
 The high-level Pig programming language has you describe the kind of full-table transformations familiar to database programmers (selecting filtered data, groups and aggregations, joining records from multiple tables). Pig carries out those transformations using efficient map/reduce scripts in Hadoop, based on optimized algorithms you'd otherwise have to reimplement or do without. To hit the sweet spot of "common things are simple, complex things remain possible", you can extend Pig with User-Defined Functions (UDFs), covered in chapter (REF).

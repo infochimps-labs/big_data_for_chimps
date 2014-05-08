@@ -245,6 +245,16 @@ SELECT G, cols.*
 ;
 ----
 
+==== Exact median using RANK
+
+Well, we've met another operation with this problem, namely the sort (ORDER BY) operation. It does a first pass to sample the global distribution of keys, then a full map-reduce to place ordered values on the same reducer. Its numerate younger brother, RANK, will do what we need. The quartiles -- the boundaries of the four bins bins each holding 25% of the values -- ...
+
+(Show using RANK and then filter; use the "pre-inject and assert global values" trick for the bin size. Handle the detail of needing to average two values when boundary splits an index, eg median of a table with even number of rows)
+
+==== Approximate median & quantiles using DataFu
+ (get better title)
+
+ 
 === Algebraic vs Holistic Aggregations
 
 TODO: content to come
