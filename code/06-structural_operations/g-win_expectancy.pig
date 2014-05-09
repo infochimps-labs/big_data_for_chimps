@@ -1,4 +1,4 @@
-IMPORT '../common_macros.pig';
+IMPORT './common_macros.pig';
 %DEFAULT beg_year 1993
 %DEFAULT end_year 2010
 
@@ -33,10 +33,7 @@ IMPORT '../common_macros.pig';
 
   
 -- load the right range of years and extract stats to be used if needed
-events = LOAD '/data/rawd/sports/baseball/retrosheet/events_lite-all.tsv' AS (
-  game_id:chararray, event_seq:int, year_id:int, game_date:chararray, game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int, inn_home:int, beg_outs_ct:int, away_score:int, home_score:int, event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int, ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int, is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray, fld_team_id:chararray, pit_id:chararray, bat_id:chararray, run1_id:chararray, run2_id:chararray, run3_id:chararray
-  );
-events = FILTER events BY (year_id >= $beg_year) AND (year_id <= $end_year);
+events      = load_events($beg_year, $end_year);
 event_stats = FOREACH (GROUP events ALL) GENERATE COUNT_STAR(events) AS ct;
 
 --
@@ -172,5 +169,5 @@ re_pretty = FOREACH (GROUP re_summable BY bases) GENERATE
   $beg_year AS beg_year, $end_year AS end_year
   ;
 
-STORE_TABLE('run_expectancy-pretty-$beg_year-$end_year', re_pretty);
+STORE_TABLE('run_expectancy-$beg_year-$end_year-pretty', re_pretty);
 

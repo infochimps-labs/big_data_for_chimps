@@ -1,4 +1,3 @@
-
 -- ==== FILTER
 --      select only seasons since 1900:
 SELECT bat_season.* FROM bat_season

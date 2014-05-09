@@ -1,6 +1,7 @@
 %DEFAULT dsfp_dir '/Users/flip/ics/data_science_fun_pack';
-%DEFAULT bdb_dir  '/data/rawd/sports/baseball/baseball_databank/csv';
-%DEFAULT out_dir '/data/out/baseball';
+%DEFAULT rawd     '/data/rawd';
+%DEFAULT out_dir  '/data/out/baseball';
+
 
 -- SET pig.verbose                         true;
 -- SET pig.exectype                        local;
@@ -17,7 +18,7 @@
 --
 
 DEFINE STORE_TABLE(filename, table) RETURNS void {
-  STORE $table INTO '/tmp/$filename' USING PigStorage('\t', '--overwrite true');
+  STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true');
 };
 
 
@@ -57,23 +58,14 @@ DEFINE STRSPLITBAG  pigsy.text.STRSPLITBAG();
 -- DEFINE SHA512              datafu.pig.hash.SHA('512');
 
 DEFINE load_allstars() RETURNS loaded {
-  $loaded = LOAD '/tmp/allstars.tsv' AS (
+  $loaded = LOAD '$rawd/sports/baseball/allstars.tsv' AS (
     player_id:chararray, year_id:int,
-    game_seq:int, game_id:chararray, team_id:chararray, lg_id:chararray, GP: int, startingPos:int
+    game_seq:int, game_id:chararray, team_id:chararray, lg_id:chararray, GP: int, starting_pos:int
     );
 };
 
 DEFINE load_bat_seasons() RETURNS loaded {
-  $loaded = LOAD '/tmp/bat_seasons.tsv'    AS (
-    player_id:chararray, year_id:int, team_id:chararray,
-    G:int,     PA:int,    AB:int,    H:int,     BB:int, HBP:int,
-    h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
-    OBP:float, SLG:float, ISO:float, OPS:float
-    );
-};
-
-DEFINE load_bat_stints() RETURNS loaded {
-  $loaded = LOAD '/tmp/bat_stints.tsv'    AS (
+  $loaded = LOAD '$rawd/sports/baseball/bats_lite.tsv'    AS (
     player_id:chararray, year_id:int, team_id:chararray,
     G:int,     PA:int,    AB:int,    H:int,     BB:int, HBP:int,
     h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
@@ -82,13 +74,14 @@ DEFINE load_bat_stints() RETURNS loaded {
 };
 
 DEFINE load_games() RETURNS loaded {
-  $loaded = LOAD '/tmp/games_2004.tsv' AS (
-    away_team_id:chararray, home_team_id:chararray, game_id:chararray, year_id:int,
+  $loaded = LOAD '$rawd/sports/baseball/games_lite.tsv' AS (
+    game_id:chararray, year_id:int,
+    away_team_id:chararray, home_team_id:chararray, 
     home_runs_ct:int, away_runs_ct:int);
 };
 
 DEFINE load_teams() RETURNS loaded {
-  $loaded = LOAD '/data/rawd/sports/baseball/baseball_databank/csv/Teams.csv' USING PigStorage(',') AS (
+  $loaded = LOAD '$rawd/sports/baseball/teams.tsv' AS (
     year_id: int, lg_id:chararray, team_id:chararray, franch_id:chararray,              -- 1-4
     div_id:chararray, Rank:int,
     G:int,    Ghome:int, W:int, L:int, DivWin:int, WCWin:int, LgWin:int, WSWin:int, -- 7-14
@@ -101,8 +94,22 @@ DEFINE load_teams() RETURNS loaded {
     );
 };
 
+DEFINE load_park_tm_yr() RETURNS loaded {
+  $loaded = LOAD '$rawd/sports/baseball/park_team_years.tsv' AS (
+    park_id:chararray, team_id:chararray, year_id:long, beg_date:chararray, end_date:chararray, n_games:long
+    );
+};
+
+-- see sports/baseball/event_lite.rb for schema
+DEFINE load_events(begy, endy) RETURNS loaded {
+  evs = LOAD '/data/rawd/sports/baseball/events_lite.tsv' AS (
+    game_id:chararray, event_seq:int, year_id:int, game_date:chararray, game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int, inn_home:int, beg_outs_ct:int, away_score:int, home_score:int, event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int, ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int, is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray, fld_team_id:chararray, pit_id:chararray, bat_id:chararray, run1_id:chararray, run2_id:chararray, run3_id:chararray
+    );
+  $loaded = FILTER evs BY (year_id >= $begy) AND (year_id <= $endy);
+};
+
 DEFINE load_people() RETURNS loaded {
-  $loaded = LOAD '/data/rawd/sports/baseball/baseball_databank/csv/Master.csv' USING PigStorage(',') AS (
+  $loaded = LOAD '$rawd/sports/baseball/baseball_databank/csv/Master.csv' USING PigStorage(',') AS (
     player_id:chararray,
     birthYear:int,        birthMonth:int,       birthDay: int,
     birthCtry: chararray, birthState:chararray, birthCity:chararray,
@@ -117,7 +124,7 @@ DEFINE load_people() RETURNS loaded {
 };
 
 DEFINE load_franchises() RETURNS loaded {
-  $loaded = LOAD '/data/rawd/sports/baseball/baseball_databank/csv/TeamsFranchises.csv' USING PigStorage(',') AS (
-    franch_id:chararray, franchName:chararray, active:chararray, NAassoc:chararray
+  $loaded = LOAD '$rawd/sports/baseball/baseball_databank/csv/TeamsFranchises.csv' USING PigStorage(',') AS (
+    franch_id:chararray, franchName:chararray, active:chararray, na_assoc:chararray
     );
 };

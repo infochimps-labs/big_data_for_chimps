@@ -36,10 +36,5 @@ SELECT * FROM allstars
   INTO OUTFILE '/tmp/allstars.tsv'
   ;
 
-SELECT * FROM retrosheet.games
-  WHERE year_id = 2004
-  INTO OUTFILE '/tmp/games_2004.tsv'
-  ;
-
 
   
