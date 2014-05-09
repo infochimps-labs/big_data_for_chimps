@@ -128,3 +128,22 @@ DEFINE load_franchises() RETURNS loaded {
     franch_id:chararray, franchName:chararray, active:chararray, na_assoc:chararray
     );
 };
+
+
+-- DEFINE summarize_field(table) {
+-- hr_stats = FOREACH (GROUP table ALL) {
+--   dist = DISTINCT table.$0;
+--   some = LIMIT (ORDER dist BY $0) 10;
+--   GENERATE
+--     MIN(table.$0)                       AS min_val,
+--     MAX(table.$0)                       AS max_val,
+--     AVG(table.$0)                       AS avg_val,
+--     SQRT(VAR(table.$0))                 AS stddev_val,
+--     SUM(table.$0)                       AS sum_val,
+--     COUNT_STAR(table)                   AS n_recs,
+--     COUNT_STAR(table) - COUNT(table.$0) AS n_nulls,
+--     COUNT(hrs_distinct)                 AS card_val,
+--     BagToString(some, '|')              AS some_vals
+--     ;
+--   };
+-- };

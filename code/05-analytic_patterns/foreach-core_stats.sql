@@ -1,14 +1,14 @@
 SELECT
     player_id, year_id, team_id, 
     G, PA, AB, H, BB,
-    @HBP := IFNULL(HBP, 0)              AS HBP,
+    @HBP := IFNULL(HBP, 0)                AS HBP,
     @h1B := (H - h2B - h3B - HR)          AS h1B,
     h2B, h3B, HR,
     @TB  := (@h1B + 2*h2B + 3*h3B + 4*HR) AS TB,
-    @OBP := (H + BB + @HBP)/PA          AS OBP,
-    @SLG := (@TB / AB)                  AS SLG,
-    @ISO := ((@TB - H) / AB)            AS ISO,
-    @OPS := (@SLG + @OBP)               AS OPS
+    @OBP := (H + BB + @HBP)/PA            AS OBP,
+    @SLG := (@TB / AB)                    AS SLG,
+    @ISO := ((@TB - H) / AB)              AS ISO,
+    @OPS := (@SLG + @OBP)                 AS OPS
   FROM bat_seasons
   WHERE PA > 0 AND AB > 0
   INTO OUTFILE '/tmp/bat_seasons.tsv'

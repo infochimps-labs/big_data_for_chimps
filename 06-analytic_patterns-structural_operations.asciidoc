@@ -115,7 +115,7 @@ The first field is still called 'group', but it's now a tuple, and so our `FOREA
 ------
 park_team_occupied = FOREACH(GROUP park_tm_yr BY (park_id, team_id))
   GENERATE group.park_id, group.team_id, park_tm_yr.year_id;
-  -- 
+  --
   -- (ALB01,TRN,{(1882),(1880),(1881)})
   -- (ALT01,ALT,{(1884)})
   -- (ANA01,ANA,{(2009),(2008),(1997)...})
@@ -131,7 +131,7 @@ team_n_parks = FOREACH (GROUP park_tm_yr BY (team_id,year_id)) GENERATE
   group.year_id,
   COUNT_STAR(park_tm_yr) AS n_parks;
 vagabonds = FILTER team_n_parks BY n_parks > 1;
-  -- 
+  --
   -- (CL4,1898,7)
   -- (CLE,1902,5)
   -- (WS3,1871,4)
@@ -241,8 +241,31 @@ end
 
 ==== Summarizing Aggregate Statistics of a Group
 
-Pretty much every data exploration you perform will involve summarizing datasets using statistical aggregations -- counts, averages and so forth. You have already seen an example of this when we helped the reindeer count UFO visit frequency by month and later in the book, we will devote a whole chapter to statistical summaries and aggregation.
+Some of the happiest moments you can have analyzing a massive data set come when you are able to make it a slightly less-massive data set. Statistical aggregations let you summarize the essential characteristics of a table: counts and sums; average and variance; medians, quantiles and extrema; and so forth. Later in the book, we will devote a whole chapter to statistical summaries and aggregation, but they are so useful we'll kick the party off now.
 
+In the previous chapter, we used each player's counting stats (hits, home runs, and so forth) to estimate how well they get on base, how well they clear the bases.
+
+------
+player_careers = FOREACH (GROUP bat_year BY player_id) {
+  team_ids = DISTINCT bat_year.team_id;
+  totG   = SUM(bat_year.G);   totPA  = SUM(bat_year.PA);
+  totAB  = SUM(bat_year.AB);  totH   = SUM(bat_year.H);
+  totBB  = SUM(bat_year.BB);  totHBP = SUM(bat_year.HBP);
+  toth1B = SUM(bat_year.h1B); toth2B = SUM(bat_year.h2B);
+  toth3B = SUM(bat_year.h3B); totHR  = SUM(bat_year.HR); 
+  OBP    = (totH + totBB + totHBP) / totPA;
+  SLG    = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
+  GENERATE group AS player_id,
+    COUNT_STAR(bat_year) AS n_seasons,
+    MIN(year_id) AS beg_year, MAX(year_id) AS end_year,
+    BagToString(team_ids, '|'),
+    totG   AS G,   totPA  AS PA,  totAB  AS AB,
+    totH   AS H,   totBB  AS BB,  totHBP AS HBP,
+    toth1B AS h1B, toth2B AS h2B, toth3B AS h3B, totHR AS HR,
+    OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS
+    ;
+};
+------
 
 * Calculating Summary Statistics on Groups with Aggregate Functions
   - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
@@ -835,9 +858,9 @@ SELECT DISTINCT player_id, team_id from batting;
 ==== Eliminating Duplicates from a Query Result:
 
 ------
-  -- 
+  --
   -- All parks a team has played in
-  -- 
+  --
 SELECT team_id, GROUP_CONCAT(DISTINCT park_id ORDER BY park_id) AS park_ids
   FROM park_team_years
   GROUP BY team_id
