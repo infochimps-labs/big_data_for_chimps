@@ -12,61 +12,63 @@ CREATE TABLE `bat_seasons` (
   `bbref_id`     CHAR(9)                CHARACTER SET ASCII NOT NULL,
   `retro_id`     CHAR(8)                CHARACTER SET ASCII DEFAULT NULL,
   --
-  `name_common`  varchar(100)           default NULL,  -- 5
-  `name_first`   varchar(50)            default NULL,
-  `name_last`    varchar(50) NOT NULL   default '',
-  `age`          SMALLINT(2) UNSIGNED   DEFAULT NULL,
+  `name_common`  varchar(100)         DEFAULT NULL,  -- 5
+  `name_first`   varchar(50)          DEFAULT NULL,
+  `name_last`    varchar(50)          NOT NULL  DEFAULT '',
+  `age`          SMALLINT(2) UNSIGNED DEFAULT NULL,
+  `height`       INT(3)               DEFAULT NULL,
+  `weight`       INT(3)               DEFAULT NULL,
   --
-  `year_id`      SMALLINT(3) UNSIGNED   DEFAULT NULL,
-  `team_id`      CHAR(3)                DEFAULT NULL,  -- 10
-  `lg_id`        CHAR(2)                DEFAULT NULL,
-  `team_ids`     VARCHAR(27)            NOT NULL,
-  `lg_ids`       VARCHAR(18)            NOT NULL,
-  `stintGs`      VARCHAR(18)            NOT NULL,
-  `n_stints`     SMALLINT(3) UNSIGNED   DEFAULT NULL,  -- 15
+  `year_id`      SMALLINT(3) UNSIGNED DEFAULT NULL,
+  `team_id`      CHAR(3)              DEFAULT NULL,  -- 10
+  `lg_id`        CHAR(2)              DEFAULT NULL,
+  `team_ids`     VARCHAR(27)          NOT NULL,
+  `lg_ids`       VARCHAR(18)          NOT NULL,
+  `stintGs`      VARCHAR(18)          NOT NULL,
+  `n_stints`     SMALLINT(3) UNSIGNED DEFAULT NULL,  -- 15
   --
-  `G`            INT(5) UNSIGNED        DEFAULT NULL,
-  `G_batting`    INT(5) UNSIGNED        DEFAULT NULL,
-  `is_allstar`      BOOLEAN                DEFAULT NULL,
+  `G`            INT(5) UNSIGNED      DEFAULT NULL,
+  `G_batting`    INT(5) UNSIGNED      DEFAULT NULL,
+  `is_allstar`      BOOLEAN           DEFAULT NULL,
   --
-  `PA`           INT(5) UNSIGNED        DEFAULT NULL,
-  `AB`           INT(5) UNSIGNED        DEFAULT NULL,
-  `R`            INT(5) UNSIGNED        DEFAULT NULL,
-  `H`            INT(5) UNSIGNED        DEFAULT NULL,
-  `h2B`          INT(5) UNSIGNED        DEFAULT NULL,
-  `h3B`          INT(5) UNSIGNED        DEFAULT NULL,
-  `HR`           INT(5) UNSIGNED        DEFAULT NULL,
-  `RBI`          INT(5) UNSIGNED        DEFAULT NULL,
-  `SB`           INT(5) UNSIGNED        DEFAULT NULL,
-  `CS`           INT(5) UNSIGNED        DEFAULT NULL,
-  `BB`           INT(5) UNSIGNED        DEFAULT NULL,
-  `SO`           INT(5) UNSIGNED        DEFAULT NULL,
-  `IBB`          INT(5) UNSIGNED        DEFAULT NULL,
-  `HBP`          INT(5) UNSIGNED        DEFAULT NULL,
-  `SH`           INT(5) UNSIGNED        DEFAULT NULL,
-  `SF`           INT(5) UNSIGNED        DEFAULT NULL,
-  `GIDP`        INT(5) UNSIGNED        DEFAULT NULL,
+  `PA`           INT(5) UNSIGNED      DEFAULT NULL,
+  `AB`           INT(5) UNSIGNED      DEFAULT NULL,
+  `R`            INT(5) UNSIGNED      DEFAULT NULL,
+  `H`            INT(5) UNSIGNED      DEFAULT NULL,
+  `h2B`          INT(5) UNSIGNED      DEFAULT NULL,
+  `h3B`          INT(5) UNSIGNED      DEFAULT NULL,
+  `HR`           INT(5) UNSIGNED      DEFAULT NULL,
+  `RBI`          INT(5) UNSIGNED      DEFAULT NULL,
+  `SB`           INT(5) UNSIGNED      DEFAULT NULL,
+  `CS`           INT(5) UNSIGNED      DEFAULT NULL,
+  `BB`           INT(5) UNSIGNED      DEFAULT NULL,
+  `SO`           INT(5) UNSIGNED      DEFAULT NULL,
+  `IBB`          INT(5) UNSIGNED      DEFAULT NULL,
+  `HBP`          INT(5) UNSIGNED      DEFAULT NULL,
+  `SH`           INT(5) UNSIGNED      DEFAULT NULL,
+  `SF`           INT(5) UNSIGNED      DEFAULT NULL,
+  `GIDP`        INT(5) UNSIGNED       DEFAULT NULL,
   -- defensive   interference while batting.
   -- Discrepancies between Baseball Reference our component stats from Baseball Databank mean that you can't trust this number very much
-  `CIB`          INT(5)                 DEFAULT NULL,
+  `CIB`          INT(5)               DEFAULT NULL,
   --
-  `BAVG`         FLOAT                  DEFAULT NULL,
-  `TB`           FLOAT                  DEFAULT NULL,
-  `SLG`          FLOAT                  DEFAULT NULL,
-  `OBP`          FLOAT                  DEFAULT NULL,
-  `OPS`          FLOAT                  DEFAULT NULL,
-  `ISO`          FLOAT                  DEFAULT NULL,
+  `BAVG`         FLOAT                DEFAULT NULL,
+  `TB`           FLOAT                DEFAULT NULL,
+  `SLG`          FLOAT                DEFAULT NULL,
+  `OBP`          FLOAT                DEFAULT NULL,
+  `OPS`          FLOAT                DEFAULT NULL,
+  `ISO`          FLOAT                DEFAULT NULL,
   --
-  `is_pitcher`   BOOLEAN                DEFAULT NULL,
-  `RAA`          FLOAT                  DEFAULT NULL,
-  `RAA_off`      FLOAT                  DEFAULT NULL,
-  `RAA_def`      FLOAT                  DEFAULT NULL,
-  `RAR`          FLOAT                  DEFAULT NULL,
-  `WAA`          FLOAT                  DEFAULT NULL,
-  `WAA_off`      FLOAT                  DEFAULT NULL,
-  `WAA_def`      FLOAT                  DEFAULT NULL,
-  `WAR`          FLOAT                  DEFAULT NULL,
-  `WAR_off`      FLOAT                  DEFAULT NULL,
+  `is_pitcher`   BOOLEAN              DEFAULT NULL,
+  `RAA`          FLOAT                DEFAULT NULL,
+  `RAA_off`      FLOAT                DEFAULT NULL,
+  `RAA_def`      FLOAT                DEFAULT NULL,
+  `RAR`          FLOAT                DEFAULT NULL,
+  `WAA`          FLOAT                DEFAULT NULL,
+  `WAA_off`      FLOAT                DEFAULT NULL,
+  `WAA_def`      FLOAT                DEFAULT NULL,
+  `WAR`          FLOAT                DEFAULT NULL,
+  `WAR_off`      FLOAT                DEFAULT NULL,
   `WAR_def`      FLOAT                  DEFAULT NULL,
   --
   PRIMARY KEY             (`lahman_id`, `year_id`),
@@ -79,7 +81,7 @@ CREATE TABLE `bat_seasons` (
 
 INSERT INTO `bat_seasons`
   (
-    lahman_id, player_id, bbref_id, retro_id, name_first, name_last, name_common,
+    lahman_id, player_id, bbref_id, retro_id, name_first, name_last, name_common, height, weight,
     year_id, team_ids, lg_ids, stintGs, n_stints,
     G, G_batting,
     is_allstar,
@@ -88,7 +90,7 @@ INSERT INTO `bat_seasons`
     SH, SF, GIDP)
 
   SELECT
-    lahman_id, peep.player_id, peep.bbref_id, peep.retro_id, peep.name_first, peep.name_last, peep.name_common,
+    lahman_id, peep.player_id, peep.bbref_id, peep.retro_id, peep.name_first, peep.name_last, peep.name_common, height, weight,
     bat.year_id,
     GROUP_CONCAT(bat.team_id) AS team_ids, GROUP_CONCAT(bat.lg_id) AS lg_ids,
     GROUP_CONCAT(bat.G) AS stintGs, COUNT(*) AS n_stints,
@@ -140,7 +142,7 @@ UPDATE `bat_seasons`,
 CREATE TEMPORARY TABLE bat_team (player_id CHAR(9), year_id CHAR(4), team_id CHAR(3), lg_id CHAR(3), PRIMARY KEY (`player_id`, `year_id`));
 INSERT INTO bat_team (player_id, year_id, team_id, lg_id)
   SELECT bat.player_id, bat.year_id, bat.team_id, bat.lg_id
-    FROM bat_stints bat   
+    FROM bat_stints bat
     INNER JOIN (SELECT player_id, year_id, MAX(G) AS Gmax FROM bat_stints bat GROUP BY player_id, year_id) batmax
     ON bat.player_id = batmax.player_id AND bat.year_id = batmax.year_id AND bat.G = batmax.Gmax
     GROUP BY player_id, year_id
@@ -151,7 +153,7 @@ UPDATE bat_seasons bats, bat_team
     bats.lg_id   = bat_team.lg_id
   WHERE bats.player_id = bat_team.player_id AND bats.year_id = bat_team.year_id
   ;
- 
+
 --
 -- Calculate derived statistics -- batting average and so forth
 --

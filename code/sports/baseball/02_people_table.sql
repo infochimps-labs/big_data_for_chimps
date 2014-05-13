@@ -32,8 +32,8 @@ CREATE TABLE `people` (
   `name_given`    VARCHAR(255) DEFAULT NULL,
   `name_nick`     VARCHAR(255) DEFAULT NULL,
   --
-  `weight`        INT(11)      DEFAULT NULL,
-  `height`        FLOAT        DEFAULT NULL,
+  `height`        INT(3)      DEFAULT NULL,
+  `weight`        INT(3)      DEFAULT NULL,
   `bats`          VARCHAR(1)   DEFAULT NULL,
   `throws`        VARCHAR(1)   DEFAULT NULL,
   `first_game`    DATE         DEFAULT NULL,
@@ -53,9 +53,18 @@ CREATE TABLE `people` (
 ;
 
 REPLACE INTO `people`
-  (      `player_id`, `retro_id`, `lahman_id`, `bbref_id`, `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`, `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`, `name_first`, `name_last`, `name_note`, `name_given`, `name_nick`, `weight`, `height`, `bats`, `throws`,
-         `first_game`, `final_game`, `college`, `manager_id`, `hof_id`)
-  SELECT `player_id`, `retro_id`, `lahman_id`, `bbref_id`, `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`, `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`, `name_first`, `name_last`, `name_note`, `name_given`, `name_nick`, `weight`, `height`, `bats`, `throws`,
+  (`player_id`, `retro_id`, `lahman_id`, `bbref_id`,
+   `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`,
+   `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`,
+   `name_first`, `name_last`, `name_note`, `name_given`, `name_nick`,
+   `height`, `weight`, `bats`, `throws`,
+   `first_game`, `final_game`, `college`, `manager_id`, `hof_id`)
+  SELECT
+    `player_id`, `retro_id`, `lahman_id`, `bbref_id`,
+    `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`,
+    `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`,
+    `name_first`, `name_last`, `name_note`, `name_given`, `name_nick`,
+    ROUND(`height` * 2.54), ROUND(`weight` * 0.453592), `bats`, `throws`,
     STR_TO_DATE(`first_game`, '%m/%d/%Y'), 
     STR_TO_DATE(`final_game`,  '%m/%d/%Y'), `college`, `manager_id`, `hof_id`
   FROM `master`
