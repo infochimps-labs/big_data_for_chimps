@@ -1,54 +1,10 @@
+== Analytic Patterns pt 2: Structural Operations
+
 === Grouping Operations
 
 ==== Grouping Records into a Bag by Key
 
-The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
-
-We can use `GROUP` to assemble an inline list of the stadiums each team played for by year:
-
-------
-teams_w_parks = FOREACH (GROUP team_parks BY team_id) GENERATE
-    group as team_id, team_park_years.(year_id, park_id);
-
-  -- (ALT,{(ALT01,ALT,1884,1884-04-30,1884-05-31,18)})
-  -- (ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
-------
-
-
-The result is always a tuple whose first field is named “group” -- holding the individual group keys in order. The next field has a bag of each the full input record with all its keys, even the group key.
-
-
-Here’s a Wukong script that illustrates what is going on:
-
-------
-(TODO: Wukong script)
-------
-
-* Group
-  - not often used on its own, but forms the basis for most structural operation patterns.
-  - Group Records by common Key or Keys
-    - Each team a player played for in career -- for single key field, first field (`group`) is that value; next is the original record, _not omitting the group key_.
-    - each team a player played for by year — grouped on team, year. For multiple keys, first field is a tuple of keys, next is the original record, _not omitting the group keys_
-    - if you want to group by an expression, synthesize a new field and use that.
-    - group players by team and decade
-  - Applying Operations to Bags
-    - you can use a nested FOREACH to apply a subset of Pig's operations to a bag: DISTINCT, ORDER, nested FOREACH, FILTER
-    - demonstrate with distinct teams in career.
-    - we'll demonstrate the others  as we go.
-  - group		Creating a Delimited List Within a Field from Table Rows
-    - one use is denormalizing multiple values into one field.
-    - use the pig 0.12 CONCAT to string them together
-    - in the flatten section we showed how to undo this
-
-TODO in part on groups note As Jon Covent says, "Bags are what makes Pig Awesome". SQL doesn't have them, and they bring extraordinary power. They can be of arbitrarily large size, present an ad-hoc object representation, and within limits can themselves be limited, transformed, ordered, threaded, and joined.
-They can't be indexed into, and unless you explicitly say so are not ordered.
-
-TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
-
-=== GROUP BY
-
-The GROUP BY operation is at the heart of every structural operation.
-Here, we collect all the stadiums each team has played for:
+The GROUP BY operation is at the heart of every structural operation. It's a one-liner in Pig: this statement groups the stadiums each team has played for:
 
 ------
 park_tm_yr_g = GROUP park_tm_yr BY team_id;
@@ -139,7 +95,7 @@ vagabonds = FILTER team_n_parks BY n_parks > 1;
   -- ...
 ------
 
-// TODO-qem: should I include this now, or just below; and should I show the .each version, the .size version, or both:
+// TODO-qem: should I include this now, or just below; and should I show the .each version, the .size version, or both: → I (QEM) vote to do this now, to mention .size, but not show the .size code
 
 ------
 mapper(array_fields_of: ParkTeamYear) do |park_id, team_id, year_id, beg_date, end_date, n_games|
@@ -164,11 +120,9 @@ end
 
 === Denormalizing a list of values into a single delimited field
 
-Always, always look through the data and seek 'second stories'. A good sifting reveals that the 1898 Cleveland Spiders called seven stadiums their home field, an improbably high figure.
+Always, always look through the data and seek 'second stories'. A good sifting reveals that the 1898 Cleveland Spiders called seven stadiums their home field, an improbably high figure. We should look deeper.
 
-Let's look deeper by listing off the parks themselves, and while we're at it introduce a very useful pattern: denormalizing a collection of values into a single delimited field. The format Pig uses to dump bags and tuples to disk uses more characters than are necessary and is not safe to use in general: any string containing a comma or bracket will cause its record to be mis-interpreted. For very simple data structures, we are better off concatenating all the values together using a delimiter -- a character guaranteed to have no other meaning and to not appear in any of the values. This preserves a rows-and-columns representation of the table, which lets us keep using the oh-so-simple TSV format and is friendly to Excel, `cut` and other commandline tools, and back into Pig itself. We will have to pack and unpack the value ourselves, but often as not that's a feature, as it lets us move the field around as a simple string and only pay the cost of constructing a full data structure when it's used.
-
-This script ouputs four fields: park_id, year, count of stadiums, and the names of the stadiums used. We've chosen `|` pipe as the delimiter; like caret `^` and bang `!`, it is visually lightweight and can be avoided within a value. Comma `,` and colon `:` are fine, but don't use commas for addresses ("Fargo, ND") or colons with dates ("2014-08-08T12:34:56+00:00"). Annoyingly, current versions of Pig can get freaked out by semicolons inside string literals, so avoid that altogether.
+Let's start by listing off the parks themselves for each team-year, and while we're at it also introduce a very useful pattern: denormalizing a collection of values into a single delimited field. The format Pig uses to dump bags and tuples to disk uses more characters than are necessary and is not safe to use in general: any string containing a comma or bracket will cause its record to be mis-interpreted. For very simple data structures, we are better off concatenating all the values together using a delimiter -- a character guaranteed to have no other meaning and to not appear in any of the values. This preserves a rows-and-columns representation of the table, which lets us keep using the oh-so-simple TSV format and is friendly to Excel, `cut` and other commandline tools, and back into Pig itself. We will have to pack and unpack the value ourselves, but often as not that's a feature, as it lets us move the field around as a simple string and only pay the cost of constructing a full data structure when it's used.
 
 ------
 team_year_w_parks = FOREACH (GROUP park_tm_yr BY (team_id, year_id)) {
@@ -182,7 +136,9 @@ team_year_w_parks = FOREACH (GROUP park_tm_yr BY (team_id, year_id)) {
   -- CL4	1898	7	CHI08|CLE05|CLL01|PHI09|ROC02|ROC03|STL05
 ------
 
-=== Denormalizing a complex data structure into a single delimited field
+This script ouputs four fields -- park_id, year, count of stadiums, and the names of the stadiums used separated by a `^` caret delimiter. Like colon ':', comma `,`, and slash '/' it doesn't need to be escaped at the commandline; like those and semicolon `;`, pipe `|`, and bang `!`, it is visually lightweight and can be avoided within a value.  Don't use the wrong delimiter for addresses ("Fargo, ND"), dates ("2014-08-08T12:34:56+00:00"), paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`).
+
+==== Denormalizing a complex data structure into a single delimited field
 
 Besides the two stadiums in Cleveland, there are "home" stadiums in Philadelphia, Rochester, St. Louis, and Chicago -- not close enough to be likely alternatives in case of repairs, and 1898 baseball did not call for publicity tours. Is it simply an unusual number of makeup games? Let's see how many were played at each stadium.
 
@@ -239,26 +195,29 @@ end
 # CL4   1898    [["CLE05",40],[PHI09,9],[STL05,2],[ROC02,2],[CLL01,2],[CHI08,1],[ROC03,1]]
 ------
 
+=== Group and Aggregate
+
+Some of the happiest moments you can have analyzing a massive data set come when you are able to make it a slightly less-massive data set. Statistical aggregations let you summarize the essential characteristics of a table. Later in the book, we will devote a whole chapter to statistical summaries and aggregation, but they are so useful we'll kick the party off now.
+
 ==== Summarizing Aggregate Statistics of a Group
 
-Some of the happiest moments you can have analyzing a massive data set come when you are able to make it a slightly less-massive data set. Statistical aggregations let you summarize the essential characteristics of a table: counts and sums; average and variance; medians, quantiles and extrema; and so forth. Later in the book, we will devote a whole chapter to statistical summaries and aggregation, but they are so useful we'll kick the party off now.
-
-In the previous chapter, we used each player's counting stats (hits, home runs, and so forth) to estimate how well they get on base, how well they clear the bases.
+In the previous chapter, we used each player's seasonal counting stats -- hits, home runs, and so forth -- to estimate seasonal rate stats -- how well they get on base (OPS), how well they clear the bases (SLG) and an overall estimate of offensive performance (OBP). We can use a group-and-aggregate on the seasonal stats to find each player's career stats.
 
 ------
 player_careers = FOREACH (GROUP bat_year BY player_id) {
   team_ids = DISTINCT bat_year.team_id;
-  totG   = SUM(bat_year.G);   totPA  = SUM(bat_year.PA);
-  totAB  = SUM(bat_year.AB);  totH   = SUM(bat_year.H);
-  totBB  = SUM(bat_year.BB);  totHBP = SUM(bat_year.HBP);
-  toth1B = SUM(bat_year.h1B); toth2B = SUM(bat_year.h2B);
-  toth3B = SUM(bat_year.h3B); totHR  = SUM(bat_year.HR); 
-  OBP    = (totH + totBB + totHBP) / totPA;
-  SLG    = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
+  totG     = SUM(bat_year.G);   totPA  = SUM(bat_year.PA);
+  totAB    = SUM(bat_year.AB);  totH   = SUM(bat_year.H);
+  totBB    = SUM(bat_year.BB);  totHBP = SUM(bat_year.HBP);
+  toth1B   = SUM(bat_year.h1B); toth2B = SUM(bat_year.h2B);
+  toth3B   = SUM(bat_year.h3B); totHR  = SUM(bat_year.HR); 
+  OBP      = (totH + totBB + totHBP) / totPA;
+  SLG      = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
   GENERATE group AS player_id,
     COUNT_STAR(bat_year) AS n_seasons,
-    MIN(year_id) AS beg_year, MAX(year_id) AS end_year,
-    BagToString(team_ids, '|'),
+    MIN(year_id)         AS beg_year, 
+    MAX(year_id)         AS end_year,
+    BagToString(team_ids, '|') AS team_ids,
     totG   AS G,   totPA  AS PA,  totAB  AS AB,
     totH   AS H,   totBB  AS BB,  totHBP AS HBP,
     toth1B AS h1B, toth2B AS h2B, toth3B AS h3B, totHR AS HR,
@@ -267,17 +226,9 @@ player_careers = FOREACH (GROUP bat_year BY player_id) {
 };
 ------
 
-* Calculating Summary Statistics on Groups with Aggregate Functions
-  - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
-    - there are a core set of aggregate functions that we use to summarize the
-    - Use COUNT_STAR() to count Records in a Group; MIN() and MAX() to find the single largest / smallest values in a group; SUM() to find the total of all values in a group. The built-in AVG() function returns the arithmetic mean. To find the standard deviation, use the (double check the name) function from Datafu.
-    - describe difference between count and count_star. Note that the number of null values is (count_star - count). Recommend to always use COUNT_STAR unless you are explicitly conveying that you want to exclude nulls. Make sure we follow that advice.
-    - demonstrate this for summarizing players' weight and height by year. Show a stock-market style candlestick graph of weight and of height (min, avg-STDEV, avg, avg+STDEV, max), with graph of "volume" (count, count distinct and count_star) below it. Players are getting bigger and stronger; more of them as league and roster size grows; more data (fewer nulls) after early days.
-    - the median is hard and so we will wait until stats chapter.
-    - other summary stats (kurtosis, other higher-moments), no built-in function
-    - nested FOREACH (in the previous chapter we found obp, slg, ops from counting stats; now do it but for career.
-    - Aggregating Nullable Columns (NULL values don't get counted in an average. To have them be counted, ternary NULL values into a zero)
+We've used some aggregate functions to create an output table with similar structure to the input table, but at a coarser-grained relational level: career rather than season. It's good manners to put the fields in a recognizable order as the original field as we have here. 
 
+==== Summarizing a Field's Values with Aggregate Functions
 
 
 ------
@@ -437,7 +388,28 @@ This brings up one of the more annoying things about Hadoop programming. The glo
 
 If the global statistic is relatively static, we prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals
 
-==== Co-Grouping Elements from Multiple Tables
+
+=== The Summing Trick
+
+==== "At Least"-style Queries
+
+
+
+
+
+* players who have ever reached figure-of-merit thresholds in a season: 30 HR, 150 hits, 350 OBP, 500 SLG, 800 OPS (check values)
+  - graph: HoF score vs HOF actual
+  - exercise: find and tune a good predictor; refer to Bill James' version. win-loss record; HoF standards test: 1pt batting over .300, 1-10 pts for each 0.025 pts of SLG above .300; 1-10 pts for each 0.010 of OBP over 0.300; 1-5 pts for each 200 walks over 300; 1 pt for each 200 HR. (And about a dozen more)
+
+
+==== Testing for Existence/Absence of a Value Within a Group
+
+* players who _have ever_ played for the Red Sox: filter, distinct.
+* players who have _never_ played for the Red Sox: can't do that, it would give you "players who have played for a team that is not the redsox". Make a synthetic field and use MAX on it. If there is year where there is a "1" in the is_redsox field, this is true, meeting he goal
+
+If we'd like to 
+
+=== Co-Grouping Elements from Multiple Tables
 
 Let's continue our example of finding the list of home ballparks for each player over their career.
 
@@ -715,6 +687,14 @@ SELECT bat.player_id, bat.nameCommon,
   HAVING begYear > 1900
   ORDER BY n_parks DESC, player_id ASC
   ;
+  
+  Join bat_yr on (team_id, year_id), pty by (team_id, year_id);
+  FOREACH @ GENERATE bat_years::player_id, park_id;
+  Group by player_id
+  Distinct parks
+  
+  Cogroup baty by (team_id, year_id), pty by (team_id, year_id);
+   distinct park_id, 
 ------
 
 So now we disclose the most important thing that SQL experts need to break
@@ -726,9 +706,13 @@ In Pig, the GROUP is supreme
 A JOIN is, for the most part, just sugar around a COGROUP-and-FLATTEN.
 Very often you'll find the simplest path is through COGROUP not JOIN.
 
-In this case, if you start by thinkingn of the group, you'll see you can eliminate a whole reduce.
+In this case, if you start by thinking of the group, you'll see you can eliminate a whole reduce.
 
 (show pig, including a DISTINCT in the fancy-style FOREACH)
+
+
+
+
 
 ==== Join a table with itself (self-join)
 
@@ -755,8 +739,6 @@ SELECT DISTINCT b1.player_id, b2.player_id
   ;
 ------
 
-=== Set operations summary
-
 ==== Find rows with no match in another table (anti-join)
 
   - group2	setops	Intersect: semi-join (allstars)
@@ -765,18 +747,6 @@ SELECT DISTINCT b1.player_id, b2.player_id
   - join	antijn	Retrieving Records from One Table That Do Not Correspond to Records in Another (non-allstars: can do this with an outer join, because cross product won't screw you up)
   - join	antijn	Finding Records with No Match in Another Table
 
-* Set operations summary
-  - group2	setops	Determining Whether Two Tables Have the Same Data (is symmetric difference empty)  -
-  - group2	setops	Retrieving Values from One Table That Do Not Exist in Another (set difference; players in batting but not pitching -- or in one but not other (symmetric difference)
-  - group2	setops	Group Elements From Multiple Tables On A Common Attribute (COGROUP)
-  - group2	setops	GROUP/COGROUP To Restructure Tables
-  - group2	setops	Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
-  - group2	setops	Union of Sets UNION-then-DISTINCT, or COGROUP (note that it doesn't dedupe, doesn't order, and doesn't check for same schema. career stats tables; do it with cogroup, not union-distinct)
-  - group2	setops	Prepare a Distinct Set from a Collection of Records: DISTINCT
-  - group2	setops	Difference (in a but not in b): cogroup keep only empty (non-allstars)
-  - group2	setops	Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
-  - group2	setops	Equality (use symmetric difference): result should be empty
-  - group2	setops	http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html and http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
 
 
 ==== Find rows with a match in another table (semi-join)
@@ -928,18 +898,90 @@ SELECT COUNT(*) AS n_asg, ast.*
 ------
 
 === Set Operations
+We've actually met most of the set operations at this point, but it's worth calling them out specifically. Set operations on groups are particularly straightforward thanks to the Datafu package, which offers Intersect, Difference (...)
 
-Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
-Find the Union of Sets UNION-then-DISTINCT
-   (note that it doesn't dedupe, doesn't order, and doesn't check for same schema)
-   * don't combine the career stats tables by union-group; do it with cogroup.
-Prepare a Distinct Set from a Collection of Records: DISTINCT
-Intersect: semi-join (allstars)
-* Difference (in a but not in b): cogroup keep only empty (non-allstars)
-* Equality (use symmetric difference): result should be empty
-* Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
-* http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html
-* http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
+TODO check that all the below is cool when there are dupes in a, b or both. 
+
+.Set Operation Membership
+------
+	 A	 B	A∪B	A∩B	a-b	b-a	a^b	 ∅
+A B	 T	 T	 T	 T	 F	 F	 F	 F
+A -	 T	 F	 T	 F	 T	 F	 T	 F
+- B	 F	 T	 T	 F	 F	 T	 T	 F
+- -	 F	 F	 F	 F	 F	 F	 F	 F
+------
+
+...
+
+------
+-- for each team year, the set of players for that year and the next, by doing the first part of a self-join 
+team_yrpls = FOREACH bat_year GENERATE team_id, year_id, player;
+team_y2y = FOREACH (COGROUP team_yrpls BY (team_id, year_id) AS ty1, team_yrpls BY (team_id, year_id-1) AS ty2) GENERATE 
+    group.team_id AS team_id, group.year_id AS year_id, 
+    ty1.player_id AS pl1, ty2.player_id AS pl2;
+
+roster_changes_y2y = FOREACH team_y2y {
+  
+  -- Distinct Union: the players in each two-year span (given year or the next). SetUnion accepts two or more bags:
+  either_year   = SetUnion(pl1, pl2);
+  
+  -- the other set operations require sorted inputs. Keep in mind that an ORDER BY within the nested block of a FOREACH (GROUP BY) is efficient, as it makes use of the secondary sort Hadoop provides.
+  opl1 = ORDER pl1 BY player_id;
+  opl2 = ORDER pl2 BY player_id;
+  
+  -- Intersect: for each team-year, the players that stayed for the next year (given year and the next). Requires sorted input. With 
+  both_years    = Intersect(opl1, opl2);
+    
+  -- Difference: for each team-year, the players that did not stay for next year (A minus B). Requires sorted input. With multiple bags of input, the result is everything that is in the first but not in any other set.
+  y1_undeparted = SetDifference(opl1, opl2);
+
+  -- Symmetric Difference: for each team-year, the players that did not stay for next year (A minus B) plus (B minus A)
+  non_both       = SetUnion(SetDifference(opl1,opl2), SetDifference(opl2,opl1));
+  TODO is there nothing better?
+  
+  -- Set Equality: for each team-year, were the players the same?
+  
+  is_unchanged =
+    -- if a has no dupes then the elements of a == elements of b if and only if (size(a intersect b) == size(a) == size(b));
+    -- if a has no dupes then the elements of a == elements of b if and only if (size(a minus b) = 0 AND (size(a) == size(b))
+  TODO is there a Datafu for this
+
+  GENERATE team_id, year_id, 
+  };
+------
+
+All of those methods use in-memory bag operations, which is generally fine.
+We can also do this using the summing trick
+
+
+For set operations on tables, let's compare at the cities that have ever hosted a major league team compare to the largest cities by population. To prove a point about set operations with duplicates, we will leave in the duplicates from the team cities (the Mets and Yankees both claim NY), and seed the largest cities list by concatenating the top 50 by strict population with the cities in the top 25 metro areas.
+
+------
+cities = LOAD 'cities-top_25_by_pop';
+top_metros = LOAD 'metros-top_25_by_pop';
+top_metros = FOREACH top_metros GENERATE FLATTEN(STRSPLITBAG(name,'-')) AS name;
+
+teams = load_teams;
+bb_g_popc = COGROUP teams BY city, top_cities BY name;
+-- union
+bb_union_popc = FOREACH bb_g_popc GENERATE FLATTEN(...)
+-- intersect
+bb_and_popc = NOT(isEmpty(A) OR isEmpty(B))
+-- set difference
+bb_minus_popc = isEmptyB
+-- symm difference
+bb_xor_popc = isEmpty(A) OR isEmpty(B)
+-- equality
+Count(bb_xor_popc) = 0
+
+-- union if no other fields needed
+bb_union_popc_0 = UNION (FOREACH teams GENERATE city), (FOREACH cities GENERATE name AS city);
+bb_union_popc_d = DISTINCT bb_union_popc_0;
+------
+
+
+This is also how you would do set operations when the bag sizes were too large, or if you wanted to retain columns not considered in the set operation.
+
 
 ==== Structural Group Operations (ie non aggregating)
 
@@ -1048,13 +1090,8 @@ Name tables for dominating primary keys. If a value is subsumed, omit. Keys are 
               pl-info[...] -- vertical partition on any other func(pl)
 If Non unique key, assumed that table xx has id xx_id
 
-
-
-
-
  Do not get join happy: find year averages, join all on year, group on player
 Just group on year then flatten with records.
-
 
 Style: n_H, ct_H, H_ct? n_H because the n_* have same schema, and because ^^^
 
@@ -1311,7 +1348,7 @@ cogroup events by team_id
 ... there's a way to do this in one less reduce in M/R -- can you in Pig?
 
 
-==== Decorate-Flatten-Redecorate
+=== Decorate-Flatten-Redecorate
 
 The patterns we've introduced so far  looking at baseball's history
 
@@ -1359,44 +1396,6 @@ WHERE (game_id LIKE 'BOS2012%')
   -- AND inn_ct > 6
 ORDER BY game_id, inn, inn_home, outs_ct
 ;
-
-    event type.  There are 25 different numeric codes to describe
-             the type of event.  They are:
-
-          Code Meaning
-
-          0    Unknown event
-          1    No event
-          2    Generic out
-          3    Strikeout
-          4    Stolen base
-          5    Defensive indifference
-          6    Caught stealing
-          7    Pickoff error
-          8    Pickoff
-          9    Wild pitch
-          10   Passed ball
-          11   Balk
-          12   Other advance
-          13   Foul error
-          14   Walk
-          15   Intentional walk
-          16   Hit by pitch
-          17   Interference
-          18   Error
-          19   Fielder's choice
-          20   Single
-          21   Double
-          22   Triple
-          23   Home run
-          24   Missing play
-
-
-
-
-
-
-
 
 
 
@@ -1507,3 +1506,86 @@ Think of this atom-only form as the neutral fighting stance for your tables. Fro
 TODO: move to the first tuning chapter.
 
 The idea is to have you run through a set of pig scripts with datasets of defined size, measuring the throughput of the core operations. The result is a ready reckoner that lets you estimate how long your job _should_ take (and how many map-reduce stages it will use).
+
+
+The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
+
+We can use `GROUP` to assemble an inline list of the stadiums each team played for by year:
+
+------
+teams_w_parks = FOREACH (GROUP team_parks BY team_id) GENERATE
+    group as team_id, team_park_years.(year_id, park_id);
+
+  -- (ALT,{(ALT01,ALT,1884,1884-04-30,1884-05-31,18)})
+  -- (ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
+------
+
+
+The result is always a tuple whose first field is named “group” -- holding the individual group keys in order. The next field has a bag of each the full input record with all its keys, even the group key.
+
+Here’s a Wukong script that illustrates what is going on:
+
+------
+(TODO: Wukong script)
+------
+
+* Group
+  - not often used on its own, but forms the basis for most structural operation patterns.
+  - Group Records by common Key or Keys
+    - Each team a player played for in career -- for single key field, first field (`group`) is that value; next is the original record, _not omitting the group key_.
+    - each team a player played for by year — grouped on team, year. For multiple keys, first field is a tuple of keys, next is the original record, _not omitting the group keys_
+    - if you want to group by an expression, synthesize a new field and use that.
+    - group players by team and decade
+  - Applying Operations to Bags
+    - you can use a nested FOREACH to apply a subset of Pig's operations to a bag: DISTINCT, ORDER, nested FOREACH, FILTER
+    - demonstrate with distinct teams in career.
+    - we'll demonstrate the others  as we go.
+  - group		Creating a Delimited List Within a Field from Table Rows
+    - one use is denormalizing multiple values into one field.
+    - use the pig 0.12 CONCAT to string them together
+    - in the flatten section we showed how to undo this
+
+TODO in part on groups note As Jon Covent says, "Bags are what makes Pig Awesome". SQL doesn't have them, and they bring extraordinary power. They can be of arbitrarily large size, present an ad-hoc object representation, and within limits can themselves be limited, transformed, ordered, threaded, and joined.
+They can't be indexed into, and unless you explicitly say so are not ordered.
+
+TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
+
+
+
+* Calculating Summary Statistics on Groups with Aggregate Functions
+  - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
+    - there are a core set of aggregate functions that we use to summarize the
+    - Use COUNT_STAR() to count Records in a Group; MIN() and MAX() to find the single largest / smallest values in a group; SUM() to find the total of all values in a group. The built-in AVG() function returns the arithmetic mean. To find the standard deviation, use the (double check the name) function from Datafu.
+    - describe difference between count and count_star. Note that the number of null values is (count_star - count). Recommend to always use COUNT_STAR unless you are explicitly conveying that you want to exclude nulls. Make sure we follow that advice.
+    - demonstrate this for summarizing players' weight and height by year. Show a stock-market style candlestick graph of weight and of height (min, avg-STDEV, avg, avg+STDEV, max), with graph of "volume" (count, count distinct and count_star) below it. Players are getting bigger and stronger; more of them as league and roster size grows; more data (fewer nulls) after early days.
+    - the median is hard and so we will wait until stats chapter.
+    - other summary stats (kurtosis, other higher-moments), no built-in function
+    - nested FOREACH (in the previous chapter we found obp, slg, ops from counting stats; now do it but for career.
+    - Aggregating Nullable Columns (NULL values don't get counted in an average. To have them be counted, ternary NULL values into a zero)
+
+
+Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
+Find the Union of Sets UNION-then-DISTINCT
+   (note that it doesn't dedupe, doesn't order, and doesn't check for same schema)
+   * don't combine the career stats tables by union-group; do it with cogroup.
+Prepare a Distinct Set from a Collection of Records: DISTINCT
+Intersect: semi-join (allstars)
+* Difference (in a but not in b): cogroup keep only empty (non-allstars)
+* Equality (use symmetric difference): result should be empty
+* Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
+* http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html
+* http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
+
+* Set operations summary
+  - group2	setops	Determining Whether Two Tables Have the Same Data (is symmetric difference empty)  -
+  - group2	setops	Retrieving Values from One Table That Do Not Exist in Another (set difference; players in batting but not pitching -- or in one but not other (symmetric difference)
+  - group2	setops	Group Elements From Multiple Tables On A Common Attribute (COGROUP)
+  - group2	setops	GROUP/COGROUP To Restructure Tables
+  - group2	setops	Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
+  - group2	setops	Union of Sets UNION-then-DISTINCT, or COGROUP (note that it doesn't dedupe, doesn't order, and doesn't check for same schema. career stats tables; do it with cogroup, not union-distinct)
+  - group2	setops	Prepare a Distinct Set from a Collection of Records: DISTINCT
+  - group2	setops	Difference (in a but not in b): cogroup keep only empty (non-allstars)
+  - group2	setops	Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
+  - group2	setops	Equality (use symmetric difference): result should be empty
+  - group2	setops	http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html and http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
+

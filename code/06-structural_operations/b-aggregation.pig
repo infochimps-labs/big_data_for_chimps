@@ -1,47 +1,30 @@
 IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball';
-bat_year   = load_bat_seasons();
+bat_yrs   = load_bat_seasons();
 
-
-
--- summary    = summarize_field(player_hrs);
-
-table = FOREACH bat_year GENERATE year_id, HR;
-
-summary = FOREACH (GROUP table ALL) {
-  dist = DISTINCT table.$1;
-  some = LIMIT dist 10; 
-  GENERATE
-    MIN(table.$1)                       AS min_val,
-    MAX(table.$1)                       AS max_val,
-    AVG(table.$1)                       AS avg_val,
-    SQRT(VAR(table.$1))                 AS stddev_val,
-    SUM(table.$1)                       AS sum_val,
-    COUNT_STAR(table)                   AS n_recs,
-    COUNT_STAR(table) - COUNT(table.$1) AS n_nulls,
-    COUNT(dist)                         AS card_val,
-    BagToString(some, '|')              AS some_vals
+-- Turn the batting season statistics into batting career statistics
+--
+bat_careers = FOREACH (GROUP bat_yrs BY player_id) {
+  team_ids = DISTINCT bat_yrs.team_id;
+  totG   = SUM(bat_yrs.G);   totPA  = SUM(bat_yrs.PA);
+  totAB  = SUM(bat_yrs.AB);  totH   = SUM(bat_yrs.H);
+  totBB  = SUM(bat_yrs.BB);  totHBP = SUM(bat_yrs.HBP);
+  toth1B = SUM(bat_yrs.h1B); toth2B = SUM(bat_yrs.h2B);
+  toth3B = SUM(bat_yrs.h3B); totHR  = SUM(bat_yrs.HR); 
+  OBP    = (totH + totBB + totHBP) / totPA;
+  SLG    = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
+  GENERATE group               AS player_id,
+    COUNT_STAR(bat_yrs)       AS n_seasons,
+    MIN(bat_yrs.year_id)	     AS beg_year,
+    MAX(bat_yrs.year_id)      AS end_year,
+    BagToString(team_ids, '^') AS team_ids,
+    totG   AS G,   totPA  AS PA,  totAB  AS AB,
+    totH   AS H,   totBB  AS BB,  totHBP AS HBP,
+    toth1B AS h1B, toth2B AS h2B, toth3B AS h3B, totHR AS HR,
+    OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS
     ;
-  };
+};
 
-DUMP summary;
+STORE_TABLE('bat_careers', bat_careers);
 
-
-yr_summary = FOREACH (GROUP table BY year_id) {
-  dist = DISTINCT table.$1;
-  some = LIMIT dist 10; 
-  GENERATE
-    group                               AS year_id,
-    MIN(table.$1)                       AS min_val,
-    MAX(table.$1)                       AS max_val,
-    AVG(table.$1)                       AS avg_val,
-    SQRT(VAR(table.$1))                 AS stddev_val,
-    SUM(table.$1)                       AS sum_val,
-    COUNT_STAR(table)                   AS n_recs,
-    COUNT_STAR(table) - COUNT(table.$1) AS n_nulls,
-    COUNT(dist)                         AS card_val,
-    BagToString(some, '|')              AS some_vals
-    ;
-  };
-
-DUMP yr_summary
-;
+DESCRIBE bat_yrs;
+DESCRIBE bat_careers;

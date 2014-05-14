@@ -14,6 +14,19 @@ Other statistical summaries require assembling context that grows with the size 
 === Summary Statistics
 
 
+
+* Calculating Summary Statistics on Groups with Aggregate Functions
+  - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
+    - there are a core set of aggregate functions that we use to summarize the
+    - Use COUNT_STAR() to count Records in a Group; MIN() and MAX() to find the single largest / smallest values in a group; SUM() to find the total of all values in a group. The built-in AVG() function returns the arithmetic mean. To find the standard deviation, use the (double check the name) function from Datafu.
+    - describe difference between count and count_star. Note that the number of null values is (count_star - count). Recommend to always use COUNT_STAR unless you are explicitly conveying that you want to exclude nulls. Make sure we follow that advice.
+    - demonstrate this for summarizing players' weight and height by year. Show a stock-market style candlestick graph of weight and of height (min, avg-STDEV, avg, avg+STDEV, max), with graph of "volume" (count, count distinct and count_star) below it. Players are getting bigger and stronger; more of them as league and roster size grows; more data (fewer nulls) after early days.
+    - the median is hard and so we will wait until stats chapter.
+    - other summary stats (kurtosis, other higher-moments), no built-in function
+    - nested FOREACH (in the previous chapter we found obp, slg, ops from counting stats; now do it but for career.
+    - Aggregating Nullable Columns (NULL values don't get counted in an average. To have them be counted, ternary NULL values into a zero)
+
+
 Criteria for being in the structural patterns part: in remainder of book,(a) there's only one way to do it; (b) we don't talk about how it's done.
 
 Later or here or at all demonstrate combiners in m-r?

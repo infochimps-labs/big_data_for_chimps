@@ -26,36 +26,49 @@ REGISTER           '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank.jar';
 REGISTER           '$dsfp_dir/pig/datafu/datafu-pig/build/libs/datafu-pig-1.2.1.jar';
 REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
 
-DEFINE Transpose    datafu.pig.util.TransposeTupleToBag();
-DEFINE VAR          datafu.pig.stats.VAR();
-DEFINE Stitch       org.apache.pig.piggybank.evaluation.Stitch();
-DEFINE Over         org.apache.pig.piggybank.evaluation.Over();
-DEFINE STRSPLITBAG  pigsy.text.STRSPLITBAG();
+DEFINE Transpose              datafu.pig.util.TransposeTupleToBag();
+DEFINE STRSPLITBAG            pigsy.text.STRSPLITBAG();
 
--- DEFINE Coalesce            datafu.pig.util.Coalesce();
--- DEFINE NullIfEmpty         datafu.pig.bags.EmptyBagToNullFields();
---
--- DEFINE CountEach           datafu.pig.bags.CountEach();
--- DEFINE BagGroup            datafu.pig.bags.BagGroup();
--- DEFINE BagConcat           datafu.pig.bags.BagConcat();
--- DEFINE AppendToBag         datafu.pig.bags.AppendToBag();
--- DEFINE PrependToBag        datafu.pig.bags.PrependToBag();
--- DEFINE BagLeftOuterJoin    datafu.pig.bags.BagLeftOuterJoin();
---
--- DEFINE VAR                 datafu.pig.stats.VAR();
+DEFINE SortedQuartile         datafu.pig.stats.Quantile('5');
+DEFINE ApproxQuartile         datafu.pig.stats.StreamingQuantile('5');
+-- DEFINE SortedDecile        datafu.pig.stats.Quantile('10');
+-- DEFINE ApproxDecile        datafu.pig.stats.StreamingQuantile('10');
+DEFINE SortedEdgeile          datafu.pig.stats.Quantile(          '0.01','0.05', '0.10', '0.50', '0.90', '0.95', '0.99');
+DEFINE ApproxEdgeile          datafu.pig.stats.StreamingQuantile( '0.01','0.05', '0.10', '0.50', '0.90', '0.95', '0.99');
+-- DEFINE ApproxCardinality   datafu.pig.stats.HyperLogLogPlusPlus();
 -- DEFINE SortedMedian        datafu.pig.stats.Median(); -- requires bag be sorted
 -- DEFINE ApproxMedian        datafu.pig.stats.StreamingMedian();
--- DEFINE SortedQuartile      datafu.pig.stats.Quantile('0.0','0.25','0.5','0.75','1.0');
--- DEFINE SortedDecile        datafu.pig.stats.Quantile('0.0','0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9','1.0');
--- DEFINE ApproxQuartile      datafu.pig.stats.StreamingQuantile('0.0','0.25','0.5','0.75','1.0');
--- DEFINE ApproxDecile        datafu.pig.stats.StreamingQuantile('0.0','0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9','1.0');
--- DEFINE ApproxEdgeile       datafu.pig.stats.StreamingQuantile('0.0','0.01','0.05','0.5','0.95','0.99','1.0');
--- DEFINE ApproxCardinality   datafu.pig.stats.HyperLogLogPlusPlus();
 --
 -- DEFINE MD5                 datafu.pig.hash.MD5();
 -- DEFINE MD5base64           datafu.pig.hash.MD5('base64');
 -- DEFINE SHA256              datafu.pig.hash.SHA();
 -- DEFINE SHA512              datafu.pig.hash.SHA('512');
+
+DEFINE summarize_values_by(table, field, keys) RETURNS summary {
+  $summary = FOREACH (GROUP $table $keys) {
+    dist       = DISTINCT $table.$field;
+    non_nulls  = FILTER   $table.$field BY $field IS NOT NULL;
+    sorted     = ORDER    non_nulls BY $field;
+    some       = LIMIT    dist.$field 5;
+    n_recs     = COUNT_STAR($table);
+    n_notnulls = COUNT($table.$field);
+    GENERATE
+      group,
+      '$field'                       AS var:chararray,
+      AVG($table.$field)             AS avg_val,
+      SQRT(VAR($table.$field))       AS stddev_val,
+      MIN($table.$field)             AS min_val,
+      FLATTEN(SortedEdgeile(sorted)) AS (p01, p05, p10, p50, p90, p95, p99),
+      MAX($table.$field)             AS max_val,
+      --
+      n_recs                         AS n_recs,
+      n_recs - n_notnulls            AS n_nulls,
+      COUNT(dist)                    AS cardinality,
+      SUM($table.$field)             AS sum_val,
+      BagToString(some, '^')         AS some_vals
+      ;
+  };
+};
 
 DEFINE load_allstars() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/allstars.tsv' AS (
@@ -69,14 +82,15 @@ DEFINE load_bat_seasons() RETURNS loaded {
     player_id:chararray, year_id:int, team_id:chararray,
     G:int,     PA:int,    AB:int,    H:int,     BB:int, HBP:int,
     h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
-    OBP:float, SLG:float, ISO:float, OPS:float
+    OBP:float, SLG:float, ISO:float, OPS:float,
+    height:int, weight:int
     );
 };
 
 DEFINE load_games() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/games_lite.tsv' AS (
     game_id:chararray, year_id:int,
-    away_team_id:chararray, home_team_id:chararray, 
+    away_team_id:chararray, home_team_id:chararray,
     home_runs_ct:int, away_runs_ct:int);
 };
 
@@ -116,34 +130,15 @@ DEFINE load_people() RETURNS loaded {
     deathYear:int,        deathMonth:int,       deathDay: int,
     deathCtry: chararray, deathState:chararray, deathCity:chararray,
     nameFirst:chararray,  nameLast:chararray,   nameGiven:chararray,
-    weight:float,         height:float,
+    height:int,           weight:int,
     bats:chararray,       throws:chararray,
     debut:chararray,      finalGame:chararray,
-    retro_id:chararray,    bbref_id:chararray
+    retro_id:chararray,   bbref_id:chararray
     );
 };
 
 DEFINE load_franchises() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/baseball_databank/csv/TeamsFranchises.csv' USING PigStorage(',') AS (
-    franch_id:chararray, franchName:chararray, active:chararray, na_assoc:chararray
+    franch_id:chararray, franch_name:chararray, active:chararray, na_assoc:chararray
     );
 };
-
-
--- DEFINE summarize_field(table) {
--- hr_stats = FOREACH (GROUP table ALL) {
---   dist = DISTINCT table.$0;
---   some = LIMIT (ORDER dist BY $0) 10;
---   GENERATE
---     MIN(table.$0)                       AS min_val,
---     MAX(table.$0)                       AS max_val,
---     AVG(table.$0)                       AS avg_val,
---     SQRT(VAR(table.$0))                 AS stddev_val,
---     SUM(table.$0)                       AS sum_val,
---     COUNT_STAR(table)                   AS n_recs,
---     COUNT_STAR(table) - COUNT(table.$0) AS n_nulls,
---     COUNT(hrs_distinct)                 AS card_val,
---     BagToString(some, '|')              AS some_vals
---     ;
---   };
--- };
