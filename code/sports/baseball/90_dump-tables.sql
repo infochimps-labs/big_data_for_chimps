@@ -4,6 +4,7 @@ SELECT * FROM `lahman`.`allstars`        ORDER BY year_id, player_id    INTO OUT
 SELECT * FROM `lahman`.`bat_seasons`     ORDER BY player_id, year_id    INTO OUTFILE '/data/rawd/sports/baseball/bat_seasons.tsv';
 SELECT * FROM `lahman`.`teams`           ORDER BY team_id, year_id      INTO OUTFILE '/data/rawd/sports/baseball/teams.tsv';
 SELECT * FROM `lahman`.`park_team_years` ORDER BY year_id, park_id      INTO OUTFILE '/data/rawd/sports/baseball/park_team_years.tsv';
+SELECT * FROM `lahman`.`parks`           ORDER BY park_id               INTO OUTFILE '/data/rawd/sports/baseball/parks.tsv';
 SELECT * FROM `lahman`.`franchises`      ORDER BY franch_id             INTO OUTFILE '/data/rawd/sports/baseball/franchises.tsv';
 
 SELECT

@@ -70,6 +70,34 @@ DEFINE summarize_values_by(table, field, keys) RETURNS summary {
   };
 };
 
+DEFINE summarize_strings_by(table, field, keys) RETURNS summary {
+  $summary = FOREACH (GROUP $table $keys) {
+    dist       = DISTINCT $table.$field;
+    lens       = FOREACH  $table GENERATE SIZE($field) AS len;
+    sortlens   = ORDER    lens BY len;
+    some       = LIMIT    dist.$field 5;
+    n_recs     = COUNT_STAR($table);
+    n_notnulls = COUNT($table.$field);
+    GENERATE
+      group,
+      '$field'                       AS var:chararray,
+      AVG(lens.len)                  AS avg_len,
+      SQRT(VAR(lens.len))            AS stddev_len,
+      MIN(lens.len)                  AS min_len,
+      FLATTEN(SortedEdgeile(sortlens)) AS (p01, p05, p10, p50, p90, p95, p99),
+      MAX(lens.len)                  AS max_len,
+      MIN($table.$field)             AS min_val,
+      MAX($table.$field)             AS max_val,
+      --
+      n_recs                         AS n_recs,
+      n_recs - n_notnulls            AS n_nulls,
+      COUNT(dist)                    AS cardinality,
+      SUM($table.$field)             AS sum_val,
+      BagToString(some, '^')         AS some_vals
+      ;
+  };
+};
+
 DEFINE load_allstars() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/allstars.tsv' AS (
     player_id:chararray, year_id:int,
@@ -111,6 +139,12 @@ DEFINE load_teams() RETURNS loaded {
 DEFINE load_park_tm_yr() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/park_team_years.tsv' AS (
     park_id:chararray, team_id:chararray, year_id:long, beg_date:chararray, end_date:chararray, n_games:long
+    );
+};
+
+DEFINE load_parks() RETURNS loaded {
+  $loaded = LOAD '$rawd/sports/baseball/parks/parkinfo.tsv' AS (
+      park_id:chararray, park_name:chararray, beg_date:datetime, end_date:datetime, is_active:boolean, n_games:long, lng:double, lat:double, city:chararray, state_id:chararray, country_id:chararray, postal_id:chararray, streetaddr:chararray, extaddr:chararray, tel:chararray, url:chararray, url_spanish:chararray, logofile:chararray, allteams:chararray, allnames:chararray, comments:chararray
     );
 };
 
