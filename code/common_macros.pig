@@ -18,7 +18,7 @@
 --
 
 DEFINE STORE_TABLE(filename, table) RETURNS void {
-  STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true');
+  STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
 };
 
 
@@ -73,30 +73,47 @@ DEFINE summarize_values_by(table, field, keys) RETURNS summary {
 DEFINE summarize_strings_by(table, field, keys) RETURNS summary {
   $summary = FOREACH (GROUP $table $keys) {
     dist       = DISTINCT $table.$field;
-    lens       = FOREACH  $table GENERATE SIZE($field) AS len;
-    sortlens   = ORDER    lens BY len;
+    lens       = FOREACH  $table GENERATE SIZE(Coalesce($field,'')) AS len;
+    -- sortlens   = ORDER    lens BY len;
     some       = LIMIT    dist.$field 5;
+    snippets   = FOREACH  some GENERATE (SIZE($field) > 15 ? CONCAT(SUBSTRING($field, 0, 15),'…') : $field) AS val;
     n_recs     = COUNT_STAR($table);
     n_notnulls = COUNT($table.$field);
+    all_chars  = FOREACH dist GENERATE STRSPLITBAG(Coalesce($field,''), '(?!^)');
+    chars      = CountEach(BagConcat(all_chars));
     GENERATE
       group,
       '$field'                       AS var:chararray,
-      AVG(lens.len)                  AS avg_len,
-      SQRT(VAR(lens.len))            AS stddev_len,
+      -- AVG(lens.len)                  AS avg_len,
+      -- SQRT(VAR(lens.len))            AS stddev_len,
       MIN(lens.len)                  AS min_len,
-      FLATTEN(SortedEdgeile(sortlens)) AS (p01, p05, p10, p50, p90, p95, p99),
+      -- FLATTEN(SortedEdgeile(sortlens)) AS (p01, p05, p10, p50, p90, p95, p99),
       MAX(lens.len)                  AS max_len,
-      MIN($table.$field)             AS min_val,
-      MAX($table.$field)             AS max_val,
       --
       n_recs                         AS n_recs,
       n_recs - n_notnulls            AS n_nulls,
       COUNT(dist)                    AS cardinality,
-      SUM($table.$field)             AS sum_val,
-      BagToString(some, '^')         AS some_vals
+      SUM(lens.len)                  AS sum_len,
+      MIN($table.$field)             AS min_val,
+      MAX($table.$field)             AS max_val,
+      BagToString(snippets, '^')     AS some_vals,
+      chars AS chars
       ;
   };
-};
+  $summary = FOREACH $summary {
+    so_chars = ORDER chars BY count DESC;
+    so_chars = LIMIT so_chars 5;
+    char_cts = FOREACH so_chars GENERATE CONCAT($0.token, ':', (chararray)count);
+    GENERATE var,
+      -- avg_len, stddev_len,
+      min_len,
+      -- p01, p05, p10, p50, p90, p95, p99
+      max_len, n_recs, n_nulls, cardinality,
+      sum_len, min_val, max_val, some_vals,
+      BagToString(char_cts, '|')
+      ;
+    };
+  };
 
 DEFINE load_allstars() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/allstars.tsv' AS (
@@ -107,11 +124,12 @@ DEFINE load_allstars() RETURNS loaded {
 
 DEFINE load_bat_seasons() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/bats_lite.tsv'    AS (
-    player_id:chararray, year_id:int, team_id:chararray,
-    G:int,     PA:int,    AB:int,    H:int,     BB:int, HBP:int,
-    h1B:int,   h2B:int,   h3B:int,   HR:int,    TB:int,
-    OBP:float, SLG:float, ISO:float, OPS:float,
-    height:int, weight:int
+    player_id:chararray, year_id:int,
+    team_id:chararray,   lg_id:chararray,
+    age: int,  G:int,     PA:int,    AB:int,
+    HBP:int,   SH: int,   BB:int,    H:int,
+    h1B:int,   h2B:int,   h3B:int,   HR:int,
+    R:int,     RBI:int,   OBP:float, SLG:float
     );
 };
 
@@ -144,9 +162,31 @@ DEFINE load_park_tm_yr() RETURNS loaded {
 
 DEFINE load_parks() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/parks/parkinfo.tsv' AS (
-      park_id:chararray, park_name:chararray, beg_date:datetime, end_date:datetime, is_active:boolean, n_games:long, lng:double, lat:double, city:chararray, state_id:chararray, country_id:chararray, postal_id:chararray, streetaddr:chararray, extaddr:chararray, tel:chararray, url:chararray, url_spanish:chararray, logofile:chararray, allteams:chararray, allnames:chararray, comments:chararray
+    park_id:chararray, park_name:chararray, beg_date:datetime,
+    end_date:datetime, is_active:int, n_games:long, lng:double, lat:double,
+    city:chararray, state_id:chararray, country_id:chararray,
+    postal_id:chararray, streetaddr:chararray, extaddr:chararray, tel:chararray,
+    url:chararray, url_spanish:chararray, logofile:chararray,
+    allteams:chararray, allnames:chararray, comments:chararray
     );
 };
+
+DEFINE load_awards() RETURNS loaded {
+  $loaded = LOAD '$rawd/sports/baseball/awards.tsv' AS (
+    award_id:chararray, year_id:long, lg_id:chararray, player_id:chararray, is_winner:int, vote_pct:double, first_pct:double, n_firstv:long, tie:int
+    );
+};
+
+
+DEFINE load_hofs() RETURNS loaded {
+  $loaded = LOAD '$rawd/sports/baseball/hof_bat.tsv' AS (
+    player_id:chararray, inducted_by:chararray,
+    is_inducted:boolean, is_pending:int,
+    max_pct:long, n_ballots:long, hof_score:long,
+    year_eligible:long, year_inducted:long, pcts:chararray
+    );
+};
+
 
 -- see sports/baseball/event_lite.rb for schema
 DEFINE load_events(begy, endy) RETURNS loaded {

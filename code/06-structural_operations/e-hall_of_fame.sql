@@ -1,0 +1,79 @@
+
+-- .300 30 HR 105 RBI
+-- SELECT COUNT(*), GROUP_CONCAT(lg_id ORDER BY lg_id) AS n_players, awd.* FROM awardsplayers awd WHERE award_id = 'Most Valuable Player' GROUP BY year_id;
+
+
+-- * Batting Average, as follows; seasons are not double-counted and require 100 games to qualify for this bonus.
+--            2.5 points for each season over .300,
+--            5   for over .350,
+--           15 for over .400.
+-- * H:       5 points for each season of 200 or more hits.
+-- * RBI:     3 points for each season of 100 RBI's
+-- * R:       3 points for each season of 100 runs.
+-- * HR:     10 points for 50 home runs
+--            4 points for 40 HR
+--            2 points for 30 HR.
+-- * 2B:      2 points for 45 doubles
+--            1 point for 35 doubles.
+-- * MVP:     8 points for each MVP award
+-- * AllSt:   3 for each AllStar Game
+-- * ROY:     1 point for a Rookie of the Year award.
+-- * GoldG:   2 points for a gold glove at C, SS, or 2B, and 1 point for any other gold glove.
+-- * PlOff:   6 points if they were the regular SS or C on a WS winning team
+--            5 points for 2B, 3 for 3B, 1 for 1B.
+--            3 points for OF (requires at least 82 games as the position).
+--            5 points if they were the regular SS or C on a Pennant-winning (but not WS winning) team
+--            3 points for 2B, 1 for 3B.
+--            1 points for OF (requires at least 82 games as the position).
+--            2 points if they were the regular SS or C on a Division winning team (but not WS or LCS winning)
+--            1 points for 2B, or 3B.
+--            1 points for OF (requires at least 82 games as the position).
+-- * Leader:  6 points for leading the league in BA
+--            4 points for leading the league in HR
+--            4 points for leading the league in RBI
+--            3 points for leading the league in R
+--            2 points for leading the league in H
+--            2 points for leading the league in SB
+--            1 points for leading the league in 2B
+--            1 points for leading the league in 3B
+-- * Career: 50 points for 3,500 career hits
+--           40 for 3,000
+--           15 for 2,500
+--            4 for 2,000
+--           30 points for 600 career home runs,
+--           20 for 500
+--           10 for 400
+--            3 for 300.
+--           24 points for lifetime BA over .330
+--           16 if over .315
+--            8 if over .300.
+-- * Pos:    60 for 1800 games as catcher
+--           45 for 1600 games as catcher
+--           30 for 1400
+--           15 for 1200
+--           30 for 2100 games at 2B or SS
+--           15 for 1800 games.
+--           15 for 2000 games at 3B.
+--           15 additional points for >= 2,500 games played at 2B, SS, or 3B.
+--           15 for 1,500 or more games as a 2B, SS or C and a career batting average over .275
+--
+
+-- [(H - 1500) / 150,      10].min    One point for each  150    hits            over 1500, limit 10.
+-- [(BAV-0.275)/ 0.005,     9].min    One point for each .005 of b.average       over .275, limit 9
+-- ((BAV)   > 300        ?1:0)        One point for              b.average       over .300
+-- [(R - 900)  / 100,       8].min    One point for each  100    runs            over  900, limit 8.
+-- ((R/G)   > 0.500      ?1:0)        One point for              runs per game   over .500
+-- ((R/G)   > 0.644      ?1:0)        One point for              runs per game   over .644
+-- [(RBI-800)  / 100,       8].min    One point for each  100    RBI's           over  800, limit 8.
+-- ((RBI/G) > 0.500      ?1:0)        One point for              RBI per game    over .500.
+-- ((RBI/G) > 0.600      ?1:0)        One point for              RBI per game    over .600.
+-- [(SLG-0.300)/ 0.025,    10].min    One point for each .025 of slugging pct    over .300, limit 10
+-- [(OBP-0.300)/ 0.010,    10].min    One point for each .010 of on-base pct     over .300, limit 10
+-- [   HR      /   200,     5].min    One point for each  200    home runs
+-- ((HR/H)  > 0.10       ?1:0)        One point for              home runs/hits  over .10
+-- ((HR/H)  > 0.20       ?1:0)        One point for              home runs/hits  over .20
+-- [(XBH - 300)/   200,     5].min    One point for each  200    extra base hits over  300, limit 5.
+-- [(BB  - 300)/   200,     5].min    One point for each  200    walks           over  300, limit 5.
+-- [     SB    /   100,     5].min    One point for each  100    stolen bases,              limit 5.
+--
+-- { c: 20, ss: 16, b2: 14, b3: 13, cf: 12, rf: 6, lf: 3, b1: 1, dh: 0 }

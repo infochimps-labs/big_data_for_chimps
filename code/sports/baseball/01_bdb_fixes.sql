@@ -7,178 +7,212 @@
 SELECT NOW() AS starting_datetime, "Correct a few inconsistencies";
 
 ALTER TABLE `master`
-  CHANGE `lahmanID`      `lahman_id`      int(11) NOT NULL,
-  CHANGE `playerID`      `player_id`      varchar(10) DEFAULT NULL,
-  CHANGE `managerID`     `manager_id`     varchar(10) DEFAULT NULL,
-  CHANGE `hofID`         `hof_id`         varchar(10) DEFAULT NULL,
-  CHANGE `birthYear`     `birth_year`     int(11) DEFAULT NULL,
-  CHANGE `birthMonth`    `birth_month`    int(11) DEFAULT NULL,
-  CHANGE `birthDay`      `birth_day`      int(11) DEFAULT NULL,
-  CHANGE `birthCountry`  `birth_country`  varchar(50) DEFAULT NULL,
-  CHANGE `birthState`    `birth_state`    varchar(2) DEFAULT NULL,
-  CHANGE `birthCity`     `birth_city`     varchar(50) DEFAULT NULL,
-  CHANGE `deathYear`     `death_year`     int(11) DEFAULT NULL,
-  CHANGE `deathMonth`    `death_month`    int(11) DEFAULT NULL,
-  CHANGE `deathDay`      `death_day`      int(11) DEFAULT NULL,
-  CHANGE `deathCountry`  `death_country`  varchar(50) DEFAULT NULL,
-  CHANGE `deathState`    `death_state`    varchar(2) DEFAULT NULL,
-  CHANGE `deathCity`     `death_city`     varchar(50) DEFAULT NULL,
-  CHANGE `nameFirst`     `name_first`     varchar(50) DEFAULT NULL,
-  CHANGE `nameLast`      `name_last`      varchar(50) DEFAULT NULL,
-  CHANGE `nameNote`      `name_note`      varchar(255) DEFAULT NULL,
-  CHANGE `nameGiven`     `name_given`     varchar(255) DEFAULT NULL,
-  CHANGE `nameNick`      `name_nick`      varchar(255) DEFAULT NULL,
-  CHANGE `debut`         `first_game`     varchar(10) DEFAULT NULL,
-  CHANGE `finalGame`     `final_game`     varchar(10) DEFAULT NULL,
-  CHANGE `lahman40ID`    `lahman40_id`    varchar(9) DEFAULT NULL,
-  CHANGE `lahman45ID`    `lahman45_id`    varchar(9) DEFAULT NULL,
-  CHANGE `retroID`       `retro_id`       varchar(9) DEFAULT NULL,
-  CHANGE `holtzID`       `holtz_id`       varchar(9) DEFAULT NULL,
-  CHANGE `bbrefID`       `bbref_id`       varchar(9) DEFAULT NULL
+  CHANGE `lahmanID`      `lahman_id`           INT(11)      NOT NULL,
+  CHANGE `playerID`      `player_id`           VARCHAR(10)  DEFAULT NULL,
+  CHANGE `managerID`     `manager_id`          VARCHAR(10)  DEFAULT NULL,
+  CHANGE `hofID`         `hof_id`              VARCHAR(10)  DEFAULT NULL,
+  CHANGE `birthYear`     `birth_year`          INT(11)      DEFAULT NULL,
+  CHANGE `birthMonth`    `birth_month`         INT(11)      DEFAULT NULL,
+  CHANGE `birthDay`      `birth_day`           INT(11)      DEFAULT NULL,
+  CHANGE `birthCountry`  `birth_country`       VARCHAR(50)  DEFAULT NULL,
+  CHANGE `birthState`    `birth_state`         VARCHAR(2)   DEFAULT NULL,
+  CHANGE `birthCity`     `birth_city`          VARCHAR(50)  DEFAULT NULL,
+  CHANGE `deathYear`     `death_year`          INT(11)      DEFAULT NULL,
+  CHANGE `deathMonth`    `death_month`         INT(11)      DEFAULT NULL,
+  CHANGE `deathDay`      `death_day`           INT(11)      DEFAULT NULL,
+  CHANGE `deathCountry`  `death_country`       VARCHAR(50)  DEFAULT NULL,
+  CHANGE `deathState`    `death_state`         VARCHAR(2)   DEFAULT NULL,
+  CHANGE `deathCity`     `death_city`          VARCHAR(50)  DEFAULT NULL,
+  CHANGE `nameFirst`     `name_first`          VARCHAR(50)  DEFAULT NULL,
+  CHANGE `nameLast`      `name_last`           VARCHAR(50)  DEFAULT NULL,
+  CHANGE `nameNote`      `name_note`           VARCHAR(255) DEFAULT NULL,
+  CHANGE `nameGiven`     `name_given`          VARCHAR(255) DEFAULT NULL,
+  CHANGE `nameNick`      `name_nick`           VARCHAR(255) DEFAULT NULL,
+  CHANGE `debut`         `first_game`          VARCHAR(10)  DEFAULT NULL,
+  CHANGE `finalGame`     `final_game`          VARCHAR(10)  DEFAULT NULL,
+  CHANGE `lahman40ID`    `lahman40_id`         VARCHAR(9)   DEFAULT NULL,
+  CHANGE `lahman45ID`    `lahman45_id`         VARCHAR(9)   DEFAULT NULL,
+  CHANGE `retroID`       `retro_id`            VARCHAR(9)   DEFAULT NULL,
+  CHANGE `holtzID`       `holtz_id`            VARCHAR(9)   DEFAULT NULL,
+  CHANGE `bbrefID`       `bbref_id`            VARCHAR(9)   DEFAULT NULL
   ;
 
 ALTER TABLE `batting`
   RENAME TO `bat_stints`,
-  CHANGE `playerID` `player_id`           varchar(9) NOT NULL,
-  CHANGE `yearID`   `year_id`             int(11) NOT NULL,
-  CHANGE `stint`    `stint_id`            int(11) NOT NULL,
-  CHANGE `teamID`   `team_id`             varchar(3) DEFAULT NULL,
-  CHANGE `lgID`     `lg_id`               varchar(2) DEFAULT NULL,
-  CHANGE `2B`       `h2B`                 int(11) DEFAULT NULL,
-  CHANGE `3B`       `h3B`                 int(11) DEFAULT NULL
+  CHANGE `playerID` `player_id`                VARCHAR(9)   NOT NULL,
+  CHANGE `yearID`   `year_id`                  INT(11)      NOT NULL,
+  CHANGE `stint`    `stint_id`                 INT(11)      NOT NULL,
+  CHANGE `teamID`   `team_id`                  VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`     `lg_id`                    VARCHAR(2)   DEFAULT NULL,
+  CHANGE `2B`       `h2B`                      INT(11)      DEFAULT NULL,
+  CHANGE `3B`       `h3B`                      INT(11)      DEFAULT NULL
   ;
 
 ALTER TABLE `battingpost`
   RENAME TO `bat_posts`,
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `round`      `round_id`          varchar(10) NOT NULL,
-  CHANGE `playerID`   `player_id`         varchar(9) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) DEFAULT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) DEFAULT NULL,
-  CHANGE `2B`         `h2B`               int(11) DEFAULT NULL,
-  CHANGE `3B`         `h3B`               int(11) DEFAULT NULL
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `round`      `round_id`               VARCHAR(10)  NOT NULL,
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   DEFAULT NULL,
+  CHANGE `2B`         `h2B`                    INT(11)      DEFAULT NULL,
+  CHANGE `3B`         `h3B`                    INT(11)      DEFAULT NULL
   ;
 
 ALTER TABLE `pitching`
   RENAME TO `pit_stints`,
-  CHANGE `playerID`  `player_id`          varchar(9) NOT NULL,
-  CHANGE `yearID`    `year_id`            int(11) NOT NULL,
-  CHANGE `stint`     `stint_id`           int(11) NOT NULL,
-  CHANGE `teamID`    `team_id`            varchar(3) DEFAULT NULL,
-  CHANGE `lgID`      `lg_id`              varchar(2) DEFAULT NULL
+  CHANGE `playerID`  `player_id`               VARCHAR(9)   NOT NULL,
+  CHANGE `yearID`    `year_id`                 INT(11)      NOT NULL,
+  CHANGE `stint`     `stint_id`                INT(11)      NOT NULL,
+  CHANGE `teamID`    `team_id`                 VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`      `lg_id`                   VARCHAR(2)   DEFAULT NULL
   ;
 
 ALTER TABLE `pitchingpost`
   RENAME TO `pit_posts`,
-  CHANGE `playerID`   `player_id`         varchar(9) NOT NULL,
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `round`      `round_id`          varchar(10) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) DEFAULT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) DEFAULT NULL
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL,
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `round`      `round_id`               VARCHAR(10)  NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   DEFAULT NULL
 ;
 
 ALTER TABLE `fielding`
   RENAME TO `fld_stints`,
-  CHANGE `playerID`   `player_id`         varchar(9) NOT NULL,
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `stint`      `stint_id`          int(11) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) DEFAULT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) DEFAULT NULL
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL,
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `stint`      `stint_id`               INT(11)      NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   DEFAULT NULL
   ;
 
 ALTER TABLE `fieldingpost`
   RENAME TO `fld_posts`,
-  CHANGE `playerID`   `player_id`         varchar(9) NOT NULL,
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) DEFAULT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) DEFAULT NULL,
-  CHANGE `round`      `round_id`          varchar(10) NOT NULL
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL,
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   DEFAULT NULL,
+  CHANGE `round`      `round_id`               VARCHAR(10)  NOT NULL
   ;
 
 ALTER TABLE `managers`
-  CHANGE `managerID`  `manager_id`        varchar(10) DEFAULT NULL,
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) NOT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) DEFAULT NULL,
-  CHANGE `Rank`       `W_rank`            int(11) DEFAULT NULL
+  CHANGE `managerID`  `manager_id`             VARCHAR(10)  DEFAULT NULL,
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   NOT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   DEFAULT NULL,
+  CHANGE `Rank`       `W_rank`                 INT(11)      DEFAULT NULL
   ;
 
 ALTER TABLE `salaries`
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) NOT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) NOT NULL,
-  CHANGE `playerID`   `player_id`         varchar(9) NOT NULL
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   NOT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   NOT NULL,
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL
   ;
 
 ALTER TABLE `allstarfull`
   RENAME TO `allstars`,
-  CHANGE `playerID`     `player_id`     varchar(9) NOT NULL,
-  CHANGE `yearID`       `year_id`       int(11) NOT NULL,
-  CHANGE `gameNum`      `game_seq`      int(11) NOT NULL,
-  CHANGE `gameID`       `game_id`       varchar(12) DEFAULT NULL,
-  CHANGE `teamID`       `team_id`       varchar(3) DEFAULT NULL,
-  CHANGE `lgID`         `lg_id`         varchar(2) DEFAULT NULL,
-  CHANGE `startingPos`  `pos_starting`  int(11) DEFAULT NULL
-  ;
-
-ALTER TABLE `halloffame`
-  CHANGE `hofID`  `hof_id`                varchar(10) NOT NULL,
-  CHANGE `yearid` `year_id`               int(11) NOT NULL
+  CHANGE `playerID`     `player_id`            VARCHAR(9)   NOT NULL,
+  CHANGE `yearID`       `year_id`              INT(11)      NOT NULL,
+  CHANGE `gameNum`      `game_seq`             INT(11)      NOT NULL,
+  CHANGE `gameID`       `game_id`              VARCHAR(12)  DEFAULT NULL,
+  CHANGE `teamID`       `team_id`              VARCHAR(3)   DEFAULT NULL,
+  CHANGE `lgID`         `lg_id`                VARCHAR(2)   DEFAULT NULL,
+  CHANGE `startingPos`  `pos_starting`         INT(11)      DEFAULT NULL
   ;
 
 ALTER TABLE `appearances`
-  CHANGE `yearID`     `year_id`           int(11) NOT NULL,
-  CHANGE `teamID`     `team_id`           varchar(3) NOT NULL,
-  CHANGE `lgID`       `lg_id`             varchar(2) DEFAULT NULL,
-  CHANGE `playerID`   `player_id`         varchar(9) NOT NULL
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `teamID`     `team_id`                VARCHAR(3)   NOT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   DEFAULT NULL,
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL
   ;
 
 ALTER TABLE `teams`
-  CHANGE `yearID`          `year_id`           int(11) NOT NULL,
-  CHANGE `lgID`            `lg_id`             varchar(2) NOT NULL,
-  CHANGE `teamID`          `team_id`           varchar(3) NOT NULL,
-  CHANGE `franchID`        `franch_id`         varchar(3) DEFAULT NULL,
-  CHANGE `divID`           `div_id`            varchar(1) DEFAULT NULL,
-  CHANGE `Rank`            `W_rank`            int(11) DEFAULT NULL,
-  CHANGE `Ghome`           `G_home`            int(11) DEFAULT NULL,
-  CHANGE `DivWin`          `W_div`             varchar(1) DEFAULT NULL,
-  CHANGE `WCWin`           `W_wc`              varchar(1) DEFAULT NULL,
-  CHANGE `LgWin`           `W_lg`              varchar(1) DEFAULT NULL,
-  CHANGE `WSWin`           `W_ws`              varchar(1) DEFAULT NULL,
-  CHANGE `2B`              `h2B`               int(11) DEFAULT NULL,
-  CHANGE `3B`              `h3B`               int(11) DEFAULT NULL,
-  CHANGE `name`            `team_name`         varchar(50) DEFAULT NULL,
-  CHANGE `park`            `park_name`         varchar(255) DEFAULT NULL,
-  CHANGE `teamIDBR`        `team_id_BR`        varchar(3) DEFAULT NULL,
-  CHANGE `teamIDlahman45`  `team_id_lahman45`  varchar(3) DEFAULT NULL,
-  CHANGE `teamIDretro`     `team_id_retro`     varchar(3) DEFAULT NULL
+  CHANGE `yearID`          `year_id`           INT(11)      NOT NULL,
+  CHANGE `lgID`            `lg_id`             VARCHAR(2)   NOT NULL,
+  CHANGE `teamID`          `team_id`           VARCHAR(3)   NOT NULL,
+  CHANGE `franchID`        `franch_id`         VARCHAR(3)   DEFAULT NULL,
+  CHANGE `divID`           `div_id`            VARCHAR(1)   DEFAULT NULL,
+  CHANGE `Rank`            `W_rank`            INT(11)      DEFAULT NULL,
+  CHANGE `Ghome`           `G_home`            INT(11)      DEFAULT NULL,
+  CHANGE `DivWin`          `W_div`             VARCHAR(1)   DEFAULT NULL,
+  CHANGE `WCWin`           `W_wc`              VARCHAR(1)   DEFAULT NULL,
+  CHANGE `LgWin`           `W_lg`              VARCHAR(1)   DEFAULT NULL,
+  CHANGE `WSWin`           `W_ws`              VARCHAR(1)   DEFAULT NULL,
+  CHANGE `2B`              `h2B`               INT(11)      DEFAULT NULL,
+  CHANGE `3B`              `h3B`               INT(11)      DEFAULT NULL,
+  CHANGE `name`            `team_name`         VARCHAR(50)  DEFAULT NULL,
+  CHANGE `park`            `park_name`         VARCHAR(255) DEFAULT NULL,
+  CHANGE `teamIDBR`        `team_id_BR`        VARCHAR(3)   DEFAULT NULL,
+  CHANGE `teamIDlahman45`  `team_id_lahman45`  VARCHAR(3)   DEFAULT NULL,
+  CHANGE `teamIDretro`     `team_id_retro`     VARCHAR(3)   DEFAULT NULL
   ;
 
 ALTER TABLE `teamshalf` 
-  CHANGE `yearID`          `year_id`           int(11) NOT NULL,
-  CHANGE `lgID`            `lg_id`             varchar(2) NOT NULL,
-  CHANGE `teamID`          `team_id`           varchar(3) NOT NULL,
-  CHANGE `Half`            `half_id`           varchar(1) DEFAULT NULL,
-  CHANGE `divID`           `div_id`            varchar(1) DEFAULT NULL,
-  CHANGE `Rank`            `W_rank`            int(11) DEFAULT NULL,
-  CHANGE `DivWin`          `W_div`             varchar(1) DEFAULT NULL
+  CHANGE `yearID`          `year_id`           INT(11)      NOT NULL,
+  CHANGE `lgID`            `lg_id`             VARCHAR(2)   NOT NULL,
+  CHANGE `teamID`          `team_id`           VARCHAR(3)   NOT NULL,
+  CHANGE `Half`            `half_id`           VARCHAR(1)   DEFAULT NULL,
+  CHANGE `divID`           `div_id`            VARCHAR(1)   DEFAULT NULL,
+  CHANGE `Rank`            `W_rank`            INT(11)      DEFAULT NULL,
+  CHANGE `DivWin`          `W_div`             VARCHAR(1)   DEFAULT NULL
   ;
 
 ALTER TABLE `teamsfranchises`
   RENAME TO  `franchises`,
-  CHANGE `franchID`   `franch_id`                  varchar(3) NOT NULL,
-  CHANGE `franchName` `franch_name`                varchar(50) DEFAULT NULL,
-  CHANGE `active`     `is_active`                  varchar(2) DEFAULT NULL,
-  CHANGE `NAassoc`    `is_NAassoc`                 varchar(3) DEFAULT NULL
+  CHANGE `franchID`   `franch_id`              VARCHAR(3)   NOT NULL,
+  CHANGE `franchName` `franch_name`            VARCHAR(50)  DEFAULT NULL,
+  CHANGE `active`     `is_active`              VARCHAR(2)   DEFAULT NULL,
+  CHANGE `NAassoc`    `is_NAassoc`             VARCHAR(3)   DEFAULT NULL
   ;
 
 
 ALTER TABLE `awardsplayers`
-  CHANGE `playerID`  `player_id`  varchar(9) NOT NULL,
-  CHANGE `awardID`   `award_id`   varchar(255) NOT NULL,
-  CHANGE `yearID`    `year_id`    int(11) NOT NULL,
-  CHANGE `lgID`      `lg_id`      varchar(2) NOT NULL
+  CHANGE `playerID`  `player_id`               VARCHAR(9)   NOT NULL,
+  CHANGE `awardID`   `award_id`                VARCHAR(25)  NOT NULL,
+  CHANGE `yearID`    `year_id`                 INT(11)      NOT NULL,
+  CHANGE `lgID`      `lg_id`                   VARCHAR(2)   NOT NULL
   ;
+
+ALTER TABLE `awardsshareplayers`
+  CHANGE `awardID`    `award_id`               VARCHAR(25)  NOT NULL,
+  CHANGE `yearID`     `year_id`                INT(11)      NOT NULL,
+  CHANGE `lgID`       `lg_id`                  VARCHAR(2)   NOT NULL,
+  CHANGE `playerID`   `player_id`              VARCHAR(9)   NOT NULL,
+  CHANGE `pointsWon`  `points_won`             DOUBLE       DEFAULT NULL,
+  CHANGE `pointsMax`  `points_max`             INT          DEFAULT NULL,
+  CHANGE `votesFirst` `votes_first`            DOUBLE       DEFAULT NULL,
+  ;
+
+DROP TABLE IF EXISTS `halloffame`;
+CREATE TABLE `halloffame` (
+  `player_id` VARCHAR(10)   NOT NULL,
+  `hof_id`    VARCHAR(10)   NOT NULL,
+  `year_id`   INT(11)       NOT NULL,
+  `voted_by`  VARCHAR(64)   DEFAULT NULL,
+  `ballots`   INT(11)       DEFAULT NULL,
+  `needed`    INT(11)       DEFAULT NULL,
+  `votes`     INT(11)       DEFAULT NULL,
+  `inducted`  VARCHAR(1)    DEFAULT NULL,
+  `category`  VARCHAR(20)   DEFAULT NULL,
+  `note`      VARCHAR(20)   DEFAULT NULL,
+  PRIMARY KEY    (`player_id`,`year_id`,`voted_by`),
+  KEY  `player`  (`player_id),
+  KEY  `year`    (`year_id`, `category`, `voted_by`)
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
+
+LOAD DATA INFILE '/data/rawd/sports/baseball/baseball_databank/csv/HallOfFame.csv'
+  REPLACE INTO TABLE `halloffame` FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY '' LINES TERMINATED BY '\r\n'
+  IGNORE 1 ROWS
+  (player_id, year_id,voted_by,ballots,needed,votes,inducted,category,note)
+  ;
+UPDATE `halloffame` hof, `master` peep
+  SET hof.hof_id = peep.hof_id
+  WHERE hof.player_id = peep.player_id
+  ;
+UPDATE `halloffame`    SET `player_id` = 'glavito02' WHERE `player_id` = 'glavito01'  AND `year_id` = 2014 AND `voted_by` = 'BBWAA';
+
 
 -- correct a couple errors in the 2012 Baseball Databank (the 'January 9, 3:00 pm' release)
 -- need to do this first as the unique indexes fail otherwise
@@ -188,6 +222,15 @@ UPDATE `master`        SET `bbref_id`  = 'snydech03' WHERE `lahman_id` = 19419 A
 UPDATE `master`        SET `bbref_id`  = 'gilgahu01' WHERE `lahman_id` = 19417 AND `player_id` = 'gilgahu01';
 UPDATE `AwardsPlayers` SET `player_id` = 'braunry02' WHERE `player_id` = 'braunry01' AND `award_id` = 'Silver Slugger' AND year_id = 2012 AND `lg_id` = 'NL';
 UPDATE `AwardsPlayers` SET `player_id` = 'brechha01' WHERE `player_id` = 'Brecheen'  AND `award_id` = 'Baseball Magazine All-Star';
+
+UPDATE awardsshareplayers 
+  SET  award_id = (CASE award_id WHEN 'MVP' THEN 'MVP' WHEN 'Cy Young' THEN 'CyY' WHEN 'Rookie of the Year' THEN 'ROY' ELSE award_id END)
+  WHERE (award_id IN ('MVP', 'Cy Young', 'Rookie of the Year'))
+  ;
+UPDATE awardsplayers 
+  SET  award_id = (CASE award_id WHEN 'Most Valuable Player' THEN 'MVP' WHEN 'Cy Young Award' THEN 'CyY' WHEN 'Rookie of the Year' THEN 'ROY' ELSE award_id END)
+  WHERE (award_id IN ('Most Valuable Player', 'Cy Young Award', 'Rookie of the Year'))
+  ;
 
 -- Old players, validated by hand
 UPDATE `master`        SET `bbref_id`  = 'sulliwi01' WHERE `lahman_id` = 19416 AND `bbref_id` IS NULL;
@@ -410,6 +453,8 @@ UPDATE `master`        SET `bbref_id`  = 'odorija01' WHERE `lahman_id` = 19408 A
 UPDATE `master`        SET `bbref_id`  = 'tayloan01' WHERE `lahman_id` = 19410 AND `bbref_id` IS NULL;
 UPDATE `master`        SET `bbref_id`  = 'ortegra01' WHERE `lahman_id` = 19411 AND `bbref_id` IS NULL;
 UPDATE `master`        SET `bbref_id`  = 'brummty01' WHERE `lahman_id` = 19412 AND `bbref_id` IS NULL;
+
+UPDATE `master`        SET `hof_id`    = 'kleskry01h' WHERE `player_id` = 'kleskry01' AND name_last = 'Klesko' AND hof_id = 'kleskry01';
 
 -- confirmed against MLB stats
 UPDATE `bat_stints`       SET `AB` = 21 WHERE player_id = "phillan01" AND year_id = 2008 AND stint_id = 1 AND team_id = "CIN";
