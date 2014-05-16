@@ -17,8 +17,8 @@ park_tm_yr_g = GROUP park_tm_yr BY team_id;
 -- the _table_ is now also the name for a _field_. This will confuse you at
 -- first, but soon become natural. Until then, use `DESCRIBE` liberally.
 --
-DESCRIBE park_tm_yr_g;
--- park_tm_yr_g: {
+-- DESCRIBE park_tm_yr_g;
+--   park_tm_yr_g: {
 --     group: chararray,
 --     park_tm_yr: {
 --         ( park_id: chararray, team_id: chararray, year_id: long,
@@ -26,7 +26,7 @@ DESCRIBE park_tm_yr_g;
 
 -- Notice that the _full record_ is kept, even including the keys:
 --
-=> LIMIT park_tm_yr_g 2 ; DUMP @;
+-- => LIMIT park_tm_yr_g 2 ; DUMP @;
 -- (ALT,{(ALT01,ALT,1884,1884-04-30,1884-05-31,18)})
 -- (ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
 
@@ -43,17 +43,17 @@ team_py_bags = FOREACH (GROUP park_tm_yr BY team_id) GENERATE
 
 -- Compare:
 --
-=> LIMIT team_py_pairs 2 ; DUMP @;
+-- => LIMIT team_py_pairs 2 ; DUMP @;
 -- (ALT,{(ALT01,1884)})
 -- (ANA,{(ANA01,2001),(ANA01,2010),(ANA01,2002),...})
-=> LIMIT team_py_bags 2 ; DUMP @;
+-- => LIMIT team_py_bags 2 ; DUMP @;
 -- (ALT, {(ALT01)}, {(1884)})
 -- (ANA, {(ANA01),(ANA01),(ANA01),...}, {(2001),(2010),(2002),...})
 --
-DESCRIBE team_py_pairs;
--- team_parks: { team_id: chararray, { (park_id: chararray, year_id: long) } }
-DESCRIBE team_py_bags;
--- team_parks: { team_id: chararray, { (park_id: chararray) }, { (year_id: long) } }
+-- DESCRIBE team_py_pairs;
+--   team_parks: { team_id: chararray, { (park_id: chararray, year_id: long) } }
+-- DESCRIBE team_py_bags;
+--   team_parks: { team_id: chararray, { (park_id: chararray) }, { (year_id: long) } }
 
 -- You can group on multiple fields.  For each park and team, find all the years
 -- that the park hosted that team:
@@ -62,8 +62,8 @@ park_team_g = GROUP park_tm_yr BY (park_id, team_id);
 --
 -- The first field is still called 'group', but it's now a tuple
 --
-DESCRIBE park_team_g;
--- park_team_g: {
+-- DESCRIBE park_team_g;
+--   park_team_g: {
 --     group: (park_id: chararray, team_id: chararray),
 --     park_tm_yr: { (park_id: chararray, team_id: chararray, year_id: long, ...) } }
 --
@@ -71,7 +71,7 @@ DESCRIBE park_team_g;
 park_team_occupied = FOREACH(GROUP park_tm_yr BY (park_id, team_id)) GENERATE
   group.park_id, group.team_id, park_tm_yr.year_id;
 --
-=> LIMIT park_team_occupied 3 ; DUMP @;
+-- => LIMIT park_team_occupied 3 ; DUMP @;
 -- (ALB01,TRN,{(1882),(1880),(1881)})
 -- (ALT01,ALT,{(1884)})
 -- (ANA01,ANA,{(2009),(2008),(1997)...})
@@ -89,7 +89,7 @@ team_n_parks = FOREACH (GROUP park_tm_yr BY (team_id,year_id)) GENERATE
   group.year_id,
   COUNT_STAR(park_tm_yr) AS n_parks;
 vagabonds = FILTER team_n_parks BY n_parks > 1;
-=> LIMIT (ORDER vagabonds BY n_parks DESC) 4; DUMP @;
+-- => LIMIT (ORDER vagabonds BY n_parks DESC) 4; DUMP @;
 
 -- Always, always look through the data and seek 'second stories'. In this case
 -- you'll notice that the 1898 Cleveland Spiders used seven stadiums as home
@@ -128,7 +128,7 @@ team_year_w_parks = FOREACH (GROUP park_tm_yr BY (team_id, year_id)) {
     COUNT_STAR(park_tm_yr) AS n_parks,
     BagToString(park_tm_yr.park_id,'^') AS park_ids;
   };
-=> LIMIT team_year_w_parks 4 ; DUMP @;
+-- => LIMIT team_year_w_parks 4 ; DUMP @;
 -- (ALT,1884,ALT01)
 -- (ANA,1997,ANA01)
 -- ...
@@ -152,23 +152,16 @@ team_year_w_pkgms = FOREACH (GROUP park_tm_yr BY (team_id,year_id)) {
 -- (CL4,1898,CLE05:40^PHI09:9^STL05:2^ROC02:2^CLL01:2^CHI08:1^ROC03:1)
 
 vagabonds   = FILTER team_year_w_pkgms BY n_parks > 1;
-nparks_hist = FOREACH (GROUP vagabonds BY year_id) {
-  hist = CountEach(vagabonds.n_parks);
-  GENERATE group AS year_id, hist AS hist:{(t:(n_parks:long),ct:int)};
-  };
+nparks_hist = FOREACH (GROUP vagabonds BY year_id)
+  GENERATE group AS year_id, CountVals(vagabonds.n_parks) AS hist_u;
 nparks_hist = FOREACH nparks_hist {
-  hist_u = FOREACH hist GENERATE FLATTEN(t.n_parks), ct;
-  hist_o = ORDER hist_u BY n_parks ASC;
-  GENERATE year_id, hist_o AS hist_o:{(n_parks:long,ct:int)};
-  };
-nparks_hist = FOREACH nparks_hist {
-  hist_pairs = FOREACH hist_o GENERATE CONCAT((chararray)n_parks, ':', (chararray)ct);
+  hist_o     = ORDER   hist_u BY n_parks ASC;
+  hist_pairs = FOREACH hist_o GENERATE CONCAT((chararray)count, ':', (chararray)n_parks);
   GENERATE year_id, BagToString(hist_pairs, ' ^ ');
   };
 --
--- DESCRIBE nparks_hist;
--- => ORDER nparks_hist BY year_id; DUMP @;
-
+DESCRIBE nparks_hist;
+=> ORDER nparks_hist BY year_id; DUMP @;
 
 pty2_f       = FOREACH park_tm_yr GENERATE
   team_id, year_id, park_id, n_games,
@@ -202,7 +195,7 @@ roadhome_gms = FOREACH (GROUP pty2 BY (team_id, year_id)) {
     ;
 };
 
-roadhome_gms = FILTER roadhome_gms BY n_cities > 1;
-roadhome_gms = ORDER roadhome_gms BY n_roadhome_gms DESC;
-STORE_TABLE('roadhome_gms', roadhome_gms);
-cat $out_dir/roadhome_gms;
+-- roadhome_gms = FILTER roadhome_gms BY n_cities > 1;
+-- roadhome_gms = ORDER roadhome_gms BY n_roadhome_gms DESC;
+-- STORE_TABLE('roadhome_gms', roadhome_gms);
+-- cat $out_dir/roadhome_gms;

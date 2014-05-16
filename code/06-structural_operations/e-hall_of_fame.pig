@@ -28,7 +28,6 @@ IMPORT 'common_macros.pig';
 --
 
 bat_years = load_bat_seasons();
--- bat_years = FILTER bat_years BY (year_id >= 1980)
 
 normed_dec = FOREACH (GROUP bat_years BY (year_id, lg_id)) {
   batq     = FILTER bat_years BY (PA >= 450);

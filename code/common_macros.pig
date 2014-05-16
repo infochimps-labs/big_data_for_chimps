@@ -21,7 +21,6 @@ DEFINE STORE_TABLE(filename, table) RETURNS void {
   STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
 };
 
-
 REGISTER           '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank.jar';
 REGISTER           '$dsfp_dir/pig/datafu/datafu-pig/build/libs/datafu-pig-1.2.1.jar';
 REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
@@ -43,6 +42,8 @@ DEFINE ApproxEdgeile          datafu.pig.stats.StreamingQuantile( '0.01','0.05',
 -- DEFINE MD5base64           datafu.pig.hash.MD5('base64');
 -- DEFINE SHA256              datafu.pig.hash.SHA();
 -- DEFINE SHA512              datafu.pig.hash.SHA('512');
+DEFINE CountVals              datafu.pig.bags.CountEach('flatten');
+
 
 DEFINE summarize_values_by(table, field, keys) RETURNS summary {
   $summary = FOREACH (GROUP $table $keys) {
@@ -80,7 +81,7 @@ DEFINE summarize_strings_by(table, field, keys) RETURNS summary {
     n_recs     = COUNT_STAR($table);
     n_notnulls = COUNT($table.$field);
     all_chars  = FOREACH dist GENERATE STRSPLITBAG(Coalesce($field,''), '(?!^)');
-    chars      = CountEach(BagConcat(all_chars));
+    chars      = CountVals(BagConcat(all_chars));
     GENERATE
       group,
       '$field'                       AS var:chararray,
