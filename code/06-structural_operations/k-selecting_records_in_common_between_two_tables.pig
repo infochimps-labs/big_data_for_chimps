@@ -1,0 +1,1 @@
+-- Selecting Rows in Common Between Two Tables (Semi-Join)

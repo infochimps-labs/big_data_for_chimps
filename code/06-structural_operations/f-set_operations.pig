@@ -2,6 +2,14 @@ IMPORT 'common_macros.pig';
 %DEFAULT rawd    '/data/rawd';
 %DEFAULT out_dir '/data/out/baseball';
 
+-- Set Operations
+--
+-- Union and Distinct Union
+-- Intersection
+-- Difference
+-- Symmetric Difference
+-- Set Equality
+
 tc_cities = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
 
 parks = load_parks();

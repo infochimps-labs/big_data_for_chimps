@@ -374,6 +374,7 @@ In this case, we prescribed the bins in advance and each bin had uniform width -
 ==== Histogram on Multiple Fields Simultaneously
 
 (Pick up the chars count from previous chapter)
+
 ==== Calculating Percent Relative to Total
 
 ...
@@ -538,6 +539,7 @@ A Pig join is outwardly similar to the join portion of a SQL SELECT statement, b
 ==== Join Practicalities
 
 The output of the Join job has one line for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order. We have to accumulate all the A records in memory so we know what rows to emit for each B record. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
+
 ==== Direct Join: Extend Records with Uniquely Matching Records from Another Table
 
 * Direct Join:
@@ -883,6 +885,7 @@ SELECT COUNT(*) AS n_parks, pty.*
 ------
 
 (Do this with games table?)
+
 ==== Eliminating rows that have a duplicated value
 
 (ie the whole row isn't distinct,

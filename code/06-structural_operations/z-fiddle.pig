@@ -2,7 +2,7 @@ IMPORT 'common_macros.pig';
 %DEFAULT rawd    '/data/rawd';
 %DEFAULT out_dir '/data/out/baseball';
 
--- tc_cities = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
+-- cities = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop:int);
 -- New York    	New York    	8244910
 -- Los Angeles 	California  	3819702
 -- Chicago     	Illinois    	2707120
@@ -10,18 +10,44 @@ IMPORT 'common_macros.pig';
 -- Philadelphia	Pennsylvania	1536471
 -- Phoenix     	Arizona     	1469471
 
-tc_cities = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
-tc_cities = FOREACH tc_cities GENERATE *, 1;
-STORE_TABLE('foo', tc_cities);
+cities = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop:int);
 
--- foo = FOREACH tc_cities GENERATE
+DESCRIBE cities;
+
+DEFINE IOver                  org.apache.pig.piggybank.evaluation.Over('state_rk:int');
+
+ranked = FOREACH(GROUP cities BY state) {
+  c_ord = ORDER cities BY pop DESC;
+  GENERATE
+    -- FLATTEN(
+    Stitch(c_ord,
+      IOver(c_ord, 'rank', -1, -1, 2)) -- beginning (-1) to end (-1) on third field (2)
+    -- )
+    ;
+};
+DESCRIBE ranked;
+STORE_TABLE('ranked_cities', ranked);
+
+-- ranked_cities = FOREACH (GROUP cities BY state) {
+--   tcc     = ORDER cities BY pop DESC;
+--   ranked  = Stitch(tcc, IOver(tcc, 'rank', -1, -1, 2));
+--   GENERATE
+--     group   AS year_id, 
+--     ranked  AS ranked
+--     ;
+-- };
+-- DESCRIBE ranked_cities;
+-- -- STORE_TABLE('foo', cities);
+
+
+-- foo = FOREACH cities GENERATE
 --   SPRINTF('%6s|%-8s|%2$,+12d %2$8x %3$1tF %<tT %<tz', 'yay', 665568, (long)(665568*1000000L)),
 --   SPRINTF('%2$5d: %3$6s %1$3s %2$4x (%<4X)', 'the', 48879, 'wheres'),
 --   SPRINTF('%tF %<tT %<tz', ToMilliSeconds(CurrentTime()))  
 -- ;
 -- 
 --   -- SPRINTF('%2$10s %1$-20s %2$,10d %2$8x %3$10.3f %4$1TFT%<tT%<tz',
---   --   city, pop_2011, (float)(pop_2011/69.0f), (long)(pop_2011 * 1000000L));
+--   --   city, pop, (float)(pop/69.0f), (long)(pop * 1000000L));
 -- 
 -- DUMP foo;
 -- 

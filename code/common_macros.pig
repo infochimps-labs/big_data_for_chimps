@@ -2,21 +2,6 @@
 %DEFAULT rawd     '/data/rawd';
 %DEFAULT out_dir  '/data/out/baseball';
 
-
--- SET pig.verbose                         true;
--- SET pig.exectype                        local;
--- SET pig.logfile                         /tmp/pig-err.log;
--- SET pig.pretty.print.schema             true;
-
--- SET mapred.compress.map.output          true;
--- SET mapred.map.output.compression.codec org.apache.hadoop.io.compress.SnappyCodec;
--- SET pig.tmpfilecompression              true;
--- SET pig.tmpfilecompression.storage      seqfile
--- SET pig.tmpfilecompression.codec        snappy;
--- SET pig.exec.mapPartAgg                 true;
--- SET pig.noSplitCombination              false;
---
-
 DEFINE STORE_TABLE(filename, table) RETURNS void {
   STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
 };
@@ -38,12 +23,12 @@ DEFINE ApproxEdgeile          datafu.pig.stats.StreamingQuantile( '0.01','0.05',
 -- DEFINE SortedMedian        datafu.pig.stats.Median(); -- requires bag be sorted
 -- DEFINE ApproxMedian        datafu.pig.stats.StreamingMedian();
 --
--- DEFINE MD5                 datafu.pig.hash.MD5();
--- DEFINE MD5base64           datafu.pig.hash.MD5('base64');
+DEFINE MD5hex                 datafu.pig.hash.MD5('hex');
+DEFINE MD5base64              datafu.pig.hash.MD5('base64');
+DEFINE MD5                    datafu.pig.hash.MD5('hex');
 -- DEFINE SHA256              datafu.pig.hash.SHA();
 -- DEFINE SHA512              datafu.pig.hash.SHA('512');
 DEFINE CountVals              datafu.pig.bags.CountEach('flatten');
-
 
 DEFINE summarize_values_by(table, field, keys) RETURNS summary {
   $summary = FOREACH (GROUP $table $keys) {
@@ -162,9 +147,11 @@ DEFINE load_park_tm_yr() RETURNS loaded {
 };
 
 DEFINE load_parks() RETURNS loaded {
-  $loaded = LOAD '$rawd/sports/baseball/parks/parkinfo.tsv' AS (
-    park_id:chararray, park_name:chararray, beg_date:datetime,
-    end_date:datetime, is_active:int, n_games:long, lng:double, lat:double,
+  $loaded = LOAD '$rawd/sports/baseball/parks.tsv' AS (
+    park_id:chararray, park_name:chararray,
+    -- beg_date:datetime, end_date:datetime,
+    beg_date:chararray, end_date:chararray,
+    is_active:int, n_games:long, lng:double, lat:double,
     city:chararray, state_id:chararray, country_id:chararray,
     postal_id:chararray, streetaddr:chararray, extaddr:chararray, tel:chararray,
     url:chararray, url_spanish:chararray, logofile:chararray,
