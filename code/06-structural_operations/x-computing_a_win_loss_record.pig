@@ -1,10 +1,16 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 games = load_games();
 
 -- ***************************************************************************
--- ** Generate both halves with a FLATTEN
--- ***************************************************************************
+--
+-- === Computing a Won-Loss Record
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- Generate both halves with a FLATTEN
+--
 
 --
 -- Use the summable trick:
@@ -39,9 +45,10 @@ rmf                          $out_dir/team_yr_win_loss;
 STORE team_yr_win_loss INTO '$out_dir/team_yr_win_loss';
 
 
--- ***************************************************************************
--- ** Alternate approach, using a COGROUP:
--- ***************************************************************************
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- Alternate approach, using a COGROUP:
+--
 
 -- --
 -- -- Use the summable trick:

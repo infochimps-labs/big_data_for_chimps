@@ -1,1 +1,0 @@
--- Projecting Chosen Columns From a Table

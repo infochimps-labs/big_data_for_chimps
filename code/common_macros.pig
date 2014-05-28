@@ -2,7 +2,7 @@
 %DEFAULT rawd     '/data/rawd';
 %DEFAULT out_dir  '/data/out/baseball';
 
-DEFINE STORE_TABLE(filename, table) RETURNS void {
+DEFINE STORE_TABLE(table, filename) RETURNS void {
   STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
 };
 
@@ -112,23 +112,21 @@ DEFINE load_bat_seasons() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/bats_lite.tsv'    AS (
     player_id:chararray, year_id:int,
     team_id:chararray,   lg_id:chararray,
-    age: int,  G:int,     PA:int,    AB:int,
-    HBP:int,   SH: int,   BB:int,    H:int,
-    h1B:int,   h2B:int,   h3B:int,   HR:int,
-    R:int,     RBI:int,   OBP:float, SLG:float
+    G:int,    PA:int,   AB:int,   HBP:int,  SH:int,   BB:int,    H:int,
+    h1B:int,  h2B:int,  h3B:int,  HR:int,   R:int,    RBI:int
     );
 };
 
 DEFINE load_games() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/games_lite.tsv' AS (
-    game_id:chararray, year_id:int,
+    game_id:chararray,      year_id:int,
     away_team_id:chararray, home_team_id:chararray,
-    home_runs_ct:int, away_runs_ct:int);
+    away_runs_ct:int,       home_runs_ct:int);
 };
 
 DEFINE load_teams() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/teams.tsv' AS (
-    year_id: int, lg_id:chararray, team_id:chararray, franch_id:chararray,              -- 1-4
+    year_id: int, lg_id:chararray, team_id:chararray, franch_id:chararray,          -- 1-4
     div_id:chararray, Rank:int,
     G:int,    Ghome:int, W:int, L:int, DivWin:int, WCWin:int, LgWin:int, WSWin:int, -- 7-14
     R:int,    AB:int,  H:int,   H2B:int, H3B:int,  HR:int,                          -- 15-20
@@ -140,7 +138,7 @@ DEFINE load_teams() RETURNS loaded {
     );
 };
 
-DEFINE load_park_tm_yr() RETURNS loaded {
+DEFINE load_park_teams() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/park_team_years.tsv' AS (
     park_id:chararray, team_id:chararray, year_id:long, beg_date:chararray, end_date:chararray, n_games:long
     );
@@ -187,15 +185,15 @@ DEFINE load_events(begy, endy) RETURNS loaded {
 DEFINE load_people() RETURNS loaded {
   $loaded = LOAD '$rawd/sports/baseball/baseball_databank/csv/Master.csv' USING PigStorage(',') AS (
     player_id:chararray,
-    birthYear:int,        birthMonth:int,       birthDay: int,
-    birthCtry: chararray, birthState:chararray, birthCity:chararray,
-    deathYear:int,        deathMonth:int,       deathDay: int,
-    deathCtry: chararray, deathState:chararray, deathCity:chararray,
-    nameFirst:chararray,  nameLast:chararray,   nameGiven:chararray,
-    height:int,           weight:int,
-    bats:chararray,       throws:chararray,
-    debut:chararray,      finalGame:chararray,
-    retro_id:chararray,   bbref_id:chararray
+    birth_year:int,        birth_month:int,       birth_day: int,
+    birth_ctry: chararray, birth_state:chararray, birth_city:chararray,
+    death_year:int,        death_month:int,       death_day: int,
+    death_ctry: chararray, death_state:chararray, death_city:chararray,
+    name_first:chararray,  name_last:chararray,   name_given:chararray,
+    height:int,            weight:int,
+    bats:chararray,        throws:chararray,
+    beg_date:chararray,    end_date:chararray,
+    retro_id:chararray,    bbref_id:chararray
     );
 };
 

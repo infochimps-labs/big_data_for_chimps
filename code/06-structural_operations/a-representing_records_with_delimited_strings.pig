@@ -1,24 +1,45 @@
--- Creating a Delimited List from Grouped Records
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
-IMPORT 'common_macros.pig';
+bat_seasons = load_bat_seasons();
+people            = load_people();
+teams             = load_teams();
+park_teams   = load_park_teams();
+
+-- ***************************************************************************
+--
+-- === Grouping Records into a Bag by Key
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Nested GROUP BY
+
+-- ***************************************************************************
+--
+-- === Representing a Collection of Values with a Delimited String
+-- 
 
 
-%DEFAULT out_dir '/Users/flip/ics/data_science_fun_pack/pig/pig/tutorial/data';
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Representing a Complex Data Structure with a Delimited String
+--
 
-pty   = load_park_tm_yr();
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Representing a Complex Data Structure with a JSON-encoded String
+--
 
 -- team_park_years = FOREACH pty GENERATE team_id, park_id, year_id, n_games;
 -- team_park_years = ORDER team_park_years BY team_id ASC, year_id ASC, n_games ASC, park_id ASC;
 -- STORE_TABLE('team_park_years', team_park_years);
 
-parks = load_parks();
 parks = FOREACH parks GENERATE
   park_id, beg_date, end_date, n_games,
   lng, lat, country_id, state_id, city, park_name, comments;
 
 STORE_TABLE('parks', parks);
-
-
 
 -- pty = FILTER (FOREACH pty GENERATE park_id, team_id, year_id) BY
 --   true

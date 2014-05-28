@@ -1,28 +1,76 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball';
-bat_yrs   = load_bat_seasons();
-bat_yrs   = FILTER bat_yrs BY (year_id >= 1905) AND (PA >= 1);
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
-bat_yrs   = FOREACH  bat_yrs GENERATE *, ((double)H / (double)AB) AS BAV;
+bat_seasons   = load_bat_seasons();
 
--- weight_summary = FOREACH (GROUP bat_yrs ALL) {
---   dist         = DISTINCT bat_yrs.weight;
---   sorted_a     = FILTER   bat_yrs.weight BY weight IS NOT NULL;
+-- === Summarizing Aggregate Statistics of a Group
+-- ==== Average of all non-Null values
+-- ==== Count of Distinct Values
+-- ==== Count of non-Null values
+-- ==== Median (50th Percentile Value) of a Bag
+-- ==== Minimum / Maximum non-Null value
+-- ==== Size of Bag (Count of all values, Null or not)
+-- ==== Standard Deviation of all non-Null Values
+-- ==== Sum of non-Null values
+
+--
+-- * COUNT_STAR(bag)              -- Counting records in a bag
+-- * COUNT(bag)                   -- Counting non-null values in a bag
+-- * DISTINCT;..COUNT_STAR        -- Counting Distinct Values in a bag
+--
+-- * SUM(bag)                     -- Totalling
+-- * AVG(bag)                     -- 
+-- * VAR(bag)                     -- 
+-- * SQRT(VAR(bag))               -- 
+-- * MIN(bag)                     -- Minimum value
+-- * MAX(bag)                     -- Maximum value
+-- * BagToString(bag, delimiter)  -- 
+
+
+-- Turn the batting season statistics into batting career statistics
+--
+bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
+  team_ids = DISTINCT bat_seasons.team_id;
+  totG   = SUM(bat_seasons.G);   totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
+  totH   = SUM(bat_seasons.H);   totBB  = SUM(bat_seasons.BB);  totHBP = SUM(bat_seasons.HBP); totR   = SUM(bat_seasons.R);    
+  toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B); toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR); 
+  OBP    = (totH + totBB + totHBP) / totPA;
+  SLG    = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
+  GENERATE group               AS player_id,
+    COUNT_STAR(bat_seasons)        AS n_seasons,
+    MIN(bat_seasons.year_id)	     AS beg_year,
+    MAX(bat_seasons.year_id)       AS end_year,
+    BagToString(team_ids, '^') AS team_ids,
+    totG   AS G,   totPA  AS PA,  totAB  AS AB,
+    totH   AS H,   totBB  AS BB,  totHBP AS HBP,
+    toth1B AS h1B, toth2B AS h2B, toth3B AS h3B, totHR AS HR,
+    OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS
+    ;
+};
+
+STORE_TABLE('bat_careers', bat_careers);
+
+DESCRIBE bat_seasons;
+DESCRIBE bat_careers;
+
+-- weight_summary = FOREACH (GROUP bat_seasons ALL) {
+--   dist         = DISTINCT bat_seasons.weight;
+--   sorted_a     = FILTER   bat_seasons.weight BY weight IS NOT NULL;
 --   sorted       = ORDER    sorted_a BY weight;
 --   some         = LIMIT    dist.weight 5;
---   n_recs       = COUNT_STAR(bat_yrs);
---   n_notnulls   = COUNT(bat_yrs.weight);
+--   n_recs       = COUNT_STAR(bat_seasons);
+--   n_notnulls   = COUNT(bat_seasons.weight);
 --   GENERATE
 --     group,
---     AVG(bat_yrs.weight)             AS avg_val,
---     SQRT(VAR(bat_yrs.weight))       AS stddev_val,
---     MIN(bat_yrs.weight)             AS min_val,
+--     AVG(bat_seasons.weight)             AS avg_val,
+--     SQRT(VAR(bat_seasons.weight))       AS stddev_val,
+--     MIN(bat_seasons.weight)             AS min_val,
 --     FLATTEN(SortedEdgeile(sorted))  AS (p01, p05, p50, p95, p99),
---     MAX(bat_yrs.weight)             AS max_val,
+--     MAX(bat_seasons.weight)             AS max_val,
 --     --
 --     n_recs                          AS n_recs,
 --     n_recs - n_notnulls             AS n_nulls,
 --     COUNT(dist)                     AS cardinality,
---     SUM(bat_yrs.weight)             AS sum_val,
+--     SUM(bat_seasons.weight)             AS sum_val,
 --     BagToString(some, '^')          AS some_vals
 --     ;
 -- };
@@ -31,25 +79,25 @@ bat_yrs   = FOREACH  bat_yrs GENERATE *, ((double)H / (double)AB) AS BAV;
 -- STORE_TABLE('weight_summary', weight_summary);
 -- cat $out_dir/weight_summary;
 -- 
--- weight_yr_stats = FOREACH (GROUP bat_yrs BY year_id) {
---   dist         = DISTINCT bat_yrs.weight;
---   sorted_a     = FILTER   bat_yrs.weight BY weight IS NOT NULL;
+-- weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
+--   dist         = DISTINCT bat_seasons.weight;
+--   sorted_a     = FILTER   bat_seasons.weight BY weight IS NOT NULL;
 --   sorted       = ORDER    sorted_a BY weight;
 --   some         = LIMIT    dist.weight 5;
---   n_recs       = COUNT_STAR(bat_yrs);
---   n_notnulls   = COUNT(bat_yrs.weight);
+--   n_recs       = COUNT_STAR(bat_seasons);
+--   n_notnulls   = COUNT(bat_seasons.weight);
 --   GENERATE
 --     group,
---     AVG(bat_yrs.weight)             AS avg_val,
---     SQRT(VAR(bat_yrs.weight))       AS stddev_val,
---     MIN(bat_yrs.weight)             AS min_val,
+--     AVG(bat_seasons.weight)             AS avg_val,
+--     SQRT(VAR(bat_seasons.weight))       AS stddev_val,
+--     MIN(bat_seasons.weight)             AS min_val,
 --     FLATTEN(SortedEdgeile(sorted))  AS (p01, p05, p50, p95, p99),
---     MAX(bat_yrs.weight)             AS max_val,
+--     MAX(bat_seasons.weight)             AS max_val,
 --     --
 --     n_recs                          AS n_recs,
 --     n_recs - n_notnulls             AS n_nulls,
 --     COUNT(dist)                     AS cardinality,
---     SUM(bat_yrs.weight)             AS sum_val,
+--     SUM(bat_seasons.weight)             AS sum_val,
 --     BagToString(some, '^')          AS some_vals
 --     ;
 -- };
@@ -58,21 +106,17 @@ bat_yrs   = FOREACH  bat_yrs GENERATE *, ((double)H / (double)AB) AS BAV;
 -- STORE_TABLE('weight_yr_stats', weight_yr_stats);
 -- cat $out_dir/weight_yr_stats;
 
---
--- We 
---
+stats_G   = summarize_values_by(bat_seasons, 'G',   'ALL');    STORE_TABLE('stats_G',   stats_G  );
+stats_PA  = summarize_values_by(bat_seasons, 'PA',  'ALL');    STORE_TABLE('stats_PA',  stats_PA  );
+stats_H   = summarize_values_by(bat_seasons, 'H',   'ALL');    STORE_TABLE('stats_H',   stats_H  );
+stats_HR  = summarize_values_by(bat_seasons, 'HR',  'ALL');    STORE_TABLE('stats_HR',  stats_HR );
+stats_OBP = summarize_values_by(bat_seasons, 'OBP', 'ALL');    STORE_TABLE('stats_OBP', stats_OBP);
+stats_BAV = summarize_values_by(bat_seasons, 'BAV', 'ALL');    STORE_TABLE('stats_BAV', stats_BAV);
+stats_SLG = summarize_values_by(bat_seasons, 'SLG', 'ALL');    STORE_TABLE('stats_SLG', stats_SLG);
+stats_OPS = summarize_values_by(bat_seasons, 'OPS', 'ALL');    STORE_TABLE('stats_OPS', stats_OPS);
 
-stats_G   = summarize_values_by(bat_yrs, 'G',   'ALL');    STORE_TABLE('stats_G',   stats_G  );
-stats_PA  = summarize_values_by(bat_yrs, 'PA',  'ALL');    STORE_TABLE('stats_PA',  stats_PA  );
-stats_H   = summarize_values_by(bat_yrs, 'H',   'ALL');    STORE_TABLE('stats_H',   stats_H  );
-stats_HR  = summarize_values_by(bat_yrs, 'HR',  'ALL');    STORE_TABLE('stats_HR',  stats_HR );
-stats_OBP = summarize_values_by(bat_yrs, 'OBP', 'ALL');    STORE_TABLE('stats_OBP', stats_OBP);
-stats_BAV = summarize_values_by(bat_yrs, 'BAV', 'ALL');    STORE_TABLE('stats_BAV', stats_BAV);
-stats_SLG = summarize_values_by(bat_yrs, 'SLG', 'ALL');    STORE_TABLE('stats_SLG', stats_SLG);
-stats_OPS = summarize_values_by(bat_yrs, 'OPS', 'ALL');    STORE_TABLE('stats_OPS', stats_OPS);
-
-stats_wt  = summarize_values_by(bat_yrs, 'weight', 'ALL'); STORE_TABLE('stats_wt', stats_wt);
-stats_ht  = summarize_values_by(bat_yrs, 'height', 'ALL'); STORE_TABLE('stats_ht', stats_ht);
+stats_wt  = summarize_values_by(bat_seasons, 'weight', 'ALL'); STORE_TABLE('stats_wt', stats_wt);
+stats_ht  = summarize_values_by(bat_seasons, 'height', 'ALL'); STORE_TABLE('stats_ht', stats_ht);
 
 -- pig ./06-structural_operations/c-summary_statistics.pig
 -- cat /data/out/baseball/stats_*/part-r-00000 | wu-lign -- %s %s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f 

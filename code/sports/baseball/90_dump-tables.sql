@@ -25,15 +25,16 @@ SELECT NOW() AS starting_datetime, 'Dumping simplified batting stats into /data/
 
 SELECT
     player_id, year_id, team_id, lg_id,
-    age, G, PA, AB,
+    -- age,
+    G, PA, AB,
     @HBP := IFNULL(HBP, 0)       AS HBP,
     @SH  := IFNULL(SH,  0)       AS SH,
     BB, H,
     @h1B := (H - h2B - h3B - HR) AS h1B,
     h2B, h3B, HR,
-    R, RBI,
-    @OBP := (H + BB + @HBP)/PA   AS OBP,
-    @SLG := ((@h1B + 2*h2B + 3*h3B + 4*HR)/AB)  AS SLG
+    R, RBI
+    -- , @OBP := (H + BB + @HBP)/PA   AS OBP,
+    -- @SLG := ((@h1B + 2*h2B + 3*h3B + 4*HR)/AB)  AS SLG
   FROM `lahman`.`bat_seasons`
   WHERE PA > 0 AND AB > 0
   ORDER BY player_id, year_id
@@ -44,7 +45,7 @@ SELECT
 --
 SELECT NOW() AS starting_datetime, 'Dumping simplified games into /data/rawd/sports/baseball/retrosheet/games_lite.tsv: should take a second or so';
 
-SELECT game_id, year_id, away_team_id, home_team_id, home_runs_ct, away_runs_ct
+SELECT game_id, year_id, away_team_id, home_team_id, away_runs_ct, home_runs_ct
   FROM retrosheet.games
   ORDER BY game_id
   INTO OUTFILE '/data/rawd/sports/baseball/games_lite.tsv'

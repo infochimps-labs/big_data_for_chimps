@@ -7,4 +7,9 @@ park_teams   = load_park_teams();
 
 -- ***************************************************************************
 --
--- === Generating a Sequence Using an Integer Table
+-- === Numbering Records in Rank Order
+
+
+-- ***************************************************************************
+--
+-- ==== Handling Ties when Ranking Records

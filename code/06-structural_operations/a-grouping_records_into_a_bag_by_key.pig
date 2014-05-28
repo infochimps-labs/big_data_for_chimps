@@ -1,9 +1,13 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball';
-park_tm_yr   = load_park_tm_yr();
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
--- ___________________________________________________________________________
+bat_seasons = load_bat_seasons();
+people            = load_people();
+teams             = load_teams();
+park_teams   = load_park_teams();
+
+-- ***************************************************************************
 --
--- === GROUP BY
+-- === Grouping Records into a Bag by Key
 --
 
 -- The GROUP BY operation is at the heart of every structural operation.
@@ -77,9 +81,9 @@ park_team_occupied = FOREACH(GROUP park_tm_yr BY (park_id, team_id)) GENERATE
 -- (ANA01,ANA,{(2009),(2008),(1997)...})
 --
 
--- ___________________________________________________________________________
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- === You can do stuff to groups!
+-- ===== You can do stuff to groups!
 --
 
 -- Operations that summarize the grouped value: This finds all teams that called

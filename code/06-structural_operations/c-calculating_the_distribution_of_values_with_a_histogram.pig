@@ -1,8 +1,21 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
-pl_yr_stats = load_bat_seasons();
+bat_seasons = load_bat_seasons();
+people            = load_people();
+teams             = load_teams();
+park_teams   = load_park_teams();
 
-G_vals = FOREACH pl_yr_stats GENERATE G;
+-- ***************************************************************************
+--
+-- === Calculating the Distribution of Values with a Histogram
+
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Binning Data for a Histogram
+--
+
+G_vals = FOREACH bat_seasons GENERATE G;
 G_hist = FOREACH (GROUP G_vals BY G) GENERATE 
   group AS G, COUNT(G_vals) AS n_seasons;
 
@@ -11,7 +24,7 @@ STORE G_hist INTO '$out_dir/g_hist';
 
 -- -- We can separate out the two eras using the summing trick: 
 -- 
--- G_vals = FOREACH pl_yr_stats GENERATE G,
+-- G_vals = FOREACH bat_seasons GENERATE G,
 --   (year_id <  1961 AND year_id > 1900 ? 1 : 0) AS G_154,
 --   (year_id >= 1961                   ? 1 : 0) AS G_162
 --   ;

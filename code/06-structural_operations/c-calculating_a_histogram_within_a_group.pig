@@ -1,6 +1,8 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
+bat_seasons = load_bat_seasons();
+
 -- ***************************************************************************
 --
--- === Re-injecting Global Values
+-- === Calculating a Histogram Within a Group
 --

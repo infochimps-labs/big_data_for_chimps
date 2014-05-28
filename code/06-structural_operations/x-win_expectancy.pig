@@ -1,7 +1,16 @@
-IMPORT './common_macros.pig';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+
 %DEFAULT beg_year 1993
 %DEFAULT end_year 2010
 
+bat_seasons = load_bat_seasons();
+people            = load_people();
+teams             = load_teams();
+park_teams   = load_park_teams();
+
+-- ***************************************************************************
+--
+-- === Computing a Win-Expectancy Table
 
 --
 -- Here are Tangotiger's results for comparison, giving the average runs scored,
@@ -120,8 +129,10 @@ evs_decorated = FOREACH evs_decorated GENERATE
 -- evs_decorated = ORDER evs_decorated BY game_id, event_seq;
 STORE_TABLE('evs_decorated-$beg_year-$end_year', evs_decorated);
 
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- === Run Expectancy
+-- ==== Run Expectancy
 -- 
 -- How many runs is a game state worth from the perspective of any inning?
 -- Bases are cleared away at inning finish, so the average number of runs scored

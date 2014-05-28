@@ -1,6 +1,7 @@
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
--- === Sorting All Records in Total Order
+bats = load_bat_seasons();
 
--- ==== Dealing with Nulls when Sorting
-
+-- ***************************************************************************
+--
 -- === Sorting Records within a Group

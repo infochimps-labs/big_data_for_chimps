@@ -1,6 +1,12 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball'; 
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 bats    = load_bat_seasons();
 allstar = load_allstars();
+
+
+-- ***************************************************************************
+--
+-- === Selecting Records Having a Match in Another Table (semi-join)
+--
 
 -- Project just what we need
 ast       = FOREACH allstar GENERATE player_id, year_id;

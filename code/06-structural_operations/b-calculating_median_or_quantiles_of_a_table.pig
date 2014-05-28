@@ -1,12 +1,12 @@
-IMPORT 'common_macros.pig'; %DEFAULT out_dir '/data/out/baseball';
-bat_yrs   = load_bat_seasons();
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+bat_seasons   = load_bat_seasons();
 
 --
 -- Example of quantile extraction
 --
 
 -- Adding in a little randomness so that the values on the boundary don't stack up
-vals = FOREACH bat_yrs GENERATE
+vals = FOREACH bat_seasons GENERATE
   weight + 0.001*RANDOM() AS val
   ;
 

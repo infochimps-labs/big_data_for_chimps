@@ -7,4 +7,7 @@ park_teams   = load_park_teams();
 
 -- ***************************************************************************
 --
--- === Generating a Sequence Using an Integer Table
+-- ==== Selecting Rows from the Middle of a Result Set
+--
+
+
