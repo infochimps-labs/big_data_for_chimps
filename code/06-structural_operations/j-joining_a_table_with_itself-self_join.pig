@@ -17,3 +17,10 @@ SELECT DISTINCT b1.player_id, b2.player_id
     AND b1.player_id != b2.player_id     -- reject self-teammates
   GROUP BY b1.player_id
   ;
+
+pty1 = foreach bat_season GENERATE team_id, player_id, year_id;
+pty2 = foreach bat_season GENERATE team_id, player_id, year_id;
+
+teammates = FOREACH (
+    JOIN pty1 BY (team_id, year_id), 
+    JOIN pty1 BY (team_id, year_id)        
