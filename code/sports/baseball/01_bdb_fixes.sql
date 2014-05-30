@@ -459,6 +459,8 @@ UPDATE `master`        SET `hof_id`    = 'kleskry01h' WHERE `player_id` = 'klesk
 -- confirmed against MLB stats
 UPDATE `bat_stints`       SET `AB` = 21 WHERE player_id = "phillan01" AND year_id = 2008 AND stint_id = 1 AND team_id = "CIN";
 
+DELETE FROM `master` WHERE name_first = 'nameFirst';
+
 -- SELECT (CONCAT(peep.`nameFirst`, ' ', peep.`nameLast`) = bw.`nameCommon`) AS name_match,
 --   peep.`lahman_id`, peep.`player_id`, bw.`bbref_id`, peep.`bbref_id`, bw.`lahman_id`, bw.year_id,
 --   peep.`nameFirst`, peep.`nameLast`, bw.`nameCommon`

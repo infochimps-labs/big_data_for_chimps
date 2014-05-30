@@ -9,11 +9,34 @@
 SELECT NOW() AS starting_datetime, 'Dumping player team and park statistics into /data/rawd/sports/baseball/retrosheet/\*.tsv: should take only a second or so';
 
 SELECT * FROM `lahman`.`allstars`        ORDER BY year_id, player_id  INTO OUTFILE '/data/rawd/sports/baseball/allstars.tsv';
-SELECT * FROM `lahman`.`bat_seasons`     ORDER BY player_id, year_id  INTO OUTFILE '/data/rawd/sports/baseball/bat_seasons.tsv';
+SELECT * FROM `lahman`.`bat_seasons`     ORDER BY player_id, year_id  INTO OUTFILE '/data/rawd/sports/baseball/bat_seasons-full.tsv';
 SELECT * FROM `lahman`.`teams`           ORDER BY team_id, year_id    INTO OUTFILE '/data/rawd/sports/baseball/teams.tsv';
 SELECT * FROM `lahman`.`park_team_years` ORDER BY year_id, park_id    INTO OUTFILE '/data/rawd/sports/baseball/park_team_years.tsv';
 SELECT * FROM `lahman`.`parks`           ORDER BY park_id             INTO OUTFILE '/data/rawd/sports/baseball/parks.tsv';
 SELECT * FROM `lahman`.`franchises`      ORDER BY franch_id           INTO OUTFILE '/data/rawd/sports/baseball/franchises.tsv';
+
+SELECT * FROM `lahman`.`numbers`   WHERE num <= 1000000 ORDER BY num INTO OUTFILE '/data/rawd/stats/numbers/numbers-1M.tsv';
+SELECT * FROM `lahman`.`numbers`   WHERE num <= 100000  ORDER BY num INTO OUTFILE '/data/rawd/stats/numbers/numbers-100k.tsv';
+SELECT * FROM `lahman`.`numbers`   WHERE num <= 10000   ORDER BY num INTO OUTFILE '/data/rawd/stats/numbers/numbers-10k.tsv';
+SELECT num FROM `lahman`.`numbers` LIMIT 1                           INTO OUTFILE '/data/rawd/stats/numbers/one.tsv';
+
+SELECT
+  player_id,
+  IFNULL(birth_year,''),    IFNULL(birth_month,''), IFNULL(birth_day,''), 
+  IFNULL(birth_country,''), IFNULL(birth_state,''), IFNULL(birth_city,''), 
+  IFNULL(death_year,''),    IFNULL(death_month,''), IFNULL(death_day,''), 
+  IFNULL(death_country,''), IFNULL(death_state,''), IFNULL(death_city,''),
+  IFNULL(name_first,''),    IFNULL(name_last,''),   IFNULL(name_given,''),
+  IFNULL(height,''),        IFNULL(weight,''),      IFNULL(bats,''),  IFNULL(throws,''),
+  IFNULL(first_game,''),    IFNULL(final_game,''),  IFNULL(college,''),
+  IFNULL(retro_id,''),      IFNULL(bbref_id,'')
+  FROM `lahman`.`people`
+  WHERE player_id IS NOT NULL
+  ORDER BY IF(player_id IS NULL, 1, 0), player_id, retro_id, lahman_id
+  INTO OUTFILE '/data/rawd/sports/baseball/people.tsv' FIELDS ENCLOSED BY '';
+
+
+    
 
 -- ===========================================================================
 --
@@ -24,8 +47,8 @@ SELECT NOW() AS starting_datetime, 'Dumping simplified batting stats into /data/
 -- bbr: age G  PA  AB     R     H     2B 3B HR    RBI BB OBP SLG HBP SH
 
 SELECT
-    player_id, year_id, team_id, lg_id,
-    -- age,
+    player_id, name_first, name_last,
+    year_id, team_id, lg_id, age,
     G, PA, AB,
     @HBP := IFNULL(HBP, 0)       AS HBP,
     @SH  := IFNULL(SH,  0)       AS SH,
@@ -38,7 +61,7 @@ SELECT
   FROM `lahman`.`bat_seasons`
   WHERE PA > 0 AND AB > 0
   ORDER BY player_id, year_id
-  INTO OUTFILE '/data/rawd/sports/baseball/bats_lite.tsv'
+  INTO OUTFILE '/data/rawd/sports/baseball/bat_seasons.tsv'
   ;
 
 -- ===========================================================================

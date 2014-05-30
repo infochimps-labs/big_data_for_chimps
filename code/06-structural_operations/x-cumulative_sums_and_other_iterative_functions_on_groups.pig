@@ -1,9 +1,9 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
-people            = load_people();
-teams             = load_teams();
-park_teams   = load_park_teams();
+peeps       = load_people();
+teams       = load_teams();
+park_teams  = load_park_teams();
 
 -- ***************************************************************************
 --
@@ -28,6 +28,12 @@ park_teams   = load_park_teams();
 
 player_seasons = GROUP bats BY player_id;
 
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Iterating Lead/Lag Values in an Ordered Bag
+
+
 --
 -- Produce for each stat the running total by season, and the next season's value
 -- 
@@ -44,5 +50,4 @@ running_seasons = FOREACH player_seasons {
     AS (year_id, G, next_G, cume_G, H, next_H, cume_H, HR, next_HR, cume_HR);
 };
 
-rmf                         $out_dir/running_seasons;
-STORE running_seasons INTO '$out_dir/running_seasons';
+STORE_TABLE(running_seasons, 'running_seasons');

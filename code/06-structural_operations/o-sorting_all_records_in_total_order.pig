@@ -9,12 +9,29 @@ bats = FILTER bats BY (year_id >= 2000);
 --
 -- === Sorting All Records in Total Order
 
--- Look at the jobtracker
-
-
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Run the script 'i-summarizing_multiple_subsets_simultaneously.pig' beforehand
+-- to get career stats broken up into young (age 21 and below), prime (22 to 29
+-- inclusive), and older (30 and over).
 --
--- ==== Cannot Use an Expression in an ORDER BY statement
+career_epochs = LOAD_RESULT('career_epochs');
+
+-- We're only going to look at players able to make solid contributions over
+-- several years, which we'll define as playing for five or more seasons and
+-- 2000 or more plate appearances (enough to show statistical significance), and
+-- a OPS of 0.650 (an acceptable-but-not-allstar level) or better.
+career_epochs = FILTER career_epochs BY
+  ((PA_all >= 2000) AND (n_seasons >= 5) AND (OPS_all >= 0.650));
+
+career_young = ORDER career_epochs BY OPS_young DESC;
+career_prime = ORDER career_epochs BY OPS_prime DESC;
+career_older = ORDER career_epochs BY OPS_older DESC;
+
+-- STORE_TABLE(career_young, 'career_young');
+-- STORE_TABLE(career_prime, 'career_prime');
+-- STORE_TABLE(career_older, 'career_older');
+
+-- You'll spot Ted Williams (willite01) as one of the top three young players,
+-- top three prime players, and top three old players. He's pretty awesome.
 --
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -22,75 +39,104 @@ bats = FILTER bats BY (year_id >= 2000);
 -- ==== Sorting by Multiple Fields
 --
 
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- ==== Floating Values to the Head or Tail of the Sort Order
---
+-- Sorting on Multiple fields is as easy as adding them in order with commas.
+-- Sort by number of older seasons, breaking ties by number of prime seasons:
+
+career_young = ORDER career_epochs BY n_young DESC, n_prime DESC;
+
+-- Whereever reasonable, always "stabilize" your sorts: add a unique id column
+-- (or any other you're sure won't have ties), ensuring the output will remain
+-- the same from run to run.
+
+career_young = ORDER career_epochs BY n_young DESC, n_prime DESC,
+  player_id ASC; -- makes sure that ties are always broken the same way.
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== Case-insensitive Sorting
+-- ==== Cannot Use an Expression in an ORDER BY statement
 --
+
+-- You cannot use an expression to sort the table. This won't work:
+--
+-- by_diff_older = ORDER career_epochs BY (OPS_older-OPS_prime) DESC; -- fails!
+
+
+-- Instead, use a foreach to prepare the field and then sort on it:
+by_diff_older = ORDER (
+  FOREACH career_epochs GENERATE *, OPS_older - OPS_prime AS diff_older
+  ) BY diff_older DESC;
+STORE_TABLE(by_diff_older, 'by_diff_older');
+
+-- Current-era players seem to be very over-represented at the top of the
+-- career_older table. Part of that is due to better training, nutrition, and
+-- medical care. Part of that is probably also to to abuse of
+-- performance-enhancing drugs.
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Dealing with Nulls When Sorting
 --
 
--- Sort the seasons table by OPS
+-- When the sort field has nulls you can of course filter them out, and
+-- sometimes it's acceptable to substitute in a harmless value using a ternary
+-- expression: `(val IS NULL ? 0 : val)`. But you typically want to retain the
+-- Null field. By default, Pig will sort Nulls as least-most: the first rows for
+-- `BY .. DESC` and the last rows for `BY .. ASC`. You can float Nulls to the
+-- front or back by projecting a dummy field exhibiting whatever favoritism
+-- you want to impose, and list it first in the sort order.
+
+nulls_sort_demo = FOREACH career_epochs GENERATE
+  *, (OPS_older IS NULL ? 0 : 1) AS has_older_epoch;
 
 
--- Find the top 20 seasons by OPS.  Pig is smart about eliminating records at
--- the map stage, dramatically decreasing the data size.
+nulls_then_vals = ORDER nulls_sort_demo BY
+  has_older_epoch ASC, OPS_all DESC;
 
--- player_seasons = LOAD `player_seasons` AS (...);
--- qual_player_seasons = FILTER player_years BY plapp > what it should be;
--- player_season_stats = FOREACH qual_player_seasons GENERATE
---    player_id, name, games,
---    hits/ab AS batting_avg,
---    whatever AS slugging_avg,
---    whatever AS offensive_pct
---    ;
--- player_season_stats_ordered = ORDER player_season_stats BY (slugging_avg + offensive_pct) DESC;
--- STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
+vals_then_nulls = ORDER nulls_sort_demo BY
+  has_older_epoch DESC, OPS_all DESC;
 
--- Use ORDER BY within a nested FOREACH to sort within a group. Here, we select
--- the top ten players by OPS for each season.  The first request to sort a
--- group does not require extra operations -- Pig simply specifies those fields
--- as secondary sort keys.
 
--- -- Making a leaderboard of records with say the top ten values for a field is
--- -- not as simple as saying `ORDER BY..LIMIT`, as there could be many records
--- -- tied for the final place on the list.
--- --
--- -- If you'd like to retain records tied with or above the Nth largest value, use
--- -- the windowed query functionality from Over.
--- -- http://pig.apache.org/docs/r0.12.0/api/org/apache/pig/piggybank/evaluation/Over.html
--- --
--- -- We limit within each group to the top `topk_window` (20) items, assuming
--- -- there are not 16 players tied for fourth in HR. We don't assume for too long
--- -- -- an `ASSERT` statement verifies there aren't so many records tied for 4th
--- -- place that it overflows the 20 highest records we retained for consideration.
--- --
--- %DEFAULT topk_window 20
--- %DEFAULT topk        4
--- DEFINE IOver                  org.apache.pig.piggybank.evaluation.Over('int');
--- ranked_HRs = FOREACH (GROUP bats BY year_id) {
---   bats_HR = ORDER bats BY HR DESC;
---   bats_N  = LIMIT bats_HR $topk_window; -- making a bet, asserted below
---   ranked  = Stitch(bats_N, IOver(bats_N, 'rank', -1, -1, 15)); -- beginning to end, rank on the 16th field (HR)
---   GENERATE
---     group   AS year_id,
---     ranked  AS ranked:{(player_id, year_id, team_id, lg_id, age, G, PA, AB, HBP, SH, BB, H, h1B, h2B, h3B, HR, R, RBI, OBP, SLG, rank_HR)}
---     ;
--- };
--- -- verify there aren't so many records tied for $topk'th place that it overflows
--- -- the $topk_window number of highest records we retained for consideration
--- ASSERT ranked_HRs BY MAX(ranked.rank_HR) > $topk; --  'LIMIT was too strong; more than $topk_window players were tied for $topk th place';
 
--- top_season_HRs = FOREACH ranked_HRs {
---   ranked_HRs = FILTER ranked BY rank_HR <= $topk;
---   GENERATE ranked_HRs;
---   };
 
--- STORE_TABLE('top_season_HRs', top_season_HRs);
+-- Floating Values to the Head or Tail of the Sort Order
+--
+-- Use a dummy field, same as with the preceding discussion on Nulls. This
+-- floats to the top all players whose careers start in 1985 or later, and
+-- otherwise sorts on number of older seasons:
+
+post1985_vs_earlier = ORDER (
+  FOREACH career_epochs GENERATE *, (beg_year >= 1985 ? 1 : 0) AS is_1985
+  ) BY is_1985 DESC, n_older DESC;
+
+STORE_TABLE(post1985_vs_earlier, 'post1985_vs_earlier');
+
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Case-insensitive Sorting
+--
+
+
+
+-- sunset = FOREACH career_epochs GENERATE
+--   player_id, beg_year, end_year, OPS_all,
+--   (PA_young >= 700 ? OPS_young : Null),
+--   (PA_prime >= 700 ? OPS_prime : Null),
+--   (PA_older >= 700 ? OPS_older : Null),
+--   (PA_young >= 700 AND PA_prime >= 700 ? OPS_young - OPS_prime : Null) AS diff_young,
+--   (PA_prime >= 700 AND PA_prime >= 700 ? OPS_prime - OPS_all   : Null) AS diff_prime,
+--   (PA_older >= 700 AND PA_prime >= 700 ? OPS_older - OPS_prime : Null) AS diff_older,
+--   PA_all, PA_young, PA_prime, PA_older
+-- 
+--   , ((end_year + beg_year)/2.0 > 1990 ? 'post' : '-') AS epoch
+--   ;
+-- 
+-- golden_oldies = ORDER sunset BY diff_older DESC;
+
+
+-- If you sort to find older player Those more familiar with the game will also note an overrepresentation of
+--
+-- http://cms.colgate.edu/portaldata/imagegallerywww/21c0d002-4098-4995-941f-9ae8013632ee/ImageGallery/2012/the-impact-of-age-on-baseball-players-performance.pdf
+
+
+-- Look at the jobtracker

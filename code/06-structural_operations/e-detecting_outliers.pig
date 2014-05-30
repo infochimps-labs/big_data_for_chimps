@@ -1,16 +1,11 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
-people            = load_people();
-teams             = load_teams();
+peeps       = load_people();
+teams       = load_teams();
 park_teams   = load_park_teams();
 
--- ***************************************************************************
---
--- === Detecting Outliers
-
--- The story thread for the next few sections will investigate players' career
--- statistics
+-- Here follows an investigation of players' career statistics
 --
 -- Defining the characteristic what we mean by an exceptional career is a matter
 -- of taste, not mathematics; and selecting how we estimate those
@@ -20,7 +15,6 @@ park_teams   = load_park_teams();
 -- * Total production: a long career and high absolute totals for hits, home runs and so forth
 -- * Sustained excellence: high normalized rates of production (on-base percentage and so forth)
 -- * Peak excellence: multiple seasons of exceptional performance
-
 
 -- ***************************************************************************
 --
@@ -54,31 +48,35 @@ normed_dec = FOREACH (GROUP bat_years BY (year_id, lg_id)) {
     FLATTEN(bat_years)
     ;
 };
+
 normed = FOREACH normed_dec GENERATE
   player_id, year_id, team_id, lg_id,
   G,    PA,   AB,   HBP,  SH,
   BB,   H,    h1B,  h2B,  h3B,
   HR,   R,    RBI,  OBP,  SLG,
-  ROUND_TO((H   - avg_H  ) /sdv_H,    3) AS zH,
-  ROUND_TO((HR  - avg_HR ) /sdv_HR,   3) AS zHR,
-  ROUND_TO((R   - avg_R  ) /sdv_R,    3) AS zR,
-  ROUND_TO((RBI - avg_RBI) /sdv_RBI,  3) AS zRBI,
-  ROUND_TO((OBP - avg_OBP) /sdv_OBP,  3) AS zOBP,
-  ROUND_TO((SLG - avg_SLG) /sdv_SLG,  3) AS zSLG,
-  ROUND_TO(((OBP - avg_OBP)/sdv_OBP)+((SLG - avg_SLG)/sdv_SLG),3) AS zOPS
+  (H   - avg_H  ) /sdv_H        AS zH,
+  (HR  - avg_HR ) /sdv_HR       AS zHR,
+  (R   - avg_R  ) /sdv_R        AS zR,
+  (RBI - avg_RBI) /sdv_RBI      AS zRBI,
+  (OBP - avg_OBP) /sdv_OBP      AS zOBP,
+  (SLG - avg_SLG) /sdv_SLG      AS zSLG,
+  ( ((OBP - avg_OBP)/sdv_OBP) +
+    ((SLG - avg_SLG)/sdv_SLG) ) AS zOPS
   ;
 
--- normed = ORDER normed BY zOPS ASC;
--- STORE_TABLE('normed_seasons', normed);
--- -- cat $out_dir/career_peaks
+normed_seasons = ORDER normed BY zOPS ASC;
+STORE_TABLE(normed_seasons, 'normed_seasons');
+
+-- ***************************************************************************
+--
+-- === Detecting Outliers
+--
 
 --
 -- The "Summing trick" is a frequently useful way to identify subsets of a group
 -- without having to perform multiple GROUP BY operatons. Think of it every time
 -- you find yourself thinking "gosh, this sure seems like a lot of reduce steps"
 --
-
--- ==== Detecting Outliers
 --
 -- Let's make a
 --
@@ -171,7 +169,6 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 --
 -- The 'bat_hof' table lists every player eligible for the hall of fame
 --
-
 
 -- ballplayers or hospitals or keyword advertisements
 -- 

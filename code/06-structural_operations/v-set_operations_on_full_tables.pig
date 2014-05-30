@@ -2,38 +2,48 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 
 bat_seasons = load_bat_seasons();
 parks       = load_parks();
-major_cities   = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
+big_cities   = LOAD '$data_dir/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
 
 bat_seasons = FILTER bat_seasons BY PA      >= 450;
 parks       = FILTER parks       BY n_games >=  50;
 
 -- === Set Operations
--- ==== Distinct Union
--- ==== Set Intersection
--- ==== Set Difference
--- ==== Set Equality
--- ==== Symmetric Set Difference
 
 bball_cities = FOREACH parks GENERATE park_id, city;
 
-combined = COGROUP major_cities BY city, bball_cities BY city;
+combined     = COGROUP big_cities BY city, bball_cities BY city;
+-- output (note: in execution Pig will project out the rest of the fields besides city)
+-- -- (Tucson,{(Tucson,Arizona,525796)},{})
+-- -- (Anaheim,{(Anaheim,California,341361)},{(ANA01,Anaheim)})
+-- -- (Atlanta,{(Atlanta,Georgia,432427)},{(ATL01,Atlanta),(ATL02,Atlanta)})
+-- -- (Buffalo,{},{(BUF02,Buffalo),(BUF01,Buffalo),(BUF04,Buffalo),(BUF03,Buffalo)})
 
-major_or_bball    = FOREACH combined GENERATE group AS city;
+-- ==== Distinct Union
+big_or_bball    = FOREACH combined
+  GENERATE group AS city;
 
-major_and_bball   = FOREACH (FILTER combined BY
-  (NOT IsEmpty(major_cities)) AND (NOT IsEmpty(bball_cities))) GENERATE group AS city;
+-- ==== Set Intersection
+big_and_bball   = FOREACH (FILTER combined BY
+  (NOT IsEmpty(big_cities)) AND (NOT IsEmpty(bball_cities)))
+  GENERATE group AS city;
 
-major_minus_bball = FOREACH (FILTER combined BY
-  (IsEmpty(bball_cities))) GENERATE group AS city;
+-- ==== Set Difference
+big_minus_bball = FOREACH (FILTER combined BY
+  (IsEmpty(bball_cities)))
+  GENERATE group AS city;
 
-bball_minus_major = FOREACH (FILTER combined BY
-  (IsEmpty(major_cities))) GENERATE group AS city;
+-- ==== Set Equality
+bball_minus_big = FOREACH (FILTER combined BY
+  (IsEmpty(big_cities)))
+  GENERATE group AS city;
 
-major_xor_bball   = FOREACH (FILTER combined BY
-  (IsEmpty(major_cities)) OR (IsEmpty(bball_cities))) GENERATE group AS city;
+-- ==== Symmetric Set Difference
+big_xor_bball   = FOREACH (FILTER combined BY
+  (IsEmpty(big_cities)) OR (IsEmpty(bball_cities)))
+  GENERATE group AS city;
 
-STORE_TABLE(major_or_bball,    'major_or_bball');
-STORE_TABLE(major_and_bball,   'major_and_bball');
-STORE_TABLE(major_minus_bball, 'major_minus_bball');
-STORE_TABLE(bball_minus_major, 'bball_minus_major');
-STORE_TABLE(major_xor_bball,   'major_xor_bball');
+STORE_TABLE(big_or_bball,    'big_or_bball');
+STORE_TABLE(big_and_bball,   'big_and_bball');
+STORE_TABLE(big_minus_bball, 'big_minus_bball');
+STORE_TABLE(bball_minus_big, 'bball_minus_big');
+STORE_TABLE(big_xor_bball,   'big_xor_bball');

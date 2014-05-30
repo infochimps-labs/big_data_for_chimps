@@ -1,8 +1,8 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
-people            = load_people();
-teams             = load_teams();
+peeps       = load_people();
+teams       = load_teams();
 park_teams   = load_park_teams();
 
 -- ***************************************************************************
@@ -10,37 +10,271 @@ park_teams   = load_park_teams();
 -- === Selecting Records with Unique (or with Duplicate) Values for a Key
 --
 
-SELECT nameFirst, nameLast, COUNT(*) AS n_usages
-  FROM bat_career
-  WHERE    nameFirst IS NOT NULL
-  GROUP BY nameFirst
-  HAVING   n_usages = 1
-  ORDER BY nameFirst
-  ;
+-- yclept /iˈklept/: by the name of; called.
+uniquely_yclept_f = GROUP peeps BY name_first;
 
+uniquely_yclept_g = FILTER uniquely_yclept_g BY SIZE(peeps) == 1;
 
-  -- group by, then emit bags with more than one size; call back to the won-loss example
+uniquely_yclept   = FOREACH uniquely_yclept_f {
+  GENERATE group AS name_first,
+    FLATTEN(peeps.name_last), FLATTEN(peeps.player_id),
+    FLATTEN(peeps.beg_date),  FLATTEN(peeps.end_date);
+};
 
-  
-  -- Teams who played in more than one stadium in a year
-SELECT COUNT(*) AS n_parks, pty.*
-  FROM park_teams pty
-  GROUP BY team_id, year_id
-  HAVING n_parks > 1
+uniquely_yclept = ORDER uniquely_yclept BY name_first ASC;
 
+STORE_TABLE(uniquely_yclept, 'uniquely_yclept');
 
--- ***************************************************************************
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== Eliminating rows that have a duplicated value
--- 
--- (ie the whole row isn't distinct,
--- just the field you're distinct-ing on.
--- Note: this chooses an arbitrary value from each group
+-- SQL Equivalent:
+--
+-- SELECT name_first, name_last, COUNT(*) AS n_usages
+--   FROM bat_career
+--   WHERE    name_first IS NOT NULL
+--   GROUP BY name_first
+--   HAVING   n_usages = 1
+--   ORDER BY name_first
+--   ;
 
 
-SELECT COUNT(*) AS n_asg, ast.*
-  FROM allstarfull ast
-  GROUP BY year_id, player_id
-  HAVING n_asg > 1
-  ;
-
+-- ===========================================================================
+--
+-- Some of our favorites:
+--
+-- -- Alamazoo        Jennings        jennial01       1878-08-15      1878-08-15
+-- -- Ambiorix        Burgos          burgoam01       2005-04-23      2007-05-26
+-- -- Arquimedez      Pozo            pozoar01        1995-09-12      1997-09-28
+-- -- Asdrubal        Cabrera         cabreas01       2007-08-08
+-- -- Astyanax        Douglass        douglas01       1921-07-30      1925-05-29
+-- -- Atahualpa       Severino        severat01       2011-09-06
+-- -- Baby Doll       Jacobson        jacobba01       1915-04-14      1927-09-22
+-- -- Baldy           Louden          loudeba01       1907-09-13      1916-09-18
+-- -- Beauty          McGowan         mcgowbe01       1922-04-12      1937-05-13
+-- -- Bevo            LeBourveau      leboube01       1919-09-09      1929-10-05
+-- -- Bid             McPhee          mcphebi01       1882-05-02      1899-10-15
+-- -- Bing            Miller          millebi02       1921-04-16      1936-09-05
+-- -- Binky           Jones           jonesbi03       1924-04-15      1924-04-27
+-- -- Bip             Roberts         roberbi01       1986-04-07      1998-09-27
+-- -- Bitsy           Mott            mottbi01        1945-04-17      1945-09-30
+-- -- Blix            Donnelly        donnebl01       1944-05-06      1951-05-03
+-- -- Blondie         Purcell         purcebl01       1879-05-01      1890-09-16
+-- -- Blondy          Ryan            ryanbl01        1930-07-13      1938-07-31
+-- -- Blue Moon       Odom            odombl01        1964-09-05      1976-08-17
+-- -- Boardwalk       Brown           brownbo01       1911-09-27      1915-10-07
+-- -- Boileryard      Clarke          clarkbo02       1893-05-01      1905-10-07
+-- -- Bombo           Rivera          riverbo01       1975-04-17      1982-10-03
+-- -- Boob            Fowler          fowlebo01       1923-05-06      1926-05-05
+-- -- Boof            Bonser          bonsebo01       2006-05-21
+-- -- Boog            Powell          powelbo01       1961-09-26      1977-08-24
+-- -- Boom-Boom       Beck            beckbo01        1924-09-22      1945-09-26
+-- -- Brick           Smith           smithbr02       1987-09-13      1988-04-23
+-- -- Brickyard       Kennedy         kennebr01       1892-04-26      1903-09-26
+-- -- Bris            Lord            lordbr01        1905-04-21      1913-10-03
+-- -- Broadway        Jones           jonesbr01       1923-07-04      1923-07-13
+-- -- Bubbles         Hargrave        hargrbu01       1913-09-18      1930-09-06
+-- -- Buckshot        May             maybu01         1924-05-09      1924-05-09
+-- -- Bug             Holliday        hollibu01       1889-04-17      1898-06-30
+-- -- Bumpus          Jones           jonesbu01       1892-10-15      1893-07-14
+-- -- Bunk            Congalton       congabu01       1902-04-17      1907-10-05
+-- -- Bunky           Stewart         stewabu02       1952-05-04      1956-09-15
+-- -- Buttercup       Dickerson       dickebu01       1878-07-15      1885-06-01
+-- -- Callix          Crabbe          crabbca01       2008-04-03      2008-05-08
+-- -- Choo Choo       Coleman         colemch01       1961-04-16      1966-04-23
+-- -- Coot            Veal            vealco01        1958-07-30      1963-06-20
+-- -- Crash           Davis           daviscr01       1940-06-15      1942-09-20
+-- -- Crazy           Schmit          schmicr01       1890-04-21      1901-06-08
+-- -- Creepy          Crespi          crespcr01       1938-09-14      1942-09-27
+-- -- Cuckoo          Christensen     chriscu01       1926-04-13      1927-08-04
+-- -- Cuddles         Marshall        marshcu01       1946-04-24      1950-09-30
+-- -- Cuke            Barrows         barrocu01       1909-09-18      1912-09-10
+-- -- Cupid           Childs          childcu01       1888-04-23      1901-09-26
+-- -- Dazzy           Vance           vanceda01       1915-04-16      1935-08-14
+-- -- Diomedes        Olivo           olivodi01       1960-09-05      1963-06-12
+-- -- Dots            Miller          milledo02       1909-04-16      1921-09-27
+-- -- Double Joe      Dwyer           dwyerdo01       1937-04-20      1937-05-17
+-- -- Drungo          Hazewood        hazewdr01       1980-09-19      1980-10-04
+-- -- Dude            Esterbrook      esterdu01       1880-05-01      1891-07-22
+-- -- Duster          Mails           mailsdu01       1915-09-28      1926-04-29
+-- -- Early           Wynn            wynnea01        1939-09-13      1963-09-13
+-- -- El              Tappe           tappeel01       1954-04-24      1962-07-17
+-- -- Epp             Sell            sellep01        1922-09-01      1923-05-29
+-- -- Eppa            Rixey           rixeyep01       1912-06-21      1933-08-05
+-- -- Fabio           Castro          castrfa01       2006-04-06      2007-09-17
+-- -- Fats            Dantonio        dantofa01       1944-09-18      1945-09-20
+-- -- Fatty           Briody          briodfa01       1880-06-16      1888-07-24
+-- -- Finners         Quinlan         quinlfi01       1913-09-06      1915-07-15
+-- -- Firpo           Marberry        marbefi01       1923-08-11      1936-06-10
+-- -- Flame           Delhi           delhifl01       1912-04-16      1912-04-16
+-- -- Flea            Clifton         cliftfl01       1934-04-29      1937-07-01
+-- -- Fleet           Walker          walkefl01       1884-05-01      1884-09-04
+-- -- Fletcher        Low             lowfl01         1915-10-07      1915-10-07
+-- -- Fleury          Sullivan        sullifl01       1884-05-03      1884-10-15
+-- -- Flint           Rhem            rhemfl01        1924-09-06      1936-08-26
+-- -- Flip            Lafferty        laffefl01       1876-09-15
+-- -- Foghorn         Bradley         bradlfo01       1876-08-23      1876-10-21
+-- -- Footer          Johnson         johnsfo01       1958-06-22      1958-07-30
+-- -- Footsie         Blair           blairfo01       1929-04-28      1931-09-27
+-- -- Frosty          Thomas          thomafr01       1905-05-01      1905-05-06
+-- -- Fu-Te           Ni              nifu01          2009-06-29
+-- -- Fuzz            White           whitefu01       1940-09-17      1947-05-06
+-- -- Gaylord         Perry           perryga01       1962-04-14      1983-09-21
+-- -- Gomer           Hodge           hodgego01       1971-04-06      1971-09-26
+-- -- Goody           Rosen           rosengo01       1937-09-14      1946-09-26
+-- -- Goose           Goslin          gosligo01       1921-09-16      1938-09-25
+-- -- Granny          Hamner          hamnegr01       1944-09-14      1962-08-01
+-- -- Greasy          Neale           nealegr01       1916-04-12      1924-06-13
+-- -- Greek           George          georggr01       1935-06-30      1945-09-03
+-- -- Hansel          Izquierdo       izquiha02       2002-04-21      2002-06-24
+-- -- Hanson          Horsey          horseha01       1912-04-27      1912-04-27
+-- -- Hippo           Vaughn          vaughhi01       1908-06-19      1921-07-09
+-- -- Hoot            Evers           eversho01       1941-09-16      1956-09-30
+-- -- Hoyt            Wilhelm         wilheho01       1952-04-19      1972-07-10
+-- -- Icehouse        Wilson          wilsoic01       1934-05-31      1934-05-31
+-- -- Icicle          Reeder          reedeic01       1884-06-24      1884-08-05
+-- -- Jewel           Ens             ensje01         1922-04-29      1925-06-15
+-- -- Jigger          Statz           statzji01       1919-07-30      1928-09-30
+-- -- Jot             Goar            goarjo01        1896-04-18      1898-05-01
+-- -- Jung            Bong            bongju01        2002-04-23      2004-06-20
+-- -- Kaiser          Wilhelm         wilheka01       1903-04-18      1921-08-26
+-- -- Kermit          Wahl            wahlke01        1944-06-23      1951-07-29
+-- -- Kewpie          Pennington      pennike01       1917-04-14      1917-04-14
+-- -- Lady            Baldwin         baldwla01       1884-09-30      1890-06-26
+-- -- Leech           Maskrey         maskrle01       1882-05-02      1886-07-07
+-- -- Leonidas        Lee             leele01         1877-07-17
+-- -- Lu              Blue            bluelu01        1921-04-14      1933-04-25
+-- -- Lucky           Wright          wrighlu01       1909-04-18      1909-05-18
+-- -- Merkin          Valdez          valdeme01       2004-08-01
+-- -- Mert            Hackett         hackeme01       1883-05-02      1887-10-06
+-- -- Mookie          Wilson          wilsomo01       1980-09-02      1991-10-06
+-- -- Moonlight       Graham          grahamo01       1905-06-29      1905-06-29
+-- -- Mother          Watson          watsomo01       1887-05-19      1887-05-27
+-- -- Mox             McQuery         mcquemo01       1884-08-20      1891-07-25
+-- -- Mudcat          Grant           grantmu01       1958-04-17      1971-09-29
+-- -- Muddy           Ruel            ruelmu01        1915-05-29      1934-08-25
+-- -- Mul             Holland         hollamu01       1926-05-25      1929-07-13
+-- -- Mysterious      Walker          walkemy01       1910-06-28      1915-09-29
+-- -- Nanny           Fernandez       fernana01       1942-04-14      1950-07-09
+-- -- Nomar           Garciaparra     garcino01       1996-08-31
+-- -- Noodles         Hahn            hahnno01        1899-04-18      1906-06-07
+-- -- Nook            Logan           loganno01       2004-07-21      2007-09-30
+-- -- Nub             Kleinke         kleinnu01       1935-04-25      1937-10-03
+-- -- Oil Can         Boyd            boydoi01        1982-09-13      1991-10-01
+-- -- Onan            Masaoka         masaoon01       1999-04-05      2000-09-30
+-- -- Onix            Concepcion      conceon01       1980-08-30      1987-04-07
+-- -- Oral            Hildebrand      hildeor01       1931-09-08      1940-07-28
+-- -- Orator          Shaffer         shaffor01       1874-05-23      1890-09-13
+-- -- Osiris          Matos           matosos01       2008-07-03
+-- -- Pea Ridge       Day             daype01         1924-09-19      1931-09-21
+-- -- Peanuts         Lowrey          lowrepe01       1942-04-14      1955-08-30
+-- -- Phenomenal      Smith           smithph01       1884-04-18      1891-06-15
+-- -- Pi              Schwert         schwepi01       1914-10-06      1915-10-07
+-- -- Pickles         Dillhoefer      dillhpi01       1917-04-16      1921-10-01
+-- -- Pie             Traynor         traynpi01       1920-09-15      1937-08-14
+-- -- Piggy           Ward            wardpi01        1883-06-12      1894-09-30
+-- -- Pinch           Thomas          thomapi01       1912-04-24      1921-06-19
+-- -- Ping            Bodie           bodiepi01       1911-04-22      1921-07-24
+-- -- Pink            Hawley          hawlepi01       1892-08-13      1901-08-20
+-- -- Pip             Koehler         koehlpi01       1925-04-22      1925-09-12
+-- -- Pit             Gilman          gilmapi01       1884-09-18      1884-09-20
+-- -- Pokey           Reese           reesepo01       1997-04-01      2004-10-03
+-- -- Pop-Boy         Smith           smithpo02       1913-04-19      1917-05-02
+-- -- Preacher        Roe             roepr01         1938-08-22      1954-09-04
+-- -- Prentice        Redman          redmapr01       2003-08-24      2003-09-28
+-- -- Press           Cruthers        cruthpr01       1913-09-29      1914-10-03
+-- -- Pud             Galvin          galvipu01       1875-05-22      1892-08-02
+-- -- Pumpsie         Green           greenpu01       1959-07-21      1963-09-26
+-- -- Punch           Knoll           knollpu01       1905-04-27      1905-10-04
+-- -- Purnal          Goldy           goldypu01       1962-06-12      1963-09-28
+-- -- Pussy           Tebeau          tebeapu01       1895-07-22      1895-07-24
+-- -- Putsy           Caballero       cabalpu01       1944-09-14      1952-09-27
+-- -- Queenie         O'Rourke        orourqu01       1908-08-15      1908-10-08
+-- -- Quilvio         Veras           verasqu01       1995-04-25      2001-07-13
+-- -- Quinton         McCracken       mccraqu01       1995-09-17      2006-07-05
+-- -- Redleg          Snyder          snydere01       1876-04-25      1884-09-12
+-- -- Ribs            Raney           raneyri01       1949-09-18      1950-04-22
+-- -- Ripper          Collins         colliri02       1931-04-18      1941-09-28
+-- -- Rit             Harrison        harriri01       1875-05-20      1875-05-20
+-- -- Roosevelt       Brown           brownro01       1999-05-18      2002-09-29
+-- -- Rugger          Ardizoia        ardizru01       1947-04-30      1947-04-30
+-- -- Runelvys        Hernandez       hernaru03       2002-07-15      2008-07-21
+-- -- Sailor          Stroud          strousa01       1910-04-29      1916-06-13
+-- -- Sap             Randall         randasa01       1988-08-02      1988-08-06
+-- -- Sarge           Connally        connasa01       1921-09-10      1934-07-18
+-- -- Satchel         Paige           paigesa01       1948-07-09      1965-09-25
+-- -- Satoru          Komiyama        komiysa01       2002-04-04      2002-09-11
+-- -- Scarborough     Green           greensc01       1997-08-02      2000-10-01
+-- -- Scat            Metha           methasc01       1940-04-22      1940-08-10
+-- -- Schoolboy       Rowe            rowesc01        1933-04-15      1949-09-13
+-- -- Scipio          Spinks          spinksc01       1969-09-16      1973-06-09
+-- -- Scoops          Carey           careysc01       1895-04-26      1903-07-06
+-- -- Seem            Studley         studlse01       1872-04-20      1872-05-08
+-- -- Shadow          Pyle            pylesh01        1884-10-15      1887-05-13
+-- -- Shags           Horan           horansh01       1924-07-14      1924-09-18
+-- -- She             Donahue         donahsh01       1904-04-29      1904-10-03
+-- -- Shea            Hillenbrand     hillesh02       2001-04-02      2007-09-20
+-- -- Sheriff         Blake           blakesh01       1920-06-29      1937-09-26
+-- -- Sixto           Lezcano         lezcasi01       1974-09-10      1985-09-29
+-- -- Skel            Roach           roachsk01       1899-08-09      1899-08-09
+-- -- Ski             Melillo         melilsk01       1926-04-18      1937-09-18
+-- -- Skippy          Roberge         robersk02       1941-07-18      1946-06-15
+-- -- Skyrocket       Smith           smithsk01       1888-04-18      1888-07-02
+-- -- Slats           Jordan          jordasl01       1901-09-28      1902-09-27
+-- -- Sled            Allen           allensl01       1910-05-04      1910-08-05
+-- -- Sleeper         Sullivan        sullisl01       1881-05-03      1884-05-29
+-- -- Slicker         Parks           parkssl01       1921-07-11      1921-09-04
+-- -- Sloppy          Thurston        thurssl01       1923-04-19      1933-10-01
+-- -- Slow Joe        Doyle           doylesl01       1906-08-25      1910-06-25
+-- -- Snooks          Dowd            dowdsn01        1919-04-27      1926-04-17
+-- -- Snuffy          Stirnweiss      stirnsn01       1943-04-22      1952-05-03
+-- -- So              Taguchi         tagucso01       2002-06-10
+-- -- Soup            Campbell        campbso01       1940-04-21      1941-09-28
+-- -- Sport           McAllister      mcallsp01       1896-08-07      1903-09-29
+-- -- Squanto         Wilson          wilsosq01       1911-10-02      1914-04-22
+-- -- Squire          Potter          pottesq01       1923-08-07      1923-08-07
+-- -- Squiz           Pillion         pillisq01       1915-08-20      1915-08-26
+-- -- Steamer         Flanagan        flanast01       1905-09-25      1905-10-07
+-- -- Stud            Bancker         banckst01       1875-04-19      1875-06-05
+-- -- Suds            Sutherland      suthesu01       1921-04-14      1921-06-22
+-- -- Sugar           Cain            cainsu01        1932-04-15      1938-05-28
+-- -- Swat            McCabe          mccabsw01       1909-09-23      1910-05-20
+-- -- Sweetbreads     Bailey          bailesw01       1919-05-23      1921-06-11
+-- -- Sy              Sutcliffe       sutclsy01       1884-10-02      1892-10-06
+-- -- Tack            Wilson          wilsota01       1983-04-09      1987-10-03
+-- -- Tacks           Latimer         latimta01       1898-10-01      1902-09-08
+-- -- The Only        Nolan           nolanth01       1878-05-01      1885-10-09
+-- -- Tip             O'Neill         oneilti01       1883-05-05      1892-08-30
+-- -- Tippy           Martinez        martiti01       1974-08-09      1988-04-18
+-- -- Toad            Ramsey          ramseto01       1885-09-05      1890-09-17
+-- -- Topsy           Hartsel         hartsto01       1898-09-14      1911-09-30
+-- -- Tot             Pressnell       pressto01       1938-04-21      1942-08-30
+-- -- Trench          Davis           davistr01       1985-06-04      1987-07-03
+-- -- Trick           McSorley        mcsortr01       1875-05-06      1886-05-06
+-- -- Tricky          Nichols         nichotr01       1875-04-19      1882-07-11
+-- -- Tris            Speaker         speaktr01       1907-09-14      1928-08-30
+-- -- Trot            Nixon           nixontr01       1996-09-21      2008-06-28
+-- -- Tubby           Spencer         spenctu01       1905-07-23      1918-09-01
+-- -- Tuffy           Stewart         stewatu01       1913-08-08      1914-04-25
+-- -- Tully           Sparks          sparktu01       1897-09-15      1910-06-08
+-- -- Tun             Berger          bergetu01       1890-05-09      1892-08-28
+-- -- Twink           Twining         twinitw01       1916-07-09      1916-07-09
+-- -- Ugueth          Urbina          urbinug01       1995-05-09      2005-10-02
+-- -- Urban           Shocker         shockur01       1916-04-24      1928-05-30
+-- -- Urbane          Pickering       pickeur01       1931-04-18      1932-09-25
+-- -- Vada            Pinson          pinsova01       1958-04-15      1975-09-28
+-- -- Vida            Blue            bluevi01        1969-07-20      1986-10-02
+-- -- Vinegar Bend    Mizell          mizelvi01       1952-04-22      1962-07-25
+-- -- War             Sanders         sandewa01       1903-04-18      1904-07-04
+-- -- Welcome         Gaston          gastowe01       1898-10-06      1899-09-25
+-- -- Whammy          Douglas         douglwh01       1957-07-29      1957-09-17
+-- -- Wheezer         Dell            dellwh01        1912-04-22      1917-07-04
+-- -- Whit            Wyatt           wyattwh01       1929-09-16      1945-07-18
+-- -- Wib             Smith           smithwi01       1909-05-31      1909-09-29
+-- -- Wish            Egan            eganwi01        1902-09-03      1906-07-23
+-- -- Yogi            Berra           berrayo01       1946-09-22      1965-05-09
+-- -- Yorvit          Torrealba       torreyo01       2001-09-05
+-- -- Yu              Darvish         darviyu01       2012-04-09
+-- -- Zaza            Harvey          harveza01       1900-05-03      1902-05-04
+-- -- Ziggy           Hasbrook        hasbrzi01       1916-09-06      1917-09-27
+-- -- Zinn            Beck            beckzi01        1913-09-14      1918-07-22
+-- -- Zoilo           Versalles       versazo01       1959-08-01      1971-09-28
