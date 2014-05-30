@@ -63,6 +63,7 @@ summary = FOREACH one_line GENERATE
   'n_players',   (long)teammate_stats.n_players AS n_players,
   'n_teammates', (long)teammate_stats.n_teammates AS n_teammates
   ;
+
 STORE_TABLE(summary, 'summary');
 cat $out_dir/summary;
 
