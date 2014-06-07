@@ -16,6 +16,8 @@ REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
 DEFINE Transpose              datafu.pig.util.TransposeTupleToBag();
 DEFINE STRSPLITBAG            pigsy.text.STRSPLITBAG();
 
+DEFINE Coalesce               datafu.pig.util.Coalesce;
+
 DEFINE SortedQuartile         datafu.pig.stats.Quantile('5');
 DEFINE ApproxQuartile         datafu.pig.stats.StreamingQuantile('5');
 -- DEFINE SortedDecile        datafu.pig.stats.Quantile('10');
@@ -33,77 +35,6 @@ DEFINE MD5                    datafu.pig.hash.MD5('hex');
 -- DEFINE SHA512              datafu.pig.hash.SHA('512');
 DEFINE CountVals              datafu.pig.bags.CountEach('flatten');
 
-DEFINE summarize_values_by(table, field, keys) RETURNS summary {
-  $summary = FOREACH (GROUP $table $keys) {
-    dist       = DISTINCT $table.$field;
-    non_nulls  = FILTER   $table.$field BY $field IS NOT NULL;
-    sorted     = ORDER    non_nulls BY $field;
-    some       = LIMIT    dist.$field 5;
-    n_recs     = COUNT_STAR($table);
-    n_notnulls = COUNT($table.$field);
-    GENERATE
-      group,
-      '$field'                       AS var:chararray,
-      AVG($table.$field)             AS avg_val,
-      SQRT(VAR($table.$field))       AS stddev_val,
-      MIN($table.$field)             AS min_val,
-      FLATTEN(SortedEdgeile(sorted)) AS (p01, p05, p10, p50, p90, p95, p99),
-      MAX($table.$field)             AS max_val,
-      --
-      n_recs                         AS n_recs,
-      n_recs - n_notnulls            AS n_nulls,
-      COUNT(dist)                    AS cardinality,
-      SUM($table.$field)             AS sum_val,
-      BagToString(some, '^')         AS some_vals
-      ;
-  };
-};
-
-DEFINE summarize_strings_by(table, field, keys) RETURNS summary {
-  $summary = FOREACH (GROUP $table $keys) {
-    dist       = DISTINCT $table.$field;
-    lens       = FOREACH  $table GENERATE SIZE(Coalesce($field,'')) AS len;
-    -- sortlens   = ORDER    lens BY len;
-    some       = LIMIT    dist.$field 5;
-    snippets   = FOREACH  some GENERATE (SIZE($field) > 15 ? CONCAT(SUBSTRING($field, 0, 15),'…') : $field) AS val;
-    n_recs     = COUNT_STAR($table);
-    n_notnulls = COUNT($table.$field);
-    all_chars  = FOREACH dist GENERATE STRSPLITBAG(Coalesce($field,''), '(?!^)');
-    chars      = CountVals(BagConcat(all_chars));
-    GENERATE
-      group,
-      '$field'                       AS var:chararray,
-      -- AVG(lens.len)                  AS avg_len,
-      -- SQRT(VAR(lens.len))            AS stddev_len,
-      MIN(lens.len)                  AS min_len,
-      -- FLATTEN(SortedEdgeile(sortlens)) AS (p01, p05, p10, p50, p90, p95, p99),
-      MAX(lens.len)                  AS max_len,
-      --
-      n_recs                         AS n_recs,
-      n_recs - n_notnulls            AS n_nulls,
-      COUNT(dist)                    AS cardinality,
-      SUM(lens.len)                  AS sum_len,
-      MIN($table.$field)             AS min_val,
-      MAX($table.$field)             AS max_val,
-      BagToString(snippets, '^')     AS some_vals,
-      chars AS chars
-      ;
-  };
-  $summary = FOREACH $summary {
-    so_chars = ORDER chars BY count DESC;
-    so_chars = LIMIT so_chars 5;
-    char_cts = FOREACH so_chars GENERATE CONCAT($0.token, ':', (chararray)count);
-    GENERATE var,
-      -- avg_len, stddev_len,
-      min_len,
-      -- p01, p05, p10, p50, p90, p95, p99
-      max_len, n_recs, n_nulls, cardinality,
-      sum_len, min_val, max_val, some_vals,
-      BagToString(char_cts, '|')
-      ;
-    };
-  };
-
 DEFINE load_allstars() RETURNS loaded {
   $loaded = LOAD '$data_dir/sports/baseball/allstars.tsv' AS (
     player_id:chararray, year_id:int,
@@ -112,11 +43,11 @@ DEFINE load_allstars() RETURNS loaded {
 };
 
 DEFINE load_bat_seasons() RETURNS loaded {
-  $loaded = LOAD '$data_dir/sports/baseball/bat_seasons.tsv'    AS (
-    player_id:chararray, name_first:chararray, name_last:chararray,
-    year_id:int,        team_id:chararray,     lg_id:chararray,
-    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,
-    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int
+  $loaded = LOAD '$data_dir/sports/baseball/bat_seasons.tsv' USING PigStorage('\t', '--null_string \\N') AS (
+    player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
+    year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
+    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,  --  $6-$12
+    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int  -- $13-$19
     );
 };
 
@@ -138,7 +69,7 @@ DEFINE load_games() RETURNS loaded {
 };
 
 DEFINE load_teams() RETURNS loaded {
-  $loaded = LOAD '$data_dir/sports/baseball/teams.tsv' AS (
+  $loaded = LOAD '$data_dir/sports/baseball/teams.tsv' USING PigStorage('\t', '--null_string \\N') AS (
     year_id: int, lg_id:chararray, team_id:chararray, franch_id:chararray,          -- 1-4
     div_id:chararray, Rank:int,
     G:int,    Ghome:int, W:int, L:int, DivWin:int, WCWin:int, LgWin:int, WSWin:int, -- 7-14
@@ -152,21 +83,17 @@ DEFINE load_teams() RETURNS loaded {
 };
 
 DEFINE load_park_teams() RETURNS loaded {
-  $loaded = LOAD '$data_dir/sports/baseball/park_team_years.tsv' AS (
+  $loaded = LOAD '$data_dir/sports/baseball/park_team_years.tsv' USING PigStorage('\t', '--null_string \\N') AS (
     park_id:chararray, team_id:chararray, year_id:long, beg_date:chararray, end_date:chararray, n_games:long
     );
 };
 
 DEFINE load_parks() RETURNS loaded {
-  $loaded = LOAD '$data_dir/sports/baseball/parks.tsv' AS (
-    park_id:chararray, park_name:chararray,
-    -- beg_date:datetime, end_date:datetime,
-    beg_date:chararray, end_date:chararray,
-    is_active:int, n_games:long, lng:double, lat:double,
-    city:chararray, state_id:chararray, country_id:chararray,
-    postal_id:chararray, streetaddr:chararray, extaddr:chararray, tel:chararray,
-    url:chararray, url_spanish:chararray, logofile:chararray,
-    allteams:chararray, allnames:chararray, comments:chararray
+  $loaded = LOAD '$data_dir/sports/baseball/park-parts-*.tsv' USING PigStorage('\t', '--null_string \\N') AS (
+    park_id:chararray,   park_name:chararray,                                       --  $0..$1
+    beg_date:chararray,  end_date:chararray, -- not datetime                        --  $2..$3
+    is_active:int,       n_games:long,          lng:double,        lat:double,      --  $4..$7
+    city:chararray,      state_id:chararray,    country_id:chararray                --  $8..$10
     );
 };
 
@@ -196,14 +123,14 @@ DEFINE load_events(begy, endy) RETURNS loaded {
 };
 
 DEFINE load_people() RETURNS loaded {
-  $loaded = LOAD '$data_dir/sports/baseball/people.tsv' AS (
+  $loaded = LOAD '$data_dir/sports/baseball/people.tsv' USING PigStorage('\t', '--null_string \\N') AS (
     player_id:chararray,
     birth_year:int,        birth_month:int,       birth_day: int,
     birth_ctry: chararray, birth_state:chararray, birth_city:chararray,
     death_year:int,        death_month:int,       death_day: int,
     death_ctry: chararray, death_state:chararray, death_city:chararray,
     name_first:chararray,  name_last:chararray,   name_given:chararray,
-    height:int,            weight:int,
+    height_in:int,         weight_lb:int,
     bats:chararray,        throws:chararray,
     beg_date:chararray,    end_date:chararray,    college:chararray,
     retro_id:chararray,    bbref_id:chararray
@@ -226,3 +153,6 @@ DEFINE load_one_line() RETURNS loaded {
   $loaded = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
 };
 
+DEFINE load_us_city_pops() RETURNS loaded {
+  $loaded = LOAD '$data_dir/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
+};

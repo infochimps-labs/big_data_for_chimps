@@ -1,15 +1,16 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
-SET default_parallel 3;
+-- SET default_parallel 3;
 
 bats = load_bat_seasons();
 bats = FILTER bats BY (year_id >= 2000);
 
+-- SET opt.multiquery            false;
 
 -- ***************************************************************************
 --
 -- === Sorting All Records in Total Order
 
--- Run the script 'i-summarizing_multiple_subsets_simultaneously.pig' beforehand
+-- Run the script 'f-summarizing_multiple_subsets_simultaneously.pig' beforehand
 -- to get career stats broken up into young (age 21 and below), prime (22 to 29
 -- inclusive), and older (30 and over).
 --
@@ -25,10 +26,6 @@ career_epochs = FILTER career_epochs BY
 career_young = ORDER career_epochs BY OPS_young DESC;
 career_prime = ORDER career_epochs BY OPS_prime DESC;
 career_older = ORDER career_epochs BY OPS_older DESC;
-
--- STORE_TABLE(career_young, 'career_young');
--- STORE_TABLE(career_prime, 'career_prime');
--- STORE_TABLE(career_older, 'career_older');
 
 -- You'll spot Ted Williams (willite01) as one of the top three young players,
 -- top three prime players, and top three old players. He's pretty awesome.
@@ -65,7 +62,6 @@ career_young = ORDER career_epochs BY n_young DESC, n_prime DESC,
 by_diff_older = ORDER (
   FOREACH career_epochs GENERATE *, OPS_older - OPS_prime AS diff_older
   ) BY diff_older DESC;
-STORE_TABLE(by_diff_older, 'by_diff_older');
 
 -- Current-era players seem to be very over-represented at the top of the
 -- career_older table. Part of that is due to better training, nutrition, and
@@ -86,16 +82,13 @@ STORE_TABLE(by_diff_older, 'by_diff_older');
 -- you want to impose, and list it first in the sort order.
 
 nulls_sort_demo = FOREACH career_epochs GENERATE
-  *, (OPS_older IS NULL ? 0 : 1) AS has_older_epoch;
-
+  (OPS_older IS NULL ? 0 : 1) AS has_older_epoch, *;
 
 nulls_then_vals = ORDER nulls_sort_demo BY
   has_older_epoch ASC, OPS_all DESC;
 
 vals_then_nulls = ORDER nulls_sort_demo BY
   has_older_epoch DESC, OPS_all DESC;
-
-
 
 
 -- Floating Values to the Head or Tail of the Sort Order
@@ -108,15 +101,23 @@ post1985_vs_earlier = ORDER (
   FOREACH career_epochs GENERATE *, (beg_year >= 1985 ? 1 : 0) AS is_1985
   ) BY is_1985 DESC, n_older DESC;
 
-STORE_TABLE(post1985_vs_earlier, 'post1985_vs_earlier');
-
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Case-insensitive Sorting
 --
 
+dict        = LOAD '/usr/share/dict/words' AS (word:chararray);
 
+-- There's no intrinsic way to sort case-insensitive; instead, just force a
+-- lower-case field to sort with:
+
+sortable    = FOREACH dict GENERATE LOWER(word) AS key, *;
+dict_nocase = FOREACH (ORDER sortable BY key DESC) GENERATE $1..;
+zzz_nocase  = LIMIT dict_nocase 200;
+--
+dict_case   = ORDER dict BY word DESC;
+zzz_case    = LIMIT dict_case   200;
 
 -- sunset = FOREACH career_epochs GENERATE
 --   player_id, beg_year, end_year, OPS_all,
@@ -140,3 +141,13 @@ STORE_TABLE(post1985_vs_earlier, 'post1985_vs_earlier');
 
 
 -- Look at the jobtracker
+
+
+STORE_TABLE(post1985_vs_earlier, 'post1985_vs_earlier');
+STORE_TABLE(career_young, 'career_young');
+STORE_TABLE(career_prime, 'career_prime');
+STORE_TABLE(career_older, 'career_older');
+STORE_TABLE(by_diff_older, 'by_diff_older');
+-- 
+STORE_TABLE(zzz_nocase, 'zzz_nocase');
+STORE_TABLE(zzz_case,   'zzz_case');

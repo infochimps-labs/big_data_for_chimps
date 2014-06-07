@@ -2,7 +2,7 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 
 bat_seasons = load_bat_seasons();
 parks       = load_parks();
-big_cities   = LOAD '$data_dir/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
+big_cities  = load_us_city_pops();
 
 bat_seasons = FILTER bat_seasons BY PA      >= 450;
 parks       = FILTER parks       BY n_games >=  50;

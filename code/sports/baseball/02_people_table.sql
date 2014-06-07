@@ -64,7 +64,8 @@ REPLACE INTO `people`
     `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`,
     `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`,
     `name_first`, `name_last`, `name_note`, `name_given`, `name_nick`,
-    ROUND(`height` * 2.54), ROUND(`weight` * 0.453592), `bats`, `throws`,
+    -- ROUND(`height` * 2.54, 1), ROUND(`weight` * 0.453592,1), `bats`, `throws`,
+    `height`, `weight`, `bats`, `throws`,
     STR_TO_DATE(`first_game`, '%m/%d/%Y'), 
     STR_TO_DATE(`final_game`,  '%m/%d/%Y'), `college`, `manager_id`, `hof_id`
   FROM `master`

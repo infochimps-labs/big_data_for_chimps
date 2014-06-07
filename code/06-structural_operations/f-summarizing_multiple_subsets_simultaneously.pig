@@ -7,7 +7,6 @@ mod_seasons = load_mod_seasons(); -- modern (post-1900) seasons of any number of
 -- === Summarizing Multiple Subsets Simultaneously
 --
 
--- Some players are brilliant young and flame out; some
 --
 -- We can use the summing trick to find aggregates on conditional subsets. For
 -- this example, we will classify players as being "young" (age 21 and below),
@@ -18,7 +17,6 @@ mod_seasons = load_mod_seasons(); -- modern (post-1900) seasons of any number of
 -- www.fangraphs.com/blogs/how-do-star-hitters-age research by fangraphs.com
 -- showed a performance drop-off by 10% from peak.]
 --
--- We're
 
 -- Project the numerator and denominator of our offensive stats into the field
 -- for that age bucket... for an age-25 season, there will be values for PA_all
@@ -32,12 +30,15 @@ age_seasons = FOREACH mod_seasons {
   GENERATE
     player_id, year_id,
     PA AS PA_all, AB AS AB_all, OB AS OB_all, TB AS TB_all,
-    (young ? PA : 0) AS PA_young, (young ? AB : 0) AS AB_young,
-    (young ? OB : 0) AS OB_young, (young ? TB : 0) AS TB_young, (young ? 1 : 0) AS is_young,
-    (prime ? PA : 0) AS PA_prime, (prime ? AB : 0) AS AB_prime,
-    (prime ? OB : 0) AS OB_prime, (prime ? TB : 0) AS TB_prime, (prime ? 1 : 0) AS is_prime,
-    (older ? PA : 0) AS PA_older, (older ? AB : 0) AS AB_older,
-    (older ? OB : 0) AS OB_older, (older ? TB : 0) AS TB_older, (older ? 1 : 0) AS is_older
+    (young ? 1 : 0) AS is_young,
+      (young ? PA : 0) AS PA_young, (young ? AB : 0) AS AB_young,
+      (young ? OB : 0) AS OB_young, (young ? TB : 0) AS TB_young,
+    (prime ? 1 : 0) AS is_prime,
+      (prime ? PA : 0) AS PA_prime, (prime ? AB : 0) AS AB_prime,
+      (prime ? OB : 0) AS OB_prime, (prime ? TB : 0) AS TB_prime,
+    (older ? 1 : 0) AS is_older,
+      (older ? PA : 0) AS PA_older, (older ? AB : 0) AS AB_older,
+      (older ? OB : 0) AS OB_older, (older ? TB : 0) AS TB_older
     ;
 };
 

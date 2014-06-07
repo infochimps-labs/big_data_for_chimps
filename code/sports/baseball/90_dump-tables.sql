@@ -20,23 +20,23 @@ SELECT * FROM `lahman`.`numbers`   WHERE num <= 100000  ORDER BY num INTO OUTFIL
 SELECT * FROM `lahman`.`numbers`   WHERE num <= 10000   ORDER BY num INTO OUTFILE '/data/rawd/stats/numbers/numbers-10k.tsv';
 SELECT num FROM `lahman`.`numbers` LIMIT 1                           INTO OUTFILE '/data/rawd/stats/numbers/one.tsv';
 
+
+SELECT  park_id, park_name, beg_date, end_date, is_active, n_games, lng, lat, city, `state`, `country`
+  FROM `lahman`.`parks`
+  ORDER BY park_id
+  INTO OUTFILE '/data/rawd/sports/baseball/parks.tsv';
+
 SELECT
-  player_id,
-  IFNULL(birth_year,''),    IFNULL(birth_month,''), IFNULL(birth_day,''), 
-  IFNULL(birth_country,''), IFNULL(birth_state,''), IFNULL(birth_city,''), 
-  IFNULL(death_year,''),    IFNULL(death_month,''), IFNULL(death_day,''), 
-  IFNULL(death_country,''), IFNULL(death_state,''), IFNULL(death_city,''),
-  IFNULL(name_first,''),    IFNULL(name_last,''),   IFNULL(name_given,''),
-  IFNULL(height,''),        IFNULL(weight,''),      IFNULL(bats,''),  IFNULL(throws,''),
-  IFNULL(first_game,''),    IFNULL(final_game,''),  IFNULL(college,''),
-  IFNULL(retro_id,''),      IFNULL(bbref_id,'')
-  FROM `lahman`.`people`
-  WHERE player_id IS NOT NULL
+  `player_id`,
+   `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`,
+   `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`,
+   `name_first`, `name_last`, `name_given`,
+   `height`, `weight`, `bats`, `throws`,
+   `first_game`, `final_game`, `college`,
+   `retro_id`, `bbref_id`
+  FROM `lahman`.`people` WHERE player_id IS NOT NULL
   ORDER BY IF(player_id IS NULL, 1, 0), player_id, retro_id, lahman_id
-  INTO OUTFILE '/data/rawd/sports/baseball/people.tsv' FIELDS ENCLOSED BY '';
-
-
-    
+  INTO OUTFILE '/data/rawd/sports/baseball/people.tsv';
 
 -- ===========================================================================
 --

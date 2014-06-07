@@ -28,9 +28,10 @@ team_scores = UNION games_a, games_b;
 DESCRIBE team_scores;
 -- team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
 
-
-team_season_runs = FOREACH (GROUP team_scores BY team_id) GENERATE
-  group AS team_id, SUM(runs_for) AS R, SUM(runs_against) AS RA;
-
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 STORE_TABLE(game_scores, 'game_scores');
 STORE_TABLE(team_scores, 'team_scores');
+
+-- Example use: the total runs scored for and against in each team's history.
+team_season_runs = FOREACH (GROUP team_scores BY team_id) GENERATE
+  group AS team_id, SUM(runs_for) AS R, SUM(runs_against) AS RA;
