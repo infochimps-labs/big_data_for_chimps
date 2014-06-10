@@ -25,6 +25,8 @@
 
 * http://blog.markfeeney.com/2010/10/jmx-through-ssh-tunnel.html[JMX through a ssh tunnel]
 
+* http://www.amazon.com/dp/039334777X[Naked Statistics]
+* http://www.amazon.com/Head-First-Statistics-Dawn-Griffiths/dp/0596527586[Head First Statistics]
 
 **To Consider**
 

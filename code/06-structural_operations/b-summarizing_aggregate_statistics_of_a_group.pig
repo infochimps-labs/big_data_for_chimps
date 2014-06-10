@@ -3,30 +3,12 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 bat_seasons   = load_bat_seasons();
 
 -- === Summarizing Aggregate Statistics of a Group
--- ==== Average of all non-Null values
--- ==== Count of Distinct Values
--- ==== Count of non-Null values
--- ==== Median (50th Percentile Value) of a Bag
--- ==== Minimum / Maximum non-Null value
--- ==== Size of Bag (Count of all values, Null or not)
--- ==== Standard Deviation of all non-Null Values
--- ==== Sum of non-Null values
+
+-- The most common way to make big data small is to apply aggregate functions
+-- that summarize the whole.
 
 --
--- * COUNT_STAR(bag)              -- Counting records in a bag
--- * COUNT(bag)                   -- Counting non-null values in a bag
--- * DISTINCT;..COUNT_STAR        -- Counting Distinct Values in a bag
---
--- * SUM(bag)                     -- Totalling
--- * AVG(bag)                     -- 
--- * VAR(bag)                     -- 
--- * SQRT(VAR(bag))               -- 
--- * MIN(bag)                     -- Minimum value
--- * MAX(bag)                     -- Maximum value
--- * BagToString(bag, delimiter)  -- 
-
-
--- Turn the batting season statistics into batting career statistics
+-- For example,  the batting season statistics into batting career statistics
 --
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
   team_ids = DISTINCT bat_seasons.team_id;
@@ -35,11 +17,12 @@ bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
   toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B); toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR); 
   OBP    = (totH + totBB + totHBP) / totPA;
   SLG    = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
-  GENERATE group               AS player_id,
+  GENERATE
+    group                          AS player_id,
     COUNT_STAR(bat_seasons)        AS n_seasons,
+    COUNT_STAR(team_ids)           AS n_distinct_teams,
     MIN(bat_seasons.year_id)	     AS beg_year,
     MAX(bat_seasons.year_id)       AS end_year,
-    BagToString(team_ids, '^') AS team_ids,
     totG   AS G,   totPA  AS PA,  totAB  AS AB,
     totH   AS H,   totBB  AS BB,  totHBP AS HBP,
     toth1B AS h1B, toth2B AS h2B, toth3B AS h3B, totHR AS HR,
@@ -47,10 +30,36 @@ bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
     ;
 };
 
-STORE_TABLE('bat_careers', bat_careers);
-
 DESCRIBE bat_seasons;
 DESCRIBE bat_careers;
+
+
+-- The following functions are built in to Pig:
+--
+-- * Count of all values: `COUNT_STAR(bag)`
+-- * Count of non-Null values: `COUNT(bag)`
+-- * Cardinality (i.e. the count of distinct values): combine the `DISTINCT` operation and the `COUNT_STAR` function as demonstrated below.
+-- * Minimum / Maximum non-Null value: `MIN(bag)` / `MAX(bag)`
+-- * Sum of non-Null values: `SUM(bag)`
+-- * Average of non-Null values: `AVG(bag)`
+--
+-- There are a few additional summary functions that aren't native features of
+-- Pig, but are offered by Linkedin's might-as-well-be-native DataFu
+-- package. (The previous chapter (REF) has details on how to use UDFs.) 
+-- 
+-- * Variance of non-Null values: `VAR(bag)`, using the `datafu.pig.stats.VAR` UDF
+-- * Standard Deviation of non-Null values: `SQRT(VAR(bag))`
+-- * Quantiles: `Quantile(bag)` or `StreamingQuantile(bag)`; we'll explain the difference shortly
+-- * Median (50th Percentile Value) of a Bag: `Median(bag)` or `StreamingMedian(bag)`
+--
+-- (If you've forgotten/never quite learned what those functions mean, hang on
+-- for just a bit and we'll demonstrate them in context. If that still doesn't
+-- do it, try either http://www.amazon.com/dp/039334777X[Naked Statistics] or
+-- http://www.amazon.com/Head-First-Statistics-Dawn-Griffiths/dp/0596527586[Head
+-- First Statistics] Both do a good job of efficiently imparting what these
+-- functions mean and how to use them, and don't assume prior expertise or
+-- interest in mathematics.)
+-- 
 
 -- weight_summary = FOREACH (GROUP bat_seasons ALL) {
 --   dist         = DISTINCT bat_seasons.weight;
@@ -106,17 +115,17 @@ DESCRIBE bat_careers;
 -- STORE_TABLE('weight_yr_stats', weight_yr_stats);
 -- cat $out_dir/weight_yr_stats;
 
-stats_G   = summarize_values_by(bat_seasons, 'G',   'ALL');    STORE_TABLE('stats_G',   stats_G  );
-stats_PA  = summarize_values_by(bat_seasons, 'PA',  'ALL');    STORE_TABLE('stats_PA',  stats_PA  );
-stats_H   = summarize_values_by(bat_seasons, 'H',   'ALL');    STORE_TABLE('stats_H',   stats_H  );
-stats_HR  = summarize_values_by(bat_seasons, 'HR',  'ALL');    STORE_TABLE('stats_HR',  stats_HR );
-stats_OBP = summarize_values_by(bat_seasons, 'OBP', 'ALL');    STORE_TABLE('stats_OBP', stats_OBP);
-stats_BAV = summarize_values_by(bat_seasons, 'BAV', 'ALL');    STORE_TABLE('stats_BAV', stats_BAV);
-stats_SLG = summarize_values_by(bat_seasons, 'SLG', 'ALL');    STORE_TABLE('stats_SLG', stats_SLG);
-stats_OPS = summarize_values_by(bat_seasons, 'OPS', 'ALL');    STORE_TABLE('stats_OPS', stats_OPS);
-
-stats_wt  = summarize_values_by(bat_seasons, 'weight', 'ALL'); STORE_TABLE('stats_wt', stats_wt);
-stats_ht  = summarize_values_by(bat_seasons, 'height', 'ALL'); STORE_TABLE('stats_ht', stats_ht);
+-- stats_G   = summarize_values_by(bat_seasons, 'G',   'ALL');    STORE_TABLE('stats_G',   stats_G  );
+-- stats_PA  = summarize_values_by(bat_seasons, 'PA',  'ALL');    STORE_TABLE('stats_PA',  stats_PA  );
+-- stats_H   = summarize_values_by(bat_seasons, 'H',   'ALL');    STORE_TABLE('stats_H',   stats_H  );
+-- stats_HR  = summarize_values_by(bat_seasons, 'HR',  'ALL');    STORE_TABLE('stats_HR',  stats_HR );
+-- stats_OBP = summarize_values_by(bat_seasons, 'OBP', 'ALL');    STORE_TABLE('stats_OBP', stats_OBP);
+-- stats_BAV = summarize_values_by(bat_seasons, 'BAV', 'ALL');    STORE_TABLE('stats_BAV', stats_BAV);
+-- stats_SLG = summarize_values_by(bat_seasons, 'SLG', 'ALL');    STORE_TABLE('stats_SLG', stats_SLG);
+-- stats_OPS = summarize_values_by(bat_seasons, 'OPS', 'ALL');    STORE_TABLE('stats_OPS', stats_OPS);
+-- 
+-- stats_wt  = summarize_values_by(bat_seasons, 'weight', 'ALL'); STORE_TABLE('stats_wt', stats_wt);
+-- stats_ht  = summarize_values_by(bat_seasons, 'height', 'ALL'); STORE_TABLE('stats_ht', stats_ht);
 
 -- pig ./06-structural_operations/c-summary_statistics.pig
 -- cat /data/out/baseball/stats_*/part-r-00000 | wu-lign -- %s %s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f 
@@ -146,3 +155,5 @@ stats_ht  = summarize_values_by(bat_seasons, 'height', 'ALL'); STORE_TABLE('stat
 -- all     weight   83.569   8.797  57.000  68.000  71.000  73.000  82.000  95.000 100.000 109.000 132.000 27750   35      54        2316119.000000000000  null^57^59^63^64                                                                     
 
 
+
+STORE_TABLE('bat_careers', bat_careers);

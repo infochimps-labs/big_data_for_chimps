@@ -43,3 +43,10 @@ DESCRIBE chars_freq;
 rmf                    $out_dir/chars_freq;
 STORE chars_freq INTO '$out_dir/chars_freq';
 
+
+-- nf_chars = FOREACH bat_seasons GENERATE
+--   FLATTEN(STRSPLITBAG(name_first, '(?!^)')) AS char;
+-- chars_hist = FOREACH (GROUP nf_chars BY char) {
+--   GENERATE group AS char, COUNT_STAR(nf_chars.char) AS ct;
+-- };
+-- chars_hist = ORDER chars_hist BY ct;

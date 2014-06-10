@@ -122,6 +122,10 @@
     7 	h  	5	expand		Histogram on Multiple Fields Simultaneously
 
 
+
+==== Nested GROUP BY
+
+
 ==== Selecting Rows from the Middle of a Result Set
 
 
