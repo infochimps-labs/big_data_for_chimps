@@ -94,8 +94,8 @@ career_HR_hist = binned_histogram(bat_careers, 'HR', 10, 800);
 -- The overall-population distribution is shown with light blue bars, overlaid
 -- with a normal distribution curve for illustrative purposes. The population of
 -- baseball players deviates predictably from the overall population: it's an
--- advantage to
--- The distribution of player weights, meanwhile, is 
+-- advantage to The distribution of player weights, meanwhile, is shifted
+-- somewhat but with a dramatically smaller spread. 
 
 
 -- Surely at least baseball players are born and die like the rest of us, though?
