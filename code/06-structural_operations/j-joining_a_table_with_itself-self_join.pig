@@ -58,9 +58,13 @@ teammate_stats = FOREACH (GROUP teammates      ALL) GENERATE
   COUNT_STAR(teammates)      AS n_players,
   SUM(teammates.n_mates)     AS n_teammates;
 
+--
+-- The one_line.tsv table is a nice trick for accumulating several scalar
+-- projections.
+--
 summary = FOREACH one_line GENERATE
-  'n_pairs',     (long)tm_pair_stats.n_pairs AS n_pairs,
-  'n_players',   (long)teammate_stats.n_players AS n_players,
+  'n_pairs',     (long)tm_pair_stats.n_pairs      AS n_pairs,
+  'n_players',   (long)teammate_stats.n_players   AS n_players,
   'n_teammates', (long)teammate_stats.n_teammates AS n_teammates
   ;
 

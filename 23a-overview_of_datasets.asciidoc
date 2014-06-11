@@ -76,6 +76,14 @@ The airport datasets contain errors and conflicts; we've done some hand-curation
   - http://blog.oldweather.org/results/[Old Weather project] --
     - http://philip.brohan.org.transfer.s3.amazonaws.com/oW_imma_20120801.tgz
 
+=== Supplementary Data
+
+* US City Populations:
+  - https://en.wikipedia.org/wiki/Cities_and_metropolitan_areas_of_the_United_States[The 100 most populous cities\, Metropolitan Statistical Areas\, and Primary Statistical Areas of the United States and Puerto Rico]
+  - http://www.census.gov/popest/data/cities/totals/2011/tables/SUB-EST2011-01.csv[US Census -- Annual Estimates of the Resident Population for Incorporated Places Over 50_000 Population]
+
+
+    
 === Retrosheet
 
 

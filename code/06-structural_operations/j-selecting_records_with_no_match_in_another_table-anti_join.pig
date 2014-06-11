@@ -58,7 +58,7 @@ bats_ast_cg = COGROUP
 -- Select all cogrouped rows where there were no all-star records, and project
 -- the batting table fields.
 bat_seasons_nonast_cg = FOREACH
-  (FILTER bats_ast_cg BY IsEmpty(allstars_py))
+  (FILTER bats_ast_cg BY (COUNT_STAR(allstars_py) == 0L))
   GENERATE FLATTEN(bat_seasons);
 
 -- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -145,12 +145,12 @@ DEFINE load_franchises() RETURNS loaded {
 
 DEFINE load_numbers_10k() RETURNS loaded {
   $loaded = LOAD '$data_dir/stats/numbers/numbers-10k.tsv' AS (
-    num:int, from_0:int, w_null:int, zip:int, uno:int
+    num:int, num0:int, w_null:int, zip:int, uno:int
     );
 };
 
 DEFINE load_one_line() RETURNS loaded {
-  $loaded = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
+  $loaded = LOAD '$data_dir/stats/numbers/one_line.tsv' AS (uno:int, zilch:int);
 };
 
 DEFINE load_us_city_pops() RETURNS loaded {

@@ -78,7 +78,7 @@ DESCRIBE bat_careers;
 --     --
 --     n_recs                          AS n_recs,
 --     n_recs - n_notnulls             AS n_nulls,
---     COUNT(dist)                     AS cardinality,
+--     COUNT_STAR(dist)                     AS cardinality,
 --     SUM(bat_seasons.weight)             AS sum_val,
 --     BagToString(some, '^')          AS some_vals
 --     ;
@@ -105,7 +105,7 @@ DESCRIBE bat_careers;
 --     --
 --     n_recs                          AS n_recs,
 --     n_recs - n_notnulls             AS n_nulls,
---     COUNT(dist)                     AS cardinality,
+--     COUNT_STAR(dist)                     AS cardinality,
 --     SUM(bat_seasons.weight)             AS sum_val,
 --     BagToString(some, '^')          AS some_vals
 --     ;

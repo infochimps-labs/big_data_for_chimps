@@ -21,7 +21,7 @@ hr_stats = FOREACH (GROUP bat_seasons ALL) {
     SQRT((SUM(bat_seasons.HRsq)/COUNT(bat_seasons)) - (AVG(bat_seasons.HR)*AVG(bat_seasons.HR))) AS hr_stdev2,
     COUNT_STAR(bat_seasons)    AS n_recs,
     COUNT_STAR(bat_seasons) - COUNT(bat_seasons.HR) AS hr_n_nulls,
-    COUNT(hrs_distinct) AS hr_card
+    COUNT_STAR(hrs_distinct) AS hr_card
     ;
   }
 

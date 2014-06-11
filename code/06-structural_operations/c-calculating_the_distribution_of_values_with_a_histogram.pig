@@ -32,9 +32,9 @@ H_hist = FOREACH (GROUP H_vals BY H) GENERATE
 -- a topic from later ("Filling Gaps in a List") because it makes it much easier
 -- to import into excel.
 -- 
-all_bins = FILTER numbers BY (from_0 < 280);
-H_hist = FOREACH (COGROUP H_vals BY H, all_bins BY from_0) GENERATE 
-  group AS val, (IsEmpty(H_vals) ? Null : COUNT_STAR(H_vals)) AS ct;
+all_bins = FILTER numbers BY (num0 < 280);
+H_hist = FOREACH (COGROUP H_vals BY H, all_bins BY num0) GENERATE 
+  group AS val, (COUNT_STAR(H_vals) == 0L ? Null : COUNT_STAR(H_vals)) AS ct;
 
 
 -- What binsize? These zoom in on the tail -- more than 2000 games played. A bin size of 200 is too coarse; it washes out the legitimate gaps. The bin size of 2 is too fine -- the counts are small and there are many trivial gaps. We chose a bin size of 50 games; it's meaningful (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, while preserving the gaps that demonstrate the epic scope of the career of Pete Rose (our 3,562-game outlier).
@@ -56,10 +56,10 @@ DEFINE histogram(table, key) RETURNS dist {
 DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
   numbers = load_numbers_10k();
   vals = FOREACH $table GENERATE (ROUND($key / $binsize) * $binsize) AS bin;
-  all_bins = FOREACH numbers GENERATE (from_0 * $binsize) AS bin;
+  all_bins = FOREACH numbers GENERATE (num0 * $binsize) AS bin;
   all_bins = FILTER  all_bins BY (bin <= $maxval);  
   $dist = FOREACH (COGROUP vals BY bin, all_bins BY bin) GENERATE
-    group AS bin, (IsEmpty(vals) ? Null : COUNT_STAR(vals)) AS ct;
+    group AS bin, (COUNT_STAR(vals) == 0L ? Null : COUNT_STAR(vals)) AS ct;
 };
 
 season_G_hist = histogram(bat_seasons, 'G');
@@ -119,9 +119,9 @@ attr_vals = FOREACH vitals GENERATE
 attr_vals_nn = FILTER attr_vals BY val IS NOT NULL;
 
 -- peep_stats   = FOREACH (GROUP attr_vals_nn BY attr) GENERATE
---   group                    AS attr,
---   COUNT_STAR(attr_vals_nn) AS ct_all,
---   COUNT(attr_vals_nn.val)  AS ct;
+--   group                        AS attr,
+--   COUNT_STAR(attr_vals_nn)     AS ct_all,
+--   COUNT_STAR(attr_vals_nn.val) AS ct;
 
 peep_stats = FOREACH (GROUP attr_vals_nn ALL) GENERATE
   BagToMap(CountVals(attr_vals_nn.attr)) AS cts:map[long];

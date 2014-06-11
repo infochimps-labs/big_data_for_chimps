@@ -46,7 +46,7 @@ bats_ast_cg = COGROUP
 --
 -- One row in the batting table => One row in the result
 bat_seasons_ast_cg = FOREACH
-  (FILTER bats_ast_cg BY NOT IsEmpty(allstars_py)))
+  (FILTER bats_ast_cg BY (COUNT_STAR(allstars_py) > 0L))
   GENERATE FLATTEN(bat_seasons);
 
 

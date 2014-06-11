@@ -39,7 +39,7 @@ tn_toks    = FOREACH franchises
   GENERATE FLATTEN(TOKENIZE(franchName)) AS token;
 tn_toks_ct = FOREACH (GROUP tn_toks BY token)
   GENERATE group AS token,
-  COUNT(tn_toks.token) AS tok_ct;
+  COUNT_STAR(tn_toks.token) AS tok_ct;
 
 team_toks  = ORDER tn_toks_ct BY tok_ct ASC;
 

@@ -48,8 +48,8 @@ SELECT NOW() AS starting_datetime, 'Dumping simplified batting stats into /data/
 
 SELECT
     player_id, name_first, name_last,
-    year_id, team_id, lg_id, age,
-    G, PA, AB,
+    year_id, team_id, lg_id,
+    age, G, PA, AB,
     @HBP := IFNULL(HBP, 0)       AS HBP,
     @SH  := IFNULL(SH,  0)       AS SH,
     BB, H,

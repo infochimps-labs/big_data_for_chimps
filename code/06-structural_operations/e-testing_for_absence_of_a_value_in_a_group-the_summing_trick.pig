@@ -26,7 +26,7 @@ player_soxness   = FOREACH bat_seasons GENERATE
   player_id, (team_id == 'BOS' ? 1 : 0) AS is_soxy;
 
 player_soxness_g = FILTER (GROUP player_soxness BY player_id)
-  BY SUM(is_soxy) == 0;
+  BY SUM(is_soxy) == 0L;
 
 never_sox = FOREACH player_soxness_g GENERATE group AS player_id;
 

@@ -26,12 +26,12 @@ numbers_10k = load_numbers_10k();
 H_vals = FOREACH (GROUP bat_seasons BY player_id) GENERATE
   100*ROUND(SUM(bat_seasons.H)/100.0) AS bin;
 H_hist_0 = FOREACH (GROUP H_vals BY bin) GENERATE 
-  group AS bin, COUNT(H_vals) AS ct;
+  group AS bin, COUNT_STAR(H_vals) AS ct;
 
 --
 -- Generate a list of all the bins we want to keep.
 --
-H_bins = FOREACH (FILTER numbers_10k BY from_0 <= 43) GENERATE 100*from_0  AS bin;
+H_bins = FOREACH (FILTER numbers_10k BY num0 <= 43) GENERATE 100*num0  AS bin;
 
 --
 -- Perform a LEFT JOIN of bins with histogram counts Missing rows will have a

@@ -25,7 +25,7 @@ H_summary_base = FOREACH (GROUP bat_seasons ALL) {
     --
     n_recs                         AS n_recs,
     n_recs - n_notnulls            AS n_nulls,
-    COUNT(dist)                    AS cardinality,
+    COUNT_STAR(dist)               AS cardinality,
     BagToString(examples, '^')     AS examples
     ;
 };
@@ -51,7 +51,7 @@ H_summary = FOREACH (GROUP bat_seasons ALL) {
     --
     n_recs                         AS n_recs,
     n_recs - n_notnulls            AS n_nulls,
-    COUNT(dist)                    AS cardinality,
+    COUNT_STAR(dist)               AS cardinality,
     BagToString(examples, '^')     AS examples
     ;
 };
@@ -83,7 +83,7 @@ name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
     --
     n_recs                         AS n_recs,
     n_recs - n_notnulls            AS n_nulls,
-    COUNT(dist)                    AS cardinality,
+    COUNT_STAR(dist)               AS cardinality,
     MIN(bat_seasons.name_first)    AS minval,
     MAX(bat_seasons.name_first)    AS maxval,
     BagToString(snippets, '^')     AS examples,
