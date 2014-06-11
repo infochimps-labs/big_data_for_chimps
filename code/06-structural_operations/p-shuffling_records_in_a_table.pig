@@ -32,7 +32,7 @@ STORE_TABLE('vals_ided',  vals_ided);
 
 -- vals_wtag = FOREACH vals_rked {
 --   line_info   = CONCAT((chararray)split_info, '#', (chararray)rank_vals);
---   GENERATE HashVal((chararray)line_info) AS rand_id, city, state, pop, FLATTEN(split_attrs) AS (sp_path, sp_idx, sp_offs, sp_size); 
+--   GENERATE HashVal((chararray)line_info) AS rand_id, city, state, pop, FLATTEN(split_attrs) AS (sp_path, sp_idx, sp_offs, sp_size);
 --   };
 -- vals_shuffled = FOREACH (ORDER vals_wtag BY rand_id) GENERATE *;
 -- STORE vals_shuffled INTO '/data/out/vals_shuffled';
@@ -91,12 +91,12 @@ STORE_TABLE('vals_shuffled', vals_shuffled);
 --   };
 -- DESCRIBE ided;
 -- STORE_TABLE('cities_with_ids', ided);
--- 
+--
 -- sampled_lines = FILTER(FOREACH ided GENERATE MD5(id_md5) AS digest, id_md5) BY (STARTSWITH(digest, 'b'));
 -- STORE_TABLE('sampled_lines', sampled_lines);
--- 
+--
 -- data_in = LOAD 'input' as (val:chararray);
--- 
+--
 -- data_out = FOREACH data_in GENERATE
 --   DefaultH(val),   GoodH(val),       BetterH(val),
 --   MurmurH32(val),  MurmurH32A(val),  MurmurH32B(val),
@@ -104,5 +104,5 @@ STORE_TABLE('vals_shuffled', vals_shuffled);
 --   SHA1H(val),      SHA256H(val),    SHA512H(val),
 --   MD5H(val)
 -- ;
--- 
+--
 -- STORE_TABLE('data_out', data_out);

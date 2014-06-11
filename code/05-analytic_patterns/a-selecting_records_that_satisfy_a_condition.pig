@@ -10,7 +10,7 @@ park_teams   = load_park_teams();
 -- === Selecting Rows that Satisfy a Condition @modern_stats
 --
 
--- Only Modern seasons 
+-- Only Modern seasons
 modern_stats = FILTER bat_seasons BY (year_id >= 1900);
 
 
@@ -20,7 +20,7 @@ modern_stats = FILTER bat_seasons BY (year_id >= 1900);
 --
 
 -- Modern seasons of more than 450 PA
-modsig_stats = FILTER bat_seasons BY 
+modsig_stats = FILTER bat_seasons BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
 
 
@@ -31,7 +31,7 @@ modsig_stats = FILTER bat_seasons BY
 
 -- Doesn't start with a capital letter, or contains a non-word non-space character
 funnychars = FILTER people BY
-  (name_last  MATCHES '^([^A-Z]|.*[^\\w\\s]).*') OR 
+  (name_last  MATCHES '^([^A-Z]|.*[^\\w\\s]).*') OR
   (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 
 

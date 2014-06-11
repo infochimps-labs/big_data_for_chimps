@@ -37,7 +37,7 @@ park_tm_yr_g = GROUP park_tm_yr BY team_id;
 -- Because of this redundancy, it's pretty common to immediately project using a
 -- FOREACH, .
 --
--- We want to keep the team_id 
+-- We want to keep the team_id
 team_py_pairs = FOREACH (GROUP park_tm_yr BY team_id) GENERATE
   group AS team_id, park_tm_yr.(park_id,year_id);
 
@@ -88,7 +88,7 @@ park_team_occupied = FOREACH(GROUP park_tm_yr BY (park_id, team_id)) GENERATE
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== FOREACH with GROUP BY lets you summarize and 
+-- ==== FOREACH with GROUP BY lets you summarize and
 --
 
 -- Operations that summarize the grouped value: This finds all teams that called

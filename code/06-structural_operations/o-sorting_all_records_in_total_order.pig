@@ -128,10 +128,10 @@ zzz_case    = LIMIT dict_case   200;
 --   (PA_prime >= 700 AND PA_prime >= 700 ? OPS_prime - OPS_all   : Null) AS diff_prime,
 --   (PA_older >= 700 AND PA_prime >= 700 ? OPS_older - OPS_prime : Null) AS diff_older,
 --   PA_all, PA_young, PA_prime, PA_older
--- 
+--
 --   , ((end_year + beg_year)/2.0 > 1990 ? 'post' : '-') AS epoch
 --   ;
--- 
+--
 -- golden_oldies = ORDER sunset BY diff_older DESC;
 
 
@@ -148,6 +148,6 @@ STORE_TABLE(career_young, 'career_young');
 STORE_TABLE(career_prime, 'career_prime');
 STORE_TABLE(career_older, 'career_older');
 STORE_TABLE(by_diff_older, 'by_diff_older');
--- 
+--
 STORE_TABLE(zzz_nocase, 'zzz_nocase');
 STORE_TABLE(zzz_case,   'zzz_case');

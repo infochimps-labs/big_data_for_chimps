@@ -17,7 +17,7 @@ park_teams  = load_park_teams();
 -- from given base/out state to end of inning (for completed innings through the
 -- 8th inning); uses Retrosheet 1950-2010 data as of 2010.
 -- http://www.tangotiger.net/re24.html
--- 
+--
 --                   1993-2010            1969-1992           1950-1968
 -- bases \ outs 0_out 1_out 2_out   0_out 1_out 2_out   0_out 1_out 2_out
 --
@@ -31,16 +31,16 @@ park_teams  = load_park_teams();
 -- 1B 2B  3B    2.390 1.631 0.814   2.343 1.545 0.752   2.315 1.540 0.747
 --
 --               1993-2010               1969-1992           1950-1968              1950-2010
--- -  -   -     0.539 0.287 0.111   0.471 0.248 0.092   0.471 0.252 0.096     0.4957  0.2634  0.0998  
--- -  -   3B    1.442 0.981 0.382   1.299 0.92  0.368   1.285 0.904 0.373     1.3408  0.9393  0.374   
--- -  2B  -     1.172 0.715 0.339   1.081 0.663 0.316   1.055 0.662 0.322     1.1121  0.682   0.3257  
--- -  2B  3B    2.046 1.428 0.599   1.927 1.341 0.56    1.936 1.338 0.59      1.9754  1.3732  0.5814  
--- 1B -   -     0.932 0.554 0.239   0.843 0.496 0.21    0.828 0.5   0.211     0.8721  0.5181  0.2211  
--- 1B -   3B    1.841 1.196 0.517   1.699 1.131 0.47    1.688 1.132 0.491     1.7478  1.1552  0.4922  
--- 1B 2B  -     1.543 0.949 0.456   1.461 0.886 0.42    1.456 0.912 0.426     1.4921  0.9157  0.4349  
--- 1B 2B  3B    2.374 1.61  0.787   2.325 1.522 0.721   2.297 1.513 0.724     2.3392  1.5547  0.7482  
+-- -  -   -     0.539 0.287 0.111   0.471 0.248 0.092   0.471 0.252 0.096     0.4957  0.2634  0.0998
+-- -  -   3B    1.442 0.981 0.382   1.299 0.92  0.368   1.285 0.904 0.373     1.3408  0.9393  0.374
+-- -  2B  -     1.172 0.715 0.339   1.081 0.663 0.316   1.055 0.662 0.322     1.1121  0.682   0.3257
+-- -  2B  3B    2.046 1.428 0.599   1.927 1.341 0.56    1.936 1.338 0.59      1.9754  1.3732  0.5814
+-- 1B -   -     0.932 0.554 0.239   0.843 0.496 0.21    0.828 0.5   0.211     0.8721  0.5181  0.2211
+-- 1B -   3B    1.841 1.196 0.517   1.699 1.131 0.47    1.688 1.132 0.491     1.7478  1.1552  0.4922
+-- 1B 2B  -     1.543 0.949 0.456   1.461 0.886 0.42    1.456 0.912 0.426     1.4921  0.9157  0.4349
+-- 1B 2B  3B    2.374 1.61  0.787   2.325 1.522 0.721   2.297 1.513 0.724     2.3392  1.5547  0.7482
 
-  
+
 -- load the right range of years and extract stats to be used if needed
 events      = load_events($beg_year, $end_year);
 event_stats = FOREACH (GROUP events ALL) GENERATE COUNT_STAR(events) AS ct;
@@ -56,7 +56,7 @@ event_stats = FOREACH (GROUP events ALL) GENERATE COUNT_STAR(events) AS ct;
 --
 -- Only innings of 3 full outs are useful for the run expectancy table;
 -- otherwise no end_inn_sc is calculated.
--- 
+--
 evs_summable = FOREACH events {
   beg_sc  = (home_score - away_score);
   end_sc  = beg_sc + ev_runs_ct;
@@ -133,11 +133,11 @@ STORE_TABLE('evs_decorated-$beg_year-$end_year', evs_decorated);
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Run Expectancy
--- 
+--
 -- How many runs is a game state worth from the perspective of any inning?
 -- Bases are cleared away at inning finish, so the average number of runs scored
 -- from an event to the end of its inning is the dominant factor.
--- 
+--
 
 -- Only want non-walkoff and full innings
 re_evs      = FILTER evs_decorated BY (inn <= 8) AND (end_inn_sc IS NOT NULL);

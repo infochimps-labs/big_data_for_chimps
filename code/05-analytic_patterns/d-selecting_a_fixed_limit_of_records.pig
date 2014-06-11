@@ -14,7 +14,7 @@ STORE_TABLE(some_players, 'some_players');
 
 --
 -- ==== LIMIT .. DUMP
--- 
+--
 
 -- The main use of a LIMIT statement, outside of an ORDER BY..LIMIT stanza, is
 -- before dumping data

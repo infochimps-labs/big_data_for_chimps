@@ -9,7 +9,7 @@ park_teams   = load_park_teams();
 -- ***************************************************************************
 --
 -- === Representing a Collection of Values with a Delimited String
--- 
+--
 
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,7 +152,7 @@ STORE_TABLE('parks', parks);
 -- team_parks = FOREACH (GROUP pty BY (team_id, park_id)) GENERATE
 --   group.team_id, group.park_id, pty.year_id AS years;
 -- DUMP team_parks;
--- 
+--
 -- rmf                    team_parks;
 -- STORE team_parks INTO 'team_parks';
 --
@@ -164,8 +164,8 @@ STORE_TABLE('parks', parks);
 -- -- SDN     HON01   {(1997)}
 -- -- SDN     MNT01   {(1996),(1999)}
 -- -- SDN     SAN01   {(1999),(1997),(1993),(1992),(1990),(1998),(1991),(1995),(1996),(1994)}
--- 
--- 
+--
+--
 -- --
 -- -- Simple delimited strings are simple:
 -- --
@@ -177,20 +177,20 @@ STORE_TABLE('parks', parks);
 -- -- BOS     BOS07
 -- -- NYA     NYC17;NYC16
 -- -- SDN     SAN01;MNT01;HON01
--- 
+--
 -- -- Default handling of complex elements probably isn't what you want.
 -- team_parkyearsugly = FOREACH (GROUP team_parks BY team_id) GENERATE
 --   group AS team_id,
 --   BagToString(team_parks.(park_id, years));
--- 
+--
 -- rmf                            /tmp/team_parkyearsugly;
 -- STORE team_parkyearsugly INTO '/tmp/team_parkyearsugly';
 -- cat                            /tmp/team_parkyearsugly;
--- 
+--
 -- -- BOS     BOS07_{(1995),(1997),(1990),(1992),(1996),(1993),(1991),(1998),(1994),(1999)}
 -- -- NYA     NYC17_{(1998)}_NYC16_{(1995),(1999),(1998),(1997),(1996),(1994),(1993),(1992),(1991),(1990)}
 -- -- SDN     SAN01_{(1999),(1997),(1993),(1992),(1990),(1998),(1991),(1995),(1996),(1994)}_MNT01_{(1996),(1999)}_HON01_{(1997)}
--- 
+--
 -- -- Instead, assemble it in pieces.
 -- team_park_yearslist = FOREACH team_parks {
 --   years_o = ORDER years BY year_id;
@@ -202,11 +202,11 @@ STORE_TABLE('parks', parks);
 --   tpy_f = FOREACH tpy_o GENERATE CONCAT(park_id, ':', yearslist);
 --   GENERATE group AS team_id, BagToString(tpy_f, ';');
 --   };
--- 
+--
 -- rmf                            /tmp/team_parkyearslist;
 -- STORE team_parkyearslist INTO '/tmp/team_parkyearslist';
 -- cat                            /tmp/team_parkyearslist;
--- 
+--
 -- -- BOS     BOS07:1990/1991/1992/1993/1994/1995/1996/1997/1998/1999
 -- -- NYA     NYC16:1990/1991/1992/1993/1994/1995/1996/1997/1998/1999;NYC17:1998
 -- -- SDN     SAN01:1990/1991/1992/1993/1994/1995/1996/1997/1998/1999;MNT01:1996/1999;HON01:1997

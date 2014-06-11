@@ -13,7 +13,7 @@ bat_careers = LOAD_RESULT('bat_careers');
 -- (describe)
 
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
-seasons_hist = FOREACH (GROUP vals BY bin) GENERATE 
+seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
   group AS bin, COUNT_STAR(vals) AS ct;
 
 
@@ -24,16 +24,16 @@ seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
 --
 
 H_vals = FOREACH bat_seasons GENERATE H;
-H_hist = FOREACH (GROUP H_vals BY H) GENERATE 
+H_hist = FOREACH (GROUP H_vals BY H) GENERATE
   group AS val, COUNT_STAR(H_vals) AS ct;
 
 --
 -- Note: the above snippet is what's in the book. We're actually going to steal
 -- a topic from later ("Filling Gaps in a List") because it makes it much easier
 -- to import into excel.
--- 
+--
 all_bins = FILTER numbers BY (num0 < 280);
-H_hist = FOREACH (COGROUP H_vals BY H, all_bins BY num0) GENERATE 
+H_hist = FOREACH (COGROUP H_vals BY H, all_bins BY num0) GENERATE
   group AS val, (COUNT_STAR(H_vals) == 0L ? Null : COUNT_STAR(H_vals)) AS ct;
 
 
@@ -57,7 +57,7 @@ DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
   numbers = load_numbers_10k();
   vals = FOREACH $table GENERATE (ROUND($key / $binsize) * $binsize) AS bin;
   all_bins = FOREACH numbers GENERATE (num0 * $binsize) AS bin;
-  all_bins = FILTER  all_bins BY (bin <= $maxval);  
+  all_bins = FILTER  all_bins BY (bin <= $maxval);
   $dist = FOREACH (COGROUP vals BY bin, all_bins BY bin) GENERATE
     group AS bin, (COUNT_STAR(vals) == 0L ? Null : COUNT_STAR(vals)) AS ct;
 };
@@ -70,12 +70,12 @@ career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 
 career_HR_hist = binned_histogram(bat_careers, 'HR', 10, 800);
 
-  
+
 -- Distribution of Games Played
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== Extreme Populations and Confounding Factors 
+-- ==== Extreme Populations and Confounding Factors
 
 -- To reach the major leagues, a player must possess multiple extreme
 -- attributes: ones that are easy to measure, like being tall or being born in a
@@ -95,7 +95,7 @@ career_HR_hist = binned_histogram(bat_careers, 'HR', 10, 800);
 -- with a normal distribution curve for illustrative purposes. The population of
 -- baseball players deviates predictably from the overall population: it's an
 -- advantage to The distribution of player weights, meanwhile, is shifted
--- somewhat but with a dramatically smaller spread. 
+-- somewhat but with a dramatically smaller spread.
 
 
 -- Surely at least baseball players are born and die like the rest of us, though?
@@ -145,13 +145,13 @@ ht = FOREACH one GENERATE peep_stats.cts#'height';
 -- them there (such as an advantageous height or birth month); and a host of
 -- other conflated features follow from those deviations (such as those stemming
 -- from the level of fitness athletes maintain).
--- 
+--
 -- So whenever you are examining populations of outliers, you cannot depend on
 -- their behavior resembling the universal population. Normal distributions may
 -- not remain normal and may not even retain a central tendency; independent
 -- features in the general population may become tightly coupled in the outlier
 -- group; and a host of other easy assumptions become invalid. Stay alert.
--- 
+--
 
 
 STORE_TABLE(seasons_hist, 'seasons_hist');

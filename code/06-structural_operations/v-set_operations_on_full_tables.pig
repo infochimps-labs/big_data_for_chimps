@@ -24,37 +24,50 @@ major_city_names = FOREACH major_cities GENERATE city;
 major_or_bball    = DISTINCT (UNION bball_city_names, major_city_names);
 
 --
--- For all the other set operations, or when you want to base the distinct union on
--- keys (rather than the full record),
+-- For all the other set operations, or when you want to base the distinct union
+-- on keys (rather than the full record), simply do a COGROUP and accept or
+-- reject rows based on what showed up in the relevant groups.
 --
 -- Two notes. First, since COUNT_STAR returns a value of type long, we do the
 -- comparison against `0L` (a long) and not `0` (an int). Second, we test
--- against the value of `COUNT_STAR(bag)`, and not `SIZE(bag)` or
--- `IsEmpty(bag)`. Those latter two require actually materializing the bag --
--- all the data is sent to the reducer, and no combiners can be used.
+-- against `COUNT_STAR(bag)`, and not `SIZE(bag)` or `IsEmpty(bag)`. Those
+-- latter two require actually materializing the bag -- all the data is sent to
+-- the reducer, and no combiners can be used.
 --
-
 combined     = COGROUP major_cities BY city, main_parks BY city;
 
 -- ==== Distinct Union (alternative method)
 --
--- Every row in combined comes from one table or the other.
+-- Every row in combined comes from one table or the other, so we don't need to
+-- filter.  To prove the point about doing the set operation on a key (rather
+-- than the full record) let's keep around the state, population, and all
+-- park_ids from the city.
 major_or_parks    = FOREACH combined
   GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
 
 -- ==== Set Intersection
+--
+-- Records lie in the set intersection when neither bag is empty.
+--
 major_and_parks   = FOREACH (FILTER combined BY (COUNT_STAR(major_cities) > 0L) AND (COUNT_STAR(main_parks) > 0L))
   GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
 
--- ==== Set Difference: A-B
+-- ==== Set Difference
+--
+-- Records lie in A-B when the second bag is empty.
+--
 major_minus_parks = FOREACH (FILTER combined BY (COUNT_STAR(main_parks) == 0L))
   GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
 
--- ==== Set Difference: B-A
 parks_minus_major = FOREACH (FILTER combined BY (COUNT_STAR(major_cities) == 0L))
   GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
 
 -- ==== Symmetric Set Difference: (A-B)+(B-A)
+--
+-- Records lie in the symmetric difference when one or the other bag is
+-- empty. (We don't have to test for them both being empty -- there wouldn't be
+-- a row if that were the case)
+--
 major_xor_parks   = FOREACH (FILTER combined BY (COUNT_STAR(major_cities) == 0L) OR (COUNT_STAR(main_parks) == 0L))
   GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
 
@@ -95,10 +108,10 @@ major_equals_major = FOREACH (COGROUP one_line BY uno, major_xor_major BY 1)
 major_equals_parks = FOREACH (COGROUP one_line BY uno, major_xor_parks BY 1)
   GENERATE (COUNT_STAR(major_xor_parks) == 0L ? 1 : 0) AS is_equal;
 
--- STORE_TABLE(major_or_parks,     'major_or_parks');
--- STORE_TABLE(major_and_parks,    'major_and_parks');
--- STORE_TABLE(major_minus_parks,  'major_minus_parks');
--- STORE_TABLE(parks_minus_major,  'parks_minus_major');
--- STORE_TABLE(major_xor_parks,    'major_xor_parks');
--- STORE_TABLE(major_equals_parks, 'major_equals_parks');
+STORE_TABLE(major_or_parks,     'major_or_parks');
+STORE_TABLE(major_and_parks,    'major_and_parks');
+STORE_TABLE(major_minus_parks,  'major_minus_parks');
+STORE_TABLE(parks_minus_major,  'parks_minus_major');
+STORE_TABLE(major_xor_parks,    'major_xor_parks');
+STORE_TABLE(major_equals_parks, 'major_equals_parks');
 STORE_TABLE(major_equals_major, 'major_equals_major');

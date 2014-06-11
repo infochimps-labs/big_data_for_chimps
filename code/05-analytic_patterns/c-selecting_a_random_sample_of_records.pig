@@ -27,7 +27,7 @@ some_seasons_bypl  = FOREACH (
 
 bat_seasons_md = LOAD '$rawd/sports/baseball/bats_lite.tsv'
   USING PigStorage('\t', '-tagMetadata') AS (
-  metadata: map[], 
+  metadata: map[],
   player_id:chararray, year_id:int,
   team_id:chararray,   lg_id:chararray,
   age: int,  G:int,     PA:int,    AB:int,

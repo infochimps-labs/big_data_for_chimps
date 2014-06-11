@@ -11,6 +11,6 @@ bat_seasons = load_bat_seasons();
 -- Use ORDER BY within a nested FOREACH to sort within a group. The first
 -- request to sort a group does not require extra operations -- Pig simply
 -- specifies those fields as secondary sort keys. This will list, for each
--- team's season, the players in decreasing order by 
+-- team's season, the players in decreasing order by
 
 

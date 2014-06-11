@@ -32,7 +32,7 @@ STORE_TABLE(parks_presorted_ranked,  'parks_presorted_ranked');
 STORE_TABLE(parks_ties_cause_skips,  'parks_ties_cause_skips');
 STORE_TABLE(parks_ties_no_skips,     'parks_ties_no_skips');
 
--- partridge            1    1    1 
+-- partridge            1    1    1
 -- turtle dove          2    2    2
 -- turtle dove          3    2    2
 -- french hen           4    3    4

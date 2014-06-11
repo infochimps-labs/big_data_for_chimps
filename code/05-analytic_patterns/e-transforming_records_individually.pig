@@ -32,14 +32,14 @@ core_stats  = FOREACH bat_seasons {
 
 -- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- --
--- 
+--
 -- junk_drawer = FOREACH bat_seasons {
---   
+--
 --   -- Concatenating Several Values into a Single String
 --   full_name  = CONCAT(name_first, ' ', name_last);
 --   -- Converting the Lettercase of a String
 --   name_shouty = UPPER(name_last);
--- 
+--
 --   -- Extracting Characters from a String by Offset
 --   initials = CONCAT(
 --     SUBSTRING(name_first, 0, 1), '. ',
@@ -47,16 +47,16 @@ core_stats  = FOREACH bat_seasons {
 --   --   The first index in SUBSTRING gives the start, counting from zero.
 --   --   The second index gives the _character after the end_.
 --   -- Select second through fourth characters with `1, 5`. Makes sense to me!
---   chars234 = SUBSTRING(name_first, 1, 5); 
--- 
+--   chars234 = SUBSTRING(name_first, 1, 5);
+--
 --   --   Selecting past the end of a string just takes what's there to take.
 --   tail_end     = SUBSTRING(player_id, 6, 99);
 --   way_past_end = SUBSTRING(player_id, 69, 99);
--- 
+--
 --   -- Handling Special Characters in Strings
 --   string_that_will_cause_problems = 'here is a newline:\n'
 
-    
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Transforming Nulls into Real Values

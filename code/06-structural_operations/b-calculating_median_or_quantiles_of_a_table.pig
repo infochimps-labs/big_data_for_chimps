@@ -46,18 +46,18 @@ dist = FOREACH (GROUP cts ALL) {
 };
 
 DUMP dist;
-  
+
 bins = FOREACH vals GENERATE ROUND_TO(val, 0) AS bin;
 hist = FOREACH (GROUP bins BY bin) GENERATE
   group AS bin, COUNT_STAR(bins) AS ct;
 DUMP hist;
 
 -- tc_cities = load_us_city_pops();
--- 
+--
 -- parks = load_parks();
 -- parks  = FILTER parks BY n_games > 50;
 -- bb_cities = FOREACH parks GENERATE park_id, city;
--- 
+--
 -- summary = summarize_strings_by(parks, 'park_id',    'ALL'); DUMP summary;
 -- summary = summarize_strings_by(parks, 'park_name',  'ALL'); DUMP summary;
 -- summary = summarize_strings_by(parks, 'city',       'ALL'); DUMP summary;

@@ -74,7 +74,7 @@ STORE_TABLE(bats_with_leaders, 'bats_with_leaders');
 --     avg_SLG AS avg_SLG, sdv_SLG AS sdv_SLG
 --     ;
 -- };
--- 
+--
 -- normed = FOREACH normed_dec GENERATE
 --   player_id, year_id, team_id, lg_id,
 --   G,    PA,   AB,   HBP,  SH,
@@ -89,6 +89,6 @@ STORE_TABLE(bats_with_leaders, 'bats_with_leaders');
 --   ( ((OBP - avg_OBP)/sdv_OBP) +
 --     ((SLG - avg_SLG)/sdv_SLG) ) AS zOPS
 --   ;
--- 
+--
 -- normed_seasons = ORDER normed BY zOPS ASC;
 -- STORE_TABLE(normed_seasons, 'normed_seasons');

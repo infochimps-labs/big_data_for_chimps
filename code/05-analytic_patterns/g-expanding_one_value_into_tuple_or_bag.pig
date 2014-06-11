@@ -32,8 +32,8 @@ franchises = load_franchises();
 -- (We'll demonstrate a much better tokenizer in the chapter on text data (REF)).
 -- The return schema of tokenize is a bag of tuples each holding one word:
 -- FLATTEN turns that into one record per word.
--- 
--- Washington's bad habit of losing franchises makes it the most common token. 
+--
+-- Washington's bad habit of losing franchises makes it the most common token.
 
 tn_toks    = FOREACH franchises
   GENERATE FLATTEN(TOKENIZE(franchName)) AS token;

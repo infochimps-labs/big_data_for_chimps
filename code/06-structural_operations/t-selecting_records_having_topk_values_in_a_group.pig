@@ -5,7 +5,7 @@ bat_seasons = load_bat_seasons();
 -- ***************************************************************************
 --
 -- === Selecting Records Having the Top K Values in a Group (discarding ties)
--- 
+--
 
 -- Let's find the top ten home-run hitters for each season
 --
@@ -22,12 +22,12 @@ HR_leaders = FOREACH (GROUP HR_seasons BY year_id) GENERATE
 
 -- HR_leaders = FOREACH HR_leaders {
 --   top_k_o = ORDER top_k BY HR DESC;
---   GENERATE 
--- 
---   top_k  = 
+--   GENERATE
+--
+--   top_k  =
 --   GENERATE top_k_o;
 --   };
--- 
+--
 --   top_k_o = ORDER top_k BY HR DESC;
 
 --
@@ -37,10 +37,10 @@ HR_leaders = FOREACH (GROUP HR_seasons BY year_id) GENERATE
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- Selecting Attribute wdw 
+-- Selecting Attribute wdw
 -- -- http://pig.apache.org/docs/r0.12.0/api/org/apache/pig/piggybank/evaluation/ExtremalTupleByNthField.html
 -- DEFINE BiggestInBag org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('1', 'max');
--- 
+--
 -- pl_best = FOREACH (GROUP bat_seasons BY player_id) GENERATE
 --   group AS player_id,
 --   BiggestInBag(bat_seasons.(H,   year_id, team_id)),
@@ -49,8 +49,8 @@ HR_leaders = FOREACH (GROUP HR_seasons BY year_id) GENERATE
 --   BiggestInBag(bat_seasons.(SLG, year_id, team_id)),
 --   BiggestInBag(bat_seasons.(OPS, year_id, team_id))
 --   ;
--- 
+--
 -- DESCRIBE pl_best;
--- 
+--
 -- rmf                 $out_dir/pl_best;
 -- STORE pl_best INTO '$out_dir/pl_best';

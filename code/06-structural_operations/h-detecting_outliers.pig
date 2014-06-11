@@ -68,7 +68,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
     --   Cumulative statistics
     G   AS G,   PA  AS PA,  BB  AS BB,
     H   AS H,   HR  AS HR,  R   AS R,  RBI AS RBI,
-    ROUND_TO(OBP,3) AS OBP, ROUND_TO(SLG,3) AS SLG, ROUND_TO(OBP+SLG,3) AS OPS, 
+    ROUND_TO(OBP,3) AS OBP, ROUND_TO(SLG,3) AS SLG, ROUND_TO(OBP+SLG,3) AS OPS,
     --
     -- Peak excellence, normalized to era:
     --   Average of seasonal z-scores (qual. only)
@@ -91,7 +91,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 -- players with historically great careers, but we don't yet have any
 --
 -- That is, we know Tony Gwynn's ten seasons of 1-sigma-plus OBP
--- and Jim Rice's ten seasons of 1-sigma-plus SLG are both impressive, 
+-- and Jim Rice's ten seasons of 1-sigma-plus SLG are both impressive,
 --
 -- (these are defensible choices, though guided in part by narrative goals)
 --
@@ -103,7 +103,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 --
 
 -- ballplayers or hospitals or keyword advertisements
--- 
+--
 
 -- Earlier we stated that the
 --
@@ -120,10 +120,10 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 
 -- In fact, however, Yount is acknowledged as one of the hundred best players
 -- ever; Dawson as being right above the edge of what defines a great career; and
--- Burks as being very good but well short of great. Any metric as simplistic as this 
+-- Burks as being very good but well short of great. Any metric as simplistic as this
 
 -- Ellis Burks, Carl Yastrzemski ("Yaz" from here on) and Andre Dawson each had
--- 8 1-sigma-SLG seasons, a career OPS over 0.800, and more than 350 home runs. 
+-- 8 1-sigma-SLG seasons, a career OPS over 0.800, and more than 350 home runs.
 
 -- The details of performing logistic regression analysis are out of scope for
 -- this book, but you can look in the sample code.

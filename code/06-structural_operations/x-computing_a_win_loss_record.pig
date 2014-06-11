@@ -34,7 +34,7 @@ away_games = FOREACH games GENERATE
 -- team_games = GROUP all_games BY team_id;
 --
 
--- 
+--
 -- === Instead, use a COGROUP.
 --
 
@@ -70,7 +70,7 @@ game_wls = FOREACH games {
   summables  = {
     (home_team_id, home_win,  home_loss, 1),
     (away_team_id, home_loss, home_win,  0)   };
-  
+
   GENERATE
     year_id, FLATTEN(summables) AS (team_id:chararray, win:int, loss:int, is_home:int);
 };

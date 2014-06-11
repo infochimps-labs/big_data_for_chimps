@@ -17,7 +17,7 @@ game_scores = FOREACH games GENERATE
 --
 
 games_a = FOREACH games GENERATE
-  home_team_id AS team,     year_id, 
+  home_team_id AS team,     year_id,
   home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
 games_b = FOREACH games GENERATE
   away_team_id AS team,     year_id,

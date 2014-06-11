@@ -20,4 +20,4 @@ park_teams   = load_park_tm_yr();
 -- match or some sort of other fuzzy equality. In map-reduce, the only kind of
 -- join you can do is on key equality (an "equi-join"). For a sharper example,
 -- you cannot do joins on range criteria (where the two keys are related through
--- inequalities (x < y). You can accomplish the _goals_ of a 
+-- inequalities (x < y). You can accomplish the _goals_ of a

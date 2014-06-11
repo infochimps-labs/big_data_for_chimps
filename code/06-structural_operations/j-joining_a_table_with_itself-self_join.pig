@@ -21,9 +21,9 @@ teammates = FOREACH (GROUP teammate_pairs BY pl1) {
   years = DISTINCT teammate_pairs.p1_year_id;
   mates = DISTINCT teammate_pairs.pl2;
   teams = DISTINCT teammate_pairs.p1_team_id;
-  GENERATE group AS player_id, 
+  GENERATE group AS player_id,
     COUNT_STAR(mates) AS n_mates,    COUNT_STAR(years) AS n_seasons,
-    MIN(years)        AS beg_year,   MAX(years)        AS end_year, 
+    MIN(years)        AS beg_year,   MAX(years)        AS end_year,
     BagToString(teams,';') AS teams,
     BagToString(mates,';') AS mates;
   };

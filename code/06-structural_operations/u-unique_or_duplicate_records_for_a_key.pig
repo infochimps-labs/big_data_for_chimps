@@ -1,42 +1,27 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
-bat_seasons = load_bat_seasons();
 peeps       = load_people();
-teams       = load_teams();
-park_teams   = load_park_teams();
 
 -- ***************************************************************************
 --
 -- === Selecting Records with Unique (or with Duplicate) Values for a Key
 --
 
--- yclept /iˈklept/: by the name of; called.
-uniquely_yclept_f = GROUP peeps BY name_first;
-
-uniquely_yclept_g = FILTER uniquely_yclept_g BY SIZE(peeps) == 1;
+-- The DISTINCT operation is useful when you want to eliminate duplicates based
+-- on the whole record. If you instead want to find only rows with a unique
+-- record for its key, or only rows with multiple records for its key, do a
+-- GROUP BY and then filter on the size of the resulting bag.
+--
+uniquely_yclept_g = GROUP peeps BY name_first; -- yclept /iˈklept/: by the name of; called.
+uniquely_yclept_f = FILTER uniquely_yclept_g BY COUNT_STAR(peeps) == 1;
 
 uniquely_yclept   = FOREACH uniquely_yclept_f {
   GENERATE group AS name_first,
-    FLATTEN(peeps.name_last), FLATTEN(peeps.player_id),
-    FLATTEN(peeps.beg_date),  FLATTEN(peeps.end_date);
+    FLATTEN(peeps.(name_last, player_id, beg_date, end_date)) AS (name_last, player_id, beg_date, end_date);
 };
 
 uniquely_yclept = ORDER uniquely_yclept BY name_first ASC;
-
 STORE_TABLE(uniquely_yclept, 'uniquely_yclept');
-
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- SQL Equivalent:
---
--- SELECT name_first, name_last, COUNT(*) AS n_usages
---   FROM bat_career
---   WHERE    name_first IS NOT NULL
---   GROUP BY name_first
---   HAVING   n_usages = 1
---   ORDER BY name_first
---   ;
-
 
 -- ===========================================================================
 --
