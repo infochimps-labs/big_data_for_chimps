@@ -28,6 +28,11 @@
 * http://www.amazon.com/dp/039334777X[Naked Statistics]
 * http://www.amazon.com/Head-First-Statistics-Dawn-Griffiths/dp/0596527586[Head First Statistics]
 
+
+* http://ercoppa.github.io/HadoopInternals/HadoopConfigurationParameters.html[Hadoop Configurations in context -- Flow diagrams]
+
+* http://www.slideshare.net/cloudera/mr-perf[Hadoop Summit 2012 | Optimizing MapReduce Job Performance] by Todd Lipcon (@tlipcon)
+
 **To Consider**
 
 * http://www.cse.unt.edu/~rada/downloads.html -- Texts semantically annotated with WordNet 1.6 senses (created at Princeton University), and automatically mapped to WordNet 1.7, WordNet 1.7.1, WordNet 2.0, WordNet 2.1, WordNet 3.0

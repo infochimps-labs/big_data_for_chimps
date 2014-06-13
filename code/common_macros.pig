@@ -114,11 +114,22 @@ DEFINE load_hofs() RETURNS loaded {
 };
 
 
--- see sports/baseball/event_lite.rb for schema
-DEFINE load_events(begy, endy) RETURNS loaded {
-  evs = LOAD '$data_dir/sports/baseball/events_lite.tsv' AS (
-    game_id:chararray, event_seq:int, year_id:int, game_date:chararray, game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int, inn_home:int, beg_outs_ct:int, away_score:int, home_score:int, event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int, ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int, is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray, fld_team_id:chararray, pit_id:chararray, bat_id:chararray, run1_id:chararray, run2_id:chararray, run3_id:chararray
+-- see code/models/baseball.rb for schema
+DEFINE load_events() RETURNS loaded {
+  $loaded = LOAD '$data_dir/sports/baseball/events_lite.tsv' AS (
+    game_id:chararray, event_seq:int, year_id:int, game_date:chararray,
+    game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int,
+    inn_home:int, beg_outs_ct:int, away_score:int, home_score:int,
+    event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int,
+    ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int,
+    is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray,
+    fld_team_id:chararray, pit_id:chararray, bat_id:chararray,
+    run1_id:chararray, run2_id:chararray, run3_id:chararray
     );
+};
+
+DEFINE load_some_events(begy, endy) RETURNS loaded {
+  evs     = load_events();
   $loaded = FILTER evs BY (year_id >= $begy) AND (year_id <= $endy);
 };
 
