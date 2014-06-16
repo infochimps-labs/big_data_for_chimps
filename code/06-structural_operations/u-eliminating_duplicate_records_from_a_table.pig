@@ -4,9 +4,13 @@ park_teams = load_park_teams();
 parks      = load_parks();
 teams      = load_teams();
 
+--
+-- === Finding Duplicate and Unique Records
+--
+
 -- ***************************************************************************
 --
--- === Eliminating Duplicate Records from a Table
+-- ==== Eliminating Duplicate Records from a Table
 --
 
 -- The park_teams table has a row for every season. To find every distinct pair
@@ -37,9 +41,12 @@ dont_do_this = FOREACH (GROUP tm_pk_pairs_many BY (team_id, park_id)) GENERATE
 -- sparse duplicates. In that case, you should still use DISTINCT, but disable
 -- combiners with the `pig.exec.nocombiner=true` setting.
 
+
+
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- === Eliminating Duplicate Records from a Group
+-- ==== Eliminating Duplicate Records from a Group
 --
 
 -- Eliminate duplicates from a group with the DISTINCT operator inside a nested
@@ -57,6 +64,13 @@ EXPLAIN team_parkslist;
 -- -- CL2     CLE02
 -- -- CL3     CLE03|CLE09|GEA01|NEW03
 -- -- CL4     CHI08|CLE03|CLE05|CLL01|DET01|IND06|PHI09|ROC02|ROC03|STL05
+
+
+-- SELECT team_id, GROUP_CONCAT(DISTINCT park_id ORDER BY park_id) AS park_ids
+--   FROM park_team_years
+--   GROUP BY team_id
+--   ORDER BY team_id, park_id DESC
+--   ;
 
 
 -- (omit from book) The output is a bit more meaningful if we add the team name

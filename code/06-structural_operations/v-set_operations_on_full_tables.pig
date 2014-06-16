@@ -10,6 +10,11 @@ major_cities = load_us_city_pops();
 -- city" to mean one of the top 60 incorporated places in the United States or
 -- Puerto Rico; see the "Overview of Datasets" (REF) for source information].
 
+-- We've actually met most of the set operations at this point, but it's worth
+-- calling them out specifically. Set operations on groups are particularly
+-- straightforward thanks to the Datafu package, which offers Intersect,
+-- Difference (...)
+
 -- Limit our attention to prominent US stadiums:
 main_parks   = FILTER parks       BY n_games >=  50 AND country_id == 'US';
 
@@ -115,3 +120,11 @@ STORE_TABLE(parks_minus_major,  'parks_minus_major');
 STORE_TABLE(major_xor_parks,    'major_xor_parks');
 STORE_TABLE(major_equals_parks, 'major_equals_parks');
 STORE_TABLE(major_equals_major, 'major_equals_major');
+
+-- .Set Operation Membership
+--
+-- 		   A	 B	A∪B	A∩B	a-b	b-a	a^b	 ∅
+-- 	A B	 T	 T	 T	 T	 F	 F	 F	 F
+-- 	A -	 T	 F	 T	 F	 T	 F	 T	 F
+-- 	- B	 F	 T	 T	 F	 F	 T	 T	 F
+-- 	- -	 F	 F	 F	 F	 F	 F	 F	 F

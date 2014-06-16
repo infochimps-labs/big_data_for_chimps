@@ -6,6 +6,8 @@ vals = LOAD 'us_city_pops.tsv' USING PigStorage('\t', '-tagMetadata')
 -- === Shuffle all Records in a Table
 -- ==== Shuffle all Records in a Table Consistently
 
+-- QEM: needs prose (perhaps able to draw from prose file)
+
 -- Use a hash with good mixing properties to shuffle. MD5 is OK but murmur3 from
 -- DATAFU-47 would be even better.
 DEFINE HashVal datafu.pig.hash.Hasher('murmur3-32');

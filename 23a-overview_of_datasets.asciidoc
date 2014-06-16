@@ -107,3 +107,7 @@ The main collection is about 650GB (as of October 2011) with nearly 2 million fi
 
 
 * http://ftp.ibiblio.org/1/1/0/100/100.txt[Complete works of William Shakespeare]
+
+=== Ideas for other datasets you could harvest 
+
+* http://www.nrc.gov/reading-rm/doc-collections/event-status/event/ US Nuclear Regulatory Commission, collection of "events" (i.e. things that went wrong). Can you find features and predictive patterns of oopsies?

@@ -7,23 +7,25 @@ allstars    = load_allstars();
 --
 -- === Selecting Records With No Match in Another Table (anti-join)
 --
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 -- Project just the fields we need
-allstars_py  = FOREACH allstars GENERATE player_id, year_id;
+allstars_p  = FOREACH allstars GENERATE player_id, year_id;
 
 -- An outer join of the two will leave both matches and non-matches.
-bats_allstars_jn = JOIN
+scrub_seasons_jn = JOIN
   bat_seasons BY (player_id, year_id) LEFT OUTER,
-  allstars_py BY (player_id, year_id);
+  allstars_p  BY (player_id, year_id);
 
 -- ...and the non-matches will have Nulls in all the allstars slots
-bat_seasons_nonast_jn_f = FILTER bats_allstars_jn BY allstars_py::player_id IS NULL;
+scrub_seasons_jn_f = FILTER scrub_seasons_jn
+  BY allstars_p::player_id IS NULL;
 
 -- Once the matches have been eliminated, pick off the first table's fields.
 -- The double-colon in 'bat_seasons::' makes clear which table's field we mean.
 -- The fieldname-ellipsis 'bat_seasons::player_id..bat_seasons::RBI' selects all
 -- the fields in bat_seasons from player_id to RBI, which is to say all of them.
-bat_seasons_nonast_jn   = FOREACH bat_seasons_nonast_jn_f
+scrub_seasons_jn   = FOREACH scrub_seasons_jn_f
   GENERATE bat_seasons::player_id..bat_seasons::RBI;
 
 --
@@ -49,22 +51,22 @@ bat_seasons_nonast_jn   = FOREACH bat_seasons_nonast_jn_f
 --
 -- An Alternative version: use a COGROUP
 --
+-- (this part appears in book following the semi-join)
 
--- Players with no entry in the allstars_py table have an empty allstars_py bag
+-- Players with no entry in the allstars_p table have an empty allstars_p bag
 bats_ast_cg = COGROUP
   bat_seasons BY (player_id, year_id),
-  allstars_py BY (player_id, year_id);
+  allstars_p BY (player_id, year_id);
 
 -- Select all cogrouped rows where there were no all-star records, and project
 -- the batting table fields.
-bat_seasons_nonast_cg = FOREACH
-  (FILTER bats_ast_cg BY (COUNT_STAR(allstars_py) == 0L))
+scrub_seasons_cg = FOREACH
+  (FILTER bats_ast_cg BY (COUNT_STAR(allstars_p) == 0L))
   GENERATE FLATTEN(bat_seasons);
 
 -- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-STORE_TABLE(bat_seasons_nonast_jn, 'bat_seasons_nonast_jn');
-STORE_TABLE(bat_seasons_nonast_cg, 'bat_seasons_nonast_cg');
-
+STORE_TABLE(scrub_seasons_jn, 'scrub_seasons_jn');
+STORE_TABLE(scrub_seasons_cg, 'scrub_seasons_cg');
 
 -- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
@@ -76,9 +78,9 @@ STORE_TABLE(bat_seasons_nonast_cg, 'bat_seasons_nonast_cg');
 --   table before the map. Pig is sometimes smart enough to eliminate fields we
 --   don't need early. There's two ways to see if it did so. The surest way is
 --   to consult the tree that EXPLAIN produces. If you make the program use
---   `allstars` and not `allstars_py`, you'll see that the extra fields are
+--   `allstars` and not `allstars_p`, you'll see that the extra fields are
 --   present. The other way is to look at how much data comes to the reducer
---   with and without the projection. If there is less data using `allstars_py`
+--   with and without the projection. If there is less data using `allstars_p`
 --   than `allstars`, the explicit projection is required.
 --
 -- * The EXPLAIN output also shows that co-group version has a simpler

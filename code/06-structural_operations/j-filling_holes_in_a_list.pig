@@ -20,6 +20,23 @@ numbers_10k = load_numbers_10k();
 -- can simply use the integer table. (We told you it was surprisingly useful!)
 
 
+-- If we prepare a histogram of career hits, similar to the one above for
+-- seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have
+-- so many more hits than the third-most player (Hank Aaron, 3771 hits) there
+-- are gaps in the output bins. To make it so that every bin has an entry, do an
+-- outer join on the integer table. (See, we told you the integers table was
+-- surprisingly useful.)
+
+-- SET @H_binsize = 10;
+-- SELECT bin, H, IFNULL(n_H,0)
+--   FROM      (SELECT @H_binsize * idx AS bin FROM numbers WHERE idx <= 430) nums
+--   LEFT JOIN (SELECT @H_binsize*CEIL(H/@H_binsize) AS H, COUNT(*) AS n_H
+--     FROM bat_career bat GROUP BY H) hist
+--   ON hist.H = nums.bin
+--   ORDER BY bin DESC
+-- ;
+
+
 --
 -- Regular old histogram of career hits, bin size 100
 --
@@ -44,3 +61,4 @@ H_hist = FOREACH (JOIN H_bins BY bin LEFT OUTER, H_hist_0 BY bin) GENERATE
 ;
 
 STORE_TABLE(H_hist, 'histogram_H');
+

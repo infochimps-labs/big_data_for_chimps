@@ -9,12 +9,15 @@ park_teams   = load_park_tm_yr();
 --
 -- === Joining Records Without Discarding Non-Matches (Outer Join)
 --
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 -- Here's how to take the career stats table we assembled earlier and decorate it with the years
+-- QEM: need to complete sentence/idea
 
 
 
 -- One application of an outer join is
+-- QEM: need to complete sentence/idea
 --
 -- Experienced database hands might now suggest doing a join using a SOUNDEX
 -- match or some sort of other fuzzy equality. In map-reduce, the only kind of

@@ -7,6 +7,7 @@ bat_seasons = load_bat_seasons();
 -- === Summarizing Aggregate Statistics of a Full Table
 --
 
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 bat_seasons = FOREACH bat_seasons GENERATE *, (float)HR*HR AS HRsq:float;
 

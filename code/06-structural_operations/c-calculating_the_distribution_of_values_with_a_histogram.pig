@@ -10,6 +10,8 @@ bat_careers = LOAD_RESULT('bat_careers');
 --
 -- === Calculating the Distribution of Numeric Values with a Histogram
 
+-- QEM: needs prose (perhaps able to draw from prose file)
+
 -- (describe)
 
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
@@ -22,6 +24,8 @@ seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
 --
 -- ==== Binning Data for a Histogram
 --
+
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 H_vals = FOREACH bat_seasons GENERATE H;
 H_hist = FOREACH (GROUP H_vals BY H) GENERATE

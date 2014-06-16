@@ -4,7 +4,7 @@ peeps       = load_people();
 
 -- ***************************************************************************
 --
--- === Selecting Records with Unique (or with Duplicate) Values for a Key
+-- ==== Selecting Records with Unique (or with Duplicate) Values for a Key
 --
 
 -- The DISTINCT operation is useful when you want to eliminate duplicates based
@@ -12,9 +12,34 @@ peeps       = load_people();
 -- record for its key, or only rows with multiple records for its key, do a
 -- GROUP BY and then filter on the size of the resulting bag.
 --
+
+-- Distinct: players with a unique first name (once again we urge you: crawl
+-- through your data. Big data is a collection of stories; the power of its
+-- unusual effectiveness mode comes from the comprehensiveness of those
+-- stories. even if you aren't into baseball this celebration of the diversity
+-- of our human race and the exuberance of identity should fill you with
+-- wonder.)
+-- 
+-- But have you heard recounted the storied diamond exploits of Firpo Mayberry,
+-- Zoilo Versalles, Pi Schwert or Bevo LeBourveau?  OK, then how about
+-- Mysterious Walker, The Only Nolan, or Phenomenal Smith?  Mul Holland, Sixto
+-- Lezcano, Welcome Gaston or Mox McQuery?  Try asking your spouse to that your
+-- next child be named for Urban Shocker, Twink Twining, Pussy Tebeau, Bris
+-- Lord, Boob Fowler, Crazy Schmit, Creepy Crespi, Cuddles Marshall, Vinegar
+-- Bend Mizell, or Buttercup Dickerson.
+--
+--
+-- SELECT nameFirst, nameLast, COUNT(*) AS n_usages
+--   FROM bat_career
+--   WHERE    nameFirst IS NOT NULL
+--   GROUP BY nameFirst
+--   HAVING   n_usages = 1
+--   ORDER BY nameFirst
+--   ;
+--
+
 uniquely_yclept_g = GROUP peeps BY name_first; -- yclept /iˈklept/: by the name of; called.
 uniquely_yclept_f = FILTER uniquely_yclept_g BY COUNT_STAR(peeps) == 1;
-
 uniquely_yclept   = FOREACH uniquely_yclept_f {
   GENERATE group AS name_first,
     FLATTEN(peeps.(name_last, player_id, beg_date, end_date)) AS (name_last, player_id, beg_date, end_date);
@@ -22,6 +47,7 @@ uniquely_yclept   = FOREACH uniquely_yclept_f {
 
 uniquely_yclept = ORDER uniquely_yclept BY name_first ASC;
 STORE_TABLE(uniquely_yclept, 'uniquely_yclept');
+
 
 -- ===========================================================================
 --

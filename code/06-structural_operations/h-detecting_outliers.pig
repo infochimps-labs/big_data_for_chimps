@@ -11,6 +11,7 @@
 --
 --
 -- Let's make a
+-- QEM: need to complete sentence/idea
 --
 -- footnote:[this is a miniature version of the Career Standards Test formulated
 -- by Bill James, the Newton of baseball analytics -- see
@@ -130,6 +131,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 
 --
 -- We'd like to
+-- QEM: need to complete sentence/idea
 
 -- *
 -- *

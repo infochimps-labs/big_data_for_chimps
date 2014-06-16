@@ -6,6 +6,7 @@ bat_seasons   = load_bat_seasons();
 --
 -- ==== Calculating Quantiles
 --
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 --
 -- Example of quantile extraction

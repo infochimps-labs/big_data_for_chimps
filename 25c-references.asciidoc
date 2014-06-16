@@ -43,3 +43,5 @@
 
 the http://github.com/schacon/git-scribe[git-scribe toolchain] was very useful creating this book. Instructions on how to install the tool and use it for things like editing this book, submitting errata and providing translations can be found at that site.
 
+
+* James, Bill (2010-05-08). The New Bill James Historical Baseball Abstract (Kindle Locations 11684-11685). Free Press. Kindle Edition. 

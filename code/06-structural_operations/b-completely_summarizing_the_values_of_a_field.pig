@@ -7,6 +7,7 @@ bat_seasons = load_bat_seasons();
 --
 -- === Completely Summarizing the Values of a Numeric Field
 --
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 H_summary_base = FOREACH (GROUP bat_seasons ALL) {
   dist       = DISTINCT bat_seasons.H;
