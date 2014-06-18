@@ -5,6 +5,20 @@ peeps       = load_people();
 teams       = load_teams();
 park_teams   = load_park_teams();
 
+-- (work into the chapter introduction)
+-- The overriding focus here is to equip you with the toolkit of analytic patterns. 
+-- The most meaningful way to introduce these patterns is to demonstrate their use in service of a question of real interest.
+-- the main storyline of these chapters will be to find quantitative indicators of exceptional performance, and we'll pick that thread up repeatedly.
+-- But where a pattern has no natural demonstration in service of that primary story, we non-sequitur into questions that could form a necessary piece of some other investigation: 
+-- "here's how you'd track changes in each team's roster over time", "is the stereotypical picture of the big brawny home-run hitter true." (TODO-qem please replace with what you found to be the most interesting one-offs (ie side-roads we didn't explore)).
+-- And at several points, immediately on peeking down a side road the data comes forth with a story of its own, and so there are also a few brief side trips to follow such a tale. 
+-- But as we revisit the player-performance exploration, you should recognize not just a way for fantasy baseball players to get an edge, but strategies for quantifying the behavior of any sort of outlier. Here, it's baseball players, but similar questions will apply when examining agents posing security threats, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance.
+-- 
+-- Although  
+-- in some cases, it's not wo
+
+
+
 -- ***************************************************************************
 --
 -- === Grouping Records into a Bag by Key

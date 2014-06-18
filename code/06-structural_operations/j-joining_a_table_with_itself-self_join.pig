@@ -12,21 +12,18 @@ one_line    = load_one_line();
 -- === Joining a Table with Itself (self-join)
 --
 
--- QEM: needs prose (perhaps able to draw from prose file)
+-- Joining a table with itself is very common when you are analyzing relationships of elements within the table (when analyzing graphs or working with datasets represented as attribute-value lists it becomes predominant.) Our example here will be to identify all teammates pairs: players listed as having played for the same team in the same year. The only annoying part about doing a self-join in Pig is that you can't, at least not directly. Pig won't let you list the same table in multiple slots of a JOIN statement, and also won't let you just write something like `"mytable_dup = mytable;"` to assign a new alias footnote:[If it didn't cause such a surprisingly hairy set of internal complications, it would have long ago been fixed]. Instead you have to use a FOREACH or somesuch to create a duplicate representative. If you don't have any other excuse, use a project-star expression: `p2 = FOREACH p1 GENERATE *;`. In this case, we already need to do a projection; we feel the most readable choice is to repeat the statement twice. 
 
---
--- We have to generate two table copies since Pig doesn't allow a pure self-join
--- (it screws up its ability to analyze the 'logical plan' of
--- operations). That's OK, we didn't want all those stupid fields anyway.
-p1 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
-p2 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
-
--- -- This won't work:
+-- -- Pig disallows self-joins so this won't work:
 -- wont_work = JOIN bat_seasons BY (team_id, year_id), bat_seasons BY (team_id, year_id);
 -- "ERROR ... Pig does not accept same alias as input for JOIN operation : bat_seasons"
 
+-- That's OK, we didn't want all those stupid fields anyway; we'll just make two copies.
+p1 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
+    p2 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
+
 --
--- Now we can join the 
+-- Now we join the table copies to find all teammate pairs. We're going to say a player isn't their their own teammate, and so we also reject the self-pairs.
 --
 
 teammate_pairs = FOREACH (JOIN
@@ -37,9 +34,11 @@ teammate_pairs = FOREACH (JOIN
     p2::player_id AS pl2;
 teammate_pairs = FILTER teammate_pairs BY NOT (pl1 == pl2);
 
---
--- Consulting the 155878
--- 
+-- As opposed to the previous section's slight many-to-many expansion, there are on average ZZZ players per roster to be paired. The result set here is explosively larger: YYY pairings from the original XXX player seasons, an expansion of QQQ footnote:[See the example code for details]. Now you might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "QQQ average players per team, so QQQ times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum. 
+
+-- The 78,000 player seasons we joined onto the team-parks-years table In
+-- contrast, a similar JOIN expression turned 78,000 seasons into 2,292,658
+-- player-player pairs, an expansion of nearly thirty times
 
 teammates = FOREACH (GROUP teammate_pairs BY pl1) {
   mates = DISTINCT teammate_pairs.pl2;
@@ -51,6 +50,10 @@ teammates = ORDER teammates BY n_mates ASC;
 
 -- STORE_TABLE(teammates, 'teammates');
 -- teammates = LOAD_RESULT('teammates');
+
+-- (A simplification was made) footnote:[(or, what started as a footnote but should probably become a sidebar or section in the timeseries chapter -- QEM advice please) Our bat_seasons table ignores mid-season trades and only lists a single team the player played the most games for, so in infrequent cases this will identify some teammate pairs that didn't actually overlap. There's no simple option that lets you join on players' intervals of service on a team: joins must be based on testing key equality, and we would need an "overlaps" test. In the time-series chapter you'll meet tools for handling such cases, but it's a big jump in complexity for a small number of renegades. You'd be better off handling it by first listing every stint on a team for each player in a season, with separate fields for the year and for the start/end dates. Doing the self-join on the season (just as we have here) would then give you every _possible_ teammate pair, with some fraction of false pairings. Lastly, use a FILTER to reject the cases where they don't overlap. Any time you're looking at a situation where 5% of records are causing 150% of complexity, look to see whether this approach of "handle the regular case, then fix up the edge cases" can apply.]
+
+
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
@@ -81,7 +84,6 @@ roster_sizes  = FOREACH (GROUP p1 BY (team_id, year_id)) GENERATE COUNT_STAR(p1)
 
 roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 
-
 -- -- roster_info   = FOREACH (GROUP roster_sizes ALL) GENERATE
 -- --   SUM(roster_sizes.n_players) AS n_players,
 -- --   AVG(roster_sizes.n_players) AS roster_size_avg,
@@ -110,10 +112,6 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 -- -- --
 -- 
 -- EXPLAIN teammates_summary;
-
--- The 78,000 player seasons we joined onto the team-parks-years table In
--- contrast, a similar JOIN expression turned 78,000 seasons into 2,292,658
--- player-player pairs, an expansion of nearly thirty times. (Which is  you'd expect given 
 
 
 -- teammate_pairs = FOREACH (JOIN

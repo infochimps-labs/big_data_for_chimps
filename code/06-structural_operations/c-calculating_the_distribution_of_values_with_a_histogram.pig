@@ -10,26 +10,34 @@ bat_careers = LOAD_RESULT('bat_careers');
 --
 -- === Calculating the Distribution of Numeric Values with a Histogram
 
--- QEM: needs prose (perhaps able to draw from prose file)
 
--- (describe)
+-- One of the most common uses of a group-and-aggregate is to create a histogram
+-- showing how often each value (or range of values) of a field occur. This
+-- calculates the distribution of seasons played -- that is, it counts the
+-- number of players whose career lasted only a single season; who played for
+-- two seasons; and so forth, up
 
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
 seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
   group AS bin, COUNT_STAR(vals) AS ct;
 
-
+vals = FOREACH (GROUP bat_seasons BY (player_id, name_first, name_last)) GENERATE
+  COUNT_STAR(bat_seasons) AS bin, flatten(group);
+seasons_hist = FOREACH (GROUP vals BY bin) {
+  some_vals = LIMIT vals 3;
+  GENERATE group AS bin, COUNT_STAR(vals) AS ct, BagToString(some_vals, '|');
+}
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Binning Data for a Histogram
 --
 
--- QEM: needs prose (perhaps able to draw from prose file)
-
 H_vals = FOREACH bat_seasons GENERATE H;
 H_hist = FOREACH (GROUP H_vals BY H) GENERATE
   group AS val, COUNT_STAR(H_vals) AS ct;
+
+-- QEM: needs prose (perhaps able to draw from prose file)
 
 --
 -- Note: the above snippet is what's in the book. We're actually going to steal
@@ -46,7 +54,7 @@ H_hist = FOREACH (COGROUP H_vals BY H, all_bins BY num0) GENERATE
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== Interpreting a Histogram
+-- ==== Interpreting Histograms and Quantiles
 --
 
 -- Different underlying mechanics will give different distributions.

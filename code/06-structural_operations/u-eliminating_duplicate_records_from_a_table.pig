@@ -83,6 +83,30 @@ team_parksnamed = FOREACH (GROUP tm_pk_named BY team_id) {
   GENERATE group AS team_id, FLATTEN(FirstTupleFromBag(tm_pk_named.team_name, (''))), BagToString(parks, '|');
 };
 
+-- ==== Eliminating All But One Duplicate Based on a Key
+
+The DataFu `DistinctBy` UDF selects a single record for each key in a bag.
+.
+It has the nice feature of being order-preserving: only the first record for a key is output, and all records that make it to the output follow the same relative ordering they had in the input bag,
+
+This gives us a clean way to retrieve the distinct teams a player served in, along with the first and last year of their tenure:define DistinctBy 
+
+DEFINE DistinctByYear datafu.pig.bags.DistinctBy('0');
+ 
+pltmyrs = FOREACH bat_seasons GENERATE player_id, year_id, team_id;
+player_teams = FOREACH (GROUP pltmyrs BY player_id) {
+  pltmyrs_o = ORDER pltmyrs.(team_id, year_id) BY team_id; -- TODO does this use secondary sort, or cause a POSort?
+  pltmyrs = DistinctByYear(pltmyrs);
+  GENERATE player_id, BagToString(pltmyrs, '|');
+};
+  
+The key is specified with a string argument in the DEFINE statement, naming the positional index(es) of the key's fields as a comma-separated list.
+
+ 
+
+
+
+
 STORE_TABLE(tm_pk_pairs,     'tm_pk_pairs');
 STORE_TABLE(team_parkslist,  'team_parkslist');
 STORE_TABLE(team_parksnamed, 'team_parksnamed');

@@ -45,6 +45,14 @@ park_teams  = load_park_teams();
 events      = load_events($beg_year, $end_year);
 event_stats = FOREACH (GROUP events ALL) GENERATE COUNT_STAR(events) AS ct;
 
+-- === Group-Decorate-Flatten
+
+-- When there
+
+-- footnote:[The fancy term is "transitive dependency"; it makes the difference
+-- between second and third normal form. Unless you already know what those
+-- mean, forget this paragraph exists.]
+
 --
 -- Get the game state (inning + top/bottom; number of outs; bases occupied;
 -- score differential), and summable-trick fields for finding the score at the

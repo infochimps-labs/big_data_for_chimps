@@ -2,6 +2,8 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 bat_seasons   = load_bat_seasons();
 
 
+-- move forward to the stats chapter if we move the "completely summarize" there
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Calculating Quantiles

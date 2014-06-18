@@ -7,7 +7,11 @@ bat_seasons = load_bat_seasons();
 --
 -- === Completely Summarizing the Values of a Numeric Field
 --
--- QEM: needs prose (perhaps able to draw from prose file)
+
+
+-- (move to statistics chapter)
+
+-- The stanza from chapter (REF) to summarize the values of a field is incredibly valuable when feeling out a dataset, and so it would be useful to turn it into a generic script. We will demonstrate the macro expansion feature of Pig by building summarizer_bot-9000, a set of standalone macros you can use to get the full set of summary statistics or histogram for a numeric field, and a summary of the length and composition of a string field.
 
 H_summary_base = FOREACH (GROUP bat_seasons ALL) {
   dist       = DISTINCT bat_seasons.H;

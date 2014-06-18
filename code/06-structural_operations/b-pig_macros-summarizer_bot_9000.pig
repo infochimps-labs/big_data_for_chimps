@@ -86,6 +86,8 @@ cat $out_dir/nums_header/part-m-00000;
 --
 -- ==== Finding the Size of a String in Bytes or in Characters
 --
+-- s.getBytes("UTF-8").length
+--
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --

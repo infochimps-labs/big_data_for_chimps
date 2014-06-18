@@ -49,7 +49,7 @@ career_older = ORDER career_epochs
   
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== Cannot Use an Expression in an ORDER BY statement
+-- ==== Sorting on an Expression (You Can't)
 --
 
 -- Which players have aged the best -- made the biggest leap in performance from
@@ -72,6 +72,24 @@ by_diff_older = FOREACH (ORDER by_diff_older BY diff DESC, player_id)
 -- training, nutrition, and medical care -- and part of that is likely due to
 -- systemic abuse of performance-enhancing drugs.
 --
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Sorting Case-insensitive Strings
+--
+
+dict        = LOAD '/usr/share/dict/words' AS (word:chararray);
+
+-- There's no intrinsic way to sort case-insensitive; instead, just force a
+-- lower-case field to sort with:
+
+sortable    = FOREACH dict GENERATE LOWER(word) AS key, *;
+dict_nocase = FOREACH (ORDER sortable BY key DESC, word) GENERATE word;
+zzz_nocase  = LIMIT dict_nocase 200;
+--
+dict_case   = ORDER dict BY word DESC;
+zzz_case    = LIMIT dict_case   200;
+
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
@@ -105,24 +123,6 @@ post1985_vs_earlier = FOREACH career_epochs
   GENERATE (beg_year >= 1985 ? 1 : 0) AS is_1985, player_id..;
 post1985_vs_earlier = FOREACH (ORDER post1985_vs_earlier BY is_1985 DESC, n_older DESC, player_id)
   GENERATE player_id..;
-
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- ==== Case-insensitive Sorting
---
-
-dict        = LOAD '/usr/share/dict/words' AS (word:chararray);
-
--- There's no intrinsic way to sort case-insensitive; instead, just force a
--- lower-case field to sort with:
-
-sortable    = FOREACH dict GENERATE LOWER(word) AS key, *;
-dict_nocase = FOREACH (ORDER sortable BY key DESC, word) GENERATE word;
-zzz_nocase  = LIMIT dict_nocase 200;
---
-dict_case   = ORDER dict BY word DESC;
-zzz_case    = LIMIT dict_case   200;
-
 
 STORE_TABLE(career_young, 'career_young');
 STORE_TABLE(career_prime, 'career_prime');
