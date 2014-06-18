@@ -35,7 +35,7 @@ DESCRIBE bat_careers;
 
 --
 -- === Group and Aggregate
--- 
+--
 -- Some of the happiest moments you can have analyzing a massive data set come
 -- when you are able to make it a slightly less-massive data set. Statistical
 -- aggregations let you summarize the essential characteristics of a
@@ -82,7 +82,7 @@ DESCRIBE bat_careers;
 -- functions are your brushes footnote:[Artist/Educator Bob Ross: "Anyone can
 -- paint, all you need is a dream in your heart and a little bit of practice" --
 -- hopefully you're feeling the same way about Big Data analysis.].
--- 
+--
 
 -- weight_summary = FOREACH (GROUP bat_seasons ALL) {
 --   dist         = DISTINCT bat_seasons.weight;

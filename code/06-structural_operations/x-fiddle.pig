@@ -10,8 +10,8 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 -- --   BY ((COUNT_STAR(bats_a) == 0L) OR (COUNT_STAR(bats_b) == 0L));
 -- --
 -- -- STORE_TABLE(a_xor_b, 'foo');
--- 
--- 
+--
+--
 -- -- a = load '/tmp/empty' AS (val:int); -- load an empty file
 -- -- -- neither of the statements below actually ever get executed
 -- -- b = group a all;
@@ -24,12 +24,12 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 -- -- empty_stats = FOREACH empty_g GENERATE COUNT(empty);
 -- --
 -- -- STORE_TABLE(empty_stats, 'empty_stats');
--- 
--- 
+--
+--
 -- empty_2 = FILTER bats_a BY 1 == 2;
 -- empty_2_g = GROUP empty_2 BY 1;
 -- empty_stats = FOREACH empty_2_g GENERATE COUNT(empty_2);
--- 
+--
 -- STORE_TABLE(empty_stats, 'empty_stats');
 
 

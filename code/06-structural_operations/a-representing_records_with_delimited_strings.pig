@@ -267,7 +267,7 @@ STORE_TABLE('parks', parks);
 
 
 -- Out of 156 games that season, the Spiders played only 42 in Cleveland. They held 15 "home games" in other cities, and played _ninety-nine_ away games -- in all, nearly three-quarters of their season on the road.
--- 
+--
 -- The Baseball Library Chronology sheds some light. It turns out that labor
 -- problems prevented play at their home or any other stadium in Cleveland for a
 -- stretch of time, and so they relocated to Philadelphia while that went
@@ -286,19 +286,19 @@ STORE_TABLE('parks', parks);
 -- disbanded. http://www.baseballlibrary.com/chronology/byyear.php?year=1898 /
 -- http://www.baseball-reference.com/teams/CLV/1898.shtml /
 -- http://www.leagle.com/decision/19675410OhioApp2d44_148
--- 
+--
 -- NOTE: In traditional analysis with sampled data, edge cases undermine the data -- they present the spectre of a non-representative sample or biased result. In big data analysis on comprehensive data, edge cases prove the data. Home-field advantage comes from a big on-field factor -- the home team plays the deciding half of the final inning -- and several psychological factors -- home-cooked meals, playing in front of fans, a stretch of time in one location. Since 1904, only a very few teams have multiple home stadiums, and no team has had more than two home stadiums in a season. In the example code, we poke at the data a little more and find there's only one other outlier that matters: in 2003 and 2004, les pauvres Montreal Expos were sentenced to play 22 "home" games in San Juan, Puerto Rico and 59 back in Montreal. How can we control for their circumstances? Having every season ever played means you can baseline the jet-powered computer-optimized schedules of the present against the night-train wanderjahr of Cleveland Spiders and other early teams.
--- 
+--
 -- Exercise: The table in `teams.tsv` has a column listing only the team's most frequent home stadium for each season; it would be nice to also list all of the ballparks used in a season. The delimited format of lets us keep the simplicity of a TSV format, and doesn't require us to unpack and repack the parks column on every load. 1: Use the JOIN operation introduced later in the chapter (REF) to add the concatenated park-n_game-pairs field to each row of the teams table. 2: Use the "denormalizing an internally-delimited field" (REF) to flatten into a table with one row per park team and year. Hint: you will need to use _both_ the `STRSPLIT` (tuple) and `STRSPLITBAG` (bag) functions, and both senses of `FLATTEN`.
--- 
+--
 -- === Denormalizing a collection or data structure into a single JSON-encoded field
--- 
+--
 -- With fields of numbers or constrained categorical values, stapling together delimited values is a fine approach. But if the fields are complex, or if there's any danger of stray delimiters sneaking into the record, you may be better off converting the record to JSON. It's a bit more heavyweight but nearly as portable, and it happy bundles complex structures and special characters to hide within TSV files. footnote:[And if nether JSON nor simple-delimiter is appropriate, use Parquet or Trevni, big-data optimized formats that support complex data structures. As we'll explain in chapter (REF), those are your three choices: TSV with delimited fields; TSV with JSON fields or JSON lines on their own; or Parquet/Trevni. We don't recommend anything further.]
 
 -- mapper(array_fields_of: ParkTeamYear) do |park_id, team_id, year_id, beg_date, end_date, n_games|
 --  yield [team_id, year_id, park_id, n_games]
 -- end
--- 
+--
 -- reducer do |(team_id, year_id), stream|
 --   parks   = stream. map{|park_id, n_games| [park_id, n_games.to_i] }
 --   n_parks = stream.size
@@ -306,7 +306,7 @@ STORE_TABLE('parks', parks);
 --     yield [team_id, year_id.to_i, n_parks, parks.to_json]
 --   end
 -- end
--- 
+--
 -- # ALT	1884	[["ALT01",18]]
 -- # ANA   1997    [["ANA01",82]]
 -- # ...

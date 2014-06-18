@@ -21,11 +21,11 @@ top_H_seasons = LIMIT (ORDER sig_seasons BY H DESC, player_id ASC) 40;
 -- it's Jim Bottomley's 227 hits in 1925) and then filter for records matching
 -- or exceeding it. Unless K is so large that the top-k starts to rival
 -- available memory, we're better off doing it in-reducer using a nested
--- FOREACH, just like we 
+-- FOREACH, just like we
 
--- 
+--
 -- http://pig.apache.org/docs/r0.12.0/api/org/apache/pig/piggybank/evaluation/Over.html[Piggybank's Over UDF]
--- allows us to 
+-- allows us to
 --
 -- We limit within each group to the top `topk_window` (60) items, assuming
 -- there are not 16 players tied for fourth in H. We don't assume for too long

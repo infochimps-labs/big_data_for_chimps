@@ -225,7 +225,7 @@ park_teams   = load_park_teams();
 -- ***************************************************************************
 --
 -- === Representing a Collection of Values with a Delimited String
--- 
+--
 
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,7 +258,7 @@ STORE_TABLE('parks', parks);
 -- team_parks = FOREACH (GROUP pty BY (team_id, park_id)) GENERATE
 --   group.team_id, group.park_id, pty.year_id AS years;
 -- DUMP team_parks;
--- 
+--
 -- rmf                    team_parks;
 -- STORE team_parks INTO 'team_parks';
 --
@@ -270,8 +270,8 @@ STORE_TABLE('parks', parks);
 -- -- SDN     HON01   {(1997)}
 -- -- SDN     MNT01   {(1996),(1999)}
 -- -- SDN     SAN01   {(1999),(1997),(1993),(1992),(1990),(1998),(1991),(1995),(1996),(1994)}
--- 
--- 
+--
+--
 -- --
 -- -- Simple delimited strings are simple:
 -- --
@@ -283,20 +283,20 @@ STORE_TABLE('parks', parks);
 -- -- BOS     BOS07
 -- -- NYA     NYC17;NYC16
 -- -- SDN     SAN01;MNT01;HON01
--- 
+--
 -- -- Default handling of complex elements probably isn't what you want.
 -- team_parkyearsugly = FOREACH (GROUP team_parks BY team_id) GENERATE
 --   group AS team_id,
 --   BagToString(team_parks.(park_id, years));
--- 
+--
 -- rmf                            /tmp/team_parkyearsugly;
 -- STORE team_parkyearsugly INTO '/tmp/team_parkyearsugly';
 -- cat                            /tmp/team_parkyearsugly;
--- 
+--
 -- -- BOS     BOS07_{(1995),(1997),(1990),(1992),(1996),(1993),(1991),(1998),(1994),(1999)}
 -- -- NYA     NYC17_{(1998)}_NYC16_{(1995),(1999),(1998),(1997),(1996),(1994),(1993),(1992),(1991),(1990)}
 -- -- SDN     SAN01_{(1999),(1997),(1993),(1992),(1990),(1998),(1991),(1995),(1996),(1994)}_MNT01_{(1996),(1999)}_HON01_{(1997)}
--- 
+--
 -- -- Instead, assemble it in pieces.
 -- team_park_yearslist = FOREACH team_parks {
 --   years_o = ORDER years BY year_id;
@@ -308,11 +308,11 @@ STORE_TABLE('parks', parks);
 --   tpy_f = FOREACH tpy_o GENERATE CONCAT(park_id, ':', yearslist);
 --   GENERATE group AS team_id, BagToString(tpy_f, ';');
 --   };
--- 
+--
 -- rmf                            /tmp/team_parkyearslist;
 -- STORE team_parkyearslist INTO '/tmp/team_parkyearslist';
 -- cat                            /tmp/team_parkyearslist;
--- 
+--
 -- -- BOS     BOS07:1990/1991/1992/1993/1994/1995/1996/1997/1998/1999
 -- -- NYA     NYC16:1990/1991/1992/1993/1994/1995/1996/1997/1998/1999;NYC17:1998
 -- -- SDN     SAN01:1990/1991/1992/1993/1994/1995/1996/1997/1998/1999;MNT01:1996/1999;HON01:1997
@@ -364,18 +364,18 @@ dist = FOREACH (GROUP cts ALL) {
 };
 
 DUMP dist;
-  
+
 bins = FOREACH vals GENERATE ROUND_TO(val, 0) AS bin;
 hist = FOREACH (GROUP bins BY bin) GENERATE
   group AS bin, COUNT_STAR(bins) AS ct;
 DUMP hist;
 
 -- tc_cities = load_us_city_pops();
--- 
+--
 -- parks = load_parks();
 -- parks  = FILTER parks BY n_games > 50;
 -- bb_cities = FOREACH parks GENERATE park_id, city;
--- 
+--
 -- summary = summarize_strings_by(parks, 'park_id',    'ALL'); DUMP summary;
 -- summary = summarize_strings_by(parks, 'park_name',  'ALL'); DUMP summary;
 -- summary = summarize_strings_by(parks, 'city',       'ALL'); DUMP summary;
@@ -635,12 +635,12 @@ bat_seasons   = load_bat_seasons();
 -- * DISTINCT;..COUNT_STAR        -- Counting Distinct Values in a bag
 --
 -- * SUM(bag)                     -- Totalling
--- * AVG(bag)                     -- 
--- * VAR(bag)                     -- 
--- * SQRT(VAR(bag))               -- 
+-- * AVG(bag)                     --
+-- * VAR(bag)                     --
+-- * SQRT(VAR(bag))               --
 -- * MIN(bag)                     -- Minimum value
 -- * MAX(bag)                     -- Maximum value
--- * BagToString(bag, delimiter)  -- 
+-- * BagToString(bag, delimiter)  --
 
 
 -- Turn the batting season statistics into batting career statistics
@@ -648,8 +648,8 @@ bat_seasons   = load_bat_seasons();
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
   team_ids = DISTINCT bat_seasons.team_id;
   totG   = SUM(bat_seasons.G);   totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
-  totH   = SUM(bat_seasons.H);   totBB  = SUM(bat_seasons.BB);  totHBP = SUM(bat_seasons.HBP); totR   = SUM(bat_seasons.R);    
-  toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B); toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR); 
+  totH   = SUM(bat_seasons.H);   totBB  = SUM(bat_seasons.BB);  totHBP = SUM(bat_seasons.HBP); totR   = SUM(bat_seasons.R);
+  toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B); toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR);
   OBP    = (totH + totBB + totHBP) / totPA;
   SLG    = (toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
   GENERATE group               AS player_id,
@@ -691,11 +691,11 @@ DESCRIBE bat_careers;
 --     BagToString(some, '^')          AS some_vals
 --     ;
 -- };
--- 
+--
 -- DESCRIBE     weight_summary;
 -- STORE_TABLE('weight_summary', weight_summary);
 -- cat $out_dir/weight_summary;
--- 
+--
 -- weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 --   dist         = DISTINCT bat_seasons.weight;
 --   sorted_a     = FILTER   bat_seasons.weight BY weight IS NOT NULL;
@@ -718,7 +718,7 @@ DESCRIBE bat_careers;
 --     BagToString(some, '^')          AS some_vals
 --     ;
 -- };
--- 
+--
 -- DESCRIBE     weight_yr_stats;
 -- STORE_TABLE('weight_yr_stats', weight_yr_stats);
 -- cat $out_dir/weight_yr_stats;
@@ -736,31 +736,31 @@ stats_wt  = summarize_values_by(bat_seasons, 'weight', 'ALL'); STORE_TABLE('stat
 stats_ht  = summarize_values_by(bat_seasons, 'height', 'ALL'); STORE_TABLE('stats_ht', stats_ht);
 
 -- pig ./06-structural_operations/c-summary_statistics.pig
--- cat /data/out/baseball/stats_*/part-r-00000 | wu-lign -- %s %s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f 
+-- cat /data/out/baseball/stats_*/part-r-00000 | wu-lign -- %s %s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f
 
 -- group   field   average  stdev     min     p01     p05     p10    p50     p90     p95     p99      max  count   nulls   cardnty    sum                  some
 -- all     BAV       0.209   0.122   0.000   0.000   0.000   0.000   0.231   0.308   0.333   0.500   1.000 69127     0     11503       14415.623359973975  0.0^0.015625^0.01639344262295082^0.01694915254237288^0.017543859649122806
--- all     G        61.575  49.645   1.000   1.000   3.000   6.000  43.000 143.000 152.000 159.000 165.000 69127     0       165     4256524.000000000000  1^2^3^4^5                                                                
--- all     H        45.956  56.271   0.000   0.000   0.000   0.000  15.000 142.000 163.000 194.000 262.000 69127     0       250     3176790.000000000000  0^1^2^3^4                                                                
--- all     HR        3.751   7.213   0.000   0.000   0.000   0.000   0.000  13.000  20.000  34.000  73.000 69127     0        66      259305.000000000000  0^1^2^3^4                                                                
--- all     OBP       0.259   0.134   0.000   0.000   0.000   0.000   0.286   0.377   0.407   0.556   2.333 69127     0     14214       17872.834545988590  0.0^0.020833334^0.021276595^0.023255814^0.024390243                      
--- all     OPS       0.550   0.308   0.000   0.000   0.000   0.000   0.602   0.838   0.921   1.333   5.000 69127     0     45768       38051.246410079300  0.0^0.021276595^0.02631579^0.027027028^0.028571429                       
--- all     PA      197.398 220.678   1.000   1.000   2.000   4.000  86.000 582.000 643.000 701.000 778.000 69127     0       766    13645539.000000000000  1^2^3^4^5                                                                
--- all     SLG       0.292   0.187   0.000   0.000   0.000   0.000   0.312   0.478   0.525   0.800   4.000 69127     0     16540       20178.412007378414  0.0^0.015625^0.016393442^0.01754386^0.018518519                          
--- all     height  183.700   5.903 160.000 170.000 175.000 175.000 183.000 190.000 193.000 198.000 211.000 69127   113        21    12677857.000000000000  null^160^163^165^168                                                     
--- all     weight   84.435   8.763  57.000  68.000  73.000  75.000  84.000  95.000 100.000 109.000 145.000 69127   176        64     5821854.000000000000  null^57^59^60^61                                                         
+-- all     G        61.575  49.645   1.000   1.000   3.000   6.000  43.000 143.000 152.000 159.000 165.000 69127     0       165     4256524.000000000000  1^2^3^4^5
+-- all     H        45.956  56.271   0.000   0.000   0.000   0.000  15.000 142.000 163.000 194.000 262.000 69127     0       250     3176790.000000000000  0^1^2^3^4
+-- all     HR        3.751   7.213   0.000   0.000   0.000   0.000   0.000  13.000  20.000  34.000  73.000 69127     0        66      259305.000000000000  0^1^2^3^4
+-- all     OBP       0.259   0.134   0.000   0.000   0.000   0.000   0.286   0.377   0.407   0.556   2.333 69127     0     14214       17872.834545988590  0.0^0.020833334^0.021276595^0.023255814^0.024390243
+-- all     OPS       0.550   0.308   0.000   0.000   0.000   0.000   0.602   0.838   0.921   1.333   5.000 69127     0     45768       38051.246410079300  0.0^0.021276595^0.02631579^0.027027028^0.028571429
+-- all     PA      197.398 220.678   1.000   1.000   2.000   4.000  86.000 582.000 643.000 701.000 778.000 69127     0       766    13645539.000000000000  1^2^3^4^5
+-- all     SLG       0.292   0.187   0.000   0.000   0.000   0.000   0.312   0.478   0.525   0.800   4.000 69127     0     16540       20178.412007378414  0.0^0.015625^0.016393442^0.01754386^0.018518519
+-- all     height  183.700   5.903 160.000 170.000 175.000 175.000 183.000 190.000 193.000 198.000 211.000 69127   113        21    12677857.000000000000  null^160^163^165^168
+-- all     weight   84.435   8.763  57.000  68.000  73.000  75.000  84.000  95.000 100.000 109.000 145.000 69127   176        64     5821854.000000000000  null^57^59^60^61
 
 -- group   field   average  stdev     min     p01     p05     p10    p50     p90     p95     p99      max  count   nulls   cardnty    sum                  some
 -- all     BAV       0.265   0.036   0.122   0.181   0.207   0.220   0.265   0.309   0.323   0.353   0.424 27750   0       10841        7352.282635679735  0.12244897959183673^0.12435233160621761^0.125^0.12598425196850394^0.12878787878787878
--- all     G       114.147  31.707  32.000  46.000  58.000  68.000 118.000 153.000 156.000 161.000 165.000 27750   0       134       3167587.000000000000  32^33^34^35^36                                                                       
--- all     H       103.566  47.301  16.000  28.000  36.000  42.000 101.000 168.000 182.000 206.000 262.000 27750   0       234       2873945.000000000000  16^17^18^19^20                                                                       
--- all     HR        8.829   9.236   0.000   0.000   0.000   0.000   6.000  22.000  28.000  40.000  73.000 27750   0       66         245001.000000000000  0^1^2^3^4                                                                            
--- all     OBP       0.329   0.042   0.156   0.233   0.261   0.276   0.328   0.383   0.399   0.436   0.609 27750   0       13270        9119.456519946456  0.15591398^0.16666667^0.16849817^0.16872428^0.16935484                               
--- all     OPS       0.721   0.115   0.312   0.478   0.544   0.581   0.715   0.867   0.916   1.027   1.422 27750   0       27642       20014.538630217314  0.31198335^0.31925547^0.32882884^0.33018503^0.3321846                                
--- all     PA      430.130 168.812 150.000 154.000 172.000 196.000 434.000 656.000 682.000 719.000 778.000 27750   0       617      11936098.000000000000  150^151^152^153^154                                                                  
--- all     SLG       0.393   0.080   0.148   0.230   0.272   0.295   0.387   0.497   0.534   0.609   0.863 27750   0       15589       10895.082128539681  0.14795919^0.15151516^0.15418503^0.15492958^0.15544042                               
--- all     height  182.460   5.608 163.000 168.000 173.000 175.000 183.000 190.000 190.000 196.000 203.000 27750   28      17        5058166.000000000000  null^163^165^168^170                                                                 
--- all     weight   83.569   8.797  57.000  68.000  71.000  73.000  82.000  95.000 100.000 109.000 132.000 27750   35      54        2316119.000000000000  null^57^59^63^64                                                                     
+-- all     G       114.147  31.707  32.000  46.000  58.000  68.000 118.000 153.000 156.000 161.000 165.000 27750   0       134       3167587.000000000000  32^33^34^35^36
+-- all     H       103.566  47.301  16.000  28.000  36.000  42.000 101.000 168.000 182.000 206.000 262.000 27750   0       234       2873945.000000000000  16^17^18^19^20
+-- all     HR        8.829   9.236   0.000   0.000   0.000   0.000   6.000  22.000  28.000  40.000  73.000 27750   0       66         245001.000000000000  0^1^2^3^4
+-- all     OBP       0.329   0.042   0.156   0.233   0.261   0.276   0.328   0.383   0.399   0.436   0.609 27750   0       13270        9119.456519946456  0.15591398^0.16666667^0.16849817^0.16872428^0.16935484
+-- all     OPS       0.721   0.115   0.312   0.478   0.544   0.581   0.715   0.867   0.916   1.027   1.422 27750   0       27642       20014.538630217314  0.31198335^0.31925547^0.32882884^0.33018503^0.3321846
+-- all     PA      430.130 168.812 150.000 154.000 172.000 196.000 434.000 656.000 682.000 719.000 778.000 27750   0       617      11936098.000000000000  150^151^152^153^154
+-- all     SLG       0.393   0.080   0.148   0.230   0.272   0.295   0.387   0.497   0.534   0.609   0.863 27750   0       15589       10895.082128539681  0.14795919^0.15151516^0.15418503^0.15492958^0.15544042
+-- all     height  182.460   5.608 163.000 168.000 173.000 175.000 183.000 190.000 190.000 196.000 203.000 27750   28      17        5058166.000000000000  null^163^165^168^170
+-- all     weight   83.569   8.797  57.000  68.000  71.000  73.000  82.000  95.000 100.000 109.000 132.000 27750   35      54        2316119.000000000000  null^57^59^63^64
 
 
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
@@ -797,17 +797,17 @@ peeps       = load_people();
 --
 
 G_vals = FOREACH bat_seasons GENERATE G;
-G_hist = FOREACH (GROUP G_vals BY G) GENERATE 
+G_hist = FOREACH (GROUP G_vals BY G) GENERATE
   group AS G, COUNT_STAR(G_vals) AS n_seasons;
 
 --
--- We can separate out the two eras using the summing trick: 
+-- We can separate out the two eras using the summing trick:
 --
 G_vals_2 = FOREACH bat_seasons GENERATE G,
   (year_id <  1961 AND year_id > 1900 ? 1 : 0) AS G_154,
   (year_id >= 1961                   ? 1 : 0) AS G_162
   ;
-G_hist_154_vs_162 = FOREACH (GROUP G_vals_2 BY G) GENERATE 
+G_hist_154_vs_162 = FOREACH (GROUP G_vals_2 BY G) GENERATE
   group AS G,
   COUNT_STAR(G_vals_2) AS n_seasons,
   SUM(G_vals_2.G_154)  AS n_seasons_154,
@@ -835,7 +835,7 @@ DEFINE hist(table, key) RETURNS dist {
 
 -- we have to be careful here because *nothing* about a professional should be taken as typical of the overall population
 -- you are drawing from the extreme tails of the extreme tails of the population,
--- and there are very few 
+-- and there are very few
 
 -- Distribution of Games Played
 
@@ -865,17 +865,17 @@ STORE_TABLE(weight_hist, 'weight_hist');
 
 -- attr_vals = FOREACH vitals GENERATE
 --   FLATTEN(Transpose(height, weight, birth_month, death_month)) AS (attr, val);
--- 
+--
 -- attr_vals_nn = FILTER attr_vals BY val IS NOT NULL;
--- 
+--
 -- -- peep_stats   = FOREACH (GROUP attr_vals_nn BY attr) GENERATE
 -- --   group                    AS attr,
 -- --   COUNT_STAR(attr_vals_nn) AS ct_all,
 -- --   COUNT(attr_vals_nn.val)  AS ct;
--- 
+--
 -- peep_stats = FOREACH (GROUP attr_vals_nn ALL) GENERATE
 --   BagToMap(CountVals(attr_vals_nn.attr)) AS cts:map[long];
--- 
+--
 -- peep_hist = FOREACH (GROUP attr_vals BY (attr, val)) {
 --   ct = COUNT_STAR(attr_vals);
 --   GENERATE
@@ -885,10 +885,10 @@ STORE_TABLE(weight_hist, 'weight_hist');
 --     ;
 -- };
 -- peep_hist = ORDER peep_hist BY attr, val;
--- 
+--
 -- -- STORE_TABLE(peep_hist, 'peep_hist');
 -- DUMP peep_stats;
--- 
+--
 -- one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
 -- ht = FOREACH one GENERATE peep_stats.cts#'height';
 -- DUMP ht;
@@ -1110,7 +1110,7 @@ STORE_TABLE(bats_with_leaders, 'bats_with_leaders');
 --     avg_SLG AS avg_SLG, sdv_SLG AS sdv_SLG
 --     ;
 -- };
--- 
+--
 -- normed = FOREACH normed_dec GENERATE
 --   player_id, year_id, team_id, lg_id,
 --   G,    PA,   AB,   HBP,  SH,
@@ -1125,7 +1125,7 @@ STORE_TABLE(bats_with_leaders, 'bats_with_leaders');
 --   ( ((OBP - avg_OBP)/sdv_OBP) +
 --     ((SLG - avg_SLG)/sdv_SLG) ) AS zOPS
 --   ;
--- 
+--
 -- normed_seasons = ORDER normed BY zOPS ASC;
 -- STORE_TABLE(normed_seasons, 'normed_seasons');
 
@@ -1198,7 +1198,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
     --   Cumulative statistics
     G   AS G,   PA  AS PA,  BB  AS BB,
     H   AS H,   HR  AS HR,  R   AS R,  RBI AS RBI,
-    ROUND_TO(OBP,3) AS OBP, ROUND_TO(SLG,3) AS SLG, ROUND_TO(OBP+SLG,3) AS OPS, 
+    ROUND_TO(OBP,3) AS OBP, ROUND_TO(SLG,3) AS SLG, ROUND_TO(OBP+SLG,3) AS OPS,
     --
     -- Peak excellence, normalized to era:
     --   Average of seasonal z-scores (qual. only)
@@ -1221,7 +1221,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 -- players with historically great careers, but we don't yet have any
 --
 -- That is, we know Tony Gwynn's ten seasons of 1-sigma-plus OBP
--- and Jim Rice's ten seasons of 1-sigma-plus SLG are both impressive, 
+-- and Jim Rice's ten seasons of 1-sigma-plus SLG are both impressive,
 --
 -- (these are defensible choices, though guided in part by narrative goals)
 --
@@ -1233,7 +1233,7 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 --
 
 -- ballplayers or hospitals or keyword advertisements
--- 
+--
 
 -- Earlier we stated that the
 --
@@ -1250,10 +1250,10 @@ career_peaks = FOREACH (GROUP tops BY player_id) {
 
 -- In fact, however, Yount is acknowledged as one of the hundred best players
 -- ever; Dawson as being right above the edge of what defines a great career; and
--- Burks as being very good but well short of great. Any metric as simplistic as this 
+-- Burks as being very good but well short of great. Any metric as simplistic as this
 
 -- Ellis Burks, Carl Yastrzemski ("Yaz" from here on) and Andre Dawson each had
--- 8 1-sigma-SLG seasons, a career OPS over 0.800, and more than 350 home runs. 
+-- 8 1-sigma-SLG seasons, a career OPS over 0.800, and more than 350 home runs.
 
 -- The details of performing logistic regression analysis are out of scope for
 -- this book, but you can look in the sample code.
@@ -1315,14 +1315,14 @@ numbers_10k = load_numbers_10k();
 
 -- ***************************************************************************
 --
--- === Joining on an Integer Table to Fill Holes in a List 
+-- === Joining on an Integer Table to Fill Holes in a List
 
 -- In some cases you want to ensure that there is an output row for each
 -- potential value of a key. For example, a histogram of career hits will show
 -- that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits
 -- than the third-most player (Hank Aaron, 3771 hits) there are gaps in the
 -- output bins.
--- 
+--
 -- To fill the gaps, generate a list of all the potential keys, then generate
 -- your (possibly hole-y) result table, and do a join of the keys list (LEFT
 -- OUTER) with results. In some cases, this requires one job to enumerate the
@@ -1330,12 +1330,12 @@ numbers_10k = load_numbers_10k();
 -- can simply use the integer table. (We told you it was surprisingly useful!)
 
 
--- 
+--
 -- Regular old histogram of career hits, bin size 100
 --
 H_vals = FOREACH (GROUP bat_seasons BY player_id) GENERATE
   100*ROUND(SUM(bat_seasons.H)/100.0) AS bin;
-H_hist_0 = FOREACH (GROUP H_vals BY bin) GENERATE 
+H_hist_0 = FOREACH (GROUP H_vals BY bin) GENERATE
   group AS bin, COUNT(H_vals) AS ct;
 
 --
@@ -1377,9 +1377,9 @@ teammates = FOREACH (GROUP teammate_pairs BY pl1) {
   years = DISTINCT teammate_pairs.p1_year_id;
   mates = DISTINCT teammate_pairs.pl2;
   teams = DISTINCT teammate_pairs.p1_team_id;
-  GENERATE group AS player_id, 
+  GENERATE group AS player_id,
     COUNT_STAR(mates) AS n_mates,    COUNT_STAR(years) AS n_seasons,
-    MIN(years)        AS beg_year,   MAX(years)        AS end_year, 
+    MIN(years)        AS beg_year,   MAX(years)        AS end_year,
     BagToString(teams,';') AS teams,
     BagToString(mates,';') AS mates;
   };
@@ -1448,7 +1448,7 @@ park_teams   = load_park_tm_yr();
 -- match or some sort of other fuzzy equality. In map-reduce, the only kind of
 -- join you can do is on key equality (an "equi-join"). For a sharper example,
 -- you cannot do joins on range criteria (where the two keys are related through
--- inequalities (x < y). You can accomplish the _goals_ of a 
+-- inequalities (x < y). You can accomplish the _goals_ of a
 -- Matching Records Between Tables (Inner Join)
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
@@ -1748,10 +1748,10 @@ zzz_case    = LIMIT dict_case   200;
 --   (PA_prime >= 700 AND PA_prime >= 700 ? OPS_prime - OPS_all   : Null) AS diff_prime,
 --   (PA_older >= 700 AND PA_prime >= 700 ? OPS_older - OPS_prime : Null) AS diff_older,
 --   PA_all, PA_young, PA_prime, PA_older
--- 
+--
 --   , ((end_year + beg_year)/2.0 > 1990 ? 'post' : '-') AS epoch
 --   ;
--- 
+--
 -- golden_oldies = ORDER sunset BY diff_older DESC;
 
 
@@ -1768,7 +1768,7 @@ STORE_TABLE(career_young, 'career_young');
 STORE_TABLE(career_prime, 'career_prime');
 STORE_TABLE(career_older, 'career_older');
 STORE_TABLE(by_diff_older, 'by_diff_older');
--- 
+--
 STORE_TABLE(zzz_nocase, 'zzz_nocase');
 STORE_TABLE(zzz_case,   'zzz_case');
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
@@ -1784,7 +1784,7 @@ bat_seasons = load_bat_seasons();
 -- Use ORDER BY within a nested FOREACH to sort within a group. The first
 -- request to sort a group does not require extra operations -- Pig simply
 -- specifies those fields as secondary sort keys. This will list, for each
--- team's season, the players in decreasing order by 
+-- team's season, the players in decreasing order by
 
 
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
@@ -1821,7 +1821,7 @@ STORE_TABLE('vals_ided',  vals_ided);
 
 -- vals_wtag = FOREACH vals_rked {
 --   line_info   = CONCAT((chararray)split_info, '#', (chararray)rank_vals);
---   GENERATE HashVal((chararray)line_info) AS rand_id, city, state, pop, FLATTEN(split_attrs) AS (sp_path, sp_idx, sp_offs, sp_size); 
+--   GENERATE HashVal((chararray)line_info) AS rand_id, city, state, pop, FLATTEN(split_attrs) AS (sp_path, sp_idx, sp_offs, sp_size);
 --   };
 -- vals_shuffled = FOREACH (ORDER vals_wtag BY rand_id) GENERATE *;
 -- STORE vals_shuffled INTO '/data/out/vals_shuffled';
@@ -1880,12 +1880,12 @@ STORE_TABLE('vals_shuffled', vals_shuffled);
 --   };
 -- DESCRIBE ided;
 -- STORE_TABLE('cities_with_ids', ided);
--- 
+--
 -- sampled_lines = FILTER(FOREACH ided GENERATE MD5(id_md5) AS digest, id_md5) BY (STARTSWITH(digest, 'b'));
 -- STORE_TABLE('sampled_lines', sampled_lines);
--- 
+--
 -- data_in = LOAD 'input' as (val:chararray);
--- 
+--
 -- data_out = FOREACH data_in GENERATE
 --   DefaultH(val),   GoodH(val),       BetterH(val),
 --   MurmurH32(val),  MurmurH32A(val),  MurmurH32B(val),
@@ -1893,7 +1893,7 @@ STORE_TABLE('vals_shuffled', vals_shuffled);
 --   SHA1H(val),      SHA256H(val),    SHA512H(val),
 --   MD5H(val)
 -- ;
--- 
+--
 -- STORE_TABLE('data_out', data_out);
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 SET DEFAULT_PARALLEL 3;
@@ -1929,7 +1929,7 @@ STORE_TABLE(parks_presorted_ranked,  'parks_presorted_ranked');
 STORE_TABLE(parks_ties_cause_skips,  'parks_ties_cause_skips');
 STORE_TABLE(parks_ties_no_skips,     'parks_ties_no_skips');
 
--- partridge            1    1    1 
+-- partridge            1    1    1
 -- turtle dove          2    2    2
 -- turtle dove          3    2    2
 -- french hen           4    3    4
@@ -1949,7 +1949,7 @@ bat_seasons = load_bat_seasons();
 --   -- In SQL, this is fairly clumsy (involving a self-join and then elimination of
 --   -- ties) In Pig, we can ORDER BY within a foreach and then pluck the first
 --   -- element of the bag.
--- 
+--
 -- SELECT bat.player_id, bat.year_id, bat.team_id, MAX(batmax.Gmax), MAX(batmax.stints), MAX(team_ids), MAX(Gs)
 --   FROM       batting bat
 --   INNER JOIN (SELECT player_id, year_id, COUNT(*) AS stints, MAX(G) AS Gmax, GROUP_CONCAT(team_id) AS team_ids, GROUP_CONCAT(G) AS Gs FROM batting bat GROUP BY player_id, year_id) batmax
@@ -1957,7 +1957,7 @@ bat_seasons = load_bat_seasons();
 --   GROUP BY player_id, year_id
 --   -- WHERE stints > 1
 --   ;
--- 
+--
 --   -- About 7% of seasons have more than one stint; only about 2% of seasons have
 --   -- more than one stint and more than a half-season's worth of games
 -- SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT player_id, year_id, IF(COUNT(*) > 1 AND SUM(G) > 77, 1, 0) AS mt1stint FROM batting GROUP BY player_id, year_id) bat
@@ -1976,7 +1976,7 @@ bats_with_l_cg = FOREACH bats_with_max_hr GENERATE
   player_id.., (HR == max_HR ? 1 : 0);
 bats_with_l_cg = ORDER bats_with_l_cg BY player_id, year_id;
 
-  
+
 -- We can also do this using a join:
 
 -- Find the max_HR for each season
@@ -2016,7 +2016,7 @@ bat_seasons = load_bat_seasons();
 -- ***************************************************************************
 --
 -- === Selecting Records Having the Top K Values in a Group (discarding ties)
--- 
+--
 
 -- Let's find the top ten home-run hitters for each season
 --
@@ -2033,12 +2033,12 @@ HR_leaders = FOREACH (GROUP HR_seasons BY year_id) GENERATE
 
 -- HR_leaders = FOREACH HR_leaders {
 --   top_k_o = ORDER top_k BY HR DESC;
---   GENERATE 
--- 
---   top_k  = 
+--   GENERATE
+--
+--   top_k  =
 --   GENERATE top_k_o;
 --   };
--- 
+--
 --   top_k_o = ORDER top_k BY HR DESC;
 
 --
@@ -2048,10 +2048,10 @@ HR_leaders = FOREACH (GROUP HR_seasons BY year_id) GENERATE
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- Selecting Attribute wdw 
+-- Selecting Attribute wdw
 -- -- http://pig.apache.org/docs/r0.12.0/api/org/apache/pig/piggybank/evaluation/ExtremalTupleByNthField.html
 -- DEFINE BiggestInBag org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('1', 'max');
--- 
+--
 -- pl_best = FOREACH (GROUP bat_seasons BY player_id) GENERATE
 --   group AS player_id,
 --   BiggestInBag(bat_seasons.(H,   year_id, team_id)),
@@ -2060,9 +2060,9 @@ HR_leaders = FOREACH (GROUP HR_seasons BY year_id) GENERATE
 --   BiggestInBag(bat_seasons.(SLG, year_id, team_id)),
 --   BiggestInBag(bat_seasons.(OPS, year_id, team_id))
 --   ;
--- 
+--
 -- DESCRIBE pl_best;
--- 
+--
 -- rmf                 $out_dir/pl_best;
 -- STORE pl_best INTO '$out_dir/pl_best';
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
@@ -2077,7 +2077,7 @@ bat_seasons = load_bat_seasons();
 
 -- -- Find the top 20 seasons by OPS.  Pig is smart about eliminating records at
 -- -- the map stage, dramatically decreasing the data size.
--- 
+--
 -- player_seasons = LOAD `player_seasons` AS (...);
 -- qual_player_seasons = FILTER player_years BY plapp > what it should be;
 -- player_season_stats = FOREACH qual_player_seasons GENERATE
@@ -2088,7 +2088,7 @@ bat_seasons = load_bat_seasons();
 --    ;
 -- player_season_stats_ordered = ORDER player_season_stats BY (slugging_avg + offensive_pct) DESC;
 -- STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
--- 
+--
 -- -- A simple ORDER BY..LIMIT stanza may not be what you need, however. It will
 -- -- always return K records exactly, even if there are ties for K'th place.
 
@@ -2127,12 +2127,12 @@ bat_seasons = load_bat_seasons();
 -- -- verify there aren't so many records tied for $topk'th place that it overflows
 -- -- the $topk_window number of highest records we retained for consideration
 -- ASSERT ranked_HRs BY MAX(ranked.rank_HR) > $topk; --  'LIMIT was too strong; more than $topk_window players were tied for $topk th place';
--- 
+--
 -- top_season_HRs = FOREACH ranked_HRs {
 --   ranked_HRs = FILTER ranked BY rank_HR <= $topk;
 --   GENERATE ranked_HRs;
 --   };
--- 
+--
 -- STORE_TABLE('top_season_HRs', top_season_HRs);
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
@@ -2162,7 +2162,7 @@ tm_pk_pairs_dist = DISTINCT tm_pk_pairs_many;
 --
 -- This gives the same result as, but is less efficient than
 --
-tm_pk_pairs_dont = FOREACH (GROUP park_teams BY (team_id, park_id)) 
+tm_pk_pairs_dont = FOREACH (GROUP park_teams BY (team_id, park_id))
   GENERATE group.team_id, group.park_id;
 -- -- ALT     ALT01
 -- -- ANA     ANA01
@@ -2200,9 +2200,9 @@ EXPLAIN team_parkslist;
 
 STORE_TABLE(team_parkslist, 'team_parkslist');
 
--- -- CL1     CHI02|CIN01|CLE01                                          
--- -- CL2     CLE02                                                      
--- -- CL3     CLE03|CLE09|GEA01|NEW03                                    
+-- -- CL1     CHI02|CIN01|CLE01
+-- -- CL2     CLE02
+-- -- CL3     CLE03|CLE09|GEA01|NEW03
 -- -- CL4     CHI08|CLE03|CLE05|CLL01|DET01|IND06|PHI09|ROC02|ROC03|STL05
 
 -- Same deal, but slap the stadium names on there first:
@@ -2552,7 +2552,7 @@ bat_seasons = load_bat_seasons();
 --
 -- === Set Operations
 --
--- * Distinct Union; 
+-- * Distinct Union;
 -- * Set Intersection
 -- * Set Difference
 -- * Set Equality
@@ -2649,7 +2649,7 @@ away_games = FOREACH games GENERATE
 -- team_games = GROUP all_games BY team_id;
 --
 
--- 
+--
 -- === Instead, use a COGROUP.
 --
 
@@ -2685,7 +2685,7 @@ game_wls = FOREACH games {
   summables  = {
     (home_team_id, home_win,  home_loss, 1),
     (away_team_id, home_loss, home_win,  0)   };
-  
+
   GENERATE
     year_id, FLATTEN(summables) AS (team_id:chararray, win:int, loss:int, is_home:int);
 };
@@ -2720,7 +2720,7 @@ park_teams  = load_park_teams();
 --
 
 -- * Rank
--- * 
+-- *
 
 -- * Lead
 -- * Lag
@@ -2745,15 +2745,15 @@ player_seasons = GROUP bats BY player_id;
 
 --
 -- Produce for each stat the running total by season, and the next season's value
--- 
+--
 running_seasons = FOREACH player_seasons {
   seasons = ORDER bats BY year_id;
   GENERATE
     group AS player_id,
     FLATTEN(Stitch(
       seasons.year_id,
-      seasons.G,  Over(seasons.G,  'SUM(int)'), Over(seasons.G,  'lead', 0, 1, 1, -1), 
-      seasons.H,  Over(seasons.H,  'SUM(int)'), Over(seasons.H,  'lead', 0, 1, 1, -1), 
+      seasons.G,  Over(seasons.G,  'SUM(int)'), Over(seasons.G,  'lead', 0, 1, 1, -1),
+      seasons.H,  Over(seasons.H,  'SUM(int)'), Over(seasons.H,  'lead', 0, 1, 1, -1),
       seasons.HR, Over(seasons.HR, 'SUM(int)'), Over(seasons.HR, 'lead', 0, 1, 1, -1)
       ))
     AS (year_id, G, next_G, cume_G, H, next_H, cume_H, HR, next_HR, cume_HR);
@@ -2780,7 +2780,7 @@ park_teams  = load_park_teams();
 -- from given base/out state to end of inning (for completed innings through the
 -- 8th inning); uses Retrosheet 1950-2010 data as of 2010.
 -- http://www.tangotiger.net/re24.html
--- 
+--
 --                   1993-2010            1969-1992           1950-1968
 -- bases \ outs 0_out 1_out 2_out   0_out 1_out 2_out   0_out 1_out 2_out
 --
@@ -2794,16 +2794,16 @@ park_teams  = load_park_teams();
 -- 1B 2B  3B    2.390 1.631 0.814   2.343 1.545 0.752   2.315 1.540 0.747
 --
 --               1993-2010               1969-1992           1950-1968              1950-2010
--- -  -   -     0.539 0.287 0.111   0.471 0.248 0.092   0.471 0.252 0.096     0.4957  0.2634  0.0998  
--- -  -   3B    1.442 0.981 0.382   1.299 0.92  0.368   1.285 0.904 0.373     1.3408  0.9393  0.374   
--- -  2B  -     1.172 0.715 0.339   1.081 0.663 0.316   1.055 0.662 0.322     1.1121  0.682   0.3257  
--- -  2B  3B    2.046 1.428 0.599   1.927 1.341 0.56    1.936 1.338 0.59      1.9754  1.3732  0.5814  
--- 1B -   -     0.932 0.554 0.239   0.843 0.496 0.21    0.828 0.5   0.211     0.8721  0.5181  0.2211  
--- 1B -   3B    1.841 1.196 0.517   1.699 1.131 0.47    1.688 1.132 0.491     1.7478  1.1552  0.4922  
--- 1B 2B  -     1.543 0.949 0.456   1.461 0.886 0.42    1.456 0.912 0.426     1.4921  0.9157  0.4349  
--- 1B 2B  3B    2.374 1.61  0.787   2.325 1.522 0.721   2.297 1.513 0.724     2.3392  1.5547  0.7482  
+-- -  -   -     0.539 0.287 0.111   0.471 0.248 0.092   0.471 0.252 0.096     0.4957  0.2634  0.0998
+-- -  -   3B    1.442 0.981 0.382   1.299 0.92  0.368   1.285 0.904 0.373     1.3408  0.9393  0.374
+-- -  2B  -     1.172 0.715 0.339   1.081 0.663 0.316   1.055 0.662 0.322     1.1121  0.682   0.3257
+-- -  2B  3B    2.046 1.428 0.599   1.927 1.341 0.56    1.936 1.338 0.59      1.9754  1.3732  0.5814
+-- 1B -   -     0.932 0.554 0.239   0.843 0.496 0.21    0.828 0.5   0.211     0.8721  0.5181  0.2211
+-- 1B -   3B    1.841 1.196 0.517   1.699 1.131 0.47    1.688 1.132 0.491     1.7478  1.1552  0.4922
+-- 1B 2B  -     1.543 0.949 0.456   1.461 0.886 0.42    1.456 0.912 0.426     1.4921  0.9157  0.4349
+-- 1B 2B  3B    2.374 1.61  0.787   2.325 1.522 0.721   2.297 1.513 0.724     2.3392  1.5547  0.7482
 
-  
+
 -- load the right range of years and extract stats to be used if needed
 events      = load_events($beg_year, $end_year);
 event_stats = FOREACH (GROUP events ALL) GENERATE COUNT_STAR(events) AS ct;
@@ -2819,7 +2819,7 @@ event_stats = FOREACH (GROUP events ALL) GENERATE COUNT_STAR(events) AS ct;
 --
 -- Only innings of 3 full outs are useful for the run expectancy table;
 -- otherwise no end_inn_sc is calculated.
--- 
+--
 evs_summable = FOREACH events {
   beg_sc  = (home_score - away_score);
   end_sc  = beg_sc + ev_runs_ct;
@@ -2896,11 +2896,11 @@ STORE_TABLE('evs_decorated-$beg_year-$end_year', evs_decorated);
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Run Expectancy
--- 
+--
 -- How many runs is a game state worth from the perspective of any inning?
 -- Bases are cleared away at inning finish, so the average number of runs scored
 -- from an event to the end of its inning is the dominant factor.
--- 
+--
 
 -- Only want non-walkoff and full innings
 re_evs      = FILTER evs_decorated BY (inn <= 8) AND (end_inn_sc IS NOT NULL);

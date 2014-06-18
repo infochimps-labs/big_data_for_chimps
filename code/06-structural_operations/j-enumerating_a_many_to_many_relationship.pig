@@ -18,14 +18,14 @@ park_teams  = load_park_teams();
 -- output records.
 
 player_team_years = FOREACH bat_seasons GENERATE year_id, team_id, player_id;
-park_team_years   = FOREACH park_teams  GENERATE year_id, team_id, park_id;  
+park_team_years   = FOREACH park_teams  GENERATE year_id, team_id, park_id;
 
 player_stadia = FOREACH (JOIN
   player_team_years BY (year_id, team_id),
   park_team_years   BY (year_id, team_id)
   ) GENERATE
   player_team_years::year_id AS year_id, player_team_years::team_id AS team_id,
-  player_id,  park_id;  
+  player_id,  park_id;
 
 --
 -- By consulting the Jobtracker counters (map input records vs reduce output

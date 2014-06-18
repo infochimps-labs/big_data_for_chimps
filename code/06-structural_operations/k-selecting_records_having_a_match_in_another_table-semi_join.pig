@@ -9,10 +9,10 @@ allstars    = load_allstars();
 --
 
 -- Semi-join: just care about the match, don't keep joined table; anti-join is where you keep the non-matches and also don't keep the joined table. Again, use left or right so that the small table occurs first in the list. Note that a semi-join has only one row per row in dominant table -- so needs to be a cogroup and sum or a join to distinct'ed table (extra reduce, but lets you do a fragment replicate join.)
--- 
+--
 -- Select player seasons where they made the all-star team.
 -- You might think you could do this with a join:
--- 
+--
 -- ------
 --   -- Don't do this... produces duplicates!
 -- bats_g    = JOIN allstar BY (player_id, year_id), bats BY (player_id, year_id);
@@ -44,7 +44,7 @@ allstar_seasons_broken   = FILTER allstar_seasons_broken_j
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- Instead, in this case you must use a COGROUP. 
+-- Instead, in this case you must use a COGROUP.
 --
 
 -- Players with no entry in the allstars_p table have an empty allstars_p bag

@@ -76,4 +76,4 @@ DESCRIBE hist_by_year;
 STORE_TABLE(hist_by_year, 'hist_by_year');
 
 --
--- Exercise: generate histograms-by-year 
+-- Exercise: generate histograms-by-year

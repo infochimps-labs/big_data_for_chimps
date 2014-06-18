@@ -31,7 +31,7 @@ team_playerslist_by_PA = FOREACH (GROUP players_PA BY (team_id, year_id)) {
 -- quicksort, but will not cause another map-reduce job. That's good news unless
 -- some bags are so huge they challenge available RAM or CPU, which won't be
 -- subtle.
--- 
+--
 -- If you depend on having a certain sorting, specify it explicitly, even when
 -- you notice that a `GROUP..BY` or some other operation seems to leave it in
 -- that desired order. It gives a valuable signal to anyone reading your code,

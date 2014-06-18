@@ -8,7 +8,7 @@ SET opt.multiquery          false
 SET pig.exec.mapPartAgg.minReduction  8
 ;
 
-DEFINE LastEventInBag org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('2', 'max');  
+DEFINE LastEventInBag org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('2', 'max');
 
 -- === Selecting Records Associated with Maximum Values
 
@@ -70,7 +70,7 @@ events_final_event_orderfirst = FOREACH (GROUP events BY game_id) {
 
 --
 -- If you'll pardon a nonsensical question,
--- 
+--
 nonsense_final_event = FOREACH (GROUP events BY event_desc)
   GENERATE FLATTEN(LastEventInBag(events));
 

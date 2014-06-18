@@ -61,7 +61,7 @@ DUMP     top_H_season;
 -- STORE_TABLE(t2, 't2');
 
 
--- DEFINE MostHits org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('1', 'max');  
+-- DEFINE MostHits org.apache.pig.piggybank.evaluation.ExtremalTupleByNthField('1', 'max');
 -- top_H_season = FOREACH (GROUP H_seasons BY year_id) {
 --   top_k     = TOP(10, 0, H_seasons);
 --   top_1     = MostHits(H_seasons);
@@ -77,17 +77,17 @@ DUMP     top_H_season;
 --     -- top_1_bag.H AS tH, -- :bag{t:(t1H:int)},
 --     top_k.(player_id, H) AS top_k;
 -- };
--- 
+--
 -- top_H_season_2 = FOREACH top_H_season {
 --   top_k_o = FILTER top_k BY (H >= max_H);
 --   -- firsties = CROSS top_k, tH;
 --   -- top_k_o = ORDER top_k BY H DESC;
 --   GENERATE year_id, max_H, top_k_o;
 -- };
--- 
+--
 -- DESCRIBE top_H_season;
 -- DESCRIBE top_H_season_2;
--- 
+--
 -- -- DUMP top_H_season;
 -- DUMP top_H_season_2;
 

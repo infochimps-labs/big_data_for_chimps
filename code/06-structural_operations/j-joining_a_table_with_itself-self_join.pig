@@ -3,7 +3,7 @@ IMPORT 'summarizer_bot_9000.pig';
 
 SET pig.auto.local.enabled true
   ;
-  
+
 bat_seasons = load_bat_seasons();
 one_line    = load_one_line();
 
@@ -12,7 +12,7 @@ one_line    = load_one_line();
 -- === Joining a Table with Itself (self-join)
 --
 
--- Joining a table with itself is very common when you are analyzing relationships of elements within the table (when analyzing graphs or working with datasets represented as attribute-value lists it becomes predominant.) Our example here will be to identify all teammates pairs: players listed as having played for the same team in the same year. The only annoying part about doing a self-join in Pig is that you can't, at least not directly. Pig won't let you list the same table in multiple slots of a JOIN statement, and also won't let you just write something like `"mytable_dup = mytable;"` to assign a new alias footnote:[If it didn't cause such a surprisingly hairy set of internal complications, it would have long ago been fixed]. Instead you have to use a FOREACH or somesuch to create a duplicate representative. If you don't have any other excuse, use a project-star expression: `p2 = FOREACH p1 GENERATE *;`. In this case, we already need to do a projection; we feel the most readable choice is to repeat the statement twice. 
+-- Joining a table with itself is very common when you are analyzing relationships of elements within the table (when analyzing graphs or working with datasets represented as attribute-value lists it becomes predominant.) Our example here will be to identify all teammates pairs: players listed as having played for the same team in the same year. The only annoying part about doing a self-join in Pig is that you can't, at least not directly. Pig won't let you list the same table in multiple slots of a JOIN statement, and also won't let you just write something like `"mytable_dup = mytable;"` to assign a new alias footnote:[If it didn't cause such a surprisingly hairy set of internal complications, it would have long ago been fixed]. Instead you have to use a FOREACH or somesuch to create a duplicate representative. If you don't have any other excuse, use a project-star expression: `p2 = FOREACH p1 GENERATE *;`. In this case, we already need to do a projection; we feel the most readable choice is to repeat the statement twice.
 
 -- -- Pig disallows self-joins so this won't work:
 -- wont_work = JOIN bat_seasons BY (team_id, year_id), bat_seasons BY (team_id, year_id);
@@ -34,7 +34,7 @@ teammate_pairs = FOREACH (JOIN
     p2::player_id AS pl2;
 teammate_pairs = FILTER teammate_pairs BY NOT (pl1 == pl2);
 
--- As opposed to the previous section's slight many-to-many expansion, there are on average ZZZ players per roster to be paired. The result set here is explosively larger: YYY pairings from the original XXX player seasons, an expansion of QQQ footnote:[See the example code for details]. Now you might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "QQQ average players per team, so QQQ times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum. 
+-- As opposed to the previous section's slight many-to-many expansion, there are on average ZZZ players per roster to be paired. The result set here is explosively larger: YYY pairings from the original XXX player seasons, an expansion of QQQ footnote:[See the example code for details]. Now you might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "QQQ average players per team, so QQQ times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum.
 
 -- The 78,000 player seasons we joined onto the team-parks-years table In
 -- contrast, a similar JOIN expression turned 78,000 seasons into 2,292,658
@@ -73,7 +73,7 @@ teammates = ORDER teammates BY n_mates ASC;
 --
 
 stats_info    = FOREACH (GROUP p1 ALL) GENERATE
-  COUNT_STAR(p1)             AS n_seasons;  
+  COUNT_STAR(p1)             AS n_seasons;
 tm_pair_info  = FOREACH (GROUP teammate_pairs ALL) GENERATE
   COUNT_STAR(teammate_pairs) AS n_mates_all;
 teammate_info = FOREACH (GROUP teammates      ALL) GENERATE
@@ -90,7 +90,7 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 -- --   SQRT(VAR(roster_sizes.n_players)) AS roster_size_stdv,
 -- --   MIN(roster_sizes.n_players) AS roster_size_min,
 -- --   MAX(roster_sizes.n_players) AS roster_size_max;
--- 
+--
 -- --
 -- -- The one_line.tsv table is a nice trick for accumulating several scalar
 -- -- projections.
@@ -101,7 +101,7 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 --   -- 'n_pairs',     (long)tm_pair_info.n_mates_all   AS n_mates_all,
 --   -- 'n_teammates', (long)teammate_info.n_mates_dist AS n_mates_dist,
 --   (long)roster_info.minval,
---   (long)roster_info.maxval, 
+--   (long)roster_info.maxval,
 --   (long)roster_info.avgval,
 --   (long)roster_info.stddev
 --   ;
@@ -110,7 +110,7 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 -- -- --
 -- -- -- n_players       16151   n_seasons       77939   n_pairs 2292658 n_teammates     1520460
 -- -- --
--- 
+--
 -- EXPLAIN teammates_summary;
 
 
@@ -121,7 +121,7 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 --     p1::player_id AS pl1,        p2::player_id AS pl2,
 --     p1::team_id   AS p1_team_id, p1::year_id   AS p1_year_id;
 -- teammate_pairs = FILTER teammate_pairs BY NOT (pl1 == pl2);
--- 
+--
 -- teammates = FOREACH (GROUP teammate_pairs BY pl1) {
 --   years = DISTINCT teammate_pairs.p1_year_id;
 --   mates = DISTINCT teammate_pairs.pl2;
@@ -132,5 +132,5 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 --     BagToString(teams,';') AS teams,
 --     BagToString(mates,';') AS mates;
 --   };
--- 
+--
 -- teammates = ORDER teammates BY n_mates DESC;

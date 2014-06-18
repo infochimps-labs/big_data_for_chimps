@@ -1,6 +1,6 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
--- 
+--
 -- SET opt.multiquery            false;
 
 -- Run the script 'f-summarizing_multiple_subsets_simultaneously.pig' beforehand
@@ -46,7 +46,7 @@ career_older = ORDER career_epochs
 --
 career_older = ORDER career_epochs
   BY n_older DESC, n_prime DESC, player_id ASC; -- makes sure that ties are always broken the same way.
-  
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Sorting on an Expression (You Can't)

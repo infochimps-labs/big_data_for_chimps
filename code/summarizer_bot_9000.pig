@@ -34,8 +34,8 @@ DEFINE numeric_summary_header() RETURNS header {
   $header = FOREACH one GENERATE
     'field',
     'min',    'p01',     'p05',   'p10', 'p50',     'p90',
-    'p95',    'p99',     'max',   'avg', 'stddev',  'sum', 
-    'n_recs', 'n_nulls', 'cardinality',  'examples';    
+    'p95',    'p99',     'max',   'avg', 'stddev',  'sum',
+    'n_recs', 'n_nulls', 'cardinality',  'examples';
 };
 
 DEFINE strings_summary_header() RETURNS header {
@@ -45,7 +45,7 @@ DEFINE strings_summary_header() RETURNS header {
     'minlen', 'p01len', 'p05len', 'p10len', 'p50len', 'p90len', 'p95len', 'p99len', 'maxlen',
     'avglen', 'stdvlen',
     'sumlen',
-    'n_recs', 'n_nulls', 'cardinality', 
+    'n_recs', 'n_nulls', 'cardinality',
     'minval', 'maxval',
-    'examples';    
+    'examples';
 };

@@ -19,7 +19,7 @@ peeps       = load_people();
 -- stories. even if you aren't into baseball this celebration of the diversity
 -- of our human race and the exuberance of identity should fill you with
 -- wonder.)
--- 
+--
 -- But have you heard recounted the storied diamond exploits of Firpo Mayberry,
 -- Zoilo Versalles, Pi Schwert or Bevo LeBourveau?  OK, then how about
 -- Mysterious Walker, The Only Nolan, or Phenomenal Smith?  Mul Holland, Sixto

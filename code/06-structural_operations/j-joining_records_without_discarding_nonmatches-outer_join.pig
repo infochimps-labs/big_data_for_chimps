@@ -20,10 +20,10 @@ park_teams   = load_park_tm_yr();
 -- (Import prose)
 
 career_stats = FOREACH (
-  JOIN 
+  JOIN
     bat_careers BY player_id LEFT OUTER,
     batting_hof BY player_id) GENERATE
-  bat_careers::player_id..bat_careers::OPS, allstars::year_id AS hof_year;    
+  bat_careers::player_id..bat_careers::OPS, allstars::year_id AS hof_year;
 
 -- Since the batting_hof table has exactly one row per player, the output has exactly as many rows as the career stats table, and exactly as many non-null rows as the hall of fame table.
 --
@@ -35,18 +35,18 @@ career_stats = FOREACH (
 -- (Code to count records)
 
 -- In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" JOIN instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
--- 
+--
 -- TODO: discuss use of left join for set intersection.
--- 
+--
 -- In a Pig JOIN it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (TODO:  REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
--- 
+--
 -- ------
 -- NOTE
 -- A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
 -- ------
 
 -- (Note about join on null keys)
--- 
+--
 -- (Note about left-right and placement within the statement)
 
 -- ==== Joining Tables that do not have a Foreign-Key Relationship
@@ -65,8 +65,8 @@ geolocated_somewhat = JOIN
 -- (Question do we talk about the problems of multiple matches on name here, or do we quietly handle it?)
 
 --
--- Experienced database hands might now suggest doing a join using some sort of fuzzy-match 
--- match or some sort of other fuzzy equality. However, in map-reduce the only kind of join you can do is an "equi-join" -- one that uses key equality to match records. Unless an operation is 'transitive' -- that is, unless `a joinsto b` and `b joinsto c` guarantees `a joinsto c`, a plain join won't work, which rules out approximate string matches; joins on range criteria (where keys are related through inequalities (x < y)); graph distance; geographic nearness; and edit distance. You also can't use a plain join on an 'OR' condition: "match stadiums and places if the placename and state are equal or the city and state are equal", "match records if the postal code from table A matches any of the component zip codes of place B". Much of the middle part of this book centers on what to do when there _is_ a clear way to group related records in context, but which is more complicated than key equality. 
+-- Experienced database hands might now suggest doing a join using some sort of fuzzy-match
+-- match or some sort of other fuzzy equality. However, in map-reduce the only kind of join you can do is an "equi-join" -- one that uses key equality to match records. Unless an operation is 'transitive' -- that is, unless `a joinsto b` and `b joinsto c` guarantees `a joinsto c`, a plain join won't work, which rules out approximate string matches; joins on range criteria (where keys are related through inequalities (x < y)); graph distance; geographic nearness; and edit distance. You also can't use a plain join on an 'OR' condition: "match stadiums and places if the placename and state are equal or the city and state are equal", "match records if the postal code from table A matches any of the component zip codes of place B". Much of the middle part of this book centers on what to do when there _is_ a clear way to group related records in context, but which is more complicated than key equality.
 
 -- exercise: are either city dwellers or country folk over-represented among major leaguers? Selecting only places with very high or very low population in the geonames table might serve as a sufficient measure of urban-ness; or you could use census data and the methods we cover in the geographic data analysis chapter to form a more nuanced indicator. The hard part will be to baseline the data for population: the question is how the urban vs rural proportion of ballplayers compares to the proportion of the general populace, but that distribution has changed dramatically over our period of interest. The US has seen a steady increase from a rural majority pre-1920 to a four-fifths majority of city dwellers today.
 

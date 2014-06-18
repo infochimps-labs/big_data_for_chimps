@@ -56,7 +56,7 @@ team_games = COGROUP
 -- the COGROUP statement as you like; their bags-of-records will be deposited in
 -- the correspondingly subsequent slots of the output records.
 --
--- The last step to forming the 
+-- The last step to forming the
 --
 
 team_yr_win_loss = FOREACH team_games {

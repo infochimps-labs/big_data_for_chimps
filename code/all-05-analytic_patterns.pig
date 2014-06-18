@@ -10,7 +10,7 @@ park_teams   = load_park_teams();
 -- === Selecting Rows that Satisfy a Condition @modern_stats
 --
 
--- Only Modern seasons 
+-- Only Modern seasons
 modern_stats = FILTER bat_seasons BY (year_id >= 1900);
 
 
@@ -20,7 +20,7 @@ modern_stats = FILTER bat_seasons BY (year_id >= 1900);
 --
 
 -- Modern seasons of more than 450 PA
-modsig_stats = FILTER bat_seasons BY 
+modsig_stats = FILTER bat_seasons BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
 
 
@@ -31,7 +31,7 @@ modsig_stats = FILTER bat_seasons BY
 
 -- Doesn't start with a capital letter, or contains a non-word non-space character
 funnychars = FILTER people BY
-  (name_last  MATCHES '^([^A-Z]|.*[^\\w\\s]).*') OR 
+  (name_last  MATCHES '^([^A-Z]|.*[^\\w\\s]).*') OR
   (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 
 
@@ -79,7 +79,7 @@ game_scores = FOREACH games GENERATE
 --
 
 games_a = FOREACH games GENERATE
-  home_team_id AS team,     year_id, 
+  home_team_id AS team,     year_id,
   home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
 games_b = FOREACH games GENERATE
   away_team_id AS team,     year_id,
@@ -126,7 +126,7 @@ some_seasons_bypl  = FOREACH (
 
 bat_seasons_md = LOAD '$rawd/sports/baseball/bats_lite.tsv'
   USING PigStorage('\t', '-tagMetadata') AS (
-  metadata: map[], 
+  metadata: map[],
   player_id:chararray, year_id:int,
   team_id:chararray,   lg_id:chararray,
   age: int,  G:int,     PA:int,    AB:int,
@@ -164,7 +164,7 @@ STORE_TABLE(some_players, 'some_players');
 
 --
 -- ==== LIMIT .. DUMP
--- 
+--
 
 -- The main use of a LIMIT statement, outside of an ORDER BY..LIMIT stanza, is
 -- before dumping data
@@ -211,14 +211,14 @@ core_stats  = FOREACH bat_seasons {
 
 -- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- --
--- 
+--
 -- junk_drawer = FOREACH bat_seasons {
---   
+--
 --   -- Concatenating Several Values into a Single String
 --   full_name  = CONCAT(name_first, ' ', name_last);
 --   -- Converting the Lettercase of a String
 --   name_shouty = UPPER(name_last);
--- 
+--
 --   -- Extracting Characters from a String by Offset
 --   initials = CONCAT(
 --     SUBSTRING(name_first, 0, 1), '. ',
@@ -226,16 +226,16 @@ core_stats  = FOREACH bat_seasons {
 --   --   The first index in SUBSTRING gives the start, counting from zero.
 --   --   The second index gives the _character after the end_.
 --   -- Select second through fourth characters with `1, 5`. Makes sense to me!
---   chars234 = SUBSTRING(name_first, 1, 5); 
--- 
+--   chars234 = SUBSTRING(name_first, 1, 5);
+--
 --   --   Selecting past the end of a string just takes what's there to take.
 --   tail_end     = SUBSTRING(player_id, 6, 99);
 --   way_past_end = SUBSTRING(player_id, 69, 99);
--- 
+--
 --   -- Handling Special Characters in Strings
 --   string_that_will_cause_problems = 'here is a newline:\n'
 
-    
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Transforming Nulls into Real Values
@@ -364,8 +364,8 @@ franchises = load_franchises();
 -- (We'll demonstrate a much better tokenizer in the chapter on text data (REF)).
 -- The return schema of tokenize is a bag of tuples each holding one word:
 -- FLATTEN turns that into one record per word.
--- 
--- Washington's bad habit of losing franchises makes it the most common token. 
+--
+-- Washington's bad habit of losing franchises makes it the most common token.
 
 tn_toks    = FOREACH franchises
   GENERATE FLATTEN(TOKENIZE(franchName)) AS token;
