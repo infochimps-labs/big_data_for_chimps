@@ -26,8 +26,15 @@ vals = FOREACH (GROUP bat_seasons BY (player_id, name_first, name_last)) GENERAT
 seasons_hist = FOREACH (GROUP vals BY bin) {
   some_vals = LIMIT vals 3;
   GENERATE group AS bin, COUNT_STAR(vals) AS ct, BagToString(some_vals, '|');
-}
+};
 
+-- So the pattern here is to
+-- 
+-- * project only the values,
+-- * Group by the values,
+-- * Produce the group as key and the count as value.
+
+  
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Binning Data for a Histogram

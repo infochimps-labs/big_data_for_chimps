@@ -5,10 +5,6 @@
 --
 
 --
--- The "Summing trick" is a frequently useful way to identify subsets of a group
--- without having to perform multiple GROUP BY operatons. Think of it every time
--- you find yourself thinking "gosh, this sure seems like a lot of reduce steps"
---
 --
 -- Let's make a
 -- QEM: need to complete sentence/idea

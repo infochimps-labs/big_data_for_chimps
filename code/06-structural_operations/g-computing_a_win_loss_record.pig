@@ -2,6 +2,14 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 
 games = load_games();
 
+
+-- ***************************************************************************
+--
+-- === Co-Grouping Records Across Tables by Common Key
+--
+
+
+
 -- ***************************************************************************
 --
 -- === Computing a Won-Loss Record

@@ -1,13 +1,13 @@
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 -- You will need to first generate the career stats by running
--- 06-structural_operations/b-summarizing_aggregate_statistics_of_a_group.pig:DESCRIBE
+-- 06-structural_operations/b-summarizing_aggregate_statistics_of_a_group.pig
 bat_careers = LOAD_RESULT('bat_careers');
 peeps       = load_people();
 
 -- ***************************************************************************
 --
--- === Joining Records in a Table with Corresponding Records in Another Table (Inner Join)
+-- === Joining Records in a Table with Matching Records in Another (Inner Join)
 --
 -- // alternate title??: Matching Records Between Tables (Inner Join)
 

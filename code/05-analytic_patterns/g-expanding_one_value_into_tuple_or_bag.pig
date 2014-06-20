@@ -16,33 +16,28 @@ franchises = load_franchises();
 -- ==== Splitting a String into its Characters
 --
 
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- ==== Tokenizing a String into Words
---
+
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- ==== Generate a Record for Each Word in a String
+-- ==== Tokenizing the Words in a String
 --
-
 
 -- The TOKENIZE command
--- is a fast-and-dirty way to break a string into words
+-- is a fast-and-dirty way to break a string into words.
 -- (We'll demonstrate a much better tokenizer in the chapter on text data (REF)).
--- The return schema of tokenize is a bag of tuples each holding one word:
--- FLATTEN turns that into one record per word.
---
--- Washington's bad habit of losing franchises makes it the most common token.
+-- The return schema of tokenize is a bag of words footnote:[Technically, a bag of tuples each containing one word, as the direct contents of a bag are always tuples], which
+-- FLATTEN turns into one record per word.
+-- The follow-on code groups all words and produces the count of occurrences for each word; we'll explain how group and friends work in the next chapter
 
 tn_toks    = FOREACH franchises
   GENERATE FLATTEN(TOKENIZE(franchName)) AS token;
 tn_toks_ct = FOREACH (GROUP tn_toks BY token)
   GENERATE group AS token,
   COUNT_STAR(tn_toks.token) AS tok_ct;
-
-team_toks  = ORDER tn_toks_ct BY tok_ct ASC;
-
+-- Only retain the top million tokens
+team_toks  = ORDER tn_toks_ct BY tok_ct DESC;
+wp_toks    = LIMIT wp_toks 1000000;
 rmf                   $out_dir/team_toks;
 STORE team_toks INTO '$out_dir/team_toks';
 

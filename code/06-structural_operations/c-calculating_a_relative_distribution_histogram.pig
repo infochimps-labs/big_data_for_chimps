@@ -33,6 +33,13 @@ park_teams   = load_park_teams();
 --
 -- Typecasting the projected field as if you were simply converting the schema of a field from one scalar type to another acts as a promise to Pig  that what looks like column of possibly many values will turn out to have only row. In return, Pig will understand that you want a sort of über-typecast of the projected column into what is effectively its literal value.
 --
+
+
+-- ***************************************************************************
+--
+-- === Re-injecting Global Values
+--
+
 -- ==== Re-injecting global totals
 --
 -- Sometimes things are more complicated, and what you'd like to do is perform light synthesis of the results of some initial Hadoop jobs, then bring them back into your script as if they were some sort of "global variable". But a pig script just orchestrates the top-level motion of data: there's no good intrinsic ways to bring the result of a step into the declaration of following steps. You can use a backhoe to tear open the trunk of your car, but it's not really set up to push the trunk latch button. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
@@ -61,3 +68,5 @@ park_teams   = load_park_teams();
 -- ------
 --
 -- As we said, this is a cheat-to-win scenario: using it to knock three minutes off an eight minute job is canny when used to make better use of a human data scientist's time, foolish when applied as a production performance optimization.
+
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';

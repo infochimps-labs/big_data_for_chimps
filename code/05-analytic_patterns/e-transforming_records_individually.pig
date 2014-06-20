@@ -77,6 +77,11 @@ core_stats  = FOREACH bat_seasons {
 -- ==== Replacing Sections of a String using a Regular Expression
 --
 
+
+-- ==== Choosing a Value Conditionally
+
+-- demonstrate case and ternary statements (combine/move demonstration in filter section?)
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- === A Nested FOREACH Allows Intermediate Expressions

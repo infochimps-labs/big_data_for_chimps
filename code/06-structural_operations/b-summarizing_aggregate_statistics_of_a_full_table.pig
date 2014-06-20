@@ -2,8 +2,6 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 
 bat_seasons = load_bat_seasons();
 
--- ?? Move forward to the stats chapter?.
-
 -- ***************************************************************************
 --
 -- === Summarizing Aggregate Statistics of a Full Table
@@ -13,7 +11,7 @@ bat_seasons = load_bat_seasons();
 
 bat_seasons = FOREACH bat_seasons GENERATE *, (float)HR*HR AS HRsq:float;
 
-hr_stats = FOREACH (GROUP bat_seasons ALL) {
+hr_info = FOREACH (GROUP bat_seasons ALL) {
   hrs_distinct = DISTINCT bat_seasons.HR;
   GENERATE
     MIN(bat_seasons.HR)        AS hr_min,
@@ -28,5 +26,6 @@ hr_stats = FOREACH (GROUP bat_seasons ALL) {
     ;
   }
 
-rmf                  $out_dir/hr_stats;
-STORE hr_stats INTO '$out_dir/hr_stats';
+-- Note the syntax of the full-table group statement. There's no I in TEAM, and no BY in GROUP ALL.
+    
+STORE_TABLE(hr_info, 'hr_info');
