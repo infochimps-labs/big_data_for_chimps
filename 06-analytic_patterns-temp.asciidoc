@@ -561,12 +561,11 @@ What binsize? These zoom in on the tail -- more than 2000 games played. A bin si
 
 ===== Binsize too small
 
-images::images/06-histograms-career_G-binsize_2.png
+image::images/06-histograms-career_G-binsize_2.png[]
 
 ===== Binsize too large
 
-images/06-histograms-career_G-binsize_200.png
-
+image::images/06-histograms-career_G-binsize_200.png[]
 
 ==== Interpreting Histograms and Quantiles
 
