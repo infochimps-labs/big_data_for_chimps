@@ -1,7 +1,6 @@
 %DEFAULT dsfp_dir '/Users/flip/ics/data_science_fun_pack';
 
 DEFINE STORE_TABLE(table, filename) RETURNS void {
-  DESCRIBE $table;
   STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
 };
 

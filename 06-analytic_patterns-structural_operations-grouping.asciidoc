@@ -134,7 +134,6 @@ three, four, even seven home stadiums? This demands a closer look.
 
 === Representing a Collection of Values with a Delimited String
 
-
 Let's keep the count of parks, but also list the parks themselves for
 inspection.  We could keep dumping the values in Pig's oddball output format,
 but this is a good opportunity to introduce a very useful pattern:
@@ -189,17 +188,16 @@ where we want to serialize an object with simple attribute-value pairs, by
 using two delimiters: one for separating list elements and one for delimiting
 its contents.
 
-------
+--------
 team_year_w_pkgms = FOREACH (GROUP park_teams BY (team_id,year_id)) {
   pty_ordered     = ORDER park_teams BY n_games DESC;
   pk_ng_pairs     = FOREACH pty_ordered GENERATE
     CONCAT(park_id, ':', (chararray)n_games) AS pk_ng_pair;
-  --
   GENERATE group.team_id, group.year_id,
     COUNT_STAR(park_teams) AS n_parks,
     BagToString(pk_ng_pairs,'|') AS pk_ngs;
   };
-------
+--------
 
 Whoa, a few new things going on here. We've snuck the ORDER BY statement into
 a few previous examples even though it won't be covered until later in the
@@ -216,10 +214,10 @@ method expects a `chararray`.) The final GENERATE line creates records naming
 the team, the count of parks, and the list of park-usages pairs:
 
 ------
--- ALT  1   ALT01:18
--- ANA  1   ANA01:82
--- ...
--- CL4  7   CLE05:40|PHI09:9|STL05:2|ROC02:2|CLL01:2|CHI08:1|ROC03:1
+ALT  1   ALT01:18
+ANA  1   ANA01:82
+...
+CL4  7   CLE05:40|PHI09:9|STL05:2|ROC02:2|CLL01:2|CHI08:1|ROC03:1
 ------
 
 
@@ -246,7 +244,6 @@ they played 50 straight on the road, won fewer than 13% of their games
 overall (20-134, the worst single-season record ever) and immediately
 disbanded at season's end.
 
-
 ==== Representing a Complex Data Structure with a JSON-encoded String
 
 So their extreme position is not a mistake; is it an anomaly? The first three
@@ -260,9 +257,7 @@ what it says.
 pktm_city     = FOREACH park_teams GENERATE
   team_id, year_id, park_id, n_games,
   SUBSTRING(park_id, 0,3) AS city;
-------
 
-------
 -- First grouping: stats about each city of residence
 pktm_stats = FOREACH (GROUP pktm_city BY (team_id, year_id, city)) {
   pty_ordered   = ORDER   pktm_city BY n_games DESC;
@@ -277,6 +272,7 @@ pktm_stats = FOREACH (GROUP pktm_city BY (team_id, year_id, city)) {
     BagToString(pk_ct_pairs,'|') AS parks
     ;
 };
+
 ------
 
 The records we're forming are significantly more complex this time. With
@@ -317,16 +313,21 @@ farhome_gms = FOREACH (GROUP pktm_stats BY (team_id, year_id)) {
     ;
 };
 farhome_gms = ORDER farhome_gms BY n_cities DESC, n_farhome_gms DESC;
---
--- CL4	1898	   	57	17	17	6	CLE:40|PHI:9|ROC:3|STL:2|CLL:2|CHI:1	CLE05:40|PHI09:9|ROC02:2|ROC03:1|STL05:2|CLL01:2|CHI08:1
--- CLE	1902	   	65	5 	5 	5	CLE:60|FOR:2|COL:1|CAN:1|DAY:1      	CLE05:60|FOR03:2|COL03:1|CAN01:1|DAY01:1
--- ...
--- MON	2003	mod	81	22	22	2	MON:59|SJU:22                       	MON02:59|SJU01:22
--- MON	2004	mod	80	21	21	2	MON:59|SJU:21                       	MON02:59|SJU01:21
--- ...
--- CHA	1969	mod	81	11	11	2	CHI:70|MIL:11                       	CHI10:70|MIL05:11
--- CHA	1968	mod	81	9 	9 	2	CHI:72|MIL:9                        	CHI10:72|MIL05:9
--- BRO	1957	mod	77	8 	8 	2	NYC:69|JER:8                        	NYC15:69|JER02:8
+
+------
+
+Here's a sample of the output:
+
+------
+CL4	1898	   	57	17	17	6	CLE:40|PHI:9|ROC:3|STL:2|CLL:2|CHI:1	CLE05:40|PHI09:9|ROC02:2|ROC03:1|STL05:2|CLL01:2|CHI08:1
+CLE	1902	   	65	5 	5 	5	CLE:60|FOR:2|COL:1|CAN:1|DAY:1   CLE05:60|FOR03:2|COL03:1|CAN01:1|DAY01:1
+...
+MON	2003	mod	81	22	22	2	MON:59|SJU:22                       	MON02:59|SJU01:22
+MON	2004	mod	80	21	21	2	MON:59|SJU:21                       	MON02:59|SJU01:21
+...
+CHA	1969	mod	81	11	11	2	CHI:70|MIL:11                       	CHI10:70|MIL05:11
+CHA	1968	mod	81	9 	9 	2	CHI:72|MIL:9                        	CHI10:72|MIL05:9
+BRO	1957	mod	77	8 	8 	2	NYC:69|JER:8                        	NYC15:69|JER02:8
 ------
 
 Inspecting the data answers the question of whether the Spiders were an
@@ -372,8 +373,6 @@ conceivably baseline the jet-powered computer-optimized schedules of the
 present against the night-train wanderjahr of Cleveland Spiders and other
 early teams.
 
-
-
 === Group and Aggregate
 
 Some of the happiest moments you can have analyzing a massive data set come
@@ -392,6 +391,7 @@ pipeline operations, we only did so on a season-by-season basis.
 A group-and-aggregate on the seasonal stats starts us on the path to
 characterizing each player's career:
 
+------
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
   team_ids = DISTINCT bat_seasons.team_id;
   totG   = SUM(bat_seasons.G);   totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
@@ -411,6 +411,8 @@ bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
     OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS
     ;
 };
+
+------
 
 ==== Completely Summarizing a Field
 
@@ -483,22 +485,14 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
     BagToString(some, '^')         AS some_vals
     ;
 };
+
 ------
-
-
-
-
-
 
 === Summarizing Aggregate Statistics of a Full Table
 
+To summarize the statistics of a full table, we use a `GROUP ALL` statement. That is, instead of `GROUP [table] BY [key]`, write `GROUP [table] ALL`. Everything else is as usual:
 
-
-To summarize the statistics of a full table, we use a `GROUP ALL` statement.
-That is, instead of `GROUP [table] BY [key]`, write `GROUP [table]
-ALL`. Everything else is as usual:
-
-
+.Summary of Weight Field
 ------
 weight_summary = FOREACH (GROUP bat_seasons ALL) {
   dist         = DISTINCT bat_seasons.weight;
@@ -514,7 +508,6 @@ weight_summary = FOREACH (GROUP bat_seasons ALL) {
     MIN(bat_seasons.weight)             AS min_val,
     FLATTEN(ApproxEdgeile(sorted))  AS (p01, p05, p50, p95, p99),
     MAX(bat_seasons.weight)             AS max_val,
-    --
     n_recs                          AS n_recs,
     n_recs - n_notnulls             AS n_nulls,
     COUNT_STAR(dist)                AS cardinality,
@@ -547,6 +540,7 @@ We showed how to examine the constituents of a string field in the preceding
 chapter, under "Tokenizing a String" (REF). But for forensic purposes similar
 to the prior example, it's useful to summarize their length distribution.
 
+.Summary of a String Field
 ------
 name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
   dist       = DISTINCT bat_seasons.name_first;
@@ -588,6 +582,7 @@ name_first_summary = FOREACH name_first_summary_0 {
     minval, maxval, examples
     ;
 };
+
 ------
 
 === Calculating the Distribution of Numeric Values with a Histogram
@@ -598,6 +593,7 @@ calculates the distribution of seasons played -- that is, it counts the
 number of players whose career lasted only a single season; who played for
 two seasons; and so forth, up
 
+.Histogram of Number of Seasons
 ------
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
 seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
@@ -619,17 +615,80 @@ So the pattern here is to
 
 ==== Binning Data for a Histogram
 
+Generating a histogram for games just as above produces mostly-useless output. There's no material difference between a career of 2000 games and one of 2001 games, but each value receives its own count -- making it hard to distinguish the density of 1-, 2-, and 3-count bins near 1000 games from the 1-, 2-, and 3-count bins near 1500 games. 
+
 ------
-H_vals = FOREACH bat_seasons GENERATE H;
-H_hist = FOREACH (GROUP H_vals BY H) GENERATE
-  group AS val, COUNT_STAR(H_vals) AS ct;
+-- Meaningless
+G_vals = FOREACH bat_seasons GENERATE G AS val;
+G_hist = FOREACH (GROUP G_vals BY val) GENERATE
+  group AS val, COUNT_STAR(G_vals) AS ct;
 ------
 
-What binsize? These zoom in on the tail -- more than 2000 games played. A bin size of 200 is too coarse; it washes out the legitimate gaps. The bin size of 2 is too fine -- the counts are small and there are many trivial gaps. We chose a bin size of 50 games; it's meaningful (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, while preserving the gaps that demonstrate the epic scope of the career of Pete Rose (our 3,562-game outlier).
+Instead, we will bin the data: divide by the bin size (50 in this case), force it to be a whole number using the `FLOOR` function footnote:[Since G is an `int`, you can probably leave off the `FLOOR` function. Your version might run 1% faster, but anyone reading our version knows _exactly_ what it means.], and then multiply back by the bin size. Values of 0, 12 and 49 all go to the `0` bin; Pete Rose's 3,562 games played becomes the only occupant of bin 3550.
+
+------
+-- Binning makes it sensible
+G_vals = FOREACH bat_seasons GENERATE 50*FLOOR(G/50) AS val;
+G_hist = FOREACH (GROUP G_vals BY val) GENERATE
+  group AS val, COUNT_STAR(G_vals) AS ct;
+------
+
+The
+
+===== Games Played -- linear
+
+images/06-histograms-career_G-linear.png
+
+==== Choosing a Bin Size
+
+What binsize? These zoom in on the tail -- more than 2000 games played. A bin size of 200 is too coarse; it washes out the legitimate gaps. The bin size of 2 is too fine -- the counts are small and there are many trivial gaps. We chose a bin size of 50 games; it's meaningful (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, while preserving the gaps that demonstrate the epic scope of Pete Rose's career.
+
+===== Binsize too small
+
+image::images/06-histograms-career_G-binsize_2.png[]
+
+===== Binsize too large
+
+image::images/06-histograms-career_G-binsize_200.png[]
 
 ==== Interpreting Histograms and Quantiles
 
 Different underlying mechanics will give different distributions.
+
+The histogram of career games 
+
+===== Games Played -- linear
+
+images::images/06-histograms-career_G-linear.png[Histogram of Career Games, Linear Axis]
+
+===== Games Played -- Log-Log plot
+
+It's easier to understand distributions that span as many orders of magnitude in both value and count, as this one does, using a 'log-log graph'. On a log-log graph, the axes display their original values but arrange them so that the same distance separates 1 from 10 as 10 from 100 and so on for any _ratio_ of values. 
+
+It is _not_ a long-tail distribution, as you can see by comparing a power-law fit (which is always a straight line on a log-log graph) to the actual curve.
+
+images::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-Log plot]
+
+==== Binning Data into Exponentially Sized Buckets
+
+In contrast, webpage views known to be are one of many phenomena that obey the "long-tail" distribution, as we can see by generating a histogram of hourly pageview counts for each Wikipedia page footnote:[For 11pm UTC on Oct 2nd, 2008, because that was what was nearby]. Since the data is so sharply exponential, we are better off binning it _logarithmically_. To do so we take the log of the value, chunk it (using the multiply-floor-undo method again), and then take the exponential to restore a representative value for the bin. (You'll notice we avoid trouble taking the logarithm of zero by feeding it an insignificantly small number instead. This lets zero be included in the processing without materially altering the result)
+
+------
+pagecount_views = LOAD '/data/out/wikipedia/pagecount-views.tsv' AS (val:long);
+
+view_vals = FOREACH pagecount_views GENERATE
+  (long)EXP( FLOOR(LOG((val == 0 ? 0.001 : val)) * 10)/10.0) AS bin;
+hist_wp_view = FOREACH (GROUP view_vals BY bin) GENERATE
+  group AS bin, COUNT_STAR(view_vals) AS ct;
+------
+
+images::06-histograms-pageviews-loglog[Histogram of Wikipedia Hourly Pageviews, Log-Log plot]
+
+The  result indeed is a nice sharp line on the log-log plot, and the logarithmic bins did a nice job of accumulating robust counts while preserving detail. Logarithmic bins are generally a better choice any time you're using a logarithmic x-axis because it means that the span of each bin is visually the same size, aiding interpretation.
+
+As you can see, you don't have to only bin linearly. Apply any function that takes piecewise segments of the domain and maps them sequentially to the integers, then undo that function to map those integers back to a central value of each segment. The Wikipedia webserver logs data also includes the total _bytes_ transferred per page; this data spans such a large range that we end up binning both logarithmically (to tame the upper range of values) and linearly (to tame the lower range of values) -- see the sample code for details.
+
+==== Creating Pig Macros for Common Stanzas
 
 ------
 DEFINE histogram(table, key) RETURNS dist {
@@ -648,7 +707,7 @@ DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
 };
 ------
 
-===== Distribution of Games Played
+==== Distribution of Games Played
 
 ------
 season_G_hist = histogram(bat_seasons, 'G');
@@ -659,6 +718,23 @@ career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 
 career_HR_hist = binned_histogram(bat_careers, 'HR', 10, 800);
 ------
+
+
+===== Games Played
+
+image::images/06-histograms-career_G-linear.png[histogram]
+
+==== Distribution of Games Played
+
+
+
+===== Height
+
+image::images/06-baseball_height_histogram.png[histogram]
+
+===== Weight
+
+image::images/06-baseball_weight_histogram.png[histogram]
 
 ===== Distribution of Birth and Death day of year
 
@@ -700,6 +776,14 @@ peep_hist = ORDER peep_hist BY attr, val;
 one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
 ht = FOREACH one GENERATE peep_stats.cts#'height';
 ------
+
+===== Births 
+image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
+
+===== Deaths
+
+image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
+
 
 ==== Extreme Populations and Confounding Factors
 
@@ -763,9 +847,7 @@ HR_hist  = FOREACH (GROUP bats BY HR) {
 
 Typecasting the projected field as if you were simply converting the schema of a field from one scalar type to another acts as a promise to Pig  that what looks like column of possibly many values will turn out to have only row. In return, Pig will understand that you want a sort of über-typecast of the projected column into what is effectively its literal value.
 
-=== Re-injecting Global Values
-
-==== Re-injecting global totals
+==== Re-injecting global values
 
 Sometimes things are more complicated, and what you'd like to do is perform light synthesis of the results of some initial Hadoop jobs, then bring them back into your script as if they were some sort of "global variable". But a pig script just orchestrates the top-level motion of data: there's no good intrinsic ways to bring the result of a step into the declaration of following steps. You can use a backhoe to tear open the trunk of your car, but it's not really set up to push the trunk latch button. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
 

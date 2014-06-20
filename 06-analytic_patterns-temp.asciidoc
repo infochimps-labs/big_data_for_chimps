@@ -539,15 +539,6 @@ career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 career_HR_hist = binned_histogram(bat_careers, 'HR', 10, 800);
 ------
 
-===== Games Played -- linear
-
-images/06-histograms-career_G-linear.png
-
-
-===== Games Played -- Logarithmic Y Axis
-
-images/06-histograms-career_G-linlog.png
-
 
 ==== Binning Data for a Histogram
 
@@ -559,13 +550,6 @@ H_hist = FOREACH (GROUP H_vals BY H) GENERATE
 
 What binsize? These zoom in on the tail -- more than 2000 games played. A bin size of 200 is too coarse; it washes out the legitimate gaps. The bin size of 2 is too fine -- the counts are small and there are many trivial gaps. We chose a bin size of 50 games; it's meaningful (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, while preserving the gaps that demonstrate the epic scope of the career of Pete Rose (our 3,562-game outlier).
 
-===== Binsize too small
-
-image::images/06-histograms-career_G-binsize_2.png[]
-
-===== Binsize too large
-
-image::images/06-histograms-career_G-binsize_200.png[]
 
 ==== Interpreting Histograms and Quantiles
 
