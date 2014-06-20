@@ -5,7 +5,7 @@ allstars    = load_allstars();
 
 -- ***************************************************************************
 --
--- === Selecting Records With No Match in Another Table (anti-join)
+-- === Selecting Only Records That Lack a Match in Another Table (anti-join)
 --
 -- QEM: needs prose (perhaps able to draw from prose file)
 
@@ -28,24 +28,7 @@ scrub_seasons_jn_f = FILTER scrub_seasons_jn
 scrub_seasons_jn   = FOREACH scrub_seasons_jn_f
   GENERATE bat_seasons::player_id..bat_seasons::RBI;
 
---
--- This is a good use of the fieldname-ellipsis syntax: to the reader it says
--- "all fields of bat_seasons, the exact members of which are of no concern".
--- (It would be even better if we could write `bat_seasons::*`, but that's not
--- supported in Pig <= 0.12.0.)
---
--- In a context where we did go on to care about the actual fields, that syntax
--- becomes an unstated assumption about not just what fields exist at this
--- stage, but what _order_ they occur in. We can try to justify why you wouldn't
--- use it with a sad story: Suppose you wrote `bat_seasons::PA..bat_seasons::HR`
--- to mean the counting stats (PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR). In
--- that case, an upstream rearrangement of the schema could cause fields to be
--- added or removed in a way that would be hard to identify. Now, that failure
--- scenario almost certainly won't happen, and if it did it probably wouldn't
--- lead to real problems, and if there were they most likely wouldn't be that
--- hard to track down. The true point is that it's lazy and unhelpful to the
--- reader. If you mean "PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR", then that's
--- what you should say.
+-- // This is a good use of the fieldname-ellipsis syntax: to the reader it says "all fields of bat_seasons, the exact members of which are of no concern". (It would be even better if we could write `bat_seasons::*`, but that's not supported in Pig <= 0.12.0.) In a context where we did go on to care about the actual fields, that syntax becomes an unstated assumption about not just what fields exist at this stage, but what _order_ they occur in. We can try to justify why you wouldn't use it with a sad story: Suppose you wrote `bat_seasons::PA..bat_seasons::HR` to mean the counting stats (PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR). In that case, an upstream rearrangement of the schema could cause fields to be added or removed in a way that would be hard to identify. Now, that failure scenario almost certainly won't happen, and if it did it probably wouldn't lead to real problems, and if there were they most likely wouldn't be that hard to track down. The true point is that it's lazy and unhelpful to the reader. If you mean "PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR", then that's what you should say.
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --

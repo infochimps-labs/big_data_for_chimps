@@ -1,0 +1,513 @@
+=== Joining Records in a Table with Matching Records in Another (Inner Join)
+
+// alternate title??: Matching Records Between Tables (Inner Join)
+
+==== Joining Records in a Table with Directly Matching Records from Another Table (Direct Inner Join)
+
+There is a stereotypical picture in baseball of a "slugger": a big fat man
+who comes to plate challenging your notion of what an athlete looks like, and
+challenging the pitcher to prevent him from knocking the ball for multiple
+bases (or at least far enough away to lumber up to first base). To examine
+the correspondence from body type to ability to hit for power (i.e. high
+SLG), we will need to join the `people` table (listing height and weight)
+with their hitting stats.
+
+
+------
+fatness = FOREACH peeps GENERATE
+  player_id, name_first, name_last,
+  height_in, weight_lb;
+lightly filter out players without statistically significant careers:
+(1000 PA is about two seasons worth of regular play. (TODO check, and make choice uniform)
+slugging_stats = FOREACH (FILTER bat_careers BY (PA > 1000))
+  GENERATE player_id, SLG;
+------
+
+The syntax of the join statement itself shouldn't be much of a surprise:
+
+------
+slugging_fatness_join = JOIN
+  fatness        BY player_id,
+  slugging_stats BY player_id;
+
+LIMIT slugging_fatness_join 20; DUMP @;
+...
+------
+
+Each output record from a JOIN simply consist of all the fields from the first table, in their original order, followed by the fields from a matching record in the second table, all in their original order. If you held up a piece of paper covering the right part of your screen you'd think you were looking at the original table.
+(This is in contrast to the records from a COGROUP: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.
+one thing you'll notice in the snippet is the notation `bat_careers::player_id`.
+
+------
+DESCRIBE slugging_fatness_join;
+{...}
+------
+
+===== Disambiguating Field Names With `::`
+
+As a consequence of flattening records from the fatness table next to records from the slugging_stats table, the two tables each contribute a field named `player_id`. Although _we_ privately know that both fields have the same value, Pig is right to insist on an unambiguous reference. The schema helpfully carries a prefix on each field disambiguating its table of origin.
+
+===== Body Type vs Slugging Average
+
+So having done the join, we finish by preparing the output:
+
+------
+FOREACH(JOIN fatness BY player_id, slugging_stats BY player_id) {
+  BMI = ROUND_TO(703.0*weight_lb/(height_in*height_in),1) AS BMI;
+  GENERATE bat_careers::player_id, name_first, name_last,
+    SLG, height_in, weight_lb, BMI;
+};
+------
+
+We added a field for BMI (Body Mass Index), a simple measure of body type found by diving a person's weight by their height squared (and, since we're stuck with english units, multiplying by 703 to convert to metric). Though BMI
+can't distinguish between 180 pounds of muscle and 180 pounds of flab, it reasonably controls for weight-due-to-tallness vs weight-due-to-bulkiness:
+beanpole Randy Johnson (6'10"/2.1m, 225lb/102kg) and pocket rocket Tim Raines (5'8"/1.7m, 160lb/73kb) both have a low BMI of 23; Babe Ruth (who in his later days was 6'2"/1.88m 260lb/118kb) and Cecil Fielder (of whom Bill James wrote "...his reported weight of 261 leaves unanswered the question of what he might weigh if he put his other foot on the scale") both have high BMIs well above 30 footnote:[The dataset we're using unfortunately only records players' weights at the start of their career, so you will see different values listed for Mr. Fielder and Mr. Ruth.]
+
+------
+SELECT bat.player_id, peep.nameCommon, begYear,
+    peep.weight, peep.height,
+    703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
+    PA, OPS, ISO
+  FROM bat_career bat
+  JOIN people peep ON bat.player_id = peep.player_id
+  WHERE PA > 500 AND begYear > 1910
+  ORDER BY BMI DESC
+  ;
+------
+
+=== How a Join Works
+
+So that you can effectively reason about the behavior of a JOIN, it's important that you have the following two-and-a-half ways to think about its operation: (a) as the equivalent of a COGROUP-and-FLATTEN; and (b) as the underlying map-reduce job it produces.
+
+==== A Join is a COGROUP+FLATTEN
+
+TODO: finish
+
+==== A Join is a Map/Reduce Job with a secondary sort on the Table Name
+
+The way to perform a join in map-reduce is similarly a particular application of the COGROUP we stepped through above. Even still, we'll walk through it mostly on its own --
+
+The mapper receives its set of input splits either from the bat_careers table or from the peep table and makes the appropriate transformations. Just as above (REF), the mapper knows which file it is receiving via either framework metadata or environment variable in Hadoop Streaming. The records it emits follow the COGROUP pattern: the join fields, anointed as the partition fields; then the index labeling the origin file, anointed as the secondary sort fields; then the remainder of the fields. So far this is just a transform (FOREACH) inlined into a cogroup.
+
+------
+mapper do
+  self.processes_models
+  config.partition_fields 1 # player_id
+  config.sort_fields      2 # player_id, origin_key
+RECORD_ORIGINS = [
+  /bat_careers/ => ['A', Baseball::BatCareer],
+  /players/     => ['B', Baseball::Player],
+]
+def set_record_origin!
+  RECORD_ORIGINS.each do |origin_name_re, (origin_index, record_klass)|
+    if config[:input_file]
+      [@origin_key, @record_klass] = [origin_index, record_klass]
+      return
+    end
+  end
+  # no match, fail
+  raise RuntimeError, "The input file name #{config[:input_file]} must match one of #{RECORD_ORIGINS.keys} so we can recognize how to handle it."
+end
+def start(*) set_record_origin! ; end
+def recordize(vals) @record_klass.receive(vals)
+def process(record)
+  case record
+  when CareerStats
+    yield [rec.player_id, @origin_idx, rec.slg]
+  when Player
+    yield [rec.player_id, @origin_key, rec.height_in, rec.weight_lb]
+  else raise "Impossible record type #{rec.class}"
+  end
+end
+end
+
+reducer do
+  def gather_records(group, origin_key)
+    records = []
+    group.each do |*vals|
+      if vals[1] != origin_key # We hit start of next table's keys
+        group.shift(vals)      # put it back before Mom notices
+        break                  # and stop gathering records
+      end
+      records << vals
+    end
+    return records
+  end
+
+
+  BMI_ENGLISH_TO_METRIC = 0.453592 / (0.0254 * 0.254)
+  def bmi(ht, wt)
+    BMI_ENGLISH_TO_METRIC * wt / (ht * ht)
+  end
+
+  def process_group(group)
+    players = gather_records(group, 'A'
+    # remainder are slugging stats
+    group.each do |player_id, _, slg|
+      players.each do |player_id,_, height_in, weight_lb|
+        # Pig would output all the fields from the JOIN,
+        # but we're inlining the follow-on FOREACH as well
+        yield [player_id, slg, height_in, weight_lb, bmi(height_in, weight_lb)]
+      end
+    end
+  end
+end
+------
+
+TODO-qem should I show the version that has just the naked join-like output ie. All the fields from each table, not including the BMI, as per slugging_fatness_join? And if so do I show it as well or instead?
+
+The output of the Join job will have one record for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the secondary sort ensures that for each key the reducer receives all the records for table A strictly followed by all records for table B. We gather all the A records in to an array, then on each B record emit the A records stapled to the B records. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In map/reduce, the table with the largest number of records per key should be assigned the last-occurring field group label; in Pig, that table should be named last in the JOIN statement.
+
+------
+stats_and_fatness = FOREACH (JOIN fatness BY player_id, stats BY player_id)
+  GENERATE fatness::player_id..BMI, stats::n_seasons..OPS;
+------
+
+===== Exercise
+
+Exercise: Explore the correspondence of weight, height and BMI to SLG using a
+medium-data tool such as R, Pandas or Excel. Spoiler alert: the stereotypes
+of the big fat slugger is quire true.
+
+==== Handling Nulls in Joins
+
+
+(add note) Joins on null values are dropped even when both are null. Filter nulls. (I can't come up with a good example of this)
+(add note) in contrast, all elements with null in a group _will_ be grouped as null. This can be dangerous when large number of nulls: all go to same reducer
+
+===== Other topics in JOIN-land:
+
+* See advanced joins: bag left outer join from DataFu
+* See advanced joins: Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
+* See Time-series: Range query using cross
+* See Time-series: Range query using prefix and UDFs (the ip-to-geo example)
+* See advanced joins: Sparse joins for filtering, with a HashMap (replicated)
+* Out of scope: Bitmap index
+* Out of scope: Bloom filter joins
+* See time-series: Self-join for successive row differences
+
+=== Enumerating a Many-to-Many Relationship
+
+In the previous examples there's been a direct pairing of each line in the
+main table with the unique line from the other table that decorates it.
+Therefore, there output had exactly the same number of rows as the larger
+input table. When there are multiple records per key, however, the the output
+will have one row for each _pairing_ of records from each table. A key with
+two records from the left table and 3 records from the right table yields six
+output records.
+
+------
+player_team_years = FOREACH bat_seasons GENERATE year_id, team_id, player_id;
+park_team_years   = FOREACH park_teams  GENERATE year_id, team_id, park_id;
+
+player_stadia = FOREACH (JOIN
+  player_team_years BY (year_id, team_id),
+  park_team_years   BY (year_id, team_id)
+  ) GENERATE
+  player_team_years::year_id AS year_id, player_team_years::team_id AS team_id,
+  player_id,  park_id;
+------
+
+By consulting the Jobtracker counters (map input records vs reduce output
+records) or by explicitly using Pig to count records, you'll see that the
+77939 batting_seasons became 80565 home stadium-player pairings. The
+cross-product behavior didn't cause a big explosion in counts -- as opposed
+to our next example, which will generate much more data.
+
+=== Joining a Table with Itself (self-join)
+
+Joining a table with itself is very common when you are analyzing relationships of elements within the table (when analyzing graphs or working with datasets represented as attribute-value lists it becomes predominant.) Our example here will be to identify all teammates pairs: players listed as having played for the same team in the same year. The only annoying part about doing a self-join in Pig is that you can't, at least not directly. Pig won't let you list the same table in multiple slots of a JOIN statement, and also won't let you just write something like `"mytable_dup = mytable;"` to assign a new alias footnote:[If it didn't cause such a surprisingly hairy set of internal complications, it would have long ago been fixed]. Instead you have to use a FOREACH or somesuch to create a duplicate representative. If you don't have any other excuse, use a project-star expression: `p2 = FOREACH p1 GENERATE *;`. In this case, we already need to do a projection; we feel the most readable choice is to repeat the statement twice.
+
+------
+-- Pig disallows self-joins so this won't work:
+wont_work = JOIN bat_seasons BY (team_id, year_id), bat_seasons BY (team_id, year_id);
+"ERROR ... Pig does not accept same alias as input for JOIN operation : bat_seasons"
+------
+
+That's OK, we didn't want all those stupid fields anyway; we'll just make two copies and then join
+the table copies to find all teammate pairs. We're going to say a player isn't their their own
+teammate, and so we also reject the self-pairs.
+
+------
+p1 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
+p2 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
+
+teammate_pairs = FOREACH (JOIN
+    p1 BY (team_id, year_id),
+    p2 by (team_id, year_id)
+  ) GENERATE
+    p1::player_id AS pl1,
+    p2::player_id AS pl2;
+teammate_pairs = FILTER teammate_pairs BY NOT (pl1 == pl2);
+------
+
+As opposed to the slight many-to-many expansion of the previous section, there are on average ZZZ players per roster to be paired. The result set here is explosively larger: YYY pairings from the original XXX player seasons, an expansion of QQQ footnote:[See the example code for details]. Now you might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "QQQ average players per team, so QQQ times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum.
+
+The 78,000 player seasons we joined onto the team-parks-years table In
+contrast, a similar JOIN expression turned 78,000 seasons into 2,292,658
+player-player pairs, an expansion of nearly thirty times
+
+(A simplification was made) footnote:[(or, what started as a footnote but should probably become a sidebar or section in the timeseries chapter -- QEM advice please) Our bat_seasons table ignores mid-season trades and only lists a single team the player played the most games for, so in infrequent cases this will identify some teammate pairs that didn't actually overlap. There's no simple option that lets you join on players' intervals of service on a team: joins must be based on testing key equality, and we would need an "overlaps" test. In the time-series chapter you'll meet tools for handling such cases, but it's a big jump in complexity for a small number of renegades. You'd be better off handling it by first listing every stint on a team for each player in a season, with separate fields for the year and for the start/end dates. Doing the self-join on the season (just as we have here) would then give you every _possible_ teammate pair, with some fraction of false pairings. Lastly, use a FILTER to reject the cases where they don't overlap. Any time you're looking at a situation where 5% of records are causing 150% of complexity, look to see whether this approach of "handle the regular case, then fix up the edge cases" can apply.]
+
+// SELECT DISTINCT b1.player_id, b2.player_id
+//   FROM bat_season b1, bat_season b2
+//   WHERE b1.team_id = b2.team_id          -- same team
+//     AND b1.year_id = b2.year_id          -- same season
+//     AND b1.player_id != b2.player_id     -- reject self-teammates
+//   GROUP BY b1.player_id
+//   ;
+
+=== Joining Records Without Discarding Non-Matches (Outer Join)
+
+The Baseball Hall of Fame is meant to honor the very best in the game, and each year a very small number of players are added to its rolls. It's a significantly subjective indicator, which is its cardinal virtue and its cardinal flaw -- it represents the consensus judgement of experts, but colored to some small extent by emotion, nostalgia, and imperfect quantitative measures. But as you'll see over and over again, the best basis for decisions is the judgement of human experts backed by data-driven analysis. What we're assembling as we go along this tour of analytic patterns isn't a mathematical answer to who the highest performers are, it's a basis for centering discussion around the right mixture of objective measures based on evidence and human judgement where the data is imperfect.
+
+So we'd like to augment the career stats table we assembled earlier with columns showing, for hall-of-famers, the year they were admitted, and a `Null` value for the rest. (This allows that column to also serve as a boolean indicator of whether the players were inducted). If you tried to use the JOIN operator in the form we have been, you'll find that it doesn't work. A plain JOIN operation keeps only rows that have a match in all tables, and so all of the non-hall-of-famers will be excluded from the result. (This differs from COGROUP, which retains rows even when some of its inputs lack a match for a key). The answer is to use an 'outer join'
+
+------
+career_stats = FOREACH (
+  JOIN
+    bat_careers BY player_id LEFT OUTER,
+    batting_hof BY player_id) GENERATE
+  bat_careers::player_id..bat_careers::OPS, allstars::year_id AS hof_year;
+------
+
+Since the batting_hof table has exactly one row per player, the output has exactly as many rows as the career stats table, and exactly as many non-null rows as the hall of fame table.
+
+footnote:[Please note that the `batting_hof` table excludes players admitted to the Hall of Fame based on their pitching record. With the exception of Babe Ruth -- who would likely have made the Hall of Fame as a pitcher if he hadn't been the most dominant hitter of all time -- most pitchers have very poor offensive skills and so are relegated back with the rest of the crowd]
+
+------
+-- (sample data)
+-- (Hank Aaron)... Year
+------
+
+In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" JOIN instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
+
+In a Pig JOIN it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (TODO:  REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
+
+NOTE: A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
+
+==== Joining Tables that do not have a Foreign-Key Relationship
+
+All of the joins we've done so far have been on nice clean values designed in advance to match records among tables. In SQL parlance, the career_stats and batting_hof tables both had player_id as a primary key (a column of unique, non-null values tied to each record's identity). The team_id field in the bat_seasons and park_team_years tables points into the teams table as a foreign key: an indexable column whose only values are primary keys in another table, and which may have nulls or duplicates. But sometimes you must match records among tables that do not have a polished mapping of values. In that case, it can be useful to use an outer join as the first pass to unify what records you can before you bring out the brass knuckles or big guns for what remains.
+
+Suppose we wanted to plot where each major-league player grew up -- perhaps as an answer in itself as a browsable map, or to allocate territories for talent scouts, or to see whether the quiet wide spaces of country living or the fast competition of growing up in the city better fosters the future career of a high performer. While the people table lists the city, state and country of birth for most players, we must geolocate those place names -- determine their longitude and latitude -- in order to plot or analyze them.
+
+There are geolocation services on the web, but they are imperfect, rate-limited and costly for commercial use footnote:[Put another way, "Accurate, cheap, fast: choose any two]. Meanwhile the freely-available geonames database gives geo-coordinates and other information on more than seven million points of interest across the globe, so for informal work it can make a lot of sense to opportunistically decorate whatever records match and then decide what to do with the rest.
+
+------
+geolocated_somewhat = JOIN
+  people BY (birth_city, birth_state, birth_country),
+  places BY (city, admin_1, country_id)
+------
+
+In the important sense, this worked quite well: XXX% of records found a match.
+(Question do we talk about the problems of multiple matches on name here, or do we quietly handle it?)
+
+Experienced database hands might now suggest doing a join using some sort of fuzzy-match
+match or some sort of other fuzzy equality. However, in map-reduce the only kind of join you can do is an "equi-join" -- one that uses key equality to match records. Unless an operation is 'transitive' -- that is, unless `a joinsto b` and `b joinsto c` guarantees `a joinsto c`, a plain join won't work, which rules out approximate string matches; joins on range criteria (where keys are related through inequalities (x < y)); graph distance; geographic nearness; and edit distance. You also can't use a plain join on an 'OR' condition: "match stadiums and places if the placename and state are equal or the city and state are equal", "match records if the postal code from table A matches any of the component zip codes of place B". Much of the middle part of this book centers on what to do when there _is_ a clear way to group related records in context, but which is more complicated than key equality.
+
+Exercise: are either city dwellers or country folk over-represented among major leaguers? Selecting only places with very high or very low population in the geonames table might serve as a sufficient measure of urban-ness; or you could use census data and the methods we cover in the geographic data analysis chapter to form a more nuanced indicator. The hard part will be to baseline the data for population: the question is how the urban vs rural proportion of ballplayers compares to the proportion of the general populace, but that distribution has changed dramatically over our period of interest. The US has seen a steady increase from a rural majority pre-1920 to a four-fifths majority of city dwellers today.
+
+=== Joining on an Integer Table to Fill Holes in a List
+
+In some cases you want to ensure that there is an output row for each
+potential value of a key. For example, a histogram of career hits will show
+that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits
+than the third-most player (Hank Aaron, 3771 hits) there are gaps in the
+output bins.
+
+To fill the gaps, generate a list of all the potential keys, then generate
+your (possibly hole-y) result table, and do a join of the keys list (LEFT
+OUTER) with results. In some cases, this requires one job to enumerate the
+keys and a separate job to calculate the results. For our purposes here, we
+can simply use the integer table. (We told you it was surprisingly useful!)
+
+If we prepare a histogram of career hits, similar to the one above for
+seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have
+so many more hits than the third-most player (Hank Aaron, 3771 hits) there
+are gaps in the output bins. To make it so that every bin has an entry, do an
+outer join on the integer table. (See, we told you the integers table was
+surprisingly useful.)
+
+------
+-- SQL Equivalent:
+SET @H_binsize = 10;
+SELECT bin, H, IFNULL(n_H,0)
+  FROM      (SELECT @H_binsize * idx AS bin FROM numbers WHERE idx <= 430) nums
+  LEFT JOIN (SELECT @H_binsize*CEIL(H/@H_binsize) AS H, COUNT(*) AS n_H
+    FROM bat_career bat GROUP BY H) hist
+  ON hist.H = nums.bin
+  ORDER BY bin DESC
+;
+------ 
+
+Regular old histogram of career hits, bin size 100
+
+------
+H_vals = FOREACH (GROUP bat_seasons BY player_id) GENERATE
+  100*ROUND(SUM(bat_seasons.H)/100.0) AS bin;
+H_hist_0 = FOREACH (GROUP H_vals BY bin) GENERATE
+  group AS bin, COUNT_STAR(H_vals) AS ct;
+------
+
+Generate a list of all the bins we want to keep, then perform a LEFT JOIN of bins with histogram
+counts. Missing rows will have a null `ct` value, which we can convert to zero.
+
+------
+H_bins = FOREACH (FILTER numbers_10k BY num0 <= 43) GENERATE 100*num0  AS bin;
+
+H_hist = FOREACH (JOIN H_bins BY bin LEFT OUTER, H_hist_0 BY bin) GENERATE
+  H_bins::bin,
+  ct,                    -- leaves missing values as null
+  (ct IS NULL ? 0 : ct)  -- converts missing values to zero
+;
+------
+
+=== Selecting Only Records That Lack a Match in Another Table (anti-join)
+
+A common use of a JOIN is to perform an effective filter on a large number of values -- the big brother of the pattern in section (REF). In this case (known as an 'anti-join'), we don't want to keep the selection table around afterwards
+
+------
+-- Project just the fields we need
+allstars_p  = FOREACH allstars GENERATE player_id, year_id;
+
+-- An outer join of the two will leave both matches and non-matches.
+scrub_seasons_jn = JOIN
+  bat_seasons BY (player_id, year_id) LEFT OUTER,
+  allstars_p  BY (player_id, year_id);
+
+-- ...and the non-matches will have Nulls in all the allstars slots
+scrub_seasons_jn_f = FILTER scrub_seasons_jn
+  BY allstars_p::player_id IS NULL;
+------
+
+Once the matches have been eliminated, pick off the first table's fields.
+The double-colon in 'bat_seasons::' makes clear which table's field we mean.
+The fieldname-ellipsis 'bat_seasons::player_id..bat_seasons::RBI' selects all
+the fields in bat_seasons from player_id to RBI, which is to say all of them.
+
+------
+scrub_seasons_jn   = FOREACH scrub_seasons_jn_f
+  GENERATE bat_seasons::player_id..bat_seasons::RBI;
+------
+
+// This is a good use of the fieldname-ellipsis syntax: to the reader it says "all fields of bat_seasons, the exact members of which are of no concern". (It would be even better if we could write `bat_seasons::*`, but that's not supported in Pig <= 0.12.0.) In a context where we did go on to care about the actual fields, that syntax becomes an unstated assumption about not just what fields exist at this stage, but what _order_ they occur in. We can try to justify why you wouldn't use it with a sad story: Suppose you wrote `bat_seasons::PA..bat_seasons::HR` to mean the counting stats (PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR). In that case, an upstream rearrangement of the schema could cause fields to be added or removed in a way that would be hard to identify. Now, that failure scenario almost certainly won't happen, and if it did it probably wouldn't lead to real problems, and if there were they most likely wouldn't be that hard to track down. The true point is that it's lazy and unhelpful to the reader. If you mean "PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR", then that's what you should say.
+
+
+
+
+=== Selecting Records Having a Match in Another Table (semi-join)
+
+
+Semi-join: just care about the match, don't keep joined table; anti-join is where you keep the non-matches and also don't keep the joined table. Again, use left or right so that the small table occurs first in the list. Note that a semi-join has only one row per row in dominant table -- so needs to be a cogroup and sum or a join to distinct'ed table (extra reduce, but lets you do a fragment replicate join.)
+
+Select player seasons where they made the all-star team.
+You might think you could do this with a join:
+
+------
+-- Don't do this... produces duplicates!
+bats_g    = JOIN allstar BY (player_id, year_id), bats BY (player_id, year_id);
+bats_as   = FOREACH bats_g GENERATE bats::player_id .. bats::HR;
+------
+
+The result is wrong, and even a diligent spot-check will probably fail to
+notice. You see, from 1959-1962 there were multiple All-Star games (!), and
+so each singular row in the `bat_season` table became two rows in the result
+for players in those years.
+
+------
+-- Project just the fields we need
+allstars_p = FOREACH allstars GENERATE player_id, year_id;
+------
+
+From 1959-1962 there were _two_ all-star games, and so the allstar table has multiple entries;
+this means that players will appear twice in the results!
+
+------
+-- Will not work: look for multiple duplicated rows in the 1959-1962 years
+allstar_seasons_broken_j = JOIN
+  bat_seasons BY (player_id, year_id) LEFT OUTER,
+  allstars_p  BY (player_id, year_id);
+allstar_seasons_broken   = FILTER allstar_seasons_broken_j
+  BY allstars_p::player_id IS NOT NULL;
+------
+
+Instead, in this case you must use a COGROUP.
+
+------
+-- Players with no entry in the allstars_p table have an empty allstars_p bag
+allstar_seasons_cg = COGROUP
+  bat_seasons BY (player_id, year_id),
+  allstars_p BY (player_id, year_id);
+------
+
+Select all cogrouped rows where there was an all-star record
+
+Project the batting table fields.
+
+------
+-- One row in the batting table => One row in the result
+allstar_seasons_cg = FOREACH
+  (FILTER allstar_seasons_cg BY (COUNT_STAR(allstars_p) > 0L))
+  GENERATE FLATTEN(bat_seasons);
+------
+
+==== An Alternative to Anti-Join: use a COGROUP
+
+As a lesson on the virtues of JOINs and COGROUPs, let's examine an alternate version of the anti-join introduced above (REF).
+
+------
+-- Players with no entry in the allstars_p table have an empty allstars_p bag
+bats_ast_cg = COGROUP
+  bat_seasons BY (player_id, year_id),
+  allstars_p BY (player_id, year_id);
+------
+
+Select all cogrouped rows where there were no all-star records, and project
+the batting table fields.
+
+------
+scrub_seasons_cg = FOREACH
+  (FILTER bats_ast_cg BY (COUNT_STAR(allstars_p) == 0L))
+  GENERATE FLATTEN(bat_seasons);
+------
+
+There are three opportunities for optimization here. Though these tables are
+far to small to warrant optimization, it's a good teachable moment for when
+to (not) optimize.
+
+* You'll notice that we projected off the extraneous fields from the allstars
+  table before the map. Pig is sometimes smart enough to eliminate fields we
+  don't need early. There's two ways to see if it did so. The surest way is
+  to consult the tree that EXPLAIN produces. If you make the program use
+  `allstars` and not `allstars_p`, you'll see that the extra fields are
+  present. The other way is to look at how much data comes to the reducer
+  with and without the projection. If there is less data using `allstars_p`
+  than `allstars`, the explicit projection is required.
+
+* The EXPLAIN output also shows that co-group version has a simpler
+  map-reduce plan, raising the question of whether it's more performant.
+
+* Usually we put the smaller table (allstars) on the right in a join or
+  cogroup. However, although the allstars table is smaller, it has larger
+  cardinality (barely): `(player_id, team_id)` is a primary key for the
+  bat_seasons table. So the order is likely to be irrelevant.
+
+But "more performant" or "possibly more performant" doesn't mean "use it
+instead".
+
+Eliminating extra fields is almost always worth it, but the explicit
+projection means extra lines of code and it means an extra alias for the
+reader to understand. On the other hand, the explicit projection reassures
+the experienced reader that the projection is for-sure-no-doubt-about-it
+taking place. That's actually why we chose to be explicit here: we find that
+the more-complicated script gives the reader less to think about.
+
+In contrast, any SQL user will immediately recognize the join formulation of
+this as an anti-join. Introducing a RIGHT OUTER join or choosing the cogroup
+version disrupts that familiarity. Choose the version you find most readable,
+and then find out if you care whether it's more performant; the simpler
+explain graph or the smaller left-hand join table _do not_ necessarily imply
+a faster dataflow. For this particular shape of data, even at much larger
+scale we'd be surprised to learn that either of the latter two optimizations
+mattered.

@@ -8,6 +8,11 @@ mod_seasons = load_mod_seasons(); -- modern (post-1900) seasons of any number of
 -- === The Summing Trick
 --
 
+-- There's a pattern-of-patterns we like to call the "Summing trick", a frequently useful way to act on
+-- subsets of a group without having to perform multiple GROUP BY or FILTER operations. Call it to mind
+-- every time you find yourself thinking "gosh, this sure seems like a lot of reduce steps on the same
+-- key". Before we describe its generic nature, it will help to see an example
+  
 -- ***************************************************************************
 --
 -- === Counting Conditional Subsets of a Group -- The Summing Trick
@@ -33,11 +38,6 @@ mod_seasons = load_mod_seasons(); -- modern (post-1900) seasons of any number of
 -- involve filtering and counting each bag of seasonal stats for a player's
 -- career; that is cumbersome to write, brings most of the data down to the
 -- reducer, and exerts GC pressure materializing multiple bags.
--- 
--- Instead, we will apply what we like to call the "Summing trick", a frequently
--- useful way to act on subsets of a group without having to perform multiple
--- GROUP BY or FILTER operations. Call it to mind every time you find yourself
--- thinking "gosh, this sure seems like a lot of reduce steps on the same key".
 -- 
 -- The summing trick involves projecting a new field whose value is based on
 -- whether it's in the desired set, forming the desired groups, and aggregating
