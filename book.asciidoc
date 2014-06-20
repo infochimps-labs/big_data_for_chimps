@@ -1,3 +1,3 @@
 = Big Data for Chimps
 
-include::06-analytic_patterns-structural_operations-temp.asciidoc[]
+include::06-analytic_patterns-temp.asciidoc[]
