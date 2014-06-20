@@ -132,7 +132,7 @@ stadiums home during the season. Is this an anomaly in the data? Could we
 possibly have messed up this three-line script? Or could teams really have had
 three, four, even seven home stadiums? This demands a closer look.
 
-=== Representing a Collection of Values with a Delimited String
+==== Representing a Collection of Values with a Delimited String
 
 Let's keep the count of parks, but also list the parks themselves for
 inspection.  We could keep dumping the values in Pig's oddball output format,
@@ -488,7 +488,7 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 
 ------
 
-=== Summarizing Aggregate Statistics of a Full Table
+==== Summarizing Aggregate Statistics of a Full Table
 
 To summarize the statistics of a full table, we use a `GROUP ALL` statement. That is, instead of `GROUP [table] BY [key]`, write `GROUP [table] ALL`. Everything else is as usual:
 
@@ -534,7 +534,7 @@ efficient through the examples in this chapter.)
 NOTE: Note the syntax of the full-table group statement. There's no I in
 TEAM, and no BY in GROUP ALL.
 
-=== Summarizing the Length of a String Field
+==== Summarizing the Length of a String Field
 
 We showed how to examine the constituents of a string field in the preceding
 chapter, under "Tokenizing a String" (REF). But for forensic purposes similar
@@ -736,55 +736,6 @@ image::images/06-baseball_height_histogram.png[histogram]
 
 image::images/06-baseball_weight_histogram.png[histogram]
 
-===== Distribution of Birth and Death day of year
-
-------
-vitals = FOREACH peeps GENERATE
-  height_in,
-  10*CEIL(weight_lb/10.0) AS weight_lb,
-  birth_month,
-  death_month;
-
-birth_month_hist = histogram(vitals, 'birth_month');
-death_month_hist = histogram(vitals, 'death_month');
-height_hist = histogram(vitals, 'height_in');
-weight_hist = histogram(vitals, 'weight_lb');
-
-attr_vals = FOREACH vitals GENERATE
-  FLATTEN(Transpose(height, weight, birth_month, death_month)) AS (attr, val);
-
-attr_vals_nn = FILTER attr_vals BY val IS NOT NULL;
-
-peep_stats   = FOREACH (GROUP attr_vals_nn BY attr) GENERATE
-group                        AS attr,
-COUNT_STAR(attr_vals_nn)     AS ct_all,
-COUNT_STAR(attr_vals_nn.val) AS ct;
-
-peep_stats = FOREACH (GROUP attr_vals_nn ALL) GENERATE
-  BagToMap(CountVals(attr_vals_nn.attr)) AS cts:map[long];
-
-peep_hist = FOREACH (GROUP attr_vals BY (attr, val)) {
-  ct = COUNT_STAR(attr_vals);
-  GENERATE
-    FLATTEN(group) AS (attr, val),
-    ct             AS ct
-    -- , (float)ct / ((float)peep_stats.ct) AS freq
-    ;
-};
-peep_hist = ORDER peep_hist BY attr, val;
-
-one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
-ht = FOREACH one GENERATE peep_stats.cts#'height';
-------
-
-===== Births 
-image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
-
-===== Deaths
-
-image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
-
-
 ==== Extreme Populations and Confounding Factors
 
 To reach the major leagues, a player must possess multiple extreme
@@ -809,6 +760,50 @@ somewhat but with a dramatically smaller spread.
 
 Surely at least baseball players are born and die like the rest of us, though?
 
+
+===== Distribution of Birth and Death day of year
+
+.Vital Stats pt 1
+------
+vitals = FOREACH peeps GENERATE
+  height_in,
+  10*CEIL(weight_lb/10.0) AS weight_lb,
+  birth_month,
+  death_month;
+
+birth_month_hist = histogram(vitals, 'birth_month');
+death_month_hist = histogram(vitals, 'death_month');
+height_hist = histogram(vitals, 'height_in');
+weight_hist = histogram(vitals, 'weight_lb');
+------
+
+.Vital Stats pt 2
+------
+peep_stats = FOREACH (GROUP attr_vals_nn ALL) GENERATE
+  BagToMap(CountVals(attr_vals_nn.attr)) AS cts:map[long];
+peep_hist = FOREACH (GROUP attr_vals BY (attr, val)) {
+  ct = COUNT_STAR(attr_vals);
+  GENERATE
+    FLATTEN(group) AS (attr, val),
+    ct             AS ct
+    -- , (float)ct / ((float)peep_stats.ct) AS freq
+    ;
+};
+peep_hist = ORDER peep_hist BY attr, val;
+one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
+ht = FOREACH one GENERATE peep_stats.cts#'height';
+------
+
+===== Births 
+
+image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
+
+===== Deaths
+
+image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
+
+==== Don't Trust Distributions at the Tails
+
 A lot of big data analyses explore population extremes: manufacturing
 defects, security threats, disease carriers, peak performers.  Elements
 arrive into these extremes exactly because multiple causative features drive
@@ -823,9 +818,7 @@ features in the general population may become tightly coupled in the outlier
 group; and a host of other easy assumptions become invalid. Stay alert.
 
 
-=== Calculating a Relative Distribution Histogram
-
-==== Calculating Percent Relative to Total
+==== Calculating a Relative Distribution Histogram
 
 The histograms we've calculated have results in terms of counts. The results do a better general job of enforcing comparisons if express them as relative frequencies: as fractions of the total count. You know how to find the total:
 
@@ -876,7 +869,7 @@ IsEqualish( SUM(freq), 1.0 ),
 
 As we said, this is a cheat-to-win scenario: using it to knock three minutes off an eight minute job is canny when used to make better use of a human data scientist's time, foolish when applied as a production performance optimization.
 
-=== Calculating a Histogram Within a Group
+==== Calculating a Histogram Within a Group
 
 As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization
 
@@ -951,7 +944,7 @@ subsets of a group without having to perform multiple GROUP BY or FILTER operati
 every time you find yourself thinking "gosh, this sure seems like a lot of reduce steps on the same
 key". Before we describe its generic nature, it will help to see an example
 
-=== Counting Conditional Subsets of a Group -- The Summing Trick
+==== Counting Conditional Subsets of a Group -- The Summing Trick
 
 Whenever you are exploring a dataset, you should determine figures of merit
 for each of the key statistics -- easy-to-remember values that separate
@@ -987,7 +980,11 @@ standards = FOREACH mod_seasons {
     (SLG >= 0.500 ? 1 : 0) AS hi_SLG
     ;
 };
--- Count the seasons that pass the threshold by summing the indicator value
+------
+
+Next, count the seasons that pass the threshold by summing the indicator value
+
+------
 career_standards = FOREACH (GROUP standards BY player_id) GENERATE
     group AS player_id,
     COUNT_STAR(standards) AS n_seasons,
@@ -1028,7 +1025,7 @@ table (REF) we'll develop later and see what it says a 0.400-on-base hitter woul
 shown you how useful it is to identify exemplar records; learn to identify these touchstone values
 as well.
 
-=== Summarizing Multiple Subsets of a Group Simultaneously
+==== Summarizing Multiple Subsets of a Group Simultaneously
 
 We can use the summing trick to apply even more sophisticated aggregations to
 conditional subsets. How did each player's career evolve -- a brief brilliant
@@ -1078,6 +1075,7 @@ plate-appearances-in-prime-seasons even though only some of the records
 belong to the prime-seasons subset. The irrelevant seasons show a zero value
 in the projected field and so don't contribute to the total.
 
+.Career Epochs
 ------
 career_epochs = FOREACH (GROUP age_seasons BY player_id) {
   PA_all    = SUM(age_seasons.PA_all  );
@@ -1118,8 +1116,7 @@ If you do a sort on the different OPS fields, you'll spot Ted Williams
 players, and top three old players. He's pretty awesome.
 
 
-=== Testing for Absence of a Value Within a Group
-
+==== Testing for Absence of a Value Within a Group
 
 We don't need a trick to answer "which players have ever played for the Red
 Sox" -- just select seasons with team id `BOS` and eliminate duplicate player

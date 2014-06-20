@@ -1,3 +1,5 @@
+== Structural Operations: Joining Tables
+
 === Joining Records in a Table with Matching Records in Another (Inner Join)
 
 // alternate title??: Matching Records Between Tables (Inner Join)
@@ -11,7 +13,6 @@ bases (or at least far enough away to lumber up to first base). To examine
 the correspondence from body type to ability to hit for power (i.e. high
 SLG), we will need to join the `people` table (listing height and weight)
 with their hitting stats.
-
 
 ------
 fatness = FOREACH peeps GENERATE
@@ -120,7 +121,13 @@ def process(record)
   end
 end
 end
+------
 
+The reducer spools all the records
+
+TODO: finish describing
+
+------
 reducer do
   def gather_records(group, origin_key)
     records = []
@@ -308,7 +315,7 @@ match or some sort of other fuzzy equality. However, in map-reduce the only kind
 
 Exercise: are either city dwellers or country folk over-represented among major leaguers? Selecting only places with very high or very low population in the geonames table might serve as a sufficient measure of urban-ness; or you could use census data and the methods we cover in the geographic data analysis chapter to form a more nuanced indicator. The hard part will be to baseline the data for population: the question is how the urban vs rural proportion of ballplayers compares to the proportion of the general populace, but that distribution has changed dramatically over our period of interest. The US has seen a steady increase from a rural majority pre-1920 to a four-fifths majority of city dwellers today.
 
-=== Joining on an Integer Table to Fill Holes in a List
+==== Joining on an Integer Table to Fill Holes in a List
 
 In some cases you want to ensure that there is an output row for each
 potential value of a key. For example, a histogram of career hits will show
@@ -393,11 +400,7 @@ scrub_seasons_jn   = FOREACH scrub_seasons_jn_f
 
 // This is a good use of the fieldname-ellipsis syntax: to the reader it says "all fields of bat_seasons, the exact members of which are of no concern". (It would be even better if we could write `bat_seasons::*`, but that's not supported in Pig <= 0.12.0.) In a context where we did go on to care about the actual fields, that syntax becomes an unstated assumption about not just what fields exist at this stage, but what _order_ they occur in. We can try to justify why you wouldn't use it with a sad story: Suppose you wrote `bat_seasons::PA..bat_seasons::HR` to mean the counting stats (PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR). In that case, an upstream rearrangement of the schema could cause fields to be added or removed in a way that would be hard to identify. Now, that failure scenario almost certainly won't happen, and if it did it probably wouldn't lead to real problems, and if there were they most likely wouldn't be that hard to track down. The true point is that it's lazy and unhelpful to the reader. If you mean "PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR", then that's what you should say.
 
-
-
-
-=== Selecting Records Having a Match in Another Table (semi-join)
-
+=== Selecting Only Records That Have a Match in Another Table (semi-join)
 
 Semi-join: just care about the match, don't keep joined table; anti-join is where you keep the non-matches and also don't keep the joined table. Again, use left or right so that the small table occurs first in the list. Note that a semi-join has only one row per row in dominant table -- so needs to be a cogroup and sum or a join to distinct'ed table (extra reduce, but lets you do a fragment replicate join.)
 
