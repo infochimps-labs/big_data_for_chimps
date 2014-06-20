@@ -14,6 +14,8 @@ include::05-analytic_patterns-pipeline_operations.asciidoc[]
 
 include::06-analytic_patterns-structural_operations.asciidoc[]
 
+include::06-analytic_patterns-structural_operations-joins.asciidoc[]
+
 include::06b-hadoop_internals-just_enough_for_now.asciidoc[]
 
 include::07-first_exploration.asciidoc[]
