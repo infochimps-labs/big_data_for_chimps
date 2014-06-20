@@ -633,22 +633,22 @@ ht = FOREACH one GENERATE peep_stats.cts#'height';
 
 ===== Games Played
 
-image::images/06-histograms-career_G-linear.png
+image::images/06-histograms-career_G-linear.png[histogram]
 
 ===== Height
 
-image::images/06-baseball_height_histogram.png
+image::images/06-baseball_height_histogram.png[histogram]
 
 ===== Weight
 
-image::images/06-baseball_weight_histogram.png
+image::images/06-baseball_weight_histogram.png[histogram]
 
 =====  Births 
-image::images/06-BirthsByMonth-Baseball_vs_US.png
+image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
 
 ===== Deaths
 
-image::images/06-DeathsByMonth-Baseball_vs_US.png
+image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
 
 
 
