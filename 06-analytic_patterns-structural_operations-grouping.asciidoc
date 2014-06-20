@@ -637,7 +637,7 @@ The
 
 ===== Games Played -- linear
 
-images/06-histograms-career_G-linear.png
+image::images/06-histograms-career_G-linear.png[Histogram of Career Games (linear axes)]
 
 ==== Choosing a Bin Size
 
@@ -682,7 +682,7 @@ hist_wp_view = FOREACH (GROUP view_vals BY bin) GENERATE
   group AS bin, COUNT_STAR(view_vals) AS ct;
 ------
 
-images::06-histograms-pageviews-loglog[Histogram of Wikipedia Hourly Pageviews, Log-Log plot]
+images::06-histograms-pageviews-loglog.png[Histogram of Wikipedia Hourly Pageviews, Log-Log plot]
 
 The  result indeed is a nice sharp line on the log-log plot, and the logarithmic bins did a nice job of accumulating robust counts while preserving detail. Logarithmic bins are generally a better choice any time you're using a logarithmic x-axis because it means that the span of each bin is visually the same size, aiding interpretation.
 
