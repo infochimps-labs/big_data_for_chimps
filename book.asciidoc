@@ -1,21 +1,3 @@
 = Big Data for Chimps
 
-include::00-preface.asciidoc[]
-
-include::01-opening.asciidoc[]
-
-include::02-hadoop_basics.asciidoc[]
-
-include::03-map_reduce.asciidoc[]
-
-include::04-structural_operations.asciidoc[]
-
-include::05-analytic_patterns-pipeline_operations.asciidoc[]
-
-include::06-analytic_patterns-structural_operations.asciidoc[]
-
-include::06-analytic_patterns-structural_operations-joins.asciidoc[]
-
-include::06b-hadoop_internals-just_enough_for_now.asciidoc[]
-
-include::07-big_data_ecosystem.asciidoc[]
+include::06-analytic_patterns-structural_operations-temp.asciidoc[]
