@@ -517,7 +517,7 @@ hr_info = FOREACH (GROUP bat_seasons ALL) {
   }
 
 -- Note the syntax of the full-table group statement. There's no I in TEAM, and no BY in GROUP ALL.
-    
+
 STORE_TABLE(hr_info, 'hr_info');
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
@@ -558,14 +558,14 @@ bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
     ;
 };
 
--- We've used some aggregate functions to create an output table with similar structure to the input table, but at a coarser-grained relational level: career rather than season. It's good manners to put the fields in a recognizable order as the original field as we have here. 
+-- We've used some aggregate functions to create an output table with similar structure to the input table, but at a coarser-grained relational level: career rather than season. It's good manners to put the fields in a recognizable order as the original field as we have here.
 
 DESCRIBE bat_seasons;
 DESCRIBE bat_careers;
 
 --
 -- ==== Completely Summarizing a Field
--- 
+--
 
 -- The following functions are built in to Pig:
 --
@@ -686,7 +686,7 @@ DESCRIBE bat_careers;
 --     ;
 -- };
 -- -- (all,H,46.838027175098475,56.05447208643693,0,262,77939,0,250,3650509,0^1^2^3^4)
--- 
+--
 -- H_summary = FOREACH (GROUP bat_seasons ALL) {
 --   dist       = DISTINCT bat_seasons.H;
 --   non_nulls  = FILTER   bat_seasons.H BY H IS NOT NULL;
@@ -712,12 +712,12 @@ DESCRIBE bat_careers;
 --     ;
 -- };
 -- -- (all,H,46.838027175098475,56.05447208643693,0,0.0,0.0,0.0,17.0,141.0,163.0,193.0,262,77939,0,250,3650509,0^1^2^3^4)
--- 
+--
 -- -- ***************************************************************************
 -- --
 -- -- === Completely Summarizing the Values of a String Field
 -- --
--- 
+--
 -- name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
 --   dist       = DISTINCT bat_seasons.name_first;
 --   lens       = FOREACH  bat_seasons GENERATE SIZE(name_first) AS len; -- Coalesce(name_first,'')
@@ -746,7 +746,7 @@ DESCRIBE bat_careers;
 --     lens  AS lens
 --     ;
 -- };
--- 
+--
 -- name_first_summary = FOREACH name_first_summary_0 {
 --   sortlens   = ORDER lens  BY len;
 --   pctiles    = SortedEdgeile(sortlens);
@@ -942,12 +942,12 @@ seasons_hist = FOREACH (GROUP vals BY bin) {
 };
 
 -- So the pattern here is to
--- 
+--
 -- * project only the values,
 -- * Group by the values,
 -- * Produce the group as key and the count as value.
 
-  
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Binning Data for a Histogram
@@ -1132,12 +1132,12 @@ mod_seasons = load_mod_seasons(); -- modern (post-1900) seasons of any number of
 -- involve filtering and counting each bag of seasonal stats for a player's
 -- career; that is cumbersome to write, brings most of the data down to the
 -- reducer, and exerts GC pressure materializing multiple bags.
--- 
+--
 -- Instead, we will apply what we like to call the "Summing trick", a frequently
 -- useful way to act on subsets of a group without having to perform multiple
 -- GROUP BY or FILTER operations. Call it to mind every time you find yourself
 -- thinking "gosh, this sure seems like a lot of reduce steps on the same key".
--- 
+--
 -- The summing trick involves projecting a new field whose value is based on
 -- whether it's in the desired set, forming the desired groups, and aggregating
 -- on those new fields. Irrelevant records are assigned a value that will be
@@ -1190,7 +1190,7 @@ career_standards = FOREACH (GROUP standards BY player_id) GENERATE
 -- later and see what it says a 0.400-on-base hitter would produce. We've shown
 -- you how useful it is to identify exemplar records; learn to identify these
 -- touchstone values as well.
--- 
+--
 -- Another example will help you see what we mean -- next, we'll use one GROUP
 -- operation to summarize multiple subsets of a table at the same time.
 

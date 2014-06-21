@@ -11,7 +11,7 @@ bat_seasons = load_bat_seasons();
 -- To summarize the statistics of a full table, we use a `GROUP ALL` statement.
 -- That is, instead of `GROUP [table] BY [key]`, write `GROUP [table]
 -- ALL`. Everything else is as usual:
--- 
+--
 
 weight_summary = FOREACH (GROUP bat_seasons ALL) {
   dist         = DISTINCT bat_seasons.weight;
@@ -50,7 +50,7 @@ weight_summary = FOREACH (GROUP bat_seasons ALL) {
 -- why and the how of algebraic functions and these approximate methods in the
 -- Statistics chapter.  But you'll get a good feel for what is and isn't
 -- efficient through the examples in this chapter.)
-    
+
 -- NOTE: Note the syntax of the full-table group statement. There's no I in
 -- TEAM, and no BY in GROUP ALL.
 
@@ -64,7 +64,7 @@ weight_summary = FOREACH (GROUP bat_seasons ALL) {
 -- We showed how to examine the constituents of a string field in the preceding
 -- chapter, under "Tokenizing a String" (REF). But for forensic purposes similar
 -- to the prior example, it's useful to summarize their length distribution.
--- 
+--
 
 name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
   dist       = DISTINCT bat_seasons.name_first;

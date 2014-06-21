@@ -18,11 +18,11 @@ park_teams   = load_park_teams();
 -- (Most records have been geolocated)
 
 -- The syntax of the SPLIT command does not have an equals sign to the left of it; the new table aliases are created in its body.
-SPLIT players_geoloced_some INTO 
+SPLIT players_geoloced_some INTO
   players_non_geoloced_us IF ((IsNull(lng) OR IsNull(lat)) AND (country_id == "US")),
   players_non_geoloced_fo IF ((IsNull(lng) OR IsNull(lat)),
   players_geoloced_a OTHERWISE;
-  
+
 -- ... Pretend we're applying a more costly / higher quality geolocation tool, rather than just sending all unmatched records to Disneyland...
 players_geoloced_b = FOREACH players_non_geoloced_us GENERATE
   player_id..country_id,

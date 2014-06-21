@@ -40,6 +40,6 @@ end
 
 
 -- move to statistics
--- The website random.org makes available a large volume of _true_ randoms number 
+-- The website random.org makes available a large volume of _true_ randoms number
 -- http://www.random.org/files/
 

@@ -44,7 +44,7 @@ bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
 
 --
 -- ==== Completely Summarizing a Field
--- 
+--
 
 -- In the preceding case, the aggregate functions were used to create an output
 -- table with similar structure to the input table, but at a coarser-grained

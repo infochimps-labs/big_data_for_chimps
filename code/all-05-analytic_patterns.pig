@@ -157,10 +157,10 @@ bat_seasons = load_bat_seasons();
 -- === Selecting a Fixed Limit of Records
 --
 
--- ==== 
+-- ====
 
--- The LIMIT statement 
--- Without some preceding operation to set the records in a determined order, it's rarely used except to extract a snippet of data for development. Let's 
+-- The LIMIT statement
+-- Without some preceding operation to set the records in a determined order, it's rarely used except to extract a snippet of data for development. Let's
 
 -- Choose an arbitrary 25 sequential records. See chapter 6 for something more interesting.
 some_players = LIMIT bat_seasons 25;
@@ -438,7 +438,7 @@ end
 
 
 -- move to statistics
--- The website random.org makes available a large volume of _true_ randoms number 
+-- The website random.org makes available a large volume of _true_ randoms number
 -- http://www.random.org/files/
 
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
@@ -577,11 +577,11 @@ park_teams   = load_park_teams();
 -- (Most records have been geolocated)
 
 -- The syntax of the SPLIT command does not have an equals sign to the left of it; the new table aliases are created in its body.
-SPLIT players_geoloced_some INTO 
+SPLIT players_geoloced_some INTO
   players_non_geoloced_us IF ((IsNull(lng) OR IsNull(lat)) AND (country_id == "US")),
   players_non_geoloced_fo IF ((IsNull(lng) OR IsNull(lat)),
   players_geoloced_a OTHERWISE;
-  
+
 -- ... Pretend we're applying a more costly / higher quality geolocation tool, rather than just sending all unmatched records to Disneyland...
 players_geoloced_b = FOREACH players_non_geoloced_us GENERATE
   player_id..country_id,
@@ -610,22 +610,22 @@ One reason you might find yourself splitting a table is to create multiple files
 
 There might be many reasons to do this splitting, but one of the best is to accomplish the equivalent of what traditional database admins call "vertical partitioning". You are still free to access the table as a whole, but in cases where one field is over and over again used to subset the data, the filtering can be done without ever even accessing the excluded data. Modern databases have this feature built-in and will apply it on your behalf based on the query, but our application of it here is purely ad-hoc. You will need to specify the subset of files yourself at load time to take advantage of the filtering.
 
-STORE events INTO '$out_dir/evs_away' 
+STORE events INTO '$out_dir/evs_away'
   USING MultiStorage('$out_dir/evs_away','5'); -- field 5: away_team_id
-STORE events INTO '$out_dir/evs_home' 
+STORE events INTO '$out_dir/evs_home'
   USING MultiStorage('$out_dir/evs_home','6'); -- field 6: home_team_id
 
 
--- 
--- This script will run a map-only job with 9 map tasks (assuming 1GB+ of data and a 128MB block size). With MultiStorage, all Boston Red Sox (team id `BOS`) home games that come from say the fifth map task will go into `$out_dir/evs_home/BOS/part-m-0004` (contrast that to the normal case of  `$out_dir/evs_home/part-m-00004`). Each map task would write its records into the sub directory named for the team with the `part-m-` file named for its taskid index. 
+--
+-- This script will run a map-only job with 9 map tasks (assuming 1GB+ of data and a 128MB block size). With MultiStorage, all Boston Red Sox (team id `BOS`) home games that come from say the fifth map task will go into `$out_dir/evs_home/BOS/part-m-0004` (contrast that to the normal case of  `$out_dir/evs_home/part-m-00004`). Each map task would write its records into the sub directory named for the team with the `part-m-` file named for its taskid index.
 
 -- Since most teams appear within each input split, each subdirectory will have a full set of part-m-00000 through part-m-00008 files. In our runs, we ended up with XXX output files -- not catastrophic, but (a) against best practices, (b) annoying to administer, (c) the cause of either nonlocal map tasks (if splits are combined) or proliferation of downstream map tasks (if splits are not combined). The methods of (REF) "Cleaning up Many Small Files" would work, but you'll need to run a cleanup job per team. Better by far is to precede the `STORE USING MultiStorage` step with a `GROUP BY team_id`. We'll learn all about grouping next chapter, but its use should be clear enough: all of each team's events will be sent to a common reducer; as long as the Pig `pig.output.lazy` option is set, the other reducers will not output files.
 
 events_by_away = FOREACH (GROUP events BY away_team_id) GENERATE FLATTEN(events);
 events_by_home = FOREACH (GROUP events BY home_team_id) GENERATE FLATTEN(events);
-STORE events_by_away INTO '$out_dir/evs_away-g' 
+STORE events_by_away INTO '$out_dir/evs_away-g'
   USING MultiStorage('$out_dir/evs_away-g','5'); -- field 5: away_team_id
-STORE events_by_home INTO '$out_dir/evs_home-g' 
+STORE events_by_home INTO '$out_dir/evs_home-g'
   USING MultiStorage('$out_dir/evs_home-g','6'); -- field 6: home_team_id
 -- cp $data_dir/sports/baseball/events/.pig_schema $out_dir/evs_away-g
 
@@ -640,7 +640,7 @@ bat_seasons = load_bat_seasons();
 
 -- note this should come after the MultiStorage script.
 
--- An ORDER BY statement with parallelism forced to (output size / desired chunk size) will give you _roughly_ uniform chunks, 
+-- An ORDER BY statement with parallelism forced to (output size / desired chunk size) will give you _roughly_ uniform chunks,
 
 %DEFAULT chunk_size 10000
 ;
@@ -651,7 +651,7 @@ bat_seasons_chunked = FOREACH (bat_seasons_ranked) GENERATE
   SPRINTF("%03d", FLOOR(rank/$chunk_size)) AS chunk_key, player_id..;
 
 -- Writes the chunk key into the file, like it or not.
-STORE bat_seasons_chunked INTO '$out_dir/bat_seasons_chunked' 
+STORE bat_seasons_chunked INTO '$out_dir/bat_seasons_chunked'
   USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
 
 -- Note that in current versions of Pig, the RANK operator forces parallelism one. If that's unacceptable, we'll quickly sketch a final alternative but send you to the sample code for details. You can instead use RANK on the map side modulo the _number_ of chunks, group on that and store with MultiStorage. This will, however,  have non-uniformity in actual chunk sizes of about the number of map-tasks -- the final lines of each map task are more likely to short-change the higher-numbered chunks. On the upside, the final chunk isn't shorter than the rest (as it is with the prior method or the unix split command).
@@ -664,7 +664,7 @@ bats_ranked_m = FOREACH (RANK bat_seasons) GENERATE
   MOD(rank, $n_chunks) AS chunk_key, player_id..;
 bats_chunked_m = FOREACH (GROUP bats_ranked_m BY chunk_key)
   GENERATE FLATTEN(bats_ranked_m);
-STORE bats_chunked_m INTO '$out_dir/bats_chunked_m' 
+STORE bats_chunked_m INTO '$out_dir/bats_chunked_m'
   USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
