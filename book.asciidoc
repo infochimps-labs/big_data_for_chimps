@@ -3,3 +3,5 @@
 include::06-analytic_patterns-structural_operations-grouping.asciidoc[]
 
 include::06-analytic_patterns-structural_operations-joining.asciidoc[]
+
+include::06-analytic_patterns-structural_operations-ordering.asciidoc[]

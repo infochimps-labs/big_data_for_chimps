@@ -18,8 +18,7 @@ with their hitting stats.
 fatness = FOREACH peeps GENERATE
   player_id, name_first, name_last,
   height_in, weight_lb;
-lightly filter out players without statistically significant careers:
-(1000 PA is about two seasons worth of regular play. (TODO check, and make choice uniform)
+-- only players w/ statistically significant careers (about two regular-player-season's worth)
 slugging_stats = FOREACH (FILTER bat_careers BY (PA > 1000))
   GENERATE player_id, SLG;
 ------
@@ -36,7 +35,7 @@ LIMIT slugging_fatness_join 20; DUMP @;
 ------
 
 Each output record from a JOIN simply consist of all the fields from the first table, in their original order, followed by the fields from a matching record in the second table, all in their original order. If you held up a piece of paper covering the right part of your screen you'd think you were looking at the original table.
-(This is in contrast to the records from a COGROUP: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.
+(This is in contrast to the records from a COGROUP: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.)
 one thing you'll notice in the snippet is the notation `bat_careers::player_id`.
 
 ------
@@ -60,9 +59,7 @@ FOREACH(JOIN fatness BY player_id, slugging_stats BY player_id) {
 };
 ------
 
-We added a field for BMI (Body Mass Index), a simple measure of body type found by diving a person's weight by their height squared (and, since we're stuck with english units, multiplying by 703 to convert to metric). Though BMI
-can't distinguish between 180 pounds of muscle and 180 pounds of flab, it reasonably controls for weight-due-to-tallness vs weight-due-to-bulkiness:
-beanpole Randy Johnson (6'10"/2.1m, 225lb/102kg) and pocket rocket Tim Raines (5'8"/1.7m, 160lb/73kb) both have a low BMI of 23; Babe Ruth (who in his later days was 6'2"/1.88m 260lb/118kb) and Cecil Fielder (of whom Bill James wrote "...his reported weight of 261 leaves unanswered the question of what he might weigh if he put his other foot on the scale") both have high BMIs well above 30 footnote:[The dataset we're using unfortunately only records players' weights at the start of their career, so you will see different values listed for Mr. Fielder and Mr. Ruth.]
+We added a field for BMI (Body Mass Index), a simple measure of body type found by diving a person's weight by their height squared (and, since we're stuck with english units, multiplying by 703 to convert to metric). Though BMI can't distinguish between 180 pounds of muscle and 180 pounds of flab, it reasonably controls for weight-due-to-tallness vs weight-due-to-bulkiness: beanpole Randy Johnson (6'10"/2.1m, 225lb/102kg) and pocket rocket Tim Raines (5'8"/1.7m, 160lb/73kb) both have a low BMI of 23; Babe Ruth (who in his later days was 6'2"/1.88m 260lb/118kb) and Cecil Fielder (of whom Bill James wrote "...his reported weight of 261 leaves unanswered the question of what he might weigh if he put his other foot on the scale") both have high BMIs well above 30 footnote:[The dataset we're using unfortunately only records players' weights at the start of their career, so you will see different values listed for Mr. Fielder and Mr. Ruth.]
 
 ------
 SELECT bat.player_id, peep.nameCommon, begYear,
@@ -123,9 +120,7 @@ end
 end
 ------
 
-The reducer spools all the records
-
-TODO: finish describing
+For each key, the reducer spools all the records matching that key from the initial table into an array in memory. The lastmost-named table, however, does not need to be accumulated. As the framework streams in each record in the current group, you simply compose it with each record in the accumulated array
 
 ------
 reducer do
@@ -141,19 +136,23 @@ reducer do
     return records
   end
 
-
   BMI_ENGLISH_TO_METRIC = 0.453592 / (0.0254 * 0.254)
   def bmi(ht, wt)
     BMI_ENGLISH_TO_METRIC * wt / (ht * ht)
   end
 
   def process_group(group)
-    players = gather_records(group, 'A'
     # remainder are slugging stats
     group.each do |player_id, _, slg|
-      players.each do |player_id,_, height_in, weight_lb|
-        # Pig would output all the fields from the JOIN,
-        # but we're inlining the follow-on FOREACH as well
+      players = gather_records(group, 'A')
+      players.each do |player_id, _, height_in, weight_lb|
+        #   The result of the JOIN in Pig would be all the fields, keys and not, in order by origin table
+	# after_the_join = [
+	#   player_id, slg,                  # fields from 'A'
+	#   player_id, height_in, weight_lb  # fields from 'B'
+	# ]
+	
+        #   But Pig then pipelines the post-join FOREACH into the reducer, and so do we:
         yield [player_id, slg, height_in, weight_lb, bmi(height_in, weight_lb)]
       end
     end
@@ -161,7 +160,7 @@ reducer do
 end
 ------
 
-TODO-qem should I show the version that has just the naked join-like output ie. All the fields from each table, not including the BMI, as per slugging_fatness_join? And if so do I show it as well or instead?
+TODO-qem should I show the version that has just the naked join-like output ie. the 'after_the_join' variable? And if so, do I show it as well or instead?
 
 The output of the Join job will have one record for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the secondary sort ensures that for each key the reducer receives all the records for table A strictly followed by all records for table B. We gather all the A records in to an array, then on each B record emit the A records stapled to the B records. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In map/reduce, the table with the largest number of records per key should be assigned the last-occurring field group label; in Pig, that table should be named last in the JOIN statement.
 
@@ -176,11 +175,40 @@ Exercise: Explore the correspondence of weight, height and BMI to SLG using a
 medium-data tool such as R, Pandas or Excel. Spoiler alert: the stereotypes
 of the big fat slugger is quire true.
 
-==== Handling Nulls in Joins
+==== Handling Nulls and Non-matches in Joins and Groups
 
+It's important to understand how Null keys are handled in Join and Group operations. Briefly:
 
-(add note) Joins on null values are dropped even when both are null. Filter nulls. (I can't come up with a good example of this)
-(add note) in contrast, all elements with null in a group _will_ be grouped as null. This can be dangerous when large number of nulls: all go to same reducer
+* In map-reduce, Nulls are respected as keys: 
+* In a single-table Pig `GROUP`, Nulls are also respected as keys.
+* In a multi-table `COGROUP`, Nulls are respected as keys, _but not grouped together_
+* In a `JOIN` operation, rows with Nulls _do not take place in the join_ at all, but are _processed anyway_
+* If you have a lot of Null keys, watch out: it is somewhere between costly and foolish.
+
+When we say 'null key', we mean that if the group or join key is a scalar expression, that it has a null result; and if the key is a tuple, that all elements of the tuple are null. So
+
+* these are null keys: `Null`, `(Null,Null,Null)`, `("hi",Null,"howareyou")` (even one non-null field)
+* these are not: `""` (empty string), `0` (zero); An empty bag `{}` and a bag with a tuple holding null `{()}` are bot not-null, but a bag cannot be used as a join or group key.
+
+In the base Hadoop infrastructure, there's not much to understand: a key is a key, and Hadoop doesn't treat nulls specially in any way. Anything different is up to your program, and Pig does in fact supply something different.
+
+A single-table `GROUP` statement does treat Nulls as keys. It's pretty easy to come up with a table having many Null values for the key you're grouping on; and if you do, all of them will be sent to the same reducer. If you actually need those keys, well, whaddayagonnado: sounds like one of the reducers will have to endure a bad day at work. But if you don't need the groups having Null keys, get rid of them as early as possible.
+
+A `COGROUP` statement with multiple tables also treats Nulls as keys (so get rid of them if unwanted). But take note! Multi-table groups treat _each table's Nulls as distinct_. That is, if table A had 4 records with null keys, and table B had 2 records with null keys, `COGROUP A by key, B by key` would produce
+
+* a row whose three fields are the null key; a bag holding the four associated records from A, and an empty bag; and
+* a row whose three fields are the null key; an empty bag; and a bag holding the two associated records from B.
+
+What do you do if you want null keys treated like any other tuple? Add an indicator field saying whether the value is null, and coalesce the actual key to non-null value. So instead of `JOIN aa BY has_nulls, bb BY has_nulls`, write
+
+------
+JOIN
+  aa BY ( (has_nulls IS NULL ? 'x' : 'Y'), (has_nulls IS NULL ? -999 : has_nulls) ),
+  bb BY ( (has_nulls IS NULL ? 'x' : 'Y'), (has_nulls IS NULL ? -999 : has_nulls) );
+------
+
+Even if there are records whose value is -999, they will have `'Y'` for the indicator, while the null-keyed records will have `'x'`, and so they will not meet up. (For your sanity, if it's possible to choose a replacement value that can't occur in the data set do so). The file `j-important_notes_about_joins.pig` in the sample code repo has a bunch more demonstrations of edge cases in groups and joins.
+
 
 ===== Other topics in JOIN-land:
 
