@@ -20,7 +20,6 @@ Truth be told, even if you work with every _record_ in a dataset, you may be int
 
 If you're uncomfortable with the notion of _eliminating_ data, then consider these techniques for being _selective_ about your data.
 
-
 ==== Filter Selected Rows Based on an Expression
 
 The first step to eliminating (or being very selective about) data is to remove records that don't match certain criteria. Pig's `FILTER` statement does this for you.  Technically it doesn't remove the data; it creates a new collection that omits certain records from the original dataset.
@@ -51,7 +50,6 @@ Pig supports regular expressions right in the `FILTER` statement. The equivalent
 ----
 TODO: Pig Syntax
 ----
-
 
 Java (and therefore Pig) is case sensitive for string operations. It also implicitly anchors regular expressions to match the full string: `"lip"` will only match the string `"lip"`. We used `".*lip.*"`, which will match anything with `lip` as a substring. As an additional caution, we'll remind you to be careful comparing floating-point numbers for equality: use `ABS( (val1 - val2)/val1 ) < tol`, not `val1 = val2`.
 
@@ -150,7 +148,6 @@ There is a situation where the heap-based top K algorithm is appropriate:  findi
 
 TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
 
-
 ==== Select Rows using a Limit and Offset
 
 TODO-flip: where do we state that the dataset has 41,040 records (aka, that 2052 is 5% of the dataset?)
@@ -180,7 +177,6 @@ SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT
 ----
 
 If you repeat those steps for the 75th and 50th percentiles, Pig should return the following:
-
 
 ----
 -- %ile	  Row	H	 BB	HBP	h2B	h3B	HR	 G	 PA	OBP	SLG	OPS
@@ -265,13 +261,11 @@ core_stats = FOREACH bat_season {
 
 This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.)
 
-
 In addition to applying arithmetic expressions, projecting and renaming fields, and FLATTENing records, there are a set of Pig operations you can also apply within a nested FOREACH -- you'll see many examples in the next chapter (REF).
 
 Note: We sneakily did two things with the filter above: eliminated rows where `PA` was equal to zero, and also eliminated rows where `PA` was NULL.  For people coming from a SQL background, Pig's handling of NULL values will be fairly familiar. NULL values generally disappear without notice from operations, and generally compare as false -- NULL is not less than, is not greater than, and is not equal to 5.0. For programmers, however, it can be hard to track all this. The rules are well detailed in the Pig manual and somewhat fiddly, so we won't go deep into them here. We've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
 
 ==== Place Values into Categorical Bins With a `FOREACH`
-
 
 // QEM: left off here
 
@@ -335,7 +329,6 @@ You'll see a more elaborate version of this
 COALESCE requires datafu:
 define COALESCE datafu.pig.util.Coalesce();
 or use ternary: eg (isEmpty(A) ? 0 : First(A))
-
 
 ==== Concatenate Multiple Strings by Applying a UDF to Records
 

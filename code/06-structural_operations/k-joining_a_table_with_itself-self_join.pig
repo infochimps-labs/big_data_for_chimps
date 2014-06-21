@@ -23,9 +23,9 @@ p1 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
     p2 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
 
 --
--- Now we join the table copies to find all teammate pairs. We're going to say a player isn't their their own teammate, and so we also reject the self-pairs.
+-- Now we join the table copies to find all teammate pairs. We're going to say a
+-- player isn't their their own teammate, and so we also reject the self-pairs.
 --
-
 teammate_pairs = FOREACH (JOIN
     p1 BY (team_id, year_id),
     p2 by (team_id, year_id)
@@ -34,12 +34,10 @@ teammate_pairs = FOREACH (JOIN
     p2::player_id AS pl2;
 teammate_pairs = FILTER teammate_pairs BY NOT (pl1 == pl2);
 
--- As opposed to the previous section's slight many-to-many expansion, there are on average ZZZ players per roster to be paired. The result set here is explosively larger: YYY pairings from the original XXX player seasons, an expansion of QQQ footnote:[See the example code for details]. Now you might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "QQQ average players per team, so QQQ times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum.
-
 -- The 78,000 player seasons we joined onto the team-parks-years table In
 -- contrast, a similar JOIN expression turned 78,000 seasons into 2,292,658
 -- player-player pairs, an expansion of nearly thirty times
-
+--
 teammates = FOREACH (GROUP teammate_pairs BY pl1) {
   mates = DISTINCT teammate_pairs.pl2;
   GENERATE group AS player_id,
@@ -48,24 +46,7 @@ teammates = FOREACH (GROUP teammate_pairs BY pl1) {
   };
 teammates = ORDER teammates BY n_mates ASC;
 
--- STORE_TABLE(teammates, 'teammates');
--- teammates = LOAD_RESULT('teammates');
-
 -- (A simplification was made) footnote:[(or, what started as a footnote but should probably become a sidebar or section in the timeseries chapter -- QEM advice please) Our bat_seasons table ignores mid-season trades and only lists a single team the player played the most games for, so in infrequent cases this will identify some teammate pairs that didn't actually overlap. There's no simple option that lets you join on players' intervals of service on a team: joins must be based on testing key equality, and we would need an "overlaps" test. In the time-series chapter you'll meet tools for handling such cases, but it's a big jump in complexity for a small number of renegades. You'd be better off handling it by first listing every stint on a team for each player in a season, with separate fields for the year and for the start/end dates. Doing the self-join on the season (just as we have here) would then give you every _possible_ teammate pair, with some fraction of false pairings. Lastly, use a FILTER to reject the cases where they don't overlap. Any time you're looking at a situation where 5% of records are causing 150% of complexity, look to see whether this approach of "handle the regular case, then fix up the edge cases" can apply.]
-
-
-
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- SQL Equivalent:
---
--- SELECT DISTINCT b1.player_id, b2.player_id
---   FROM bat_season b1, bat_season b2
---   WHERE b1.team_id = b2.team_id          -- same team
---     AND b1.year_id = b2.year_id          -- same season
---     AND b1.player_id != b2.player_id     -- reject self-teammates
---   GROUP BY b1.player_id
---   ;
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
@@ -105,14 +86,6 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 --   (long)roster_info.avgval,
 --   (long)roster_info.stddev
 --   ;
--- STORE_TABLE(teammates_summary, 'teammates_summary');
--- cat $out_dir/teammates_summary/part-m-00000;
--- -- --
--- -- -- n_players       16151   n_seasons       77939   n_pairs 2292658 n_teammates     1520460
--- -- --
---
--- EXPLAIN teammates_summary;
-
 
 -- teammate_pairs = FOREACH (JOIN
 --     p1 BY (team_id, year_id),
@@ -134,3 +107,13 @@ roster_info   = summarize_numeric(roster_sizes, 'n_players', 'ALL');
 --   };
 --
 -- teammates = ORDER teammates BY n_mates DESC;
+
+-- STORE_TABLE(teammates, 'teammates');
+-- teammates = LOAD_RESULT('teammates');
+-- STORE_TABLE(teammates_summary, 'teammates_summary');
+-- cat $out_dir/teammates_summary/part-m-00000;
+-- -- --
+-- -- -- n_players       16151   n_seasons       77939   n_pairs 2292658 n_teammates     1520460
+-- -- --
+--
+-- EXPLAIN teammates_summary;

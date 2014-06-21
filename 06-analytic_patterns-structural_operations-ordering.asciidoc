@@ -1,0 +1,185 @@
+
+=== Sorting All Records in Total Order
+
+We're only going to look at players able to make solid contributions over
+several years, which we'll define as playing for five or more seasons and
+2000 or more plate appearances (enough to show statistical significance), and
+a OPS of 0.650 (an acceptable-but-not-allstar level) or better.
+
+.Career Epochs
+------
+career_epochs = FILTER career_epochs BY
+  ((PA_all >= 2000) AND (n_seasons >= 5) AND (OPS_all >= 0.650));
+
+career_young = ORDER career_epochs BY OPS_young DESC;
+career_prime = ORDER career_epochs BY OPS_prime DESC;
+career_older = ORDER career_epochs BY OPS_older DESC;
+------
+
+You'll spot Ted Williams (willite01) as one of the top three young players,
+top three prime players, and top three old players. Ted Williams was pretty
+awesome.
+
+==== Sorting by Multiple Fields
+
+Sorting on Multiple fields is as easy as adding them in order with commas.
+Sort by number of older seasons, breaking ties by number of prime seasons:
+
+------
+career_older = ORDER career_epochs
+  BY n_older DESC, n_prime DESC;
+------
+
+Whereever reasonable, "stabilize" your sorts by adding enough columns to make
+the ordering unique. This ensures the output will remain the same from run to
+run, a best practice for testing and maintainability.
+
+------
+career_older = ORDER career_epochs
+  BY n_older DESC, n_prime DESC, player_id ASC; -- makes sure that ties are always broken the same way.
+------
+
+==== Sorting on an Expression (You Can't)
+
+
+Which players have aged the best -- made the biggest leap in performance from
+their prime years to their older years? You might thing the following would
+work, but you cannot use an expression in an `ORDER..BY` statement:
+
+------
+by_diff_older = ORDER career_epochs BY (OPS_older-OPS_prime) DESC; -- fails!
+------
+
+Instead, generate a new field, sort on it, then project it away. Though it's
+cumbersome to type, there's no significant performance impact.
+
+------
+by_diff_older = FOREACH career_epochs
+  GENERATE OPS_older - OPS_prime AS diff, player_id..;
+by_diff_older = FOREACH (ORDER by_diff_older BY diff DESC, player_id)
+  GENERATE player_id..;
+------
+
+If you browse through that table, you'll get a sense that current-era players
+seem to be over-represented. This is just a simple whiff of a question, but
+http://j.mp/bd4c-baseball_age_vs_performance[more nuanced analyses] do show
+an increase in longevity of peak performance.  Part of that is due to better
+training, nutrition, and medical care -- and part of that is likely due to
+systemic abuse of performance-enhancing drugs.
+
+==== Sorting Case-insensitive Strings
+
+There's no intrinsic way to sort case-insensitive; instead, just force a
+lower-case field to sort with:
+
+------
+dict        = LOAD '/usr/share/dict/words' AS (word:chararray);
+sortable    = FOREACH dict GENERATE LOWER(word) AS key, *;
+dict_nocase = FOREACH (ORDER sortable BY key DESC, word) GENERATE word;
+zzz_nocase  = LIMIT dict_nocase 200;
+dict_case   = ORDER dict BY word DESC;
+zzz_case    = LIMIT dict_case   200;
+------
+
+==== Dealing with Nulls When Sorting
+
+
+When the sort field has nulls, Pig sorts them as least-most by default: they
+will appear as the first rows for `DESC` order and as the last rows for `ASC`
+order. To float Nulls to the front or back, project a dummy field having the
+favoritism you want to impose, and name it first in the `ORDER..BY` clause.
+
+.Handling Nulls When Sorting
+------
+nulls_sort_demo = FOREACH career_epochs
+  GENERATE (OPS_older IS NULL ? 0 : 1) AS has_older_epoch, player_id..;
+nulls_then_vals = FOREACH (ORDER nulls_sort_demo BY
+  has_older_epoch ASC,  OPS_all DESC, player_id)
+  GENERATE player_id..;
+vals_then_nulls = FOREACH (ORDER nulls_sort_demo BY
+  has_older_epoch DESC, OPS_all DESC, player_id)
+  GENERATE player_id..;
+------
+
+==== Floating Values to the Top or Bottom of the Sort Order
+
+Use the dummy field trick any time you want to float records to the top or
+bottom of the sort order based on a criterion. This moves all players whose
+careers start in 1985 or later to the top, but otherwise sorts on number of
+older seasons:
+
+.Floating Values to the Top of the Sort Order
+------
+post1985_vs_earlier = FOREACH career_epochs
+  GENERATE (beg_year >= 1985 ? 1 : 0) AS is_1985, player_id..;
+post1985_vs_earlier = FOREACH (ORDER post1985_vs_earlier BY is_1985 DESC, n_older DESC, player_id)
+  GENERATE player_id..;
+------
+
+// TODO: ??Change this to use the parks table earlier, floating the modern ones to the top?
+
+=== Sorting Records within a Group
+
+This operation is straightforward enough and so useful we've been applying it
+all this chapter, but it's time to be properly introduced and clarify a
+couple points.
+
+Sort records within a group using ORDER BY within a nested FOREACH. Here's a
+snippet to list the top four players for each team-season, in decreasing
+order by plate appearances.
+
+------
+players_PA = FOREACH bat_seasons GENERATE team_id, year_id, player_id, name_first, name_last, PA;
+team_playerslist_by_PA = FOREACH (GROUP players_PA BY (team_id, year_id)) {
+  players_o_1 = ORDER players_PA BY PA DESC, player_id;
+  players_o = LIMIT players_o_1 4;
+  GENERATE group.team_id, group.year_id,
+    players_o.(player_id, name_first, name_last, PA) AS players_o;
+};
+------
+
+Ordering a group in the nested block immediately following a structural
+operation does not require extra operations, since Pig is able to simply
+specify those fields as secondary sort keys. Basically, as long as it happens
+first in the reduce operation it's free (though if you're nervous, look for
+the line "Secondary sort: true" in the output of EXPLAIN). Messing with a bag
+before the `ORDER..BY` causes Pig to instead sort it in-memory using
+quicksort, but will not cause another map-reduce job. That's good news unless
+some bags are so huge they challenge available RAM or CPU, which won't be
+subtle.
+
+If you depend on having a certain sorting, specify it explicitly, even when
+you notice that a `GROUP..BY` or some other operation seems to leave it in
+that desired order. It gives a valuable signal to anyone reading your code,
+and a necessary defense against some future optimization deranging that order
+footnote:[That's not too hypothetical: there are cases where you could more
+efficiently group by binning the items directly in a Map rather than sorting]
+
+Once sorted, the bag's order is preserved by projections, by most functions
+that iterate over a bag, and by the nested pipeline operations FILTER,
+FOREACH, and LIMIT. The return values of nested structural operations CROSS,
+ORDER..BY and DISTINCT do not follow the same order as their input; neither
+do structural functions such as CountEach (in-bag histogram) or the set
+operations (REF) described at the end of the chapter. (Note that though their
+outputs are dis-arranged these of course don't mess with the order of their
+inputs: everything in Pig is immutable once created.)
+
+------
+team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
+  -- will not have same order, even though contents will be identical
+  disordered    = DISTINCT players_o;
+  -- this ORDER BY does _not_ come for free, though it's not terribly costly
+  alt_order     = ORDER players_o BY player_id;
+  -- these are all iterative and so will share the same order of descending PA
+  still_ordered = FILTER players_o BY PA > 10;
+  pa_only       = players_o.PA;
+  pretty        = FOREACH players_o GENERATE
+    CONCAT((chararray)PA, ':', name_first, ' ', name_last);
+  GENERATE team_id, year_id,
+    disordered, alt_order,
+    still_ordered, pa_only, BagToString(pretty, '|');
+};
+------
+
+Notice the lines 'Global sort: false // Secondary sort: true' in the explain output
+  
