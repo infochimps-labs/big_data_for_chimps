@@ -338,24 +338,11 @@ Exercise: are either city dwellers or country folk over-represented among major 
 
 ==== Joining on an Integer Table to Fill Holes in a List
 
-In some cases you want to ensure that there is an output row for each
-potential value of a key. For example, a histogram of career hits will show
-that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits
-than the third-most player (Hank Aaron, 3771 hits) there are gaps in the
-output bins.
+In some cases you want to ensure that there is an output row for each potential value of a key. For example, a histogram of career hits will show that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins.
 
-To fill the gaps, generate a list of all the potential keys, then generate
-your (possibly hole-y) result table, and do a join of the keys list (LEFT
-OUTER) with results. In some cases, this requires one job to enumerate the
-keys and a separate job to calculate the results. For our purposes here, we
-can simply use the integer table. (We told you it was surprisingly useful!)
+To fill the gaps, generate a list of all the potential keys, then generate your (possibly hole-y) result table, and do a join of the keys list (LEFT OUTER) with results. In some cases, this requires one job to enumerate the keys and a separate job to calculate the results. For our purposes here, we can simply use the integer table. (We told you it was surprisingly useful!)
 
-If we prepare a histogram of career hits, similar to the one above for
-seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have
-so many more hits than the third-most player (Hank Aaron, 3771 hits) there
-are gaps in the output bins. To make it so that every bin has an entry, do an
-outer join on the integer table. (See, we told you the integers table was
-surprisingly useful.)
+If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, do an outer join on the integer table. (See, we told you the integers table was surprisingly useful.)
 
 ------
 -- SQL Equivalent:
@@ -409,10 +396,7 @@ scrub_seasons_jn_f = FILTER scrub_seasons_jn
   BY allstars_p::player_id IS NULL;
 ------
 
-Once the matches have been eliminated, pick off the first table's fields.
-The double-colon in 'bat_seasons::' makes clear which table's field we mean.
-The fieldname-ellipsis 'bat_seasons::player_id..bat_seasons::RBI' selects all
-the fields in bat_seasons from player_id to RBI, which is to say all of them.
+Once the matches have been eliminated, pick off the first table's fields. The double-colon in 'bat_seasons::' makes clear which table's field we mean. The fieldname-ellipsis 'bat_seasons::player_id..bat_seasons::RBI' selects all the fields in bat_seasons from player_id to RBI, which is to say all of them.
 
 ------
 scrub_seasons_jn   = FOREACH scrub_seasons_jn_f
@@ -434,18 +418,14 @@ bats_g    = JOIN allstar BY (player_id, year_id), bats BY (player_id, year_id);
 bats_as   = FOREACH bats_g GENERATE bats::player_id .. bats::HR;
 ------
 
-The result is wrong, and even a diligent spot-check will probably fail to
-notice. You see, from 1959-1962 there were multiple All-Star games (!), and
-so each singular row in the `bat_season` table became two rows in the result
-for players in those years.
+The result is wrong, and even a diligent spot-check will probably fail to notice. You see, from 1959-1962 there were multiple All-Star games (!), and so each singular row in the `bat_season` table became two rows in the result for players in those years.
 
 ------
 -- Project just the fields we need
 allstars_p = FOREACH allstars GENERATE player_id, year_id;
 ------
 
-From 1959-1962 there were _two_ all-star games, and so the allstar table has multiple entries;
-this means that players will appear twice in the results!
+From 1959-1962 there were _two_ all-star games, and so the allstar table has multiple entries; this means that players will appear twice in the results!
 
 ------
 -- Will not work: look for multiple duplicated rows in the 1959-1962 years
@@ -487,8 +467,7 @@ bats_ast_cg = COGROUP
   allstars_p BY (player_id, year_id);
 ------
 
-Select all cogrouped rows where there were no all-star records, and project
-the batting table fields.
+Select all cogrouped rows where there were no all-star records, and project the batting table fields.
 
 ------
 scrub_seasons_cg = FOREACH
@@ -496,42 +475,16 @@ scrub_seasons_cg = FOREACH
   GENERATE FLATTEN(bat_seasons);
 ------
 
-There are three opportunities for optimization here. Though these tables are
-far to small to warrant optimization, it's a good teachable moment for when
-to (not) optimize.
+There are three opportunities for optimization here. Though these tables are far to small to warrant optimization, it's a good teachable moment for when to (not) optimize.
 
-* You'll notice that we projected off the extraneous fields from the allstars
-  table before the map. Pig is sometimes smart enough to eliminate fields we
-  don't need early. There's two ways to see if it did so. The surest way is
-  to consult the tree that EXPLAIN produces. If you make the program use
-  `allstars` and not `allstars_p`, you'll see that the extra fields are
-  present. The other way is to look at how much data comes to the reducer
-  with and without the projection. If there is less data using `allstars_p`
-  than `allstars`, the explicit projection is required.
+* You'll notice that we projected off the extraneous fields from the allstars table before the map. Pig is sometimes smart enough to eliminate fields we   don't need early. There's two ways to see if it did so. The surest way is to consult the tree that EXPLAIN produces. If you make the program use `allstars` and not `allstars_p`, you'll see that the extra fields are   present. The other way is to look at how much data comes to the reducer with and without the projection. If there is less data using `allstars_p` than `allstars`, the explicit projection is required.
 
-* The EXPLAIN output also shows that co-group version has a simpler
-  map-reduce plan, raising the question of whether it's more performant.
+* The EXPLAIN output also shows that co-group version has a simpler map-reduce plan, raising the question of whether it's more performant.
 
-* Usually we put the smaller table (allstars) on the right in a join or
-  cogroup. However, although the allstars table is smaller, it has larger
-  cardinality (barely): `(player_id, team_id)` is a primary key for the
-  bat_seasons table. So the order is likely to be irrelevant.
+* Usually we put the smaller table (allstars) on the right in a join or cogroup. However, although the allstars table is smaller, it has larger cardinality (barely): `(player_id, team_id)` is a primary key for the bat_seasons table. So the order is likely to be irrelevant.
 
-But "more performant" or "possibly more performant" doesn't mean "use it
-instead".
+But "more performant" or "possibly more performant" doesn't mean "use it instead".
 
-Eliminating extra fields is almost always worth it, but the explicit
-projection means extra lines of code and it means an extra alias for the
-reader to understand. On the other hand, the explicit projection reassures
-the experienced reader that the projection is for-sure-no-doubt-about-it
-taking place. That's actually why we chose to be explicit here: we find that
-the more-complicated script gives the reader less to think about.
+Eliminating extra fields is almost always worth it, but the explicit projection means extra lines of code and it means an extra alias for the reader to understand. On the other hand, the explicit projection reassures the experienced reader that the projection is for-sure-no-doubt-about-it taking place. That's actually why we chose to be explicit here: we find that the more-complicated script gives the reader less to think about. 
 
-In contrast, any SQL user will immediately recognize the join formulation of
-this as an anti-join. Introducing a RIGHT OUTER join or choosing the cogroup
-version disrupts that familiarity. Choose the version you find most readable,
-and then find out if you care whether it's more performant; the simpler
-explain graph or the smaller left-hand join table _do not_ necessarily imply
-a faster dataflow. For this particular shape of data, even at much larger
-scale we'd be surprised to learn that either of the latter two optimizations
-mattered.
+In contrast, any SQL user will immediately recognize the join formulation of this as an anti-join. Introducing a RIGHT OUTER join or choosing the cogroup version disrupts that familiarity. Choose the version you find most readable, and then find out if you care whether it's more performant; the simpler explain graph or the smaller left-hand join table _do not_ necessarily imply a faster dataflow. For this particular shape of data, even at much larger scale we'd be surprised to learn that either of the latter two optimizations mattered.
