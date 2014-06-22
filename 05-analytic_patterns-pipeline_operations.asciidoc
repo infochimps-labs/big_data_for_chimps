@@ -35,8 +35,18 @@ SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;
 In Pig, the equivalent `FILTER` syntax would be:
 
 ----
-TODO: Pig Syntax
+modern_stats = FILTER bat_seasons BY (year_id >= 1900);
 ----
+
+==== Selecting Records that Satisfy Multiple Conditions
+
+You can supply multiple conditions with SQL-like boolean statements footnote:[Note to programmers: `AND`, `OR`, `NOT`; Pig does not support the c-like `&&`/`||`/`!` forms.]. To select player seasons that have a significant number of plate appearances,
+
+------
+modsig_stats = FILTER bat_seasons BY
+  (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
+------
+
 
 That example used a mathematical operator to choose records based on a field's numeric value.  It's also possible to employ pattern matching against string values.  SQL provides the the `%` operator for simple string matching, and some database implementations support regular expressions, such as MySQL's `RLIKE`.  This operation uses a regular expression to select players whose names are similar to your authors':
 
@@ -47,9 +57,11 @@ SELECT people.* FROM people
 
 Pig supports regular expressions right in the `FILTER` statement. The equivalent Pig call would read as follows:
 
-----
-TODO: Pig Syntax
-----
+------
+-- Name contains a 'Q', 'Flip', or anything in the Philip/Phillip/... family
+-- (?i) means "case insensitive"
+namesakes = FILTER people BY (name_first MATCHES '(?i).*(q|flip|phil+ip).*');
+------
 
 Java (and therefore Pig) is case sensitive for string operations. It also implicitly anchors regular expressions to match the full string: `"lip"` will only match the string `"lip"`. We used `".*lip.*"`, which will match anything with `lip` as a substring. As an additional caution, we'll remind you to be careful comparing floating-point numbers for equality: use `ABS( (val1 - val2)/val1 ) < tol`, not `val1 = val2`.
 
