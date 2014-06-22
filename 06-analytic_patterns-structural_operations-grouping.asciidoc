@@ -13,8 +13,7 @@ But as we revisit the player-performance exploration, you should recognize not j
 
 === Grouping Records into a Bag by Key
 
-The GROUP BY operation is at the heart of every structural operation. It's a
-one-liner in Pig to collect all the stadiums each team has played for:
+The GROUP BY operation is at the heart of every structural operation. It's a one-liner in Pig to collect all the stadiums a team has played for in its history:
 
 ------
 park_teams_g = GROUP park_teams BY team_id;
@@ -42,19 +41,16 @@ Notice that the _full record_ is kept, even including the keys:
 (ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
 ------
 
-This means it's pretty common to immediately project using a FOREACH, and we
-can even put the `GROUP BY` statement inline:
+To eliminate the redundant data, you'll almost always immediately project using a FOREACH. Pig allows you to put the `GROUP` statement inline:
 
 ------
 team_pkyr_pairs = FOREACH (GROUP park_teams BY team_id) GENERATE
-  group AS team_id, park_teams.(park_id,year_id);
+  group AS team_id, park_teams.(park_id, year_id);
 -- (ALT,{(ALT01,1884)})
 -- (ANA,{(ANA01,2001),(ANA01,2010),(ANA01,2002),...})
 ------
 
-Notice the `park_teams.(park_id,year_id)` form, which gives us a bag of
-(park_id,year_id) pairs. Using `park_teams.park_id, park_teams.year_id`
-instead gives two bags, one with park_id tuples and one with year_id tuples:
+Notice the `park_teams.(park_id,year_id)` form, which gives us a bag of (park_id,year_id) pairs. Using `park_teams.park_id, park_teams.year_id` instead gives two bags, one with park_id tuples and one with year_id tuples:
 
 ------
 team_pkyr_bags = FOREACH (GROUP park_teams BY team_id) GENERATE
@@ -69,54 +65,45 @@ DESCRIBE team_pkyr_bags;
 -- team_parks: { team_id: chararray, { (park_id: chararray) }, { (year_id: long) } }
 ------
 
-You can group on multiple fields.  For each park and team, find all the years
-that the park hosted that team:
+You can group on multiple fields.  For each team and year, we can find the park(s) that team called home:
 
 ------
-park_team_g = GROUP park_teams BY (park_id, team_id);
+team_yr_parks_g = GROUP park_teams BY (year_id, team_id);
 ------
 
-The first field is still called 'group', but it's now a tuple
+The first field is still called 'group', but it's now a tuple.
 
 ------
-DESCRIBE park_team_g;
--- park_team_g: {
---   group: (park_id: chararray, team_id: chararray),
---   park_teams: { (park_id: chararray, team_id: chararray, year_id: long, ...) } }
+DESCRIBE team_yr_parks_g;
+--   team_yr_parks_g: {
+--     group: (year_id: long,team_id: chararray),
+--     park_teams: {(park_id: chararray, team_id: chararray, year_id: long, ...)}}
 ------
 
-and so our `FOREACH` statement looks a bit different:
+Our `FOREACH` statement now looks a bit different:
 
 ------
-park_team_occupied = FOREACH(GROUP park_teams BY (park_id, team_id)) GENERATE
-  group.park_id, group.team_id, park_teams.year_id;
-
-=> LIMIT park_team_occupied 3 ; DUMP @;
--- (ALB01,TRN,{(1882),(1880),(1881)})
--- (ALT01,ALT,{(1884)})
--- (ANA01,ANA,{(2009),(2008),(1997)...})
+team_yr_parks = FOREACH(GROUP park_teams BY (year_id, team_id)) GENERATE
+  group.team_id, park_teams.park_id;
+--
+=> LIMIT team_yr_parks 4; DUMP @;
+--   (BS1,{(BOS01),(NYC01)})
+--   (CH1,{(NYC01),(CHI01)})
+--   (CL1,{(CIN01),(CLE01)})
+--   (FW1,{(FOR01)})
 ------
 
 ==== Counting Occurrences of a Key
 
-The typical reason to group records is to operate on the bag of values it
-forms, and that's how we'll spend much of this chapter -- the data bag is a
-very powerful concept. Let's take a quickie tour of what we can do to a
-group; afterwards we'll see the internals of how a group works before moving
-on to its broader applications.
+The typical reason to group records is to operate on the bag of values it forms, and that's how we'll spend much of this chapter -- the data bag is a very powerful concept. Let's take a quickie tour of what we can do to a group; afterwards we'll see the internals of how a group works before moving on to its broader applications.
 
-As you can see, sometimes a team has more than one "home" stadium in a
-season. Typically this is due to stadium repairs or late-season makeups for
-cancelled games. A few other times MLB has opened the season with a series in
-Japan or Mexico for publicity. In any case, it's rare enough that it's
-difficult to conceive how a team could end up with more than a couple home
-stadiums in a year. Let's confirm our feel for the data using `COUNT_STAR`,
-which counts all elements of a bag:
+You'll notice from the result of the last query that sometimes a team has more than one "home" stadium in a season. That's a bit unexpected, but on consideration teams occasionally face stadium repairs or late-season makeups for cancelled games. But cases where there were even three home parks should be quite rare. Let's confirm our feel for the data using `COUNT_STAR`, which counts all elements of a bag:
 
 ------
 team_n_parks = FOREACH (GROUP park_teams BY (team_id,year_id)) GENERATE
   group.team_id, COUNT_STAR(park_teams) AS n_parks;
 vagabonds = FILTER team_n_parks BY n_parks >= 3;
+
 DUMP vagabonds;
 (CL4,7)
 (CLE,5)
@@ -126,18 +113,13 @@ DUMP vagabonds;
 ...
 ------
 
-Always, always look through the data and seek 'second stories'. In this case
-you'll notice that the 1898 Cleveland Spiders called seven (!) different
-stadiums home during the season. Is this an anomaly in the data? Could we
-possibly have messed up this three-line script? Or could teams really have had
-three, four, even seven home stadiums? This demands a closer look.
+Always, always look through the data and seek 'second stories'.
+
+Our script is reporting that CL4 (the Cleveland Spiders) called seven (!) different stadiums home during a season. Is this some weirdness in the data? Could we possibly have messed up this three-line script? Or is it really the case that some teams have had four, five, even seven home stadiums? This demands a closer look.
 
 ==== Representing a Collection of Values with a Delimited String
 
-Let's keep the count of parks, but also list the parks themselves for
-inspection.  We could keep dumping the values in Pig's oddball output format,
-but this is a good opportunity to introduce a very useful pattern:
-denormalizing a collection of values into a single delimited field.
+Let's keep the count of parks, but also list the parks themselves for inspection.  We could keep dumping the values in Pig's oddball output format, but this is a good opportunity to introduce a very useful pattern: denormalizing a collection of values into a single delimited field.
 
 The format Pig uses to dump bags and tuples to disk wastes characters and is not safe to use in
 general: any string containing a comma or bracket will cause its record to be mis-interpreted. For
@@ -199,19 +181,9 @@ team_year_w_pkgms = FOREACH (GROUP park_teams BY (team_id,year_id)) {
   };
 --------
 
-Whoa, a few new things going on here. We've snuck the ORDER BY statement into
-a few previous examples even though it won't be covered until later in the
-chapter (REF), but always as a full-table operator. Here we're using it
-within the body of a FOREACH to sort each bag locally, rather than a total
-sort of the table as a whole. In most cases an ORDER BY in the first slot (as
-the above) has the nice property of being "free": we just ask Hadoop to do a
-secondary-sort on the data as it lands on the reducer.
+Whoa, a few new things going on here. We've snuck the ORDER BY statement into a few previous examples even though it won't be covered until later in the chapter (REF), but always as a full-table operator. Here we're using it within the body of a FOREACH to sort each bag locally, rather than as a total sort of the whole table. One nice thing about this ORDER BY: it's essentially free, as Pig just instructs Hadoop to do a secondary-sort on the data as it lands on the reducer. So there's no reason not to make the data easier to read.
 
-After the `ORDER BY` statement, we use a _nested_ `FOREACH` to staple each
-park onto the number of games at that park, delimited with a colon. (Along
-the way you'll see we also typecast the n_games value, since the CONCAT
-method expects a `chararray`.) The final GENERATE line creates records naming
-the team, the count of parks, and the list of park-usages pairs:
+After the `ORDER BY` statement, we use a _nested_ `FOREACH` to staple each park onto the number of games at that park, delimited with a colon. (Along the way you'll see we also typecast the n_games value, since the `CONCAT` method expects a `chararray`.) The final `GENERATE` line creates records naming the team, the count of parks, and the list of park-usages pairs:
 
 ------
 ALT  1   ALT01:18
@@ -220,37 +192,27 @@ ANA  1   ANA01:82
 CL4  7   CLE05:40|PHI09:9|STL05:2|ROC02:2|CLL01:2|CHI08:1|ROC03:1
 ------
 
-
-Out of http://www.baseball-reference.com/teams/CLV/1898.shtml[156 games] that
-season, the Spiders played only 42 in Cleveland. They held 15 "home games" in
-other cities, and played _ninety-nine_ away games -- in all, nearly
-three-quarters of their season on the road.
+Out of http://www.baseball-reference.com/teams/CLV/1898.shtml[156 games] that season, the Spiders played only 42 in Cleveland. Between the 15 "home" games in other cities, and their _ninety-nine_ away games, they spent nearly three-quarters of their season on the road.
 
 The http://www.baseballlibrary.com/chronology/byyear.php?year=1898[Baseball
 Library Chronology] sheds some light. It turns out that labor problems
 prevented play at their home or any other stadium in Cleveland for a stretch
 of time, and so they relocated to Philadelphia while that went on. What's
-more, on June 19th police arrested the entire team _during_ footnote:[The
+more, on June 19th police _arrested the entire team_ during a home game footnote:[The
 Baseball Library Chronology does note that "not so coincidentally‚ the
 Spiders had just scored to go ahead 4-3‚ so the arrests assured Cleveland of
 a victory."  Sounds like the officers, not devoid of hometown pride, might
-have enjoyed a few innings of the game first.] a home game for violating the
-Sunday "blue laws" footnote:[As late as 1967, selling a 'Corning Ware dish
-with lid' in Ohio was still enough to get you convicted of "Engaging in
-common labor on Sunday":
-www.leagle.com/decision/19675410OhioApp2d44_148]. Little wonder the Spiders
-decided to take their talents elsewhere than Cleveland! The following year
+have enjoyed a few innings of the game first.] for violating the
+Sunday "blue laws" footnote:[As late as 1967, selling cookery on Sunday in Ohio was still
+http://www.leagle.com/decision/19675410OhioApp2d44_148[enough to get you convicted]]. Little wonder the Spiders
+decided to take their talents away from Cleveland! The following year
 they played 50 straight on the road, won fewer than 13% of their games
 overall (20-134, the worst single-season record ever) and immediately
 disbanded at season's end.
 
 ==== Representing a Complex Data Structure with a JSON-encoded String
 
-So their extreme position is not a mistake; is it an anomaly? The first three
-characters of the park id mirror the city name, so we can identify not just
-alternative parks but season spent in alternative cities. And since an 1898
-season is quite pre-modern, let's also keep around the year_id field to see
-what it says.
+So the result for the Spiders isn't a mistake. Is the team a sole anomalous outlier, or are there other cases, less extreme but similar? The Spiders' season stands out for at least these three reasons: an unusual number of alternate parks; "home" games played in other cities; and a pre-modern (1898) setting. So let's include a field for the city (we'll take the first three characters of the park id to represent the city name) and not throw away the field for year.
 
 ------
 -- Prepare the city field
@@ -299,7 +261,7 @@ farhome_gms = FOREACH (GROUP pktm_stats BY (team_id, year_id)) {
   n_home_gms    = SUM(pktm_stats.n_city_games);
   n_main_city   = MAX(pktm_stats.n_city_games);
   n_main_park   = MAX(pktm_stats.max_in_city);
-  -- a nice trick to make the modern-ness easily visible while scanning the data:
+  -- a nice trick: a string vs a blank makes it easy to scan the data for patterns:
   is_modern     = (group.year_id >= 1905 ? 'mod' : NULL);
   --
   GENERATE group.team_id, group.year_id,
@@ -319,27 +281,20 @@ farhome_gms = ORDER farhome_gms BY n_cities DESC, n_farhome_gms DESC;
 Here's a sample of the output:
 
 ------
-CL4	1898	   	57	17	17	6	CLE:40|PHI:9|ROC:3|STL:2|CLL:2|CHI:1	CLE05:40|PHI09:9|ROC02:2|ROC03:1|STL05:2|CLL01:2|CHI08:1
-CLE	1902	   	65	5 	5 	5	CLE:60|FOR:2|COL:1|CAN:1|DAY:1   CLE05:60|FOR03:2|COL03:1|CAN01:1|DAY01:1
+CL4  1898     	57  17	17  6	CLE:40|PHI:9|ROC:3|STL:2|CLL:2|CHI:1	CLE05:40|PHI09:9|ROC02:2...
+CLE  1902     	65  5 	5   5	CLE:60|FOR:2|COL:1|CAN:1|DAY:1          CLE05:60|FOR03:2|COL03:1...
 ...
-MON	2003	mod	81	22	22	2	MON:59|SJU:22                       	MON02:59|SJU01:22
-MON	2004	mod	80	21	21	2	MON:59|SJU:21                       	MON02:59|SJU01:21
+MON  2003  mod	81  22	22  2	MON:59|SJU:22                       	MON02:59|SJU01:22
+MON  2004  mod	80  21	21  2	MON:59|SJU:21                       	MON02:59|SJU01:21
 ...
-CHA	1969	mod	81	11	11	2	CHI:70|MIL:11                       	CHI10:70|MIL05:11
-CHA	1968	mod	81	9 	9 	2	CHI:72|MIL:9                        	CHI10:72|MIL05:9
-BRO	1957	mod	77	8 	8 	2	NYC:69|JER:8                        	NYC15:69|JER02:8
+CHA  1969  mod	81  11	11  2	CHI:70|MIL:11                       	CHI10:70|MIL05:11
+CHA  1968  mod	81  9 	9   2	CHI:72|MIL:9                        	CHI10:72|MIL05:9
+BRO  1957  mod	77  8 	8   2	NYC:69|JER:8                        	NYC15:69|JER02:8
 ------
 
-Inspecting the data answers the question of whether the Spiders were an
-outlier: no. Considered against the teams of their era, they look much more
-normal. In the early days baseball was still literally getting its act together
-and teams hopped around frequently. Since 1905, no team has seen home bases
-in three cities, and the three cases where a team spent any significant time
-in an alternate city each tell a notable story.
+So, are the Spiders an anomaly? No. Considered against the teams of their era, they look much more normal. In the early days baseball was still literally getting its act together and teams hopped around frequently. Since 1905, no team has seen home bases in three cities, and the three cases where a team spent any significant time in an alternate city each tell a notable story.
 
-In 2003 and 2004, les pauvres Montreal Expos were sentenced to play 22 "home"
-games in San Juan (Puerto Rico) and only 59 back in Montreal. The rudderless
-franchise had been sold back to the league itself and was being shopped
+In 2003 and 2004, les pauvres Montreal Expos were sentenced to play 22 "home" games in San Juan (Puerto Rico) and only 59 back in Montreal. The rudderless franchise had been sold back to the league itself and was being shopped
 around in preparation for a move to Washington, DC. With no real stars, no
 home-town enthusiasm, and no future in Montreal, MLB took the opportunity to
 build its burgeoning fanbase in Latin America and so deployed the team to
@@ -530,11 +485,11 @@ weren't there is a good approximate cardinality function. We'll explain the
 why and the how of algebraic functions and these approximate methods in the
 Statistics chapter.  But you'll get a good feel for what is and isn't
 efficient through the examples in this chapter.)
-    
+
 NOTE: Note the syntax of the full-table group statement. There's no I in
 TEAM, and no BY in GROUP ALL.
 
-==== Summarizing the Length of a String Field
+==== Summarizing a String Field
 
 We showed how to examine the constituents of a string field in the preceding
 chapter, under "Tokenizing a String" (REF). But for forensic purposes similar
@@ -615,7 +570,7 @@ So the pattern here is to
 
 ==== Binning Data for a Histogram
 
-Generating a histogram for games just as above produces mostly-useless output. There's no material difference between a career of 2000 games and one of 2001 games, but each value receives its own count -- making it hard to distinguish the density of 1-, 2-, and 3-count bins near 1000 games from the 1-, 2-, and 3-count bins near 1500 games. 
+Generating a histogram for games just as above produces mostly-useless output. There's no material difference between a career of 2000 games and one of 2001 games, but each value receives its own count -- making it hard to distinguish the density of 1-, 2-, and 3-count bins near 1000 games from the 1-, 2-, and 3-count bins near 1500 games.
 
 ------
 -- Meaningless
@@ -624,7 +579,7 @@ G_hist = FOREACH (GROUP G_vals BY val) GENERATE
   group AS val, COUNT_STAR(G_vals) AS ct;
 ------
 
-Instead, we will bin the data: divide by the bin size (50 in this case), force it to be a whole number using the `FLOOR` function footnote:[Since G is an `int`, you can probably leave off the `FLOOR` function. Your version might run 1% faster, but anyone reading our version knows _exactly_ what it means.], and then multiply back by the bin size. Values of 0, 12 and 49 all go to the `0` bin; Pete Rose's 3,562 games played becomes the only occupant of bin 3550.
+Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's 3,562 games played becomes the only occupant of bin `3550`.
 
 ------
 -- Binning makes it sensible
@@ -633,39 +588,49 @@ G_hist = FOREACH (GROUP G_vals BY val) GENERATE
   group AS val, COUNT_STAR(G_vals) AS ct;
 ------
 
-The
+===== Histogram of Career Games Played
 
-===== Games Played -- linear
+The histogram on the binned data is now quite clear:
 
 image::images/06-histograms-career_G-linear.png[Histogram of Career Games (linear axes)]
 
 ==== Choosing a Bin Size
 
-What binsize? These zoom in on the tail -- more than 2000 games played. A bin size of 200 is too coarse; it washes out the legitimate gaps. The bin size of 2 is too fine -- the counts are small and there are many trivial gaps. We chose a bin size of 50 games; it's meaningful (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, while preserving the gaps that demonstrate the epic scope of Pete Rose's career.
-
-===== Binsize too small
-
-image::images/06-histograms-career_G-binsize_2.png[]
+How do you choose a binsize? The following three graphs zoom in on the tail (2000 or more games) to show bin sizes that are too large, too small, and just right.
 
 ===== Binsize too large
 
+A bin size of 200 is too coarse, washing out legitimate gaps that tell a story.
+
 image::images/06-histograms-career_G-binsize_200.png[]
+
+===== Binsize too small
+
+The bin size of 2 is too fine -- the counts are small, there are many trivial gaps, and there is a lot of non-meaningful bin-to-bin variation.
+
+image::images/06-histograms-career_G-binsize_2.png[]
+
+===== Binsize too small
+
+The bin size we chose, 50 games, works well. It's a meaningful number (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, and yet preserves the gaps that demonstrate the epic scope of Pete Rose and our other outliers' careers.
+
+image::images/06-histograms-career_G-binsize_2.png[]
 
 ==== Interpreting Histograms and Quantiles
 
 Different underlying mechanics will give different distributions.
 
-The histogram of career games 
-
 ===== Games Played -- linear
+
+The histogram of career games shows that most players see only one game their whole career, and the counts drop off continuously at higher and higher career totals. You can't play 30 games unless you were good enough to make it in to 29 games; you can't play 100 games unless you continued to be good, didn't get injured, didn't get old, didn't go to war between the thirtieth and ninety-ninth game, and so on.
 
 images::images/06-histograms-career_G-linear.png[Histogram of Career Games, Linear Axis]
 
 ===== Games Played -- Log-Log plot
 
-It's easier to understand distributions that span as many orders of magnitude in both value and count, as this one does, using a 'log-log graph'. On a log-log graph, the axes display their original values but arrange them so that the same distance separates 1 from 10 as 10 from 100 and so on for any _ratio_ of values. 
+Distributions, such as this one, that span many orders of magnitude in value and count are easier to understand using a 'log-log graph'. On a log-log graph, the axes arrange the displayed values so that the same distance separates 1 from 10 as separates 10 from 100 and so on, for any _ratio_ of values.
 
-It is _not_ a long-tail distribution, as you can see by comparing a power-law fit (which is always a straight line on a log-log graph) to the actual curve.
+Though the career games data shows a very sharp dropoff, it is _not_ a long-tail distribution, as you can see by comparing a power-law fit (which is always a straight line on a log-log graph) to the actual histogram.
 
 images::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-Log plot]
 
@@ -690,6 +655,8 @@ As you can see, you don't have to only bin linearly. Apply any function that tak
 
 ==== Creating Pig Macros for Common Stanzas
 
+Rather than continuing to write the histogram recipe over and over, let's take a moment and generalize. Pig allows you to create macros that parameterize multiple statements:
+
 ------
 DEFINE histogram(table, key) RETURNS dist {
   vals = FOREACH $table GENERATE $key;
@@ -699,7 +666,7 @@ DEFINE histogram(table, key) RETURNS dist {
 
 DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
   numbers = load_numbers_10k();
-  vals = FOREACH $table GENERATE (ROUND($key / $binsize) * $binsize) AS bin;
+  vals = FOREACH $table GENERATE (long)(FLOOR($key / $binsize) * $binsize) AS bin;
   all_bins = FOREACH numbers GENERATE (num0 * $binsize) AS bin;
   all_bins = FILTER  all_bins BY (bin <= $maxval);
   $dist = FOREACH (COGROUP vals BY bin, all_bins BY bin) GENERATE
@@ -709,32 +676,21 @@ DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
 
 ==== Distribution of Games Played
 
-------
-season_G_hist = histogram(bat_seasons, 'G');
-career_G_hist = binned_histogram(bat_careers, 'G', 50, 3600);
+Call the histogram macro as follows:
 
+------
+career_G_hist	  = binned_histogram(bat_careers, 'G', 50, 3600);
 career_G_hist_2   = binned_histogram(bat_careers, 'G', 2, 3600);
 career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 
-career_HR_hist = binned_histogram(bat_careers, 'HR', 10, 800);
+height_hist	  = binned_histogram(people, 'height_in', 40, 80);
+weight_hist	  = binned_histogram(people, 'weight_lb', 10, 300);
+
+birthmo_hist	  = histogram(people, 'birth_month');
+deathmo_hist	  = histogram(people, 'death_month');
 ------
 
-
-===== Games Played
-
-image::images/06-histograms-career_G-linear.png[histogram]
-
-==== Distribution of Games Played
-
-
-
-===== Height
-
-image::images/06-baseball_height_histogram.png[histogram]
-
-===== Weight
-
-image::images/06-baseball_weight_histogram.png[histogram]
+Now that finding a histogram is effortless, let's examine more shapes of distributions.
 
 ==== Extreme Populations and Confounding Factors
 
@@ -744,6 +700,14 @@ country where baseball is popular; and ones that are not, like field vision,
 clutch performance, the drive to put in outlandishly many hours practicing
 skills. Any time you are working with extremes as we are, you must be very
 careful to assume their characteristics resemble the overall population's.
+
+===== Height
+
+image::images/06-baseball_height_histogram.png[histogram]
+
+===== Weight
+
+image::images/06-baseball_weight_histogram.png[histogram]
 
 Here again are the graphs for players' height and weight, but now graphed
 against (in light blue) the distribution of height/weight for US males aged
@@ -759,7 +723,6 @@ advantage to The distribution of player weights, meanwhile, is shifted
 somewhat but with a dramatically smaller spread.
 
 Surely at least baseball players are born and die like the rest of us, though?
-
 
 ===== Distribution of Birth and Death day of year
 
@@ -794,7 +757,7 @@ one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
 ht = FOREACH one GENERATE peep_stats.cts#'height';
 ------
 
-===== Births 
+===== Births
 
 image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
 
@@ -1118,9 +1081,7 @@ players, and top three old players. He's pretty awesome.
 
 ==== Testing for Absence of a Value Within a Group
 
-We don't need a trick to answer "which players have ever played for the Red
-Sox" -- just select seasons with team id `BOS` and eliminate duplicate player
-ids:
+We don't need a trick to answer "which players have ever played for the Red Sox" -- just select seasons with team id `BOS` and eliminate duplicate player ids:
 
 ------
 -- Players who were on the Red Sox at some time
@@ -1128,12 +1089,7 @@ onetime_sox_ids = FOREACH (FILTER bat_seasons BY (team_id == 'BOS')) GENERATE pl
 onetime_sox     = DISTINCT onetime_sox_ids;
 ------
 
-The summing trick is useful for the complement, "which players have _never_
-played for the Red Sox?" You might think to repeat the above but filter for
-`team_id != 'BOS'` instead, but what that gives you is "which players have
-ever played for a non-Red Sox team?". The right approach is to generate a
-field with the value `1` for a Red Sox season and the irrelevant value `0`
-otherwise. The never-Sox are those with zeroes for every year.
+The summing trick is useful for the complementary question "which players have _never_ played for the Red Sox?" You might think to repeat the above but filter for `team_id != 'BOS'` instead, but what that gives you is "which players have ever played for a non-Red Sox team?". The right approach is to generate a field with the value `1` for a Red Sox season and the irrelevant value `0` otherwise. The never-Sox are those with zeroes for every year.
 
 ------
 player_soxness   = FOREACH bat_seasons GENERATE

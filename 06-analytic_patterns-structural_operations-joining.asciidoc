@@ -6,13 +6,7 @@
 
 ==== Joining Records in a Table with Directly Matching Records from Another Table (Direct Inner Join)
 
-There is a stereotypical picture in baseball of a "slugger": a big fat man
-who comes to plate challenging your notion of what an athlete looks like, and
-challenging the pitcher to prevent him from knocking the ball for multiple
-bases (or at least far enough away to lumber up to first base). To examine
-the correspondence from body type to ability to hit for power (i.e. high
-SLG), we will need to join the `people` table (listing height and weight)
-with their hitting stats.
+There is a stereotypical picture in baseball of a "slugger": a big fat man who comes to plate challenging your notion of what an athlete looks like, and challenging the pitcher to prevent him from knocking the ball for multiple bases (or at least far enough away to lumber up to first base). To examine the correspondence from body type to ability to hit for power (i.e. high SLG), we will need to join the `people` table (listing height and weight) with their hitting stats.
 
 ------
 fatness = FOREACH peeps GENERATE
@@ -59,7 +53,7 @@ FOREACH(JOIN fatness BY player_id, slugging_stats BY player_id) {
 };
 ------
 
-We added a field for BMI (Body Mass Index), a simple measure of body type found by diving a person's weight by their height squared (and, since we're stuck with english units, multiplying by 703 to convert to metric). Though BMI can't distinguish between 180 pounds of muscle and 180 pounds of flab, it reasonably controls for weight-due-to-tallness vs weight-due-to-bulkiness: beanpole Randy Johnson (6'10"/2.1m, 225lb/102kg) and pocket rocket Tim Raines (5'8"/1.7m, 160lb/73kb) both have a low BMI of 23; Babe Ruth (who in his later days was 6'2"/1.88m 260lb/118kb) and Cecil Fielder (of whom Bill James wrote "...his reported weight of 261 leaves unanswered the question of what he might weigh if he put his other foot on the scale") both have high BMIs well above 30 footnote:[The dataset we're using unfortunately only records players' weights at the start of their career, so you will see different values listed for Mr. Fielder and Mr. Ruth.]
+We added a field for BMI (Body Mass Index), a simple measure of body type. It is found by diving a person's weight by their height squared, and, since we're stuck with english units, multiplying by 703 to convert to metric. Though BMI can't distinguish between 180 pounds of muscle and 180 pounds of flab, it reasonably controls for weight-due-to-tallness vs weight-due-to-bulkiness: beanpole Randy Johnson (6'10"/2.1m, 225lb/102kg) and pocket rocket Tim Raines (5'8"/1.7m, 160lb/73kb) both have a low BMI of 23; Babe Ruth (who in his later days was 6'2"/1.88m 260lb/118kb) and Cecil Fielder (of whom Bill James wrote "...his reported weight of 261 leaves unanswered the question of what he might weigh if he put his other foot on the scale") both have high BMIs well above 30 footnote:[The dataset we're using unfortunately only records players' weights at the start of their career, so you will see different values listed for Mr. Fielder and Mr. Ruth.]
 
 ------
 SELECT bat.player_id, peep.nameCommon, begYear,
@@ -208,7 +202,6 @@ JOIN
 ------
 
 Even if there are records whose value is -999, they will have `'Y'` for the indicator, while the null-keyed records will have `'x'`, and so they will not meet up. (For your sanity, if it's possible to choose a replacement value that can't occur in the data set do so). The file `j-important_notes_about_joins.pig` in the sample code repo has a bunch more demonstrations of edge cases in groups and joins.
-
 
 ===== Other topics in JOIN-land:
 

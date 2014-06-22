@@ -45,25 +45,26 @@ DESCRIBE team_pkyr_pairs;
 DESCRIBE team_pkyr_bags;
 -- -- team_parks: { team_id: chararray, { (park_id: chararray) }, { (year_id: long) } }
 
--- You can group on multiple fields.  For each park and team, find all the years
--- that the park hosted that team:
+-- You can group on multiple fields.  For each team and year, we can find the
+-- park(s) that team called home:
 --
-park_team_g = GROUP park_teams BY (park_id, team_id);
+team_yr_parks_g = GROUP park_teams BY (year_id, team_id);
 
--- The first field is still called 'group', but it's now a tuple
-DESCRIBE park_team_g;
--- -- park_team_g: {
--- --   group: (park_id: chararray, team_id: chararray),
--- --   park_teams: { (park_id: chararray, team_id: chararray, year_id: long, ...) } }
+-- The first field is still called 'group', but it's now a tuple.
+DESCRIBE team_yr_parks_g;
+--   team_yr_parks_g: {
+--     group: (year_id: long,team_id: chararray),
+--     park_teams: {(park_id: chararray, team_id: chararray, year_id: long, ...)}}
 
 -- and so our `FOREACH` statement looks a bit different:
-park_team_occupied = FOREACH(GROUP park_teams BY (park_id, team_id)) GENERATE
-  group.park_id, group.team_id, park_teams.year_id;
+team_yr_parks = FOREACH(GROUP park_teams BY (year_id, team_id)) GENERATE
+  group.team_id, park_teams.park_id;
 --
--- => LIMIT park_team_occupied 3 ; DUMP @;
--- -- (ALB01,TRN,{(1882),(1880),(1881)})
--- -- (ALT01,ALT,{(1884)})
--- -- (ANA01,ANA,{(2009),(2008),(1997)...})
+=> LIMIT team_yr_parks 4; DUMP @;
+--   (BS1,{(BOS01),(NYC01)})
+--   (CH1,{(NYC01),(CHI01)})
+--   (CL1,{(CIN01),(CLE01)})
+--   (FW1,{(FOR01)})
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
