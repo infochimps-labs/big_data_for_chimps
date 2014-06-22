@@ -4,23 +4,21 @@ Now that you've met the fundamental analytic operations -- in both their map/red
 
 This chapter will equip you to think tactically, to think in terms of the changes you would like to make to the data. Each section introduces a repeatedly-useful data transformation pattern, demonstrated in Pig (and, where we'd like to reinforce the record-by-record action, in Wukong as well).
 
-// The real goal is to learn to think strategically, to be able to look at the data you have and recognize the steps required to produce the data you want. You do not do this, however, by thinking about how to coordinate the fundamental operations you have just learned directly into your solution any more than a general thinks about coordinating the actions of every individual soldier while preparing a battle plan.
-
 Most of the operations in this chapter require no reduce phase of their own. When they stand alone, they lead to map-only jobs. When they are combined with the grouping / sorting operations you'll meet in the next chapter, they become additional pipeline stages of the mapper or reducer (depending on whether they come before or after).
 
-The section on "pattern in use" will become most useful once you're past reading the book and (we hope) using it as your go-to reference. If you find the level of detail here to be a bit intense, skim past them on the first reading. footnote:[The authors' universal experience is that when we do come back, we read past at least problem that we wasted two days figuring out on our own... But of course it was only by figuring out that problem that the other things became intelligible anyway.]
+The section on "pattern in use" will become most useful once you've read the book a first time and (we hope) begin using it as your go-to reference. If you find the level of detail here to be a bit intense, skim past them on the first reading. footnote:[The authors' universal experience is that when we do come back, we read past at least problem that we wasted two days figuring out on our own... But of course it was only by figuring out that problem that the other things became intelligible anyway.]
 
 Most of the examples in this chapter will involve our baseball dataset, for which we provide a thorough description of the dataset in [TODO: ref to sidebar]. Even if you're not a baseball fan, we expect you'll learn a lot about data pipelines here.
 
 === Eliminating Data
 
-For this first round, we'll focus on patterns that somehow shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally get to work with the entire population, not a sample thereof, so why should we scale down our data?  
+For this first round, we'll focus on patterns that somehow shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally develop models based on the entire population, not a sample thereof, so why should we scale down our data?
 
 Truth be told, even if you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research.  For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are first provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.]  Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
 
 If you're uncomfortable with the notion of _eliminating_ data, then consider these techniques for being _selective_ about your data.
 
-==== Filter Selected Rows Based on an Expression
+=== Selecting Rows that Satisfy a Condition: FILTER
 
 The first step to eliminating (or being very selective about) data is to remove records that don't match certain criteria. Pig's `FILTER` statement does this for you.  Technically it doesn't remove the data; it creates a new collection that omits certain records from the original dataset.
 
@@ -28,199 +26,175 @@ We've prepared the players' offensive stats in per-season (`bat_season`) and car
 
 The stats go back to 1871 (!), but it took a few decades for the game to reach its modern form.  Let's say we're only interested in seasons since 1900.  If we were using a relational database, we'd use the handy `SELECT` statement such as:
 
-----
+------
 SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;
-----
+------
 
 In Pig, the equivalent `FILTER` syntax would be:
 
-----
-modern_stats = FILTER bat_seasons BY (year_id >= 1900);
-----
+------
+player_year_stats = LOAD 'data/sports/baseball/bat_seasons.tsv'    AS (
+    player_id:chararray, year_id:int, team_id:chararray,
+    lg_id:chararray, age: int,  G:int,     PA:int,    AB:int, ...(omitted)...);
+
+modern_stats = FILTER bats BY (year_id >= 1900);
+
+STORE modern_stats INTO 'data/out/modern_stats';
+------
 
 ==== Selecting Records that Satisfy Multiple Conditions
 
-You can supply multiple conditions with SQL-like boolean statements footnote:[Note to programmers: `AND`, `OR`, `NOT`; Pig does not support the c-like `&&`/`||`/`!` forms.]. To select player seasons that have a significant number of plate appearances,
+The range of conditional expressions you'd expect are present. Use `==` (double-equals) to express an equality condition footnote:[SQL users take note: `==`, not `=`]; use `AND`, `OR`, `NOT` to combine conditional statements footnote:[programmers take note: `AND`, not `&&`]. In a data exploration, you may want to eliminate subjects with sparse data, either to eliminate small-sample-size artifacts, or because they are not in the focus of interest. Major-league players come to bat a bit over 4 times a game on average in a season of 154 to 162 games (it increased in 1960), and so 450 plate appearances (roughly 2/3 of the maximum)footnote:[450 PA is close to the "qualified" season threshold of 3.1 plate appearances per team game that are required for seasonal performance awards] captures the idea of a regular player while allowing for injury or situational replacement. The following filters for what we'll call "qualified modern seasons" (regular players competing in the modern era and either of the two modern leagues) footnote:[In this and in further scripts, we're going omit the `LOAD`, `STORE` and other boilerplate except to prove a point. See the example code (REF) for fully-working snippets]:
 
 ------
-modsig_stats = FILTER bat_seasons BY
+modsig_stats = FILTER bats BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
 ------
 
+==== Selecting Records that Match a Regular Expression
 
-That example used a mathematical operator to choose records based on a field's numeric value.  It's also possible to employ pattern matching against string values.  SQL provides the the `%` operator for simple string matching, and some database implementations support regular expressions, such as MySQL's `RLIKE`.  This operation uses a regular expression to select players whose names are similar to your authors':
-
-----
-SELECT people.* FROM people
-  WHERE nameFirst RLIKE "^Q.*" OR nameFirst RLIKE ".*lip.*"; -- TODO maybe a more interesting regexp?
-----
-
-Pig supports regular expressions right in the `FILTER` statement. The equivalent Pig call would read as follows:
+It's also possible to employ pattern matching against string values. Regular expressions are incredibly powerful and we urge all readers to acquire basic familiarity. There's no better path to mastery than the http://regexp.info[regexp.info] website, and we've provided a brief cheatsheet at the end of the book (REF). This operation uses a regular expression to select players whose names are either similar to your authors' names:
 
 ------
--- Name contains a 'Q', 'Flip', or anything in the Philip/Phillip/... family
--- (?i) means "case insensitive"
-namesakes = FILTER people BY (name_first MATCHES '(?i).*(q|flip|phil+ip).*');
+-- Name contains a Q; is `Flip` or anything in the Philip/Phillip/... family. (?i) means be case-insensitive:
+namesakes = FILTER people BY (nameFirst MATCHES '(?i).*(q|flip|phil+ip).*');
 ------
 
-Java (and therefore Pig) is case sensitive for string operations. It also implicitly anchors regular expressions to match the full string: `"lip"` will only match the string `"lip"`. We used `".*lip.*"`, which will match anything with `lip` as a substring. As an additional caution, we'll remind you to be careful comparing floating-point numbers for equality: use `ABS( (val1 - val2)/val1 ) < tol`, not `val1 = val2`.
+It's easy to forget that people's names can contain spaces, dots, dashes, apostrophes; start with lowercase letters or apostrophes, and have accented or other non-latin characters footnote:[This demonstrates the general principle that If you believe a thing involving people will be simple, you're probably wrong.]. For a less silly example, this snippet extracts all names which do not start with a capital letter or which contain a non-word non-space character:
 
-This is an important point, so we'll repeat something we said earlier in the chapter: _filter (and otherwise scale down your dataset) as early as possible._  This may sound obvious, but in the next chapter (TODO ref) we'll highlight many non-obvious expressions of this rule.
+------
+funnychars = FILTER people BY (nameFirst MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
+------
 
-==== Select a Random Sample of Rows
+There aren't any baseball players whose names are represented as starting with a lowercase character footnote:[None of the Nobel Prize-winning physicists Gerard 't Hooft, Louis-Victor Pierre Raymond de Broglie, or Tomonaga Shin'ichirō ever made the major leagues. Or tried out as far as we know. But their names are great counter-examples to keep in mind when dealing with names. Prof de Broglie's full name is 38 characters long, has a last name that starts with a lowercase letter, and is non-trivial to segment. "Tomonaga" is a family name, though it comes first. You'll see Prof. Tomonaga's name given variously as "Tomonaga Shin'ichirō", "Sin-Itiro Tomonaga", or "朝永 振一郎", each correct and the others not in appropriate context. And Prof. 't Hooft\'s last name starts with an apostrophe, a lower-case-letter, and a space.], but in early drafts of the book it caught the value "nameFirst" -- showing that header rows from a source datafile had contaminated the table. Sanity checks like these are a good idea always, and when you have billions of records your one-in-a-million exceptions appear thousands of times.
+
+.Important Notes about String Matching
+******
+* Regular expressions in Pig are supplied to the MATCHES operator as plain strings. A single backslash serves the purposes of the string literal and does not appear in the string sent to the regexp engine. To pass along the shorthand `[^\\w\\s]` (non-word non-space characters), we have to use two backslashes.
+* Yes, that means matching a literal backslash in the target string is done with four backslashes: `\\\\`!
+* Options for matching are supplied within the string. For example, `(?i)` matches without regard to case (as we did above), `(?m)` to do multi-line matches, and so forth -- see the documentation.
+* Pig Regular Expressions are implicitly anchored at the beginning and end of the string, the equivalent of adding `^` at the start and `$` at the end. (This mirrors Java but is unlike most other languages.) Use `.*` at both ends, as we did above, to regain the conventional "greedy" behavior. Supplying explicit `^` or `$` when intended is a good habit for readability.
+* `MATCHES` is an expression, like `AND` or `==` -- you write `str MATCHES regexp`.  The other regular expression mechanisms you'll meet are functions -- you write `REGEX_EXTRACT(str, regexp, 1)`. You will forget we told you so the moment you finish this book.
+* In the crop of results: Peek-A-Boo Veach, Quincy Trouppe, and Flip Lafferty.
+* You're allowed to have the regular expression be a value from the record, though Pig is able to pre-compile a constant (literal) regexp string for a nice speedup.
+* Pig doesn't offer an exact equivalent to the SQL `%` expression for simple string matching. The rough equivalents are dot-star (`.*`) for the SQL `%` (zero or more arbitrary characters), dot (`.`) for the SQL `_` (a single character); and square brackets (e.g. `[a-z]`) for a character range, similar to SQL.
+* The string equality expression is case sensitive: `'Peek-A-Boo'` does not equal `'peek-a-boo'`  For case-insensitive string matching, use the `EqualsIgnoreCase` function: `EqualsIgnoreCase('Peek-A-Boo', 'peek-a-boo')` is true. This simply invokes Java's `String.equalsIgnoreCase()` method and does not support regular expressions.
+******
+==== Matching Records against a Fixed List of Lookup Values
+
+If you plan to filter by matching against a small static list of values, Pig offers the handy `IN` expression: true if the value is equal (case-sensitive) to any of the listed values. This selects the stadiums used each year by the current teams in baseball's AL-east division:
+
+------
+al_east_parks = FILTER park_team_years BY
+  team_id IN ('BAL', 'BOS', 'CLE', 'DET', 'ML4', 'NYA', 'TBA', 'TOR', 'WS2');
+------
+
+When the list grows somewhat larger, an alternative is to read it into a set-membership data structure footnote:[For a dynamic language such as Ruby, it can often be both faster and cleaner to reformat the table into the language itself than to parse a data file. Loading the table is now a one-liner (`require "lookup_table"`), and there's nothing the Ruby interpreter does faster than interpret Ruby.], but ultimately large data sets belong in data files.
+
+The general case uses a join, as described in the next chapter (REF) under "Selecting Records Having a Match in Another Table (semi-join)", and see in particular the specialized merge join and HashMap (replicated) join, which can offer a great speedup. Finally, in the case that the list is extremely large, but few elements are expected to match, a Bloom Filter may be appropriate. They're discussed more in the statistics chapter, where use a Bloom Filter to match every phrase in a large document set against a large list of place names, effectively geolocating the documents.
+
+=== Project Only Chosen Columns by Name
+
+While a `FILTER` selects _rows_ based on an expression, Pig's `FOREACH` selects specific _fields_ chosen by name. The fancy word for this simple action is "projection". We'll try to be precise in using _project_ for choosing columns, _select_ for choosing rows by any means, and _filter_ where we specifically mean selecting rows that satisfy a conditional expression.
+
+The tables we're using come with an overwhelming wealth of stats, but we only need a few of them to do fairly sophisticated explorations. The gamelogs table has more than 90 columns; to extract just the teams and the final score, use a FOREACH:
+
+------
+game_scores = FOREACH games GENERATE
+  away_team_id, home_team_id, home_runs_ct, away_runs_ct;
+------
+
+You're not limited to simply restricting the number of columns; you can also rename and reorder them in a projection. Each row in the table above has _two_ game outcomes, one for the home team and one for the away team. We can represent the same data in a table listing outcomes purely from each team's perspective:
+
+----
+
+games_a = FOREACH games GENERATE
+  year_id, home_team_id AS team,
+  home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
+games_b = FOREACH games GENERATE
+  away_team_id AS team,     year_id,
+  away_runs_ct AS runs_for, home_runs_ct AS runs_against, 0 AS is_home:int;
+
+team_scores = UNION games_a, games_b;
+
+DESCRIBE team_scores;
+-- team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
+----
+
+The first projection puts the `home_team_id` into the team slot, renaming it `team`; retains the `year_id` field unchanged; and files the home and away scores under `runs_for` and `runs_against`. Lastly, we slot in an indicator field for home games, supplying both the name and type as a matter of form. Next we generate the corresponding table for away games, then stack them together with the `UNION` operation (to which you'll be properly introduced in a few pages). All the tables have the identical schema shown, even though their values come from different columns in the original tables.
+
+=== Select a Random Sample of Records
 
 Another common operation is to extract a _uniform_ sample -- one where every record has an equivalent chance of being selected.  For example, you could use this to test new code before running it against the entire dataset (and possibly having a long-running job fail due to a large number of mis-handled records).  By calling the `SAMPLE`operator, you ask Pig to pluck out some records at random.
 
+The following Pig code will return a randomly-selected 25% (that is, 25/100 = 0.25) of the records from our baseball dataset:
+
+---
+some_seasons_samp = SAMPLE bat_seasons 0.0625;
+---
+
 The `SAMPLE` operation does so by generating a random number to select records, which means each call to `SAMPLE` should yield a different set of records.  Sometimes this is what you want, or in the very least, you don't mind.  In other cases, you may want to draw a uniform sample once, then repeatedly work through those _same_ records.  (Consider our example of spot-checking new code against a dataset: you'd need to run your code against the same sample in order to confirm your changes work as expected.)
 
-Experienced software developers will invoke a "seeding" function -- such as R's `set.seed()` or Python's `random.seed()` --  to make the randomness a little less so.  To our knowledge, Pig does not have an equivalent function.  You could instead use a "consistent hash digest," which we'll describe in the Statistics chapter (REF).
+Experienced software developers will reach for a "seeding" function -- such as R's `set.seed()` or Python's `random.seed()` --  to make the randomness a little less so.  At the moment, Pig does not have an equivalent function.
 
-==== Project Only Chosen Columns by Name
+==== Extracting a Consistent Sample of Records by Key
 
-While a `FILTER` selects _rows_ based on an expression, Pig's `FOREACH` selects specific _fields_ chosen by name. footnote:[The fancy word for this simple action is 'projection'. It's useful to have precise terms for choosing columns ('project'), choosing rows ('select'), and specifically choosing rows by expression ('filter')].
+Another way to stabilize the sample from run to run is to use a "consistent hash digest". A hash digest function creates a fixed-length fingerprint of a string whose output is otherwise unpredictable from the input and uniformly distributed -- you can't tell which string the function will produce except by computing the digest, and every string is equally likely. For example, the function we've chosen gives the hexadecimal-string digest `3ce3e909` for 'Chimpanzee' but `07a05f9c` for 'Chimp'. Since all hexadecimal strings are equally likely, one-sixteenth of them will start with a zero.
 
-The tables we're using come with an overwhelming wealth of stats, but we will be able to do quite sophisticated explorations using only a few of them. 
+------
+DEFINE Digest  datafu.pig.hash.Hasher('murmur3-32');
 
-Major League Baseball teams play a game nearly every single day from the start of April to the end of September (currently, 162 per season). The team on offense sends its players to bat in order, with the goal of having its players reach base and advance the full way around the diamond. Each time a player makes it all the way to home, their team scores a run, and at the end of the game, the team with the most runs wins. We count these events as `G` (games), `PA` (plate appearances on offense) and `R` (runs).
+keyed_seasons = FOREACH bat_seasons GENERATE Digest(player_id) AS keep_hash, *;
 
-The following Pig code selects our core set of stats for seasons since 1990 where players had more than 60 appearances:
+some_seasons  = FOREACH (
+    FILTER keyed_seasons BY (SUBSTRING(keep_hash, 0, 1) == '0')
+  ) GENERATE $0..;
+------
 
-----
-TODO: Pig code
-----
+The virtues of this script are that it
+To select each row consistently, use the
 
-----
-SELECT
-    player_id, year_id, team_id,
-    G,  PA, AB, R,
-    H,  BB, HBP,
-    h2B, h3B, HR
-  FROM bat_season bat
-  WHERE PA > 60 AND year > 1900 ;
-----
-
+We'll have a lot more to say about sampling in the Statistics chapter (REF).
 ==== Retrieve a fixed number of Rows (LIMIT)
 
-Another way to create a smaller dataset is to take the first _K_ records of a collection.  (Please note that we emphasize the _first_ _K_ records, not the _top-ranked_ _K_.  We cover that in the next section.)  This is similar to running the `head` command in Unix-like operating systems, or using the `LIMIT` clause in a SQL `SELECT` statement.
+A much blunter way to create a smaller dataset is to take the first _K_ records of a collection.  (Please note that we emphasize the _first_ _K_ records, not the _top-ranked_ _K_.  We cover that in the next chapter.)  This is similar to running the `head` command in Unix-like operating systems, or using the `LIMIT` clause in a SQL `SELECT` statement.
 
-Pig offers the `LIMIT` operator for this purpose. To select the first 25 records of our `bat_season` data, you would run:
-
-----
-TODO: Pig syntax
-----
-
-If your background is in relational databases, that is Pig's way of saying:
+Pig offers the `LIMIT` operator for this purpose. To select the first 25 records of our `bat_seasons` data, you would run:
 
 ----
-SELECT bat_season.* FROM bat_season LIMIT 25 ;
+some_players = LIMIT player_year_stats 25;
 ----
-
-(TODO: Is there a non-Reduce way to do this?)
-
-In the simplest Map/Reduce equivalent, Mappers emit each record unchanged until they hit the specified limit (or reach the end of their input). Those output records pass through a single Reducer, which itself emits each record unchanged until it has hit the specified limit and does nothing on all subsequent records.
-
-(TODO: Do we want to talk about a non-single Reducer approach?)
 
 In the big data regime, where your data is striped across many machines, there's no intrinsic
-notion of a row order.  That means, similar to the `SAMPLE` operator, you have no guarantees of which records `LIMIT` will select.  Changing the number of mappers or reducers, small changes in the data, and so forth can change which records are selected. In the next section, we describe how to better control what records `LIMIT` returns.
+notion of a row order.  That means, similar to the `SAMPLE` operator, you have no guarantees of which records `LIMIT` will select.  Changes in the number of mappers or reducers, in the data, and so forth, may change which records are selected. Exerting control over which records are selected requires a much more expensive `ORDER BY` operation -- we'll cover that in the next chapter.
 
-NOTE: If you truly don't care which records to select, just point Pig to a single input file.  For example, invoke `LIMIT` on  `some_data/part-00000`, instead of `some_data/` (which will operate on all files in that directory).
+NOTE: If you truly don't care which records to select, just point Pig to a single input file.  For example, invoke `LIMIT` on  `some_data/part-00000`, instead of `some_data/` (which will operate on all files in that directory). Pig effectively does this in the loader, making it very efficient.
 
-A Combiner is helpful here in the predominant case where the specified limit is small, as it will eliminate excess records before they are sent to the Reducer and at each merge/sort pass.
+==== LIMIT .. DUMP to safely display a handful of records
 
-==== Select Rows with the Top-K Values for a Field
+The main use of a LIMIT statement outside of an `ORDER BY..LIMIT` stanza is for interactive development. We hope that someday the DUMP command will gains an intrinsic LIMIT capability, but until then you can write
 
-On its own, `LIMIT` will return the first records it finds.  What if you want to _rank_ the records -- sort by some criteria -- so you don't just return the first ones, but the _top_ ones?
+------
+=> LIMIT player_year_stats 25; DUMP @;
+------
 
-Use the `ORDER` operator before a `LIMIT` to guarantee this "top _K_" ordering.  This technique also applies a clever optimization (reservoir sampling, see TODO ref) that sharply limits the amount of data sent to the reducers.
-
-Let's say you wanted to select the top 20 seasons by number of hits:
-
-----
-TODO: Pig code
-----
-
-In SQL, this would be:
-
-----
-SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 10
-----
-
-// TODO: not sure what is the second optimization here?
-// TODO: remove the term "N" if it is not used elsewhere in this section.
+Keep in mind that the presence anywhere of a DUMP command has hidden consequences, such as disabling parallel execution of different dataflows in a script.
 
 
-There are two useful optimizations to make when the number of records you will keep (_K_) is much smaller than the number of records in the table (_N_). The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
+==== Other Data Elimination Patterns
 
-NOTE: We've cheated on the theme of this chapter (pipeline-only operations) -- sharp eyes will note that `ORDER … LIMIT` will in fact trigger a reduce operation.  We still feel that top-_K_ belongs with the other data elimination pattern, though, so we've included it here.
-
-==== Top K Within a Group
-
-There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements.
-
-TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
-
-==== Select Rows using a Limit and Offset
-
-TODO-flip: where do we state that the dataset has 41,040 records (aka, that 2052 is 5% of the dataset?)
-
-A common practice is to express percentiles of your data, that is, to order it and see which records are in the top _K_ percent.  That's another way of saying that those records are better than the remaining 100-_K_ percent, or that they are in the (100-_K_)th percentile.
-
-The first step to calculating percentiles is to determine the number of records in your dataset.  Multiplying that number by 0.01 (that is, 1/100) will show how many records are in one percent of the data.  Multiplying the total by 0.05 (5/100) will show the number of records in five percent of the data, and so on.
-
-For example, our baseball dataset holds 41,040 records.   Five percent of 41,040 is 2,052.  To fetch the top five percent of records -- that is, those records in the 95th percentile -- we would sort the records and extract the top 2,052.
-
-----
-TODO: Pig code
-----
-
-----
-SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 2052
-----
-
-Instead of fetching all of the records in a given percentile, we sometimes just want to know which is the lowest-ranked record of that percentile.  This tells us which record is the boundary between the ranges above and below the percentile marking.  Calculating this requires an additional step, that both Pig and SQL call `OFFSET`.  To find the 95th percentile values for our topline stats -- assuming a post-1900 game, and players with more than 60 plate appearances -- then, we would run:
-
-----
-TODO: Pig code
-----
-
-----
-SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
-----
-
-If you repeat those steps for the 75th and 50th percentiles, Pig should return the following:
-
-----
--- %ile	  Row	H	 BB	HBP	h2B	h3B	HR	 G	 PA	OBP	SLG	OPS
--- 95th	 2052	175	75	7	34	9	25	155	669	0.394	0.519	0.895
--- 75th	10260	124	41	3	21	4	9	132	520	0.347	0.422	0.765
--- 50th	20521	66	22	1	11	1	3	93	294	0.313	0.359	0.676
-----
-
-WARNING: Be really careful doing this.  As opposed to the `ORDER BY .. LIMIT` pattern, Pig must do a total sort on the full table to calculate percentiles this way.
-
-(TODO call ahead to other "Eliminating Data" things like sparse join and DISTINCT)
-
-==== Selecting Records with a Static Lookup Table
-
-You may want to select rows from a table by whether each record's key matches a one in a separate table. The general case, using a join, is described in the next chapter (REF) under "Selecting Records that Match Records in Another".
-
-If the list is static and of modest size, you might just use a case statement in your code, or match against a set-membership data structure footnote:[By the way, the fastest and cleanest way to load a large-ish table in a dynamic language is often to reformat the table into the language itself. Loading the table is now a one-liner (`require "lookup_table"`), and there's no faster way for the Ruby interpreter to make a data structure than by interpreting Ruby.]. 
-
-In keeping with its "keep the grammar light" philosophy, however, Pig has no equivalent of a case statement -- you must apply the ternary operator (`cond ? t_val : f_val`) repeatedly. The best advice we can give is to use lots of parentheses and whitespace, and to use a UDFs if the case is really severe.
-
+There are two tools we'll meet in the next chapter that can be viewed as data elimination patterns as well. The `DISTINCT` and related operations are used to identify duplicated or unique records. Doing so requires putting each record in context with its possible duplicates -- meaning they are not pure pipeline operations like the others here. Above, we gave you a few special cases of selecting records against a list of values. We'll see the general case -- selecting records with or without a match in another table (also known as semi-join and anti-join) -- when we learn about all the flavors of `JOIN` operations in the next chapter.
 === Transforming Records
-
 ==== Transform Records Individually using `FOREACH`
 
-A `FOREACH` lets you make simple transformations to each record. 
+A `FOREACH` lets you develop simple transformations based on each record.
 
 For example, baseball stats don't list the number of singles, only the number of total hits and the number of non-singles (doubles, triples, home runs). This `FOREACH` statement generates the number of singles as its own field:
 
 ----
-core_stats = FOREACH bat_season GENERATE 
-    player_id, year_id, team_id, 
-    G, PA, AB, H, 
+core_stats = FOREACH bat_season GENERATE
+    player_id, year_id, team_id,
+    G, PA, AB, H,
     H - h2B - h3B - HR AS h1B,
     h2B, h3B, HR
   ;
@@ -231,7 +205,7 @@ Here's the corresponding SQL command:
 ----
 SELECT
     player_id, year_id, team_id,
-    G, PA, AB, H, 
+    G, PA, AB, H,
     H - h2B - h3B - HR AS h1B,
     h2B, h3B, HR
   FROM bat_season
@@ -240,7 +214,7 @@ SELECT
 
 A `FOREACH` won't cause a new Hadoop job stage: it's chained onto the end of the preceding operation (and when it's on its own, like this one, there's just a single a mapper-only job). A FOREACH always produces exactly the same count of output records as input records.
 
-Within the GENERATE portion of a normal FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange, rename and eliminate fields); and apply the FLATTEN operator (see below). 
+Within the GENERATE portion of a normal FOREACH, you can apply arithmetic expressions (as shown); project fields (rearrange, rename and eliminate fields); and apply the FLATTEN operator (see below).
 
 ==== A nested `FOREACH` Allows Intermediate Expressions
 
@@ -257,21 +231,24 @@ Doing this with the simple form of `FOREACH` we've been using would be annoying 
 There's a fancier form of `FOREACH` (a 'nested' `FOREACH`) that allows intermediate expressions:
 
 ----
-bat_season = FILTER bat_season BY PA > 0 AND AB > 0;
-core_stats = FOREACH bat_season {
-    h1B  = H - h2B - h3B - HR;
-    HBP = ifNull(HBP) ? 0 : HBP;
-    TB  = vh1B + 2*vh2B + 3*vh3B + 4*HR;
-    OBP  = (H + BB + HBP) / PA;
-    SLG  = TB / AB;
-    OPS  = SLG + OBP;
-    GENERATE 
-      player_id, year_id, team_ids, 
-      G, PA, H, HR, SLG, OBP, OPS;
+bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
+core_stats  = FOREACH bat_seasons {
+  h1B  = H - (h2B + h3B + HR);
+  HBP  = (HBP IS NULL ? 0 : HBP);
+  TB   = h1B + 2*h2B + 3*h3B + 4*HR;
+  OBP  = (H + BB + HBP) / PA;
+  SLG  = TB / AB;
+  OPS  = SLG + OBP;
+  GENERATE
+    player_id, year_id, team_id, lg_id,
+    G,   PA,  AB,  HBP, SH,  BB,
+    H,   h1B, h2B, h3B, HR,  R,  RBI,
+    SLG, OBP, OPS;
 };
 ----
 
 This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.)
+
 
 In addition to applying arithmetic expressions, projecting and renaming fields, and FLATTENing records, there are a set of Pig operations you can also apply within a nested FOREACH -- you'll see many examples in the next chapter (REF).
 
@@ -279,11 +256,9 @@ Note: We sneakily did two things with the filter above: eliminated rows where `P
 
 ==== Place Values into Categorical Bins With a `FOREACH`
 
-// QEM: left off here
+One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth.
 
-TODO-qem: find that word he had in mind for "ranges"
-
-One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth. 
+In mathematical syntax, we would say we're breaking the number of hits into 50-unit categorical ranges: [0,50] , (50,100] , (100,150] , and so on.
 
 The SQL version might look like this:
 
@@ -297,64 +272,42 @@ In Pig we'll use a `FOREACH` to determine the bin for each record, and then use 
 
 ----
 bat_season = LOAD '...' AS (...);
-season_binned = FOREACH bat_season GENERATE 
+season_binned = FOREACH bat_season GENERATE
     50*CEIL(H / 50) AS H_bin;
 season_grouped = GROUP season_binned BY H_bin;
 FOREACH season_grouped GENERATE group AS H_bin, COUNTSTAR(season_binned) AS ct;
 ----
 
-==== Generating Data
 
-Generating data in a distributed system requires distributing an assignment of what to generate onto each node, which can be somewhat annoying. The surprisingly useful integers table -- 1, 2, 3, ... each on subsequent rows -- provides one way to get around this. We don't really have a good baseball-based example, but we can demonstrate generating the 11 million combinations of five letters using a map-reduce job (or the similar UDF):
 
-----
-C2 = 26**2; C3 = 26**3; C4 = 26**4; C5 = 26**5
-ORD_A = 'a'.ord
+TODO:
 
-mapper do |line|
-  idx = line.to_i
-  offsets = [ line / C5, (line / C4) % 26, (line / C3) % 26, (line / C2) % 26, line % 26 ]
-  chars = offsets.map{|offset| (ORD_A + offset).chr }
-  yield chars.join
-end
-----
+  - Transforming Strings with Regular Expressions
 
-Another example of this pattern is the poor-mans data loader given in Chapter 3 (REF) -- prepare a mapper input that is a list of filenames or database queries, and have each mapper expand its trivial input into many rows of output.
+  - Sidebar: Working with NULL Values -- TODO-Flip: we briefly mention NULL earlier; should we skip that and do it all here?
 
-==== Generating Pairs
 
-is there a way to do the SQL version more elegantly?
+  - As we go along:
+	- Transforming Nulls into Real Values
+	- Converting the Lettercase of a String
+	- Converting a Number to its String Representation (and Back) (cast with (int))
+	- Embedding Quotes and Special Characters Within String Literals.
 
-SELECT
-    IF(home_team_id <= away_team_id, home_team_id, away_team_id) AS team_a,
-    IF(home_team_id <= away_team_id, away_team_id, home_team_id) AS team_b,
-    COUNT(*)
-  FROM events ev
-GROUP BY home_team_id, away_team_id
-ORDER BY home_team_id, away_team_id
-;
 
-(do we want to show the group by or call forward to it)
 
-You'll see a more elaborate version of this
+TODO-Flip: remainder of this highlighted section: not sure what you mean?
+* Applying a User-Defined Function
+  - namely, converting a JSON-encoded string value to the actual string: i.e. "Here is a snowman on its own line:\n\u2603" becomes "Here is a snowman on its own line:
+☃"
+  - TSV and CSV don't let you have any old character you want, but are so wonderfully simple. In cases where you have a blob of text that you don't always want to pay to decode it, we will sometimes use TSV but JSON-encode the value of internal strings. You can be confident that all special characters have been safely taken out of band, it's compact and ubiquitous to decode
 
-COALESCE requires datafu:
-define COALESCE datafu.pig.util.Coalesce();
-or use ternary: eg (isEmpty(A) ? 0 : First(A))
+* Assigning a Unique Identifier to Each Record (use `-tagPath` when loading; may require most recent Pig)
+  - I guess admit to the `$1..` syntax here (to include the rest of the fields after the first). But don't adopt the disrespectful habit of using this to mean "the rest of the fields that I'm too lazy to type in"; only use this for "the rest of the fields, whatever they happen to be")
+  - Call forward to RANK, and to Over, for sequentially numbering records
 
-==== Concatenate Multiple Strings by Applying a UDF to Records
 
-concatenating bag
 
-DEFINE MULTICONCAT 'pygmalion/udf/RangeBasedStringConcat.java';
-
-https://github.com/jeromatron/pygmalion/blob/master/udf/src/main/java/org/pygmalion/udf/RangeBasedStringConcat.java
-
-TODO describe using, call ahead to acquiring, Piggybank, Datafu, Pigsy, Pygmalion, and Sounder
-
-TODO submodule in Datafu, Pigsy, Pygmalion, and Sounder 
-
-=== Expanding Data
+=== Operations that Expand the number of Rows or Columns
 
 If you count all the letters in a large-enough body of text, you'll generally find that the letter "e" (the most frequent) appears about 12% of the time, while z and q (the least frequent) appear less than 1% of the time. But names of people have a noticeably different distribution of characters, as we can demonstrate using the baseball data. The `people` table has two fields representing city names, a first name field and a last name field. We'll find the frequency distribution for each.
 
@@ -451,32 +404,76 @@ z	   .27		  0.07		  .19		  .53
 
 The chapter on text data (REF) shows how to tokenize free text into a "word bag", using both Pig's simplistic `TOKENIZE` function and a UDF that applies a sophisticated computational linguistics library. In the Event Stream chapter (REF), we'll demonstrate dividing time range into discrete intervals. Lastly, the Statistics chapter (REF) describes a script to take summary statistics of all columns simultaneously, which involves transposing a record into attribute-value pairs.
 
-=== Splitting a Table
+We have much more to say about FLATTEN, but it's best done the next chapter so that we can illustrate our points well.
+
+==== Generating Data
+
+Generating data in a distributed system requires distributing an assignment of what to generate onto each node, which can be somewhat annoying. The surprisingly useful integers table -- 1, 2, 3, ... each on subsequent rows -- provides one way to get around this. We don't really have a good baseball-based example, but we can demonstrate generating the 11 million combinations of five letters using a map-reduce job (or the similar UDF):
+
+----
+C2 = 26**2; C3 = 26**3; C4 = 26**4; C5 = 26**5
+ORD_A = 'a'.ord
+
+mapper do |line|
+  idx = line.to_i
+  offsets = [ line / C5, (line / C4) % 26, (line / C3) % 26, (line / C2) % 26, line % 26 ]
+  chars = offsets.map{|offset| (ORD_A + offset).chr }
+  yield chars.join
+end
+----
+
+Another example of this pattern is the poor-man's data loader given in Chapter 3 (REF) -- prepare a mapper input that is a list of filenames or database queries, and have each mapper expand its trivial input into many rows of output.
+
+==== Generating Pairs
+
+is there a way to do the SQL version more elegantly?
+
+SELECT
+    IF(home_team_id <= away_team_id, home_team_id, away_team_id) AS team_a,
+    IF(home_team_id <= away_team_id, away_team_id, home_team_id) AS team_b,
+    COUNT(*)
+  FROM events ev
+GROUP BY home_team_id, away_team_id
+ORDER BY home_team_id, away_team_id
+;
+
+(do we want to show the group by or call forward to it)
+
+You'll see a more elaborate version of this
+
+COALESCE requires datafu:
+define COALESCE datafu.pig.util.Coalesce();
+or use ternary: eg (isEmpty(A) ? 0 : First(A))
+
+  - Generating data using the assignment list as input
+	- in particular, using the list of URLs or filenames or whatever -- TODO-Flip: not sure what you mean here?
+	- just demonstrate with map-reduce only, no pig (unless we decide to use this to show an inline Ruby UDF?)
+
+=== Operations that Break One Table Into Many
 
 ==== Splitting into Multiple Data Flows using `SPLIT`
 
 The careers table gives the number of times each player was elected to the All-Star game (indicating extraordinary performance during a season) and whether they were elected to the Hall of Fame (indicating a truly exceptional career).
 
 ===== Demonstration in Pig
-
 Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
 
 ----
 SPLIT bat_career
   INTO hof     IF hofYear > 0, -- the '> 0' eliminates both NULLs and 0s
-  INTO allstar IF G_allstar > 0
-  INTO neither IF NOT(hofYear > 0 OR G_allstar > 0)
+  INTO allstar IF G_allstar > 0,
+  INTO neither OTHERWISE
   ;
 STORE hof     INTO '/data/out/baseball/hof_careers';
 STORE allstar INTO '/data/out/baseball/allstar_careers';
 STORE neither INTO '/data/out/baseball/neither_careers';
 ----
 
-The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files. There is also no "else" clause to trap records that did not match a condition; you'll have to negate everything as we have here.
+The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files.
 
 ==== Splitting into files by key by using a Pig Storefunc UDF
 
-If instead you're looking to write directly into files named for a key, use the multistorage storefunc from the Piggybank UDF collection. For example, we can partition player seasons by primary team:
+If instead you're looking to partition directly into files named for a key, use the multistorage storefunc from the Piggybank UDF collection. As opposed to SPLIT, each record goes into exactly one file. Here is how to partition player seasons by primary team:
 
 ----
     bat_season = LOAD 'bat_season' AS (...);
@@ -484,17 +481,17 @@ If instead you're looking to write directly into files named for a key, use the 
     STORE ... multistorage;
 ----
 
-The output has a directory for each key, and within directory that the same `part-NNNNN` files of any map-reduce job. 
+The output has a directory for each key, and within directory that the same `part-NNNNN` files of any map-reduce job.
 
-This means the count of output files is the number of keys times the number of output slots, which can lead to severe many small files problem. As mentioned in Chapter 3 (REF), many small files is Not Good. If you precede the STORE operation by a `GROUP BY` on the key, the reducer guarantee provides that each subdirectory will only have one output file. 
+This means the count of output files is the number of keys times the number of output slots, which can lead to severe many small files problem. As mentioned in Chapter 3 (REF), many small files is Not Good. If you precede the STORE operation by a `GROUP BY` on the key, the reducer guarantee provides that each subdirectory will only have one output file.
 
 ==== Splitting a Table into Uniform Chunks
 
-We won't go into much detail, but one final set of patterns is to split a table into uniform chunks. If you don't need the chunks to be exactly sized, you can apply a final `ORDER BY` operation on a uniformly-distributed key -- see the section on "Shuffling the Records in a Table" in the next chapter (REF). 
+We won't go into much detail, but one final set of patterns is to split a table into uniform chunks. If you don't need the chunks to be exactly sized, you can apply a final `ORDER BY` operation on a uniformly-distributed key -- see the section on "Shuffling the Records in a Table" in the next chapter (REF).
 
-To split into chunks with an exact number of lines, first use `RANK` to number each line, then prepare a chunk key using the line number modulo the chunk size, and store into chunks using MultiStorage. Since the rank operation's reducers number their records sequentially, only a few reducers are involved with each chunk, and so you won't hit the small files problem. Splitting a table into blocks of fixed _size_ is naturally provided by the HDFS block size parameter, but we're not aware of a good way to do so explicitly. 
+To split into chunks with an exact number of lines, first use `RANK` to number each line, then prepare a chunk key using the line number modulo the chunk size, and store into chunks using MultiStorage. Since the rank operation's reducers number their records sequentially, only a few reducers are involved with each chunk, and so you won't hit the small files problem. Splitting a table into blocks of fixed _size_ is naturally provided by the HDFS block size parameter, but we're not aware of a good way to do so explicitly.
 
-=== Treat the Union of Several Tables as a Single Table
+=== Operations that Treat the Union of Several Tables as One
 
 The counterpart to splitting a table into pieces is to treat many pieces as a single table. This really only makes sense when all those pieces have the same schema, so that's the only case we'll handle here.
 
@@ -514,7 +511,7 @@ b_and_n_teams = LOAD '/data/out/baseball/seasons_by_team/B*,/data/out/baseball/s
 (show commandline for multiple files)
 ----
 
-==== Treat Several Pig Relation Tables as a Single Table
+==== Treat Several Pig Relation Tables as a Single Table (Stacking Rowsets)
 
 In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and id of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
 
@@ -531,9 +528,9 @@ The `UNION` operation does not remove duplicate rows as a set-wise union would. 
 
 ==== Clean Up Many Small Files by Merging into Fewer Files
 
-The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files. 
+The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files.
 
-One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs. 
+One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs.
 
 Sorting is a fairly expensive operation, though; luckily, Pig can do this reasonably well with a mapper-only job by setting the `pig.splitCombination` configuration to true and setting `pig.maxCombinedSplitSize` to the size of the input divided by the number of files you'd like to produce.
 
@@ -545,6 +542,8 @@ set pig.maxCombinedSplitSize 2100100100;
 The `maxCombinedSplitSize` should be much larger than the HDFS block size so that blocks are fully used. Also note the old sailor's trick in the last line -- since there's no essential difference between 2 billion bytes, 2 gigabytes, or a number nearby, the value `2100100100` is much easier to read accurately than `2000000000` or `2147483648`.
 
 The operations in this chapter (except where noted) do not require a reduce on their own, which makes them very efficient. The really interesting applications, however, come when we put data into context, which is the subject of the next chapter.
+
+
 
 
 .A Quick Look into Baseball
@@ -574,6 +573,7 @@ For those who consider sporting events to be the dull province of jocks, holding
 
 Major League Baseball teams play a game nearly every single day from the start of April to the end of September (currently, 162 per season). The team on offense sends its players to bat in order, with the goal of having its players reach base and advance the full way around the diamond. Each time a player makes it all the way to home, their team scores a run, and at the end of the game, the team with the most runs wins. We count these events as `G` (games), `PA` (plate appearances on offense) and `R` (runs).
 
+
 The best way to reach base is by hitting the ball back to the fielders and reaching base safely before they can retrieve the ball and chase you down -- a hit (`H`) . You can also reach base on a 'walk' (`BB`) if the pitcher presents too many unsuitable pitches, or from a 'hit by pitch' (`HBP`) which is like a walk but more painful. You advance on the basepaths when your teammates hit the ball or reach base; the reason a hit is valuable is that you can advance as many bases as you can run in time. Most hits are singles (h1B), stopping safely at first base. Even better are doubles (`h2B`: two bases), triples (`h3B`: three bases, which are rare and require very fast running), or home runs (`HR`: reaching all the way home, usually by clobbering the ball out of the park).
 
 So your goal as a batter is both becomes a potential run and helps to convert players on base into runs. If the batter does not reach base it counts as an out, and after three outs, all the players on base lose their chance to score and the other team comes to bat. (This threshold dynamic is what makes a baseball game exciting: a single pitch can swing the score by or squander the offensive efforts
@@ -596,12 +596,30 @@ For historical reasons, some stats use a restricted subset of PA called AB (At B
 .Pig Gotchas
 ****
 
-"dot or colon?"
+**"dot or colon?"**
 
 Some late night under deadline, Pig will supply you with the absolutely baffling error message "scalar has more than one row in the output". You've gotten confused and used the tuple element operation (`players.year`) when you should have used the disambiguation operator (`players::year`). The dot is used to reference a tuple element, a common task following a `GROUP`. The double-colon is used to clarify which specific field is intended, common following a join of tables sharing a field name.
 
 
 Where to look to see that Pig is telling you have either nulls, bad fields, numbers larger than your type will hold or a misaligned schema.
+
+Things that used to be gotchas, but aren't, and are preserved here just through the tech review:
+
+* You can rename an alias, and refer to the new name: `B = A;` works. (v10)
+* LIMIT is handled in the loader, and LIMIT accepts an expression (v10)
+* There is an OTHERWISE (else) statement on SPLIT! v10
+* If you kill a Pig job using Ctrl-C or “kill”, Pig will now kill all associated Hadoop jobs currently running. This is applicable to both grunt mode and non-interactive mode.
+* In next Pig (post-0.12.0),
+  - CONCAT will accept multiple args
+  - store can overwrite existing directory (PIG-259)
+
+
+**"Good Habits of SQL Users That Will Mess You Up in Hadoop"**
+
+* Group/Cogroup is king; Join is a special case
+* Window functions are a recent feature -- use but don't overuse Stitch/Over.
+* Everything is immutable, so you don't need and can't have transactional behavior
+
 
 
 TODO: fill this in with more gotchas
@@ -616,5 +634,3 @@ TODO: consider pushing this up, earlier in the chapter, if we find a good spot f
 We will tell you about another "optimization," mostly because we want to illustrate how a naive performance estimation based on theory can lead you astray in practice. In principle, sorting a large table in place takes 'O(N log N)' time. In a single compute node context, you can actually find the top K elements in 'O(N log K)' time -- a big savings since K is much smaller than N. What you do is maintain a heap structure; for every element past the Kth, if it is larger than the smallest element in the heap, remove the smallest member of the heap and add the element to the heap. While it is true that 'O(N log K)' beats 'O(N log N)', this reasoning is flawed in two ways. First, you are not working in a single-node context; Hadoop is going to perform that sort anyway. Second, the fixed costs of I/O almost always dominate the cost of compute (FOOTNOTE:  Unless you are unjustifiably fiddling with a heap in your Mapper.)
 
 The 'O(log N)' portion of Hadoop's log sort shows up in two ways:  The N memory sort that precedes a spill is 'O(N log N)' in compute time but less expensive than the cost of spilling the data. The true 'O(N log N)' cost comes in the reducer: 'O(log N)' merge passes, each of cost 'O(N)'. footnote:[If initial spills have M records, each merge pass combines B spills into one file, and we can skip the last merge pass, the total time is `N (log_B(N/M)-1).` [TODO: double check this]. But K is small, so there should not be multiple merge passes; the actual runtime is 'O(N)' in disk bandwidth. Avoid subtle before-the-facts reasoning about performance; run your job, count the number of merge passes, weigh your salary against the costs of the computers you are running on, and only then decide if it is worth optimizing.
-
-****
