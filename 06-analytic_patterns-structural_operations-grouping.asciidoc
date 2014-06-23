@@ -6,9 +6,9 @@ The overriding focus here is to equip you with the toolkit of analytic patterns.
 The most meaningful way to introduce these patterns is to demonstrate their use in service of a question of real interest.
 the main storyline of these chapters will be to find quantitative indicators of exceptional performance, and we'll pick that thread up repeatedly.
 But where a pattern has no natural demonstration in service of that primary story, we non-sequitur into questions that could form a necessary piece of some other investigation:
-"here's how you'd track changes in each team's roster over time", "is the stereotypical picture of the big brawny home-run hitter true." (TODO-qem please replace with what you found to be the most interesting one-offs (ie side-roads we didn't explore)).
+"here's how you'd track changes in each team's roster over time", "is the stereotypical picture of the big brawny home-run hitter true."
 And at several points, immediately on peeking down a side road the data comes forth with a story of its own, and so there are also a few brief side trips to follow such a tale.
-But as we revisit the player-performance exploration, you should recognize not just a way for fantasy baseball players to get an edge, but strategies for quantifying the behavior of any sort of outlier. Here, it's baseball players, but similar questions will apply when examining agents posing security threats, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance.
+But as we revisit the player-performance exploration, you should recognize not just a way for fantasy baseball players to get an edge, but strategies for quantifying the behavior of any sort of outlier. Here, it's baseball players, but similar questions will apply when examining agents posing security threats, load factor on public transit routes, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance.
 
 === Grouping Records into a Bag by Key
 
@@ -180,9 +180,9 @@ team_year_w_pkgms = FOREACH (GROUP park_teams BY (team_id,year_id)) {
   };
 --------
 
-Whoa, a few new things going on here. We've snuck the ORDER BY statement into a few previous examples even though it won't be covered until later in the chapter (REF), but always as a full-table operator. Here we're using it within the body of a FOREACH to sort each bag locally, rather than as a total sort of the whole table. One nice thing about this ORDER BY: it's essentially free, as Pig just instructs Hadoop to do a secondary-sort on the data as it lands on the reducer. So there's no reason not to make the data easier to read.
+Whoa, a few new things going on here. We've snuck the `ORDER BY` statement into a few previous examples even though it won't be covered until later in the chapter (REF), but always as a full-table operator. Here we're using it within the body of a `FOREACH` to sort each bag locally, rather than as a total sort of the whole table. One nice thing about this `ORDER BY`: it's essentially free, as Pig just instructs Hadoop to do a secondary-sort on the data as it lands on the reducer. So there's no reason not to make the data easier to read.
 
-After the `ORDER BY` statement, we use a _nested_ `FOREACH` to staple each park onto the number of games at that park, delimited with a colon. (Along the way you'll see we also typecast the n_games value, since the `CONCAT` method expects a `chararray`.) The final `GENERATE` line creates records naming the team, the count of parks, and the list of park-usages pairs:
+After the `ORDER BY` statement, we use a _nested_ `FOREACH` to staple each park onto the number of games at that park, delimited with a colon. (Along the way you'll see we also typecast the `n_games` value, since the `CONCAT` method expects a `chararray`.) The final `GENERATE` line creates records naming the team, the count of parks, and the list of park-usages pairs:
 
 ------
 ALT  1   ALT01:18
@@ -242,7 +242,7 @@ delimited values is a fine approach. But when fields become this complex, or
 when there's any danger of stray delimiters sneaking into the record, if
 you're going to stick with TSV you are better off using JSON encoding to
 serialize the field. It's a bit more heavyweight but nearly as portable, and
-it happy bundles complex structures and special characters to hide within TSV
+it happily bundles complex structures and special characters to hide within TSV
 files. footnote:[And if nether JSON nor simple-delimiter is appropriate, use
 Parquet or Trevni, big-data optimized formats that support complex data
 structures. As we'll explain in chapter (REF), those are your three choices:
@@ -475,7 +475,7 @@ We're safe here, even on larger datasets, because all but one of the
 functions we supplied above are efficiently 'algebraic': they can be
 significantly performed in the map phase and combiner'ed. This eliminates
 most of the data before the reducer. The cardinality calculation, done here
-with a nested DISTINCT operation, is the only real contributor to
+with a nested `DISTINCT` operation, is the only real contributor to
 reducer-side data size. For this dataset its size is manageable, and if it
 weren't there is a good approximate cardinality function. We'll explain the
 why and the how of algebraic functions and these approximate methods in the
@@ -483,7 +483,7 @@ Statistics chapter.  But you'll get a good feel for what is and isn't
 efficient through the examples in this chapter.)
 
 NOTE: Note the syntax of the full-table group statement. There's no I in
-TEAM, and no BY in GROUP ALL.
+TEAM, and no `BY` in `GROUP ALL`.
 
 ==== Summarizing a String Field
 
@@ -542,7 +542,7 @@ One of the most common uses of a group-and-aggregate is to create a histogram
 showing how often each value (or range of values) of a field occur. This
 calculates the distribution of seasons played -- that is, it counts the
 number of players whose career lasted only a single season; who played for
-two seasons; and so forth, up
+two seasons; and so forth.
 
 .Histogram of Number of Seasons
 ------
@@ -558,7 +558,7 @@ seasons_hist = FOREACH (GROUP vals BY bin) {
 };
 ------
 
-So the pattern here is to
+So the pattern here is to:
 
 * project only the values,
 * Group by the values,
@@ -624,7 +624,7 @@ images::images/06-histograms-career_G-linear.png[Histogram of Career Games, Line
 
 ===== Games Played -- Log-Log plot
 
-Distributions, such as this one, that span many orders of magnitude in value and count are easier to understand using a 'log-log graph'. On a log-log graph, the axes arrange the displayed values so that the same distance separates 1 from 10 as separates 10 from 100 and so on, for any _ratio_ of values.
+Distributions, such as this one, that span many orders of magnitude in value and count, are easier to understand using a 'log-log graph'.  The "log" is short for "logarithm," in which successive values represent orders of magnitude difference.  On a log-log graph, then, the axes arrange the displayed values so that the same distance separates 1 from 10 as separates 10 from 100 and so on, for any _ratio_ of values.
 
 Though the career games data shows a very sharp dropoff, it is _not_ a long-tail distribution, as you can see by comparing a power-law fit (which is always a straight line on a log-log graph) to the actual histogram.
 
@@ -718,9 +718,11 @@ baseball players deviates predictably from the overall population: it's an
 advantage to The distribution of player weights, meanwhile, is shifted
 somewhat but with a dramatically smaller spread.
 
+===== Distribution of Birth and Death day of year
+
 Surely at least baseball players are born and die like the rest of us, though?
 
-===== Distribution of Birth and Death day of year
+With a little Pig action, we can generate some histograms to answer that question:
 
 .Vital Stats pt 1
 ------
@@ -761,6 +763,9 @@ image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
 
 image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
 
+
+TODO: summarize the findings, just one or two quick sentences
+
 ==== Don't Trust Distributions at the Tails
 
 A lot of big data analyses explore population extremes: manufacturing
@@ -785,7 +790,7 @@ The histograms we've calculated have results in terms of counts. The results do 
 HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS n_players;
 ------
 
-The problem is that HR_stats is a single-row table, and so not something we can use directly in a FOREACH expression. Pig gives you a piece of syntactic sugar for this specific case of a one-row table footnote:[called 'scalar projection' in Pig terminology]: project the value as tablename.field as if it were an inner bag, but slap the field's type (in parentheses) in front of it like a typecast expression:
+The problem is that HR_stats is a single-row table, and so not something we can use directly in a `FOREACH` expression. Pig gives you a piece of syntactic sugar for this specific case of a one-row table footnote:[called 'scalar projection' in Pig terminology]: project the value as tablename.field as if it were an inner bag, but slap the field's type (in parentheses) in front of it like a typecast expression:
 
 ------
 HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS n_total;
@@ -832,6 +837,8 @@ As we said, this is a cheat-to-win scenario: using it to knock three minutes off
 
 As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization
 
+TODO: this section arrived incomplete
+
 http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
 
 You'll see the
@@ -852,9 +859,9 @@ We want to normalize this to be a relative-fraction histogram, so that we can
 make comparisons across eras even as the number of active players grows.
 Finding the total count to divide by is a straightforward COUNT_STAR on the
 group, but a peccadillo of Pig's syntax makes using it a bit frustrating.
-Annoyingly, a nested FOREACH can only "see" values from the bag it's
+Annoyingly, a nested `FOREACH` can only "see" values from the bag it's
 operating on, so there's no natural way to reference the calculated total
-from the FOREACH statement.
+from the `FOREACH` statement.
 
 ------
 -- Won't work:
@@ -899,7 +906,7 @@ hist_by_year = FOREACH hist_by_year_bags {
 === The Summing Trick
 
 There's a pattern-of-patterns we like to call the "Summing trick", a frequently useful way to act on
-subsets of a group without having to perform multiple GROUP BY or FILTER operations. Call it to mind
+subsets of a group without having to perform multiple `GROUP BY` or `FILTER` operations. Call it to mind
 every time you find yourself thinking "gosh, this sure seems like a lot of reduce steps on the same
 key". Before we describe its generic nature, it will help to see an example
 
@@ -969,7 +976,7 @@ field. This approach allows Pig to use combiners (and so less data to the
 reducer); and more importantly it doesn't cause a bag of values to be
 collected, only a running sum (and so way less garbage-collector pressure).
 
-Another example will help you see what we mean -- next, we'll use one GROUP
+Another example will help you see what we mean -- next, we'll use one `GROUP`
 operation to summarize multiple subsets of a table at the same time.
 
 First, though, a side note on these figures of merit. As it stands, this isn't a terribly
