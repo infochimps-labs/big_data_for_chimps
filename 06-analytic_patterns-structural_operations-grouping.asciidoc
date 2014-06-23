@@ -1,5 +1,4 @@
-
-== Structural Operations
+== Analytic Patterns: Grouping Operations
 
 === Introduction
 

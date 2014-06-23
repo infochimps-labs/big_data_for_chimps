@@ -2,6 +2,8 @@
 
 include::02-part_one.asciidoc[]
 
+include::02-part_two.asciidoc[]
+
 include::05-analytic_patterns-pipeline_operations.asciidoc[]
 
 include::06-analytic_patterns-structural_operations-grouping.asciidoc[]
@@ -9,3 +11,5 @@ include::06-analytic_patterns-structural_operations-grouping.asciidoc[]
 include::06-analytic_patterns-structural_operations-joining.asciidoc[]
 
 include::06-analytic_patterns-structural_operations-ordering.asciidoc[]
+
+include::02-part_three.asciidoc[]

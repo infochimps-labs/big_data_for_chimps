@@ -1,3 +1,4 @@
+== Analytic Patterns: Ordering Operations
 
 === Sorting All Records in Total Order
 
@@ -181,5 +182,4 @@ team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
 };
 ------
 
-Notice the lines 'Global sort: false // Secondary sort: true' in the explain output
-
+The lines 'Global sort: false // Secondary sort: true' in the explain output indicate that pig is indeed relying on the free secondary sort, rather than quicksorting the bag itself in the reducer.

@@ -1,5 +1,5 @@
 [[analytic_patterns]]
-= Part 2: Analytic Patterns
+= Tactics: Analytic Patterns
 
 Now that you've met the fundamental analytic machinery -- in both their map/reduce and table-operation form -- it's time to put them to work.
 
