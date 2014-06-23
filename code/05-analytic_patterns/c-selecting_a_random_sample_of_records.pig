@@ -10,7 +10,13 @@ bat_seasons = load_bat_seasons();
 some_seasons_samp = SAMPLE bat_seasons 0.0625;
 
 --
--- ==== Extracting a Consistent Sample of Records by Key
+-- ==== Consistent Sampling of Records by Key, Badly
+--
+
+some_seasons_firstchar = FILTER bat_seasons BY (SUBSTRING(player_id, 0, 1) == 's');
+
+--
+-- ==== Consistent Sampling of Records by Key Using a Digest
 --
 
 -- The seasons for a given player will either all be kept or all be rejected.
@@ -24,6 +30,9 @@ some_seasons_bypl  = FOREACH (
     FILTER plhash_seasons BY (STARTSWITH(keep_hash, '0'))
   ) GENERATE $0..;
 
+--
+-- ==== Consistent Uniform Sampling of Records
+--
 
 bat_seasons_md = LOAD '$rawd/sports/baseball/bats_lite.tsv'
   USING PigStorage('\t', '-tagMetadata') AS (
@@ -45,7 +54,9 @@ some_seasons_hash  = FOREACH (
     FILTER rechash_seasons BY (STARTSWITH(keep_hash, '0'))
   ) GENERATE $0..;
 
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 STORE_TABLE(some_seasons_samp,   'some_seasons_samp');
+STORE_TABLE(some_seasons_samp,   'some_seasons_firstchar');
 STORE_TABLE(some_seasons_bypl,   'some_seasons_bypl');
 STORE_TABLE(some_seasons_hash,   'some_seasons_hash');

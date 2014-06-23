@@ -15,8 +15,6 @@ bat_seasons = load_bat_seasons();
 -- Choose an arbitrary 25 sequential records. See chapter 6 for something more interesting.
 some_players = LIMIT bat_seasons 25;
 
-STORE_TABLE(some_players, 'some_players');
-
 --
 -- ==== LIMIT .. DUMP
 --
@@ -32,3 +30,4 @@ STORE_TABLE(some_players, 'some_players');
 -- consequences, including disabling multi-query execution.
 
 
+STORE_TABLE(some_players, 'some_players');

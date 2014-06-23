@@ -4,6 +4,9 @@
 
 // alternate title??: Matching Records Between Tables (Inner Join)
 
+
+The core operation you will use to put records from one table into context with data from another table is the JOIN. A common application of the JOIN is to reunite data that has been normalized -- that is to say, where the database tables are organized to eliminate any redundancy.
+
 ==== Joining Records in a Table with Directly Matching Records from Another Table (Direct Inner Join)
 
 There is a stereotypical picture in baseball of a "slugger": a big fat man who comes to plate challenging your notion of what an athlete looks like, and challenging the pitcher to prevent him from knocking the ball for multiple bases (or at least far enough away to lumber up to first base). To examine the correspondence from body type to ability to hit for power (i.e. high SLG), we will need to join the `people` table (listing height and weight) with their hitting stats.
@@ -73,7 +76,23 @@ So that you can effectively reason about the behavior of a JOIN, it's important 
 
 ==== A Join is a COGROUP+FLATTEN
 
-TODO: finish
+Applying the `COGROUP` operation in place of the JOIN gives us 
+
+------
+slugging_fatness_join = COGROUP
+  fatness        BY player_id,
+  slugging_stats BY player_id;
+------
+
+As you now know, 
+
+------
+Key   Baga   BagB
+------
+
+TODO argh we need to introduce a one-to-many or many-to-many example, because this is boring when all bags have exactly one element. This example should stay, and with a comment about vertical partitioning and a one-to-one join
+
+
 
 ==== A Join is a Map/Reduce Job with a secondary sort on the Table Name
 
@@ -321,6 +340,9 @@ All of the joins we've done so far have been on nice clean values designed in ad
 Suppose we wanted to plot where each major-league player grew up -- perhaps as an answer in itself as a browsable map, or to allocate territories for talent scouts, or to see whether the quiet wide spaces of country living or the fast competition of growing up in the city better fosters the future career of a high performer. While the people table lists the city, state and country of birth for most players, we must geolocate those place names -- determine their longitude and latitude -- in order to plot or analyze them.
 
 There are geolocation services on the web, but they are imperfect, rate-limited and costly for commercial use footnote:[Put another way, "Accurate, cheap, fast: choose any two]. Meanwhile the freely-available geonames database gives geo-coordinates and other information on more than seven million points of interest across the globe, so for informal work it can make a lot of sense to opportunistically decorate whatever records match and then decide what to do with the rest.
+
+// TODO: rework this to instead attack the 'birth_ctry' and 'death_ctry' fields in the people table.
+// On the other hand, that allows it to accurately describe Ed Porray's birthplace as "A Ship on Atlantic Ocean". The joys of community-generated data!
 
 ------
 geolocated_somewhat = JOIN

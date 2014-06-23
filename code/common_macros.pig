@@ -137,9 +137,9 @@ DEFINE load_people() RETURNS loaded {
   $loaded = LOAD '$data_dir/sports/baseball/people.tsv' USING PigStorage('\t', '--null_string \\N') AS (
     player_id:chararray,
     birth_year:int,        birth_month:int,       birth_day: int,
-    birth_ctry: chararray, birth_state:chararray, birth_city:chararray,
+    birth_city:chararray,  birth_state:chararray, birth_country: chararray, 
     death_year:int,        death_month:int,       death_day: int,
-    death_ctry: chararray, death_state:chararray, death_city:chararray,
+    death_city:chararray,  death_state:chararray, death_country: chararray, 
     name_first:chararray,  name_last:chararray,   name_given:chararray,
     height_in:int,         weight_lb:int,
     bats:chararray,        throws:chararray,

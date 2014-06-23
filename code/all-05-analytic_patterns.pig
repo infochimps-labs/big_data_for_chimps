@@ -31,7 +31,6 @@ modsig_stats = FILTER bat_seasons BY
 
 -- Doesn't start with a capital letter, or contains a non-word non-space character
 funnychars = FILTER people BY
-  (name_last  MATCHES '^([^A-Z]|.*[^\\w\\s]).*') OR
   (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 
 
@@ -109,7 +108,13 @@ bat_seasons = load_bat_seasons();
 some_seasons_samp = SAMPLE bat_seasons 0.0625;
 
 --
--- ==== Extracting a Consistent Sample of Records by Key
+-- ==== Consistent Sampling of Records by Key, Badly
+--
+
+some_seasons_firstchar = FILTER bat_seasons BY (SUBSTRING(player_id, 0, 1) == 's');
+
+--
+-- ==== Consistent Sampling of Records by Key Using a Digest
 --
 
 -- The seasons for a given player will either all be kept or all be rejected.
@@ -123,6 +128,9 @@ some_seasons_bypl  = FOREACH (
     FILTER plhash_seasons BY (STARTSWITH(keep_hash, '0'))
   ) GENERATE $0..;
 
+--
+-- ==== Consistent Uniform Sampling of Records
+--
 
 bat_seasons_md = LOAD '$rawd/sports/baseball/bats_lite.tsv'
   USING PigStorage('\t', '-tagMetadata') AS (
@@ -144,8 +152,10 @@ some_seasons_hash  = FOREACH (
     FILTER rechash_seasons BY (STARTSWITH(keep_hash, '0'))
   ) GENERATE $0..;
 
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 STORE_TABLE(some_seasons_samp,   'some_seasons_samp');
+STORE_TABLE(some_seasons_samp,   'some_seasons_firstchar');
 STORE_TABLE(some_seasons_bypl,   'some_seasons_bypl');
 STORE_TABLE(some_seasons_hash,   'some_seasons_hash');
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
@@ -185,26 +195,46 @@ STORE_TABLE(some_players, 'some_players');
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
+people      = load_people();
+
+birthplaces = FOREACH people GENERATE
+    player_id,
+    CONCAT(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc
+  ;
+
+birthplaces = FOREACH people GENERATE
+    player_id,
+    CONCAT(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc,
+    CONCAT((chararray)birth_year, '-', (chararray)birth_month, '-', (chararray)birth_day) AS birth_date
+  ;
+
+
+birthplaces = FOREACH people {
+  occasions = {
+      ('birth', birth_year, birth_month, birth_day),
+      ('death', death_year, death_month, death_day),
+      ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
+      ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
+    };
+  GENERATE
+    player_id,
+    CONCAT(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc,
+    CONCAT((chararray)birth_year, '-', (chararray)birth_month, '-', (chararray)birth_day) AS birth_date,
+    occasions AS occasions:bag{t:(occasion:chararray, year, month, day)}
+    ;
+};
+
 
 -- ***************************************************************************
 --
 -- === Transforming Records Individually
 --
 
-bat_seasons = LOAD '/tmp/bat_null.tsv' USING PigStorage('\t', '--null_string \\N')   AS (
-    player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
-    year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
-    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,  --  $6-$12
-    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int  -- $13-$19
-    ) ;
-
 bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
 core_stats  = FOREACH bat_seasons {
-  h1B  = H - (h2B + h3B + HR);
-  HBP  = (HBP IS NULL ? 0 : HBP);
   TB   = h1B + 2*h2B + 3*h3B + 4*HR;
-  OBP  = (H + BB + HBP) / PA;
-  SLG  = TB / AB;
+  OBP  = 1.0f*(H + BB + HBP) / PA;
+  SLG  = 1.0f*TB / AB;
   OPS  = SLG + OBP;
   GENERATE
     player_id, name_first, name_last,   --  $0- $2
@@ -213,6 +243,45 @@ core_stats  = FOREACH bat_seasons {
     H,    h1B, h2B, h3B,  HR,  R,  RBI, -- $13-$19
     SLG, OBP, OPS;                      -- $20-$22
 };
+
+DESCRIBE core_stats;
+
+obp_1 = FOREACH bat_seasons {
+  OBP = 1.0f * (H + BB + HBP) / PA; -- constant is a float
+  GENERATE OBP;                     -- making OBP a float
+};
+obp_2 = FOREACH bat_seasons {
+  OBP = 1.0 * (H + BB + HBP) / PA; -- constant is a double (same as if we wrote 1.0)
+  GENERATE OBP;                     -- making OBP a double
+};
+obp_3 = FOREACH bat_seasons {
+  OBP = (float)(H + BB + HBP) / PA; -- typecast forces floating-point arithmetic
+  GENERATE OBP;                     -- making OBP a float
+};
+obp_4 = FOREACH bat_seasons {
+  OBP = 1.0 * (H + BB + HBP) / PA; -- constant is a double
+  GENERATE OBP AS OBP:float;        -- but OBP is explicitly a float
+};
+broken = FOREACH bat_seasons {
+  OBP = (H + BB + HBP) / PA;        -- all int operands means integer math and zero as result
+  GENERATE OBP AS OBP:float;        -- even though OBP is explicitly a float
+};
+
+rounded = FOREACH bat_seasons GENERATE
+  (ROUND(1000.0f*(H + BB + HBP) / PA)) / 1000.0f AS round_and_typecast,
+  ((int)(1000.0f*(H + BB + HBP) / PA)) / 1000.0f AS typecast_only,
+  (FLOOR(1000.0f*(H + BB + HBP) / PA)) / 1000    AS floor_and_typecast,
+  ROUND_TO( 1.0f*(H + BB + HBP) / PA, 3)         AS what_we_would_use,
+  1.0f*(H + BB + HBP) / PA                       AS full_value
+  ;
+
+
+=> LIMIT obp_1  10; DUMP @; DESCRIBE obp_1  ;
+=> LIMIT obp_2  10; DUMP @; DESCRIBE obp_2  ;
+=> LIMIT obp_3  10; DUMP @; DESCRIBE obp_3  ;
+=> LIMIT obp_4  10; DUMP @; DESCRIBE obp_4  ;
+=> LIMIT broken 10; DUMP @; DESCRIBE broken ;
+=> LIMIT rounded 10; DUMP @; DESCRIBE rounded ;
 
 -- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- --
@@ -271,7 +340,8 @@ core_stats  = FOREACH bat_seasons {
 -- === A Nested FOREACH Allows Intermediate Expressions
 
 
-STORE_TABLE(core_stats, 'core_stats');
+-- STORE_TABLE(birthplaces, 'birthplaces');
+-- STORE_TABLE(core_stats,  'core_stats');
 IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
@@ -594,7 +664,8 @@ players_geoloced_c = FOREACH players_non_geoloced_us GENERATE
 Players_geoloced = UNION alloftheabove;
 
 
--- The SPLIT statement is fairly rare in use, and though its own performance cost is low it can lead to proliferation of code paths and map-reduce jobs downstream. If the different streams receive significantly different schema or different processing downstream, the SPLIT statement is justified. But if you follow a SPLIT statement with parallel repeated stanzas applied to each stream, consider whether you're not better off using a case or ternary statement (REF); the "Partitioning Data By Keys into Multiple Files" (REF) pattern; the "Summarizing Multiple Subsets of a Table Simultaneously" (REF) pattern; or some other application of the "summing trick" (REF) introduced in the next chapter.IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+-- The SPLIT statement is fairly rare in use, and though its own performance cost is low it can lead to proliferation of code paths and map-reduce jobs downstream. If the different streams receive significantly different schema or different processing downstream, the SPLIT statement is justified. But if you follow a SPLIT statement with parallel repeated stanzas applied to each stream, consider whether you're not better off using a case or ternary statement (REF); the "Partitioning Data By Keys into Multiple Files" (REF) pattern; the "Summarizing Multiple Subsets of a Table Simultaneously" (REF) pattern; or some other application of the "summing trick" (REF) introduced in the next chapter.
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
 peeps       = load_people();
@@ -629,7 +700,8 @@ STORE events_by_home INTO '$out_dir/evs_home-g'
   USING MultiStorage('$out_dir/evs_home-g','6'); -- field 6: home_team_id
 -- cp $data_dir/sports/baseball/events/.pig_schema $out_dir/evs_away-g
 
-Lastly, a couple notes about MultiStorage. It only partitions by a single key field in each record, and that key will is unavoidably written to disk along with the records -- you need to be OK with it sticking around. If the key is null, the word 'null' will be substituted without warning. (TODO check). You can produce compressed output by supplying an additional option; see the documentation. Lastly, it does not accept PigStorage's advanced options such as writing schema files or overwriting output.IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+Lastly, a couple notes about MultiStorage. It only partitions by a single key field in each record, and that key will is unavoidably written to disk along with the records -- you need to be OK with it sticking around. If the key is null, the word 'null' will be substituted without warning. (TODO check). You can produce compressed output by supplying an additional option; see the documentation. Lastly, it does not accept PigStorage's advanced options such as writing schema files or overwriting output.
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
 
 bat_seasons = load_bat_seasons();
 

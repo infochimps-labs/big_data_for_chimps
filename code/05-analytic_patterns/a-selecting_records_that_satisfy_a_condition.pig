@@ -31,7 +31,6 @@ modsig_stats = FILTER bat_seasons BY
 
 -- Doesn't start with a capital letter, or contains a non-word non-space character
 funnychars = FILTER people BY
-  (name_last  MATCHES '^([^A-Z]|.*[^\\w\\s]).*') OR
   (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 
 

@@ -330,10 +330,7 @@ early teams.
 
 === Group and Aggregate
 
-Some of the happiest moments you can have analyzing a massive data set come
-when you are able to make it a slightly less-massive data set.  Aggregate
-functions -- ones that turn the whole of a group into a scalar value -- are
-the best path to this joy.
+Some of the happiest moments you can have analyzing a massive data set come when you are able to make it a slightly less-massive data set.  Aggregate functions -- ones that turn the whole of a group into a scalar value -- are the best path to this joy.
 
 ==== Aggregate Statistics of a Group
 

@@ -265,8 +265,21 @@ The `ASSERT` operation applies a test to each record as it goes by, and fails th
 
 ==== `DUMP` shows data on the console with great peril
 
-The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. So you should never use a `DUMP` statement except as in the following stanza: `dumpable = LIMIT table_to_dump 10; DUMP dumpable;`.
-(ATTN tech reviewers: should we even discuss `DUMP`? Is there a good alternative, given `ILLUSTRATE`s flakiness?)
+The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. We hope that someday the DUMP command will gain an intrinsic LIMIT capability, but until then you can write footnote:[That snippet has some funny syntactical shortcuts that apart from this one snippet we don't like encouraging people to adopt. But look in the Pig documentation if you want to know about `=>` and `@`]
+
+------
+=> LIMIT player_year_stats 25; DUMP @;
+------
+
+What's more, the presence anywhere of a DUMP command has hidden consequences, such as disabling parallel execution of different dataflows in a script. If your output is in a text format, a preferred alternative is to run your script using the appropriate pair of commands below. Separating the two commands with `&&` means that the dumper command will not run if the pig script fails.
+
+------
+# Local mode script (Output is on local filesystem)
+time pig -x local  my_script.pig  && head -n 100 its_output/part-*00000
+# Mapreduce mode script (Output is on HDFS)
+time pig -x mapred my_script.pig  && hadoop fs -cat its_output/part-\*00000 | head -n 100
+------
+
 
 ==== `ILLUSTRATE` magically simulates your script's actions, except when it fails to work
 

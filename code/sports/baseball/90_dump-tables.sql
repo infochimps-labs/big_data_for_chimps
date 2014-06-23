@@ -28,8 +28,8 @@ SELECT  park_id, park_name, beg_date, end_date, is_active, n_games, lng, lat, ci
 
 SELECT
   `player_id`,
-   `birth_year`, `birth_month`, `birth_day`, `birth_country`, `birth_state`, `birth_city`,
-   `death_year`, `death_month`, `death_day`, `death_country`, `death_state`, `death_city`,
+   `birth_year`, `birth_month`, `birth_day`, `birth_city`, `birth_state`, `birth_country`, 
+   `death_year`, `death_month`, `death_day`, `death_city`, `death_state`, `death_country`, 
    `name_first`, `name_last`, `name_given`,
    `height`, `weight`, `bats`, `throws`,
    `first_game`, `final_game`, `college`,
@@ -74,6 +74,16 @@ SELECT game_id, year_id, away_team_id, home_team_id, away_runs_ct, home_runs_ct
   INTO OUTFILE '/data/rawd/sports/baseball/games_lite.tsv'
   ;
 
+
+-- ===========================================================================
+--
+SELECT NOW() AS starting_datetime, 'Dumping full game logs into /data/rawd/sports/baseball/retrosheet/games_lite.tsv: should take several seconds';
+
+SELECT  *
+  FROM `retrosheet`.`games`
+  ORDER BY year_id, game_id
+  INTO OUTFILE '/data/rawd/sports/baseball/games.tsv';
+  
 
 -- ===========================================================================
 --
