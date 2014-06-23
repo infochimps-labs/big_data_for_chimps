@@ -1,0 +1,446 @@
+
+
+=== Operations that Expand the number of Rows or Columns
+
+If you count all the letters in a large-enough body of text, you'll generally find that the letter "e" (the most frequent) appears about 12% of the time, while z and q (the least frequent) appear less than 1% of the time. But names of people have a noticeably different distribution of characters, as we can demonstrate using the baseball data. The `people` table has two fields representing city names, a first name field and a last name field. We'll find the frequency distribution for each.
+
+==== Parsing a Delimited String into a Collection of Values
+
+TSV (tab-separated-values) is the Volkswagen Beetle of go-anywhere file formats: it's robust, simple, friendly and works everywhere. However, it has significant drawbacks, most notably that it can only store flat records: a member field with, say, an array type must be explicitly handled after loading. One common workaround for serializing an array type is to convert the array into a string, where each value is separated from the next using a delimiter -- a character that doesn't appear in any of the values. We'll demonstrate creating such a field in the next chapter (REF), and in fact we're going to sneak into the future and steal that section's output files.
+
+------
+team_parkslists = LOAD team_parklists AS (...)
+xxx = FOREACH ... {
+  parks = STRSPLITBAG(...);
+  GENERATE ..., FLATTEN(parks), ...;
+};
+------
+
+In other cases the value may not be a bag holding an arbitrarily-sized collection of values, but a tuple holding several composite fields. Among other examples, it's common to find addresses serialized this way. The people table has fields for (city,state,country) of both birth and death. We will demonstrate by first creating single birth_loc and death_loc fields, then untangling them.
+
+------
+people_shrunk = FOREACH people GENERATE
+  player_id..birth_day,
+  CONCAT(birth_city,'|', birth_state, '|', birth_country) AS birth_loc,
+  death_year, death_month, death_day,
+  CONCAT(death_city,'|', death_state, '|', death_country) AS death_loc,
+  name_first.. ;
+
+people_2 = FOREACH people_shrunk GENERATE
+  player_id..birth_day,
+  FLATTEN(STRSPLIT(birth_loc)) AS (birth_city, birth_state, birth_country),
+  death_year, death_month, death_day,
+  FLATTEN(STRSPLIT(death_loc)) AS (death_city, death_state, death_country),
+  name_first.. ;
+------
+
+In this case we apply STRSPLIT, which makes a tuple (rather than STRSPLITBAG, which makes a bag). When we next apply FLATTEN to our tuple, it turns its fields into new columns (rather than if we had a bag, which would generate new rows). You can run the sample code to verify the output and input are identical.
+
+TODO-reviewer: (combine this with the later chapter? There's a lot going on there, so I think no, but want opinion)
+
+==== Flattening a Bag Generates Many Records
+
+attr_strings = FOREACH people {
+  fields_bag = {('fn', nameFirst), ('ln', nameLast), ('ct', birthCity), ('ct', deathCity)};
+  GENERATE FLATTEN(fields_bag) AS (type:chararray, str:chararray);
+  };
+-- ('fn',Hank)
+-- ('ln',Aaron)
+-- ...
+
+attr_chars = FOREACH (FILTER attr_strings BY str != '') {
+  chars_bag = STRSPLITBAG(LOWER(str), '(?!^)');
+  GENERATE type, FLATTEN(chars_bag) AS token;
+  };
+DESCRIBE attr_chars;
+
+chars_ct   = FOREACH (GROUP attr_chars BY (type, token))
+  GENERATE group.type, group.token, COUNT_STAR(attr_chars) AS ct
+  ;
+
+==== Flattening a Tuple Generates Many Columns
+  
+chars_freq = FOREACH (GROUP chars_ct BY type) {
+  tot_ct = SUM(chars_ct.ct);
+  GENERATE group AS type, tot_ct AS tot_ct, FLATTEN(chars_ct.(ct, token));
+  };
+chars_freq = FOREACH chars_freq GENERATE type, token, ct, (int)ROUND(1e6f*ct/tot_ct) AS freq:int;
+DESCRIBE chars_freq;
+
+rmf                    $out_dir/chars_freq;
+STORE chars_freq INTO '$out_dir/chars_freq';
+
+
+
+==== Flatten on a Bag Generates Many Records from a Field with Many Elements
+
+This snippet first produces a bag pairing each of the `chararray` values we want with the distribution it belongs to, then flattens it.
+
+----
+typed_strings = FOREACH people {
+  fields_bag = {('fn', nameFirst), ('ln', nameLast), ('ct', birthCity), ('ct', deathCity)};
+  GENERATE FLATTEN(fields_bag) AS (type:chararray, str:chararray);
+  };
+----
+
+Each single record having a bag turns into four records having a field called 'type' and a field called 'str':
+
+----
+fn    Hank
+ln    Aaron
+ct   San Diego
+ct   Inverness
+----
+
+==== Flatten on a Tuple Folds it into its Parent
+
+Our next step is to split those string fields into characters. Pig provides a `STRSPLIT` function that _seems_ to do what we want (spoiler alert: for this purpose it doesn't, but we want to prove a point).
+
+----
+typed_chars = FOREACH typed_strings {
+  chars_bag = STRSPLIT(str, '(?!^)');  -- works, but not as we want
+  GENERATE type, FLATTEN(chars_bag) AS token;
+  };
+----
+
+The output we want would have one record per character in the `str` field, but that isn't what happens:
+
+----
+fn   H   a   n   k
+ln   A   a   r    o   n
+...
+----
+
+`STRSPLIT` returns a _tuple_, not a _bag_, and the `FLATTEN` operation applied to a tuple does not produce many records from the tuple field, it lifts the elements of the tuple into its container. This `FLATTEN(STRSPLIT(...))` combination is great for, say, breaking up a comma-delimited string into field, but we want to flatten the characters into multiple records. The pigsy package has the UDF we need:
+
+----
+register    '/path/to/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
+DEFINE STRSPLITBAG         pigsy.text.STRSPLITBAG();
+-- ...
+typed_chars = FOREACH typed_strings {
+  chars_bag = STRSPLITBAG(LOWER(str), '(?!^)');
+  GENERATE type, FLATTEN(chars_bag) AS token;
+  };
+----
+
+===== Results
+
+What remains is to group on the characters for each type to find their overall counts, and then to prepare the final results. We'll jump into all that in the next chapter, but (REF) shows the final results. The letters "k", "j", "b" and "y" are very over-represented in first names. The letter "z" is very over-represented in last names, possibly because of the number of Hispanic and Latin American players.
+
+----
+char	% dictionary  	% prose		% first names	% excess
+a	  8.49		  8.16		 8.31		 1.01
+b	  2.07		  1.49		 3.61		 2.00
+c	  4.53		  2.78		 3.67		  .80
+d	  3.38		  4.25		 4.42		 1.48
+e	 11.16		 12.70		11.03		 1.05
+f	  1.81		  2.22		 1.43		 1.27
+g	  2.47		  2.01		 2.03		  .96
+h	  3.00		  6.09		 3.40		 1.23
+i	  7.54		  6.96		 6.85		  .78
+j	   .19		  0.15		 3.70		 3.14
+k	  1.10		  0.77		 3.07		 4.37
+l	  5.48		  4.02		 6.29		 1.07
+m	  3.01		  2.40		 3.73		 1.21
+n	  6.65		  6.74		 6.46		  .92
+o	  7.16		  7.50		 6.81		  .89
+p	  3.16		  1.92		 1.08		  .31
+q	   .19		  0.09		  . 3		  .19
+r	  7.58		  5.98		 8.33		 1.15
+s	  5.73		  6.32		 3.06		  .49
+t	  6.95		  9.05		 4.00		  .58
+u	  3.63		  2.75		 1.91		  .49
+v	  1.00		  0.97		 1.15		 1.25
+w	  1.28		  2.36		  .82		 1.29
+x	   .29		  0.15		  .22		  .73
+y	  1.77		  1.97		 3.93		 1.68
+z	   .27		  0.07		  .19		  .53
+----
+
+(TODO insert actual results, and decide which distribution (prose or dictionary) you'll normalize against)
+
+==== Other Similar Patterns
+
+The chapter on text data (REF) shows how to tokenize free text into a "word bag", using both Pig's simplistic `TOKENIZE` function and a UDF that applies a sophisticated computational linguistics library. In the Event Stream chapter (REF), we'll demonstrate dividing time range into discrete intervals. Lastly, the Statistics chapter (REF) describes a script to take summary statistics of all columns simultaneously, which involves transposing a record into attribute-value pairs.
+
+We have much more to say about FLATTEN, but it's best done the next chapter so that we can illustrate our points well.
+
+==== Generating Data
+
+Generating data in a distributed system requires distributing an assignment of what to generate onto each node, which can be somewhat annoying.
+
+==== Generating Data by Distributing Assignments As Input
+
+The best way to generate data in Hadoop is to prepare map inputs that represent assignments of what data to generate. There are two good examples of this pattern elsewhere in the book, so we won't try to contrive one here. One is the "poor-man's data loader" given in Chapter 3 (REF). The mapper input is a list of filenames or database queries; each mapper expands that trivial input into many rows of output. Another is the "self-inflicted DDOS" tool for stress-testing your website (REF). In that case, the mapper input is your historical weblogs, and the mapper output is formed from the web server response.
+
+Another example of this pattern is the poor-man's data loader given in Chapter 3 (REF) -- prepare a mapper input that is a list of filenames or database queries, and have each mapper expand its trivial input into many rows of output.
+
+==== Generating a Sequence Using an Integer Table
+
+The surprisingly useful integers table -- 1, 2, 3, ... each on subsequent rows -- provides one way to get around this. We don't really have a good baseball-based example, but we can demonstrate generating the 11 million combinations of five letters using a map-reduce job (or the similar UDF):
+
+.Generating Data
+----
+C2 = 26**2; C3 = 26**3; C4 = 26**4; C5 = 26**5
+ORD_A = 'a'.ord
+mapper do |line|
+  idx = line.to_i
+  offsets = [ line / C5, (line / C4) % 26, (line / C3) % 26, (line / C2) % 26, line % 26 ]
+  chars = offsets.map{|offset| (ORD_A + offset).chr }
+  yield chars.join
+end
+----
+
+------
+# seed the RNG with the index
+www.ruby-doc.org/gems/docs/w/wukong-4.0.0/Wukong/Faker/Helpers.html
+Faker::Config.locale = 'en-us'
+Faker::Name.name #=> "Tyshawn Johns Sr."
+Faker::PhoneNumber.phone_number #=> "397.693.1309"
+Faker::Address.street_address #=> "282 Kevin Brook"
+Faker::Address.secondary_address #=> "Apt. 672"
+Faker::Address.city #=> "Imogeneborough"
+Faker::Address.zip_code #=> "58517"
+Faker::Address.state_abbr #=> "AP"
+Faker::Address.country #=> "French Guiana"
+Faker::Business.credit_card_number #=> "1228-1221-1221-1431"
+Faker::Business.credit_card_expiry_date #=> <Date: 2015-11-11 ((2457338j,0s,0n),+0s,2299161j)>
+mapper do |line|
+  idx = line.to_i
+  offsets = [ line / C5, (line / C4) % 26, (line / C3) % 26, (line / C2) % 26, line % 26 ]
+  chars = offsets.map{|offset| (ORD_A + offset).chr }
+  yield chars.join
+end
+------
+
+
+  - Generating data using the assignment list as input
+	- in particular, using the list of URLs or filenames or whatever -- TODO-Flip: not sure what you mean here?
+	- just demonstrate with map-reduce only, no pig (unless we decide to use this to show an inline Ruby UDF?)
+
+
+==== Generating Pairs
+
+is there a way to do the SQL version more elegantly?
+
+------
+SELECT
+    IF(home_team_id <= away_team_id, home_team_id, away_team_id) AS team_a,
+    IF(home_team_id <= away_team_id, away_team_id, home_team_id) AS team_b,
+    COUNT(*)
+  FROM events ev
+GROUP BY home_team_id, away_team_id
+ORDER BY home_team_id, away_team_id
+;
+------
+
+(do we want to show the group by or call forward to it)
+
+You'll see a more elaborate version of this
+	
+
+
+=== Operations that Break One Table Into Many
+
+==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
+
+The careers table gives the number of times each player was elected to the All-Star game (indicating extraordinary performance during a season) and whether they were elected to the Hall of Fame (indicating a truly exceptional career).
+
+===== Demonstration in Pig
+
+Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
+
+----
+SPLIT bat_career
+  INTO hof     IF hofYear > 0, -- the '> 0' eliminates both NULLs and 0s
+  INTO allstar IF G_allstar > 0,
+  INTO neither OTHERWISE
+  ;
+STORE hof     INTO '/data/out/baseball/hof_careers';
+STORE allstar INTO '/data/out/baseball/allstar_careers';
+STORE neither INTO '/data/out/baseball/neither_careers';
+----
+
+The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files.
+
+// ==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
+// 
+// TODO integrate prose
+// 
+// The most natural use of the SPLIT operator is when you really do require divergent processing flows. In the next chapter, you'll use a JOIN LEFT OUTER to geolocate (derive longitude and latitude from place name) records. That method is susceptible to missing matches, and so in practice a next step might be to apply a fancier but more costly geolocation tool. This is a strategy that arises often in advanced machine learning applications: run a first pass with a cheap algorithm that can estimate its error rate; isolate the low-confidence results for harder processing; then reunite the whole dataset.
+// 
+// The syntax of the SPLIT command does not have an equals sign to the left of it; the new table aliases are created in its body.
+// 
+// ------
+// SPLIT players_geoloced_some INTO
+//   players_non_geoloced_us IF ((IsNull(lng) OR IsNull(lat)) AND (country_id == "US")),
+//   players_non_geoloced_fo IF ((IsNull(lng) OR IsNull(lat)),
+//   players_geoloced_a OTHERWISE;
+// 
+// -- ... Pretend we're applying a more costly / higher quality geolocation tool, rather than just sending all unmatched records to Disneyland...
+// players_geoloced_b = FOREACH players_non_geoloced_us GENERATE
+//   player_id..country_id,
+//   FLATTEN((Disney,land)) as (lng, lat);
+// -- ... And again, pretend we are not just sending all non-us to the Eiffel Tower.
+// players_geoloced_c = FOREACH players_non_geoloced_us GENERATE
+//   player_id..country_id,
+//   FLATTEN((Eiffel,tower)) as (lng, lat);
+//   
+// Players_geoloced = UNION alloftheabove;
+// ------
+
+==== Splitting into files by key by using a Pig Storefunc UDF
+
+One reason you might find yourself splitting a table is to create multiple files on disk according to some key.
+
+If instead you're looking to partition directly into files named for a key, use the multistorage storefunc from the Piggybank UDF collection. As opposed to SPLIT, each record goes into exactly one file. Here is how to partition player seasons by primary team:
+
+There might be many reasons to do this splitting, but one of the best is to accomplish the equivalent of what traditional database admins call "vertical partitioning". You are still free to access the table as a whole, but in cases where one field is over and over again used to subset the data, the filtering can be done without ever even accessing the excluded data. Modern databases have this feature built-in and will apply it on your behalf based on the query, but our application of it here is purely ad-hoc. You will need to specify the subset of files yourself at load time to take advantage of the filtering.
+
+----
+bat_season = LOAD 'bat_season' AS (...);
+STORE bat_season INTO '/data/out/baseball/seasons_by_team' USING MultiStorage('/data/out/baseball/seasons_by_team', '10'); -- team_id, field 10
+STORE ... multistorage;
+----
+
+------
+STORE events INTO '$out_dir/evs_away'
+  USING MultiStorage('$out_dir/evs_away','5'); -- field 5: away_team_id
+STORE events INTO '$out_dir/evs_home'
+  USING MultiStorage('$out_dir/evs_home','6'); -- field 6: home_team_id
+------
+
+This script will run a map-only job with 9 map tasks (assuming 1GB+ of data and a 128MB block size). With MultiStorage, all Boston Red Sox (team id `BOS`) home games that come from say the fifth map task will go into `$out_dir/evs_home/BOS/part-m-0004` (contrast that to the normal case of  `$out_dir/evs_home/part-m-00004`). Each map task would write its records into the sub directory named for the team with the `part-m-` file named for its taskid index.
+
+Since most teams appear within each input split, each subdirectory will have a full set of part-m-00000 through part-m-00008 files. In our runs, we ended up with XXX output files -- not catastrophic, but (a) against best practices, (b) annoying to administer, (c) the cause of either nonlocal map tasks (if splits are combined) or proliferation of downstream map tasks (if splits are not combined). The methods of (REF) "Cleaning up Many Small Files" would work, but you'll need to run a cleanup job per team. Better by far is to precede the `STORE USING MultiStorage` step with a `GROUP BY team_id`. We'll learn all about grouping next chapter, but its use should be clear enough: all of each team's events will be sent to a common reducer; as long as the Pig `pig.output.lazy` option is set, the other reducers will not output files.
+
+------
+events_by_away = FOREACH (GROUP events BY away_team_id) GENERATE FLATTEN(events);
+events_by_home = FOREACH (GROUP events BY home_team_id) GENERATE FLATTEN(events);
+STORE events_by_away INTO '$out_dir/evs_away-g'
+  USING MultiStorage('$out_dir/evs_away-g','5'); -- field 5: away_team_id
+STORE events_by_home INTO '$out_dir/evs_home-g'
+  USING MultiStorage('$out_dir/evs_home-g','6'); -- field 6: home_team_id
+------
+
+The output has a directory for each key, and within directory that the same `part-NNNNN` files of any map-reduce job.
+
+This means the count of output files is the number of keys times the number of output slots, which can lead to severe many small files problem. As mentioned in Chapter 3 (REF), many small files is Not Good. If you precede the STORE operation by a `GROUP BY` on the key, the reducer guarantee provides that each subdirectory will only have one output file.
+
+==== Splitting a Table into Uniform Chunks
+
+We won't go into much detail, but one final set of patterns is to split a table into uniform chunks. If you don't need the chunks to be exactly sized, you can apply a final `ORDER BY` operation on a uniformly-distributed key -- see the section on "Shuffling the Records in a Table" in the next chapter (REF).
+
+To split into chunks with an exact number of lines, first use `RANK` to number each line, then prepare a chunk key using the line number modulo the chunk size, and store into chunks using MultiStorage. Since the rank operation's reducers number their records sequentially, only a few reducers are involved with each chunk, and so you won't hit the small files problem. Splitting a table into blocks of fixed _size_ is naturally provided by the HDFS block size parameter, but we're not aware of a good way to do so explicitly.
+
+An ORDER BY statement with parallelism forced to (output size / desired chunk size) will give you _roughly_ uniform chunks,
+
+------
+SET DEFAULT_PARALLEL 3;
+%DEFAULT chunk_size 10000;
+------
+
+------
+-- Supply enough keys to rank to ensure a stable sorting
+bat_seasons_ranked  = RANK bat_seasons BY (player_id, year_id)
+bat_seasons_chunked = FOREACH (bat_seasons_ranked) GENERATE
+  SPRINTF("%03d", FLOOR(rank/$chunk_size)) AS chunk_key, player_id..;
+
+-- Writes the chunk key into the file, like it or not.
+STORE bat_seasons_chunked INTO '$out_dir/bat_seasons_chunked'
+  USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
+------
+
+Note that in current versions of Pig, the RANK operator forces parallelism one. If that's unacceptable, we'll quickly sketch a final alternative but send you to the sample code for details. You can instead use RANK on the map side modulo the _number_ of chunks, group on that and store with MultiStorage. This will, however,  have non-uniformity in actual chunk sizes of about the number of map-tasks -- the final lines of each map task are more likely to short-change the higher-numbered chunks. On the upside, the final chunk isn't shorter than the rest (as it is with the prior method or the unix split command).
+
+------
+%DEFAULT n_chunks 8;
+
+bats_ranked_m = FOREACH (RANK bat_seasons) GENERATE
+  MOD(rank, $n_chunks) AS chunk_key, player_id..;
+bats_chunked_m = FOREACH (GROUP bats_ranked_m BY chunk_key)
+  GENERATE FLATTEN(bats_ranked_m);
+STORE bats_chunked_m INTO '$out_dir/bats_chunked_m'
+  USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
+------
+
+With no sort key fields, it's done on the map side (avoiding the single-reducer drawback of RANK)
+
+=== Operations that Treat the Union of Several Tables as One
+
+The counterpart to splitting a table into pieces is to treat many pieces as a single table. This really only makes sense when all those pieces have the same schema, so that's the only case we'll handle here.
+
+==== Load Multiple Files as One Table
+
+The easiest way to unify several tables is to simply load them as one. Hadoop will expand a comma-separated list of paths into multiple paths, and perform simple 'glob-style' filename expansion. This snippet will load all the teams whose team_id starts with a "B" or ends with an "N":
+
+===== Demonstration in Pig
+
+----
+b_and_n_teams = LOAD '/data/out/baseball/seasons_by_team/B*,/data/out/baseball/seasons_by_team/*N' AS (...);
+----
+
+===== Demonstration in map/reduce
+
+----
+(show commandline for multiple files)
+----
+
+==== Treat Several Pig Relation Tables as a Single Table (Stacking Rowsets)
+
+In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and id of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
+
+.Union Treats Several Tables as a Single Table
+------
+bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
+pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
+bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
+pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
+names_in_both = UNION bat_names, pit_names;
+player_names = DISTINCT names_in_both;
+------
+
+Note that this is not a Join (which requires a reduce, and changes the schema
+of the records) -- this is more like stacking one table atop another, making
+no changes to the records (schema or otherwise) and does not require a
+reduce.
+
+A common use of the UNION statement comes in 'symmetrizing' a relationship. For example, each line in the games table describes in a sense two game outcomes: one for the home team and one for the away team. We might reasonably want to prepare another table that listed game _outcomes_: game_id, team, opponent, team's home/away position, team's score, opponent's score. The game between BAL playing at BOS on XXX (final score BOS Y, BAL Z) would get two lines: `GAMEIDXXX BOS BAL 1 Y Z` and `GAMEID BAL BOS 0 Z Y`.
+
+// TODO: This is the same snippet used at the top. Good or bad?
+
+------
+games_a = FOREACH games GENERATE
+  year_id, home_team_id AS team,
+  home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
+
+games_b = FOREACH games GENERATE
+  away_team_id AS team,     year_id,
+  away_runs_ct AS runs_for, home_runs_ct AS runs_against, 0 AS is_home:int;
+
+team_scores = UNION games_a, games_b;
+
+DESCRIBE team_scores;
+--   team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
+------
+
+The `UNION` operation does not remove duplicate rows as a set-wise union would. It simply tacks one table onto the end of the other, and so the last line eliminates those duplicates -- more on `DISTINCT` in the next chapter (REF). The `UNION` operation also does not provide any guarantees on ordering of rows. Some SQL users may fall into the trap of doing a UNION-then-GROUP to combine multiple tables. This is terrible in several ways, and you should instead use the COGROUP operation -- see the Won-Loss Record example in the next chapter (REF).
+
+NOTE: The UNION operator is easy to over-use. For one example, in the next chapter we'll extend the first part of this code to prepare win-loss statistics by team. A plausible first guess would be to follow the UNION statement above with a GROUP statement, but a much better approach would use a COGROUP instead (both operators are explained in the next chapter). The UNION statement is mostly harmless but fairly rare in use; give it a second look any time you find yourself writing it in to a script.
+
+==== Clean Up Many Small Files by Merging into Fewer Files
+
+The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files.
+
+One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs.
+
+Sorting is a fairly expensive operation, though; luckily, Pig can do this reasonably well with a mapper-only job by setting the `pig.splitCombination` configuration to true and setting `pig.maxCombinedSplitSize` to the size of the input divided by the number of files you'd like to produce.
+
+----
+set pig.splitCombination true;
+set pig.maxCombinedSplitSize 2100100100;
+----
+
+The `maxCombinedSplitSize` should be much larger than the HDFS block size so that blocks are fully used. Also note the old sailor's trick in the last line -- since there's no essential difference between 2 billion bytes, 2 gigabytes, or a number nearby, the value `2100100100` is much easier to read accurately than `2000000000` or `2147483648`.
+
+The operations in this chapter (except where noted) do not require a reduce on their own, which makes them very efficient. The really interesting applications, however, come when we put data into context, which is the subject of the next chapter.

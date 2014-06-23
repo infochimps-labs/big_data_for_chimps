@@ -9,14 +9,26 @@ park_teams   = load_park_teams();
 --
 -- === Treating the Union of Several Tables as a Single Table
 --
--- Note that this is not a Join (which requires a reduce, and changes the schema
--- of the records) -- this is more like stacking one table atop another, making
--- no changes to the records (schema or otherwise) and does not require a
--- reduce.
 
--- A common use of the UNION statement comes in 'symmetrizing' a relationship. For example, each line in the games table describes in a sense two game outcomes: one for the home team and one for the away team. We might reasonably want to prepare another table that listed game _outcomes_: game_id, team, opponent, team's home/away position, team's score, opponent's score. The game between BAL playing at BOS on XXX (final score BOS Y, BAL Z) would get two lines: `GAMEIDXXX BOS BAL 1 Y Z` and `GAMEID BAL BOS 0 Z Y`.
+games_a = FOREACH games GENERATE
+  year_id, home_team_id AS team,
+  home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
 
-TODO copy over code
+games_b = FOREACH games GENERATE
+  away_team_id AS team,     year_id,
+  away_runs_ct AS runs_for, home_runs_ct AS runs_against, 0 AS is_home:int;
+
+team_scores = UNION games_a, games_b;
+
+DESCRIBE team_scores;
+--   team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
+
+-- bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
+-- pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
+bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
+pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
+names_in_both = UNION bat_names, pit_names;
+player_names = DISTINCT names_in_both;
 
 
--- NOTE: The UNION operator is easy to over-use. For one example, in the next chapter we'll extend the first part of this code to prepare win-loss statistics by team. A plausible first guess would be to follow the UNION statement above with a GROUP statement, but a much better approach would use a COGROUP instead (both operators are explained in the next chapter). The UNION statement is mostly harmless but fairly rare in use; give it a second look any time you find yourself writing it in to a script.
+-- 

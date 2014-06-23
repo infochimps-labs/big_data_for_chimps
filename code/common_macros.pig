@@ -1,4 +1,24 @@
+-- ***************************************************************************
+--
+-- Paths and Jars
+--
 %DEFAULT dsfp_dir '/Users/flip/ics/data_science_fun_pack';
+
+--
+-- Versions; must include the leading dash when version is given
+--
+%DEFAULT datafu_version	   '-1.2.1';
+%DEFAULT piggybank_version '';
+%DEFAULT pigsy_version	   '-2.1.0-SNAPSHOT';
+
+REGISTER           '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank$piggybank_version.jar';
+REGISTER           '$dsfp_dir/pig/datafu/datafu-pig/build/libs/datafu-pig$datafu_version.jar';
+REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy$pigsy_version.jar';
+
+-- ***************************************************************************
+--
+-- Utility macros
+--
 
 DEFINE STORE_TABLE(table, filename) RETURNS void {
   STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
@@ -8,10 +28,10 @@ DEFINE LOAD_RESULT(filename) RETURNS loaded {
   $loaded = LOAD '$out_dir/$filename' USING PigStorage('\t', '-schema');
 };
 
-
-REGISTER           '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank.jar';
-REGISTER           '$dsfp_dir/pig/datafu/datafu-pig/build/libs/datafu-pig-1.2.1.jar';
-REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
+-- ***************************************************************************
+--
+-- UDFs
+--
 
 DEFINE Transpose              datafu.pig.util.TransposeTupleToBag();
 DEFINE STRSPLITBAG            pigsy.text.STRSPLITBAG();
@@ -34,6 +54,11 @@ DEFINE MD5                    datafu.pig.hash.MD5('hex');
 -- DEFINE SHA256              datafu.pig.hash.SHA();
 -- DEFINE SHA512              datafu.pig.hash.SHA('512');
 DEFINE CountVals              datafu.pig.bags.CountEach('flatten');
+
+-- ***************************************************************************
+--
+-- Loading Macros
+--
 
 DEFINE load_allstars() RETURNS loaded {
   $loaded = LOAD '$data_dir/sports/baseball/allstars.tsv' AS (

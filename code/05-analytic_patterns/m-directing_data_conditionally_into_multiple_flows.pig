@@ -7,8 +7,19 @@ park_teams   = load_park_teams();
 
 -- ***************************************************************************
 --
--- === Directing Data Conditionally into Multiple Data Flows
+-- === Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
 --
+
+SPLIT bat_career
+  INTO hof     IF hofYear > 0, -- the '> 0' eliminates both NULLs and 0s
+  INTO allstar IF G_allstar > 0,
+  INTO neither OTHERWISE
+  ;
+STORE hof     INTO '/data/out/baseball/hof_careers';
+STORE allstar INTO '/data/out/baseball/allstar_careers';
+STORE neither INTO '/data/out/baseball/neither_careers';
+
+-- ==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
 
 -- TODO integrate prose
 

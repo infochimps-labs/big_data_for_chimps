@@ -10,12 +10,4 @@ park_teams   = load_park_teams();
 -- === Loading Multiple Files as a Single Table
 --
 
-TODO make this target the output of the MultiStorage script instead
-
-
--- bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
--- pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
-bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
-pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
-names_in_both = UNION bat_names, pit_names;
-player_names = DISTINCT names_in_both;
+-- TODO make this target the output of the MultiStorage script instead

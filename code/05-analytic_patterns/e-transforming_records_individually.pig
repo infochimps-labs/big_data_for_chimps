@@ -3,6 +3,13 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 bat_seasons = load_bat_seasons();
 people      = load_people();
 
+-- ***************************************************************************
+--
+-- === Transforming Records Individually
+--
+
+-- ==== Concatenating Several Values into a Single String
+
 birthplaces = FOREACH people GENERATE
     player_id,
     CONCAT(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc
@@ -14,26 +21,8 @@ birthplaces = FOREACH people GENERATE
     CONCAT((chararray)birth_year, '-', (chararray)birth_month, '-', (chararray)birth_day) AS birth_date
   ;
 
-
-birthplaces = FOREACH people {
-  occasions = {
-      ('birth', birth_year, birth_month, birth_day),
-      ('death', death_year, death_month, death_day),
-      ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
-      ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
-    };
-  GENERATE
-    player_id,
-    CONCAT(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc,
-    CONCAT((chararray)birth_year, '-', (chararray)birth_month, '-', (chararray)birth_day) AS birth_date,
-    occasions AS occasions:bag{t:(occasion:chararray, year, month, day)}
-    ;
-};
-
-
--- ***************************************************************************
 --
--- === Transforming Records Individually
+-- ==== A nested `FOREACH` Allows Intermediate Expressions
 --
 
 bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
@@ -51,6 +40,11 @@ core_stats  = FOREACH bat_seasons {
 };
 
 DESCRIBE core_stats;
+
+
+--
+-- ==== Typecasting a Field
+--
 
 obp_1 = FOREACH bat_seasons {
   OBP = 1.0f * (H + BB + HBP) / PA; -- constant is a float
@@ -73,6 +67,10 @@ broken = FOREACH bat_seasons {
   GENERATE OBP AS OBP:float;        -- even though OBP is explicitly a float
 };
 
+--
+-- ==== Manipulating the Type of a Field
+--
+
 rounded = FOREACH bat_seasons GENERATE
   (ROUND(1000.0f*(H + BB + HBP) / PA)) / 1000.0f AS round_and_typecast,
   ((int)(1000.0f*(H + BB + HBP) / PA)) / 1000.0f AS typecast_only,
@@ -81,30 +79,71 @@ rounded = FOREACH bat_seasons GENERATE
   1.0f*(H + BB + HBP) / PA                       AS full_value
   ;
 
+
+--
+-- ==== Formatting a String According to a Template
+--
+
 formatted = FOREACH bat_seasons GENERATE
-  SPRINTF('%4d\t%-9s %-20s\tOBP %5.3f: (%3d + %3d + %2d)/%3d | %4$014.9f',
-    year_id,  player_id, CONCAT(name_first, ' ', name_last),
+  SPRINTF('%4d\t%-9s %-19s\tOBP %5.3f / %-3s %-3s\t%4$012.3e',
+    year_id,  player_id,
+    CONCAT(name_first, ' ', name_last),
     1.0f*(H + BB + HBP) / PA,
-    H, BB, HBP, PA) AS OBP_summary:chararray;
+    (year_id >= 1900 ? '.'   : 'pre'),
+    (PA >= 450       ? 'sig' : '.')
+  ) AS OBP_summary:chararray;
 
 
-=> LIMIT obp_1     10; DUMP @; DESCRIBE obp_1  ;
-=> LIMIT obp_2     10; DUMP @; DESCRIBE obp_2  ;
-=> LIMIT obp_3     10; DUMP @; DESCRIBE obp_3  ;
-=> LIMIT obp_4     10; DUMP @; DESCRIBE obp_4  ;
-=> LIMIT broken    10; DUMP @; DESCRIBE broken ;
-=> LIMIT rounded   10; DUMP @; DESCRIBE rounded ;
-=> LIMIT formatted 10; DUMP @; DESCRIBE formatted ;
-
-STORE_TABLE(formatted, 'formatted');
-
-
--- -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- --
 --
--- junk_drawer = FOREACH one_line {
---
---   -- Concatenating Several Values into a Single String
+-- ==== Assembling Literals with  Complex Type
+-- ==== Specifying Schema for Complex Types
+
+-- graphable = FOREACH people
+--   {
+--   occasions = {
+--       ('birth', birth_year, birth_month, birth_day),
+--       ('death', death_year, death_month, death_day),
+--       ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
+--       ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
+--     };
+--   places = (
+--     (birth_city, birth_state, birth_country),
+--     (death_city, death_state, death_country) );
+--   GENERATE
+--     player_id,
+--     occasions AS occasions:bag{t:(occasion:chararray, year, month, day)},
+--     places    AS places:tuple( birth:tuple(city, state, country),
+--                                death:tuple(city, state, country) )
+--     ;
+-- };
+
+
+graphable = FOREACH people GENERATE player_id,
+  {
+      ('birth', birth_year, birth_month, birth_day),
+      ('death', death_year, death_month, death_day),
+      ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
+      ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
+    } AS occasions:bag{t:(occasion:chararray, year, month, day)};
+
+-- => LIMIT obp_1     10; DUMP @; DESCRIBE obp_1  ;
+-- => LIMIT obp_2     10; DUMP @; DESCRIBE obp_2  ;
+-- => LIMIT obp_3     10; DUMP @; DESCRIBE obp_3  ;
+-- => LIMIT obp_4     10; DUMP @; DESCRIBE obp_4  ;
+-- => LIMIT broken    10; DUMP @; DESCRIBE broken ;
+-- => LIMIT rounded   10; DUMP @; DESCRIBE rounded ;
+
+-- STORE_TABLE(birthplaces, 'birthplaces');
+-- STORE_TABLE(core_stats,  'core_stats');
+
+STORE_TABLE(graphable,  'graphable');
+-- STORE_TABLE(formatted, 'formatted');
+
+-- From the commandline:
+sh egrep '^..\\(54.aaron\\|87.gwynnto\\|07.pedro\\|70.carewro\\|97.ansonca\\|95.vanlaw\\|41.willite\\)' /data/out/baseball/formatted/part-m-00000
+sh egrep '^\\(aaronha\\|gwynnto\\|pedrodu\\|carewro\\|ansonca\\|vanlaw\\|willite01\\)' /data/out/baseball/graphable/part-m-00000
+
+
 --   full_name  = CONCAT(name_first, ' ', name_last);
 --   -- Converting the Lettercase of a String
 --   name_shouty = UPPER(name_last);
@@ -156,5 +195,44 @@ STORE_TABLE(formatted, 'formatted');
 -- === A Nested FOREACH Allows Intermediate Expressions
 
 
--- STORE_TABLE(birthplaces, 'birthplaces');
--- STORE_TABLE(core_stats,  'core_stats');
+
+-- ***************************************************************************
+--
+-- === Working With Strings
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Splitting a String into Characters
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Splitting a Delimited String into a Collection of Values
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Finding a String's Size in Bytes or in Characters
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Selecting Records that Match a Regular Expression Template
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Replacing Sections of a String using a Regular Expression
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Splitting Delimited Data into a Collection of Values
+--
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- ==== Formatting a String With a Template
+--
+--
