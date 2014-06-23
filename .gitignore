@@ -52,3 +52,5 @@ images/map_grid_cells
 tmp/*
 *.log
 \~\$*
+
+code/all-*.pig

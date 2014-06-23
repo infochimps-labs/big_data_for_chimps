@@ -31,4 +31,4 @@ names_in_both = UNION bat_names, pit_names;
 player_names = DISTINCT names_in_both;
 
 
--- 
+--

@@ -1,4 +1,22 @@
 
+
+I see where that's needed for strategic things, and so I tried to frame the "What baseball players have had the greatest careers" as a search for outliers:
+
+Here, it's baseball players, but similar questions will apply when examining agents posing security threats, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance."
+
+
+But the content in the chapters we're assembling now cover tactical patterns, where this is harder to do -- and I'm not sure the reader will be expecting it. When we demonstrate Concatenating Several Values into a Single String or Testing for Absence of a Value Within a Group or Set Operations on Full Tables, the answer to "what are other applications of this technique" is "most of them, if that's what you're trying to do".
+
+As you know, I have a habit of inflating problems to grandest scale, so I might be overestimating what you're suggesting we change. But it's exceptionally hard to come up with a natural examples for things like "Testing for Absence of a Value Within a Group" or "Set Operations on Full Tables", while keeping focus on the analytic pattern and not on the data or domain specifics of the problem. And the baseball data is one of the very few that let us exhibit the full range of patterns.
+
+I've just added this section to the first analytic patterns chapter
+
+Throughout the book, when we touch on _strategic_ techniques -- how to assemble the patterns you're about to see into an explanation that tells a coherent story -- we endeavor to not only choose an interesting and realistic problem from some domain, but also to indicate how the strategic approach would extend to other domains, especially ones with an obvious business focus.
+
+This part of the book, however, will focus on tactical patterns, which are exactly those tools that don't adhere to any particular domain. Think of them as the screwdriver, torque wrench, lathe and so forth of your toolkit. Now, if this book were called "Big Mechanics for Chimps", we introduce those tools by repairing and rebuilding a Volkswagen Beetle engine, or by building another lathe from scratch. But those lessons carry over to anywhere machine tools apply: air conditioner repair, fixing your kid's bike, building a rocket ship to Mars. Similarly, to meet our standard of interesting and realistic demonstrations, we need some domain to explore. And to keep focus on the patterns and not on specifics of the data model or domain, it's best to choose one and stick with it. So we will center these next few chapters on what Nate Silver calls "the perfect data set": the sea of numbers surrounding the sport of baseball. The members of the Retrosheet and Baseball Databank projects have provided an extraordinary resource: comprehensive statistics from the birth of the game in the late 1800s until the present day, freely available and redistributable. There is an overview of the stats we'll use in (REF sidebar), and further information in the "Overview of Datasets" appendix (REF). Even if you're not a baseball fan, we've endeavored to choose recognizably interesting questions and to minimize the number of concepts you'll need to learn. We expect you'll learn a lot about data pipelines here.
+
+This means, however, that you may find yourself looking at a pattern and saying "geez, I don't see how this would apply to my work in quantitative finance". It might be the case that it doesn't apply; a practicing air conditioner repair person will generally not have use for a lathe. In many other cases it does apply, but you won't see how until some late night when your back's against the wall and you remember that one section in that covered "Splitting a Table into Uniform Chunks" and an hour later you tweet "No doubt about it, I sure am glad I purchased 'Big Data for Chimps'". Our belief and our goal is that it's most commonly the second scenario.
+
 ### Grouping
 
 Cleveland Spiders
@@ -71,7 +89,7 @@ We calculate several distributions:
   - **Shuffle all Records in a Table Consistently**
 * **Numbering Records in Rank Order**
   - **Handling Ties when Ranking Records**
-	
+
 * **Selecting Records Associated with Maximum Values**
   - **Selecting a Single Maximal Record Within a Group, Ignoring Ties**
 * **Selecting Records Having the Top K Values in a Group (discarding ties)**
@@ -101,7 +119,7 @@ We calculate several distributions:
 ### Advanced Grouping Operations
 
 * **Summarizing Multiple Subsets Simultaneously**
-	
+
 * **Testing for Absence of a Value Within a Group**
 * **Detecting Outliers**
 
@@ -123,10 +141,8 @@ We calculate several distributions:
 ### Other
 
 	-- ==== Mode (Most Frequent Value) of a Bag
-	-- ==== Selecting or Rejecting Records with a Null Value
 	-- ==== Use a HashMap (Replicated) Join when Joining Small-ish to Large-ish
 	-- ==== Dealing with Nulls When Grouping or Joining
-	-- === Why Flatten Can Be Dangerous
 	-- === Producing Master-Detail Lists and Summaries
 	-- ==== Dealing with Nulls (outer-join equivalent)
 	-- === Performing a Join-and-Aggregate with COGROUP

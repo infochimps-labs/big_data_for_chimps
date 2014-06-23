@@ -59,7 +59,7 @@ chars_ct   = FOREACH (GROUP attr_chars BY (type, token))
   ;
 
 ==== Flattening a Tuple Generates Many Columns
-  
+
 chars_freq = FOREACH (GROUP chars_ct BY type) {
   tot_ct = SUM(chars_ct.ct);
   GENERATE group AS type, tot_ct AS tot_ct, FLATTEN(chars_ct.(ct, token));
@@ -237,7 +237,7 @@ ORDER BY home_team_id, away_team_id
 (do we want to show the group by or call forward to it)
 
 You'll see a more elaborate version of this
-	
+
 
 
 === Operations that Break One Table Into Many
@@ -264,19 +264,19 @@ STORE neither INTO '/data/out/baseball/neither_careers';
 The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files.
 
 // ==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
-// 
+//
 // TODO integrate prose
-// 
+//
 // The most natural use of the SPLIT operator is when you really do require divergent processing flows. In the next chapter, you'll use a JOIN LEFT OUTER to geolocate (derive longitude and latitude from place name) records. That method is susceptible to missing matches, and so in practice a next step might be to apply a fancier but more costly geolocation tool. This is a strategy that arises often in advanced machine learning applications: run a first pass with a cheap algorithm that can estimate its error rate; isolate the low-confidence results for harder processing; then reunite the whole dataset.
-// 
+//
 // The syntax of the SPLIT command does not have an equals sign to the left of it; the new table aliases are created in its body.
-// 
+//
 // ------
 // SPLIT players_geoloced_some INTO
 //   players_non_geoloced_us IF ((IsNull(lng) OR IsNull(lat)) AND (country_id == "US")),
 //   players_non_geoloced_fo IF ((IsNull(lng) OR IsNull(lat)),
 //   players_geoloced_a OTHERWISE;
-// 
+//
 // -- ... Pretend we're applying a more costly / higher quality geolocation tool, rather than just sending all unmatched records to Disneyland...
 // players_geoloced_b = FOREACH players_non_geoloced_us GENERATE
 //   player_id..country_id,
@@ -285,7 +285,7 @@ The `SPLIT` operator does not short-circuit: every record is tested against ever
 // players_geoloced_c = FOREACH players_non_geoloced_us GENERATE
 //   player_id..country_id,
 //   FLATTEN((Eiffel,tower)) as (lng, lat);
-//   
+//
 // Players_geoloced = UNION alloftheabove;
 // ------
 

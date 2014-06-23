@@ -74,7 +74,7 @@ what_happens_to_null = FOREACH aa {
 -- * Flattening a bag with a tuple holding null _does_ result in a row. Flattening an empty bag _does not_.
 flatten_keeps_nulls = FOREACH aa GENERATE FLATTEN(bag_wnulls) AS wnulls_num, * ;
 -- * Flattening an empty bag _does not_ result in a row.
-flatten_drops_empty = FOREACH aa GENERATE FLATTEN(bag_wempty) AS wempty_num, * ; 
+flatten_drops_empty = FOREACH aa GENERATE FLATTEN(bag_wempty) AS wempty_num, * ;
 
 aa1 = FOREACH aa GENERATE tbl, row, has_nulls;
 bb1 = FOREACH bb GENERATE tbl, row, has_nulls;

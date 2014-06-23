@@ -10,7 +10,7 @@ park_teams   = load_park_teams();
 -- === Partitioning Data into Multiple Files By Key
 --
 
--- Ue the multistorage storefunc from the Piggybank UDF collection. 
+-- Ue the multistorage storefunc from the Piggybank UDF collection.
 
 STORE events INTO '$out_dir/evs_away'
   USING MultiStorage('$out_dir/evs_away','5'); -- field 5: away_team_id

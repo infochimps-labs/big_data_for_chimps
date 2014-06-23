@@ -1,3 +1,4 @@
+[[analytic_patterns]]
 = Part 2: Analytic Patterns
 
 Now that you've met the fundamental analytic machinery -- in both their map/reduce and table-operation form -- it's time to put them to work.
@@ -76,7 +77,7 @@ Truth be told, even if you work with every _record_ in a dataset, you may be int
 
 The goal of course isn't to _eliminate_ data, it's to be _selective_ about your data, and so we will introduce you to a variety of techniques for doing so.
 
-=== Selecting Rows that Satisfy a Condition: `FILTER` and Friends
+=== Selecting Records that Satisfy a Condition: `FILTER` and Friends
 
 The first step to eliminating (or being selective about) data is to reject records that don't match certain criteria. Pig's `FILTER` statement does this for you. It doesn't remove the data -- all data in Hadoop and thus Pig is immutable -- rather like all Pig operations it creates a new table that omits certain records from the input.
 
@@ -104,6 +105,12 @@ In Pig, you can also combine conditional statements with  `AND`, `OR`, `NOT` foo
 modsig_stats = FILTER bats BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
 ------
+
+// ==== Selecting or Rejecting Records with a Null Value
+//
+//
+// Consulting the output, you'll see that some players' birthplaces are not yet known, and so the corresponding input fields are `Null`. This doesn't cause an error
+// For people coming from a SQL background, Pig's handling of NULL values will be fairly familiar. NULL values generally disappear without notice from operations, and generally compare as Null. This means NULL is not less than 5.0, it is not greater than 5.0, it is not equal to 5.0. Null is not equal to Null, and is not _unequal_ to Null. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
 
 ==== Selecting Records that Match a Regular Expression (`MATCHES`)
 
@@ -165,7 +172,9 @@ game_scores = FOREACH games GENERATE
   away_team_id, home_team_id, home_runs_ct, away_runs_ct;
 ------
 
-You're not limited to simply restricting the number of columns; you can also rename and reorder them in a projection. Each row in the table above has _two_ game outcomes, one for the home team and one for the away team. We can represent the same data in a table listing outcomes purely from each team's perspective:
+==== Using a FOREACH to Select, Rename and Reorder fields
+
+You're not limited to simply restricting the number of columns; you can also rename and reorder them in a projection. Each record in the table above has _two_ game outcomes, one for the home team and one for the away team. We can represent the same data in a table listing outcomes purely from each team's perspective:
 
 ----
 games_a = FOREACH games GENERATE
@@ -184,11 +193,9 @@ DESCRIBE team_scores;
 
 The first projection puts the `home_team_id` into the team slot, renaming it `team`; retains the `year_id` field unchanged; and files the home and away scores under `runs_for` and `runs_against`. Lastly, we slot in an indicator field for home games, supplying both the name and type as a matter of form. Next we generate the corresponding table for away games, then stack them together with the `UNION` operation (to which you'll be properly introduced in a few pages). All the tables have the identical schema shown, even though their values come from different columns in the original tables.
 
-=== Select a Random Sample of Records
+==== Extracting a Random Sample of Records
 
 Another common operation is to extract a _uniform_ sample -- one where every record has an equivalent chance of being selected.  For example, you could use this to test new code before running it against the entire dataset (and possibly having a long-running job fail due to a large number of mis-handled records).  By calling the `SAMPLE`operator, you ask Pig to pluck out some records at random.
-
-==== Extracting a Random Sample of Records
 
 The following Pig code will return a randomly-selected 10% (that is, 1/10 = 0.10) of the records from our baseball dataset:
 
@@ -218,7 +225,7 @@ We called this a terrible hash function, but it does fit the bill. When applied 
 
 Sometimes you just want to knock down the data size while developing your script, and don't much care about the exact population. If you find a prior stage has left you with 20 files `part-r-00000` through `part-r-00019`, specifying `part-r-0000[01]` (the first two out of twenty files) as the input to the next stage is a hamfisted but effective way to get a 10% sample. You can cheat even harder by adjusting the parallelism of the preceding stage to get you the file granularity you need. As long as you're mindful that some operations leave the reducer with a biased selection of records, toggling back and forth between say `my_data/part-r-0000[01]` (two files) and `my_data/` (all files in that directory) can really speed up development.
 
-==== Selecting a fixed number of Rows with `LIMIT`
+==== Selecting a Fixed Number of Records with `LIMIT`
 
 A much blunter way to create a smaller dataset is to take some fixed number 'K' of records. Pig offers the `LIMIT` operator for this purpose. To select 25 records from our `bat_seasons` data, you would run:
 
@@ -227,7 +234,7 @@ some_players = LIMIT player_year_stats 25;
 ----
 
 This is somewhat similar to running the `head` command in Unix-like operating systems, or using the `LIMIT` clause in a SQL `SELECT` statement.
-However, unless you have explicitly imparted some order to the table (probably by sorting it with `ORDER`, which we'll cover later (REF)), Pig gives you _no guarantee over which records it selects_. In the big data regime, where your data is striped across many machines, there's no intrinsic notion of a row order. Changes in the number of mappers or reducers, in the data, or in the cluster may change which records are selected. In practice, you'll find that it takes the first 'K' records of the first-listed file (and so, as opposed to `SAMPLE`, generally gives the same outcome run-to-run), but it's irresponsible to rely on that.
+However, unless you have explicitly imparted some order to the table (probably by sorting it with `ORDER`, which we'll cover later (REF)), Pig gives you _no guarantee over which records it selects_. In the big data regime, where your data is striped across many machines, there's no intrinsic notion of a record order. Changes in the number of mappers or reducers, in the data, or in the cluster may change which records are selected. In practice, you'll find that it takes the first 'K' records of the first-listed file (and so, as opposed to `SAMPLE`, generally gives the same outcome run-to-run), but it's irresponsible to rely on that.
 
 When you have a very large dataset, as long as you really just need any small piece of it, you can apply the previous trick as well and just specify a single input file.  Invoking `LIMIT` on one file will prevent a lot of trivial map tasks from running.
 
@@ -252,7 +259,7 @@ birthplaces = FOREACH people GENERATE
     ;
 ------
 
-The syntax should be largely self-explanatory: this runs through the people table, and outputs a table with two columns, the player ID and our synthesized string. Consulting the output, you'll see that some players' birthplaces are not yet known, and so the corresponding input fields are `Null`. This doesn't cause an error, it only causes the `CONCAT` function to return `Null` as well.
+The syntax should be largely self-explanatory: this runs through the people table, and outputs a table with two columns, the player ID and our synthesized string. In the output you'll see that when `CONCAT` encounters records with `Null` values, it returned `Null` as well without an error.
 
 For the benefit of SQL aficionados, here's an equivalent SQL query:
 
@@ -309,9 +316,9 @@ This alternative `{` curly braces form of `FOREACH` lets you describe its transf
 
 You'll notice that we multiplied by `1.0` while calculating `OBP` and `SLG`. If all the operands were integers, Pig would use integer arithmetic; instead of fractions between 0 and 1, the result would always be integer 0. Multiplying by the floating-point value 1.0 forces Pig to use floating-point math, preserving the fraction. Using a typecast -- `SLG = (float)TB / AB` -- as described below is arguably more efficient but inarguably uglier. The above is what we'd write in practice.
 
-TODO-reviewer: In practice what I would write is what is above, using `1.0f` to get a float value. I want to talk about the integer arithmetic but not have to call this nitty little detail out; it's clarified three paragraphs later. Do we (a) write `1.0f` and sneak it by, describing it below (the way it is now); (b) write `1.0` and then fix it up below, or (c) write `1.0f` and call it out?
+By the way, the filter above is sneakily doing two things. It obviously eliminates records where `PA` is equal to zero, but it also eliminates records where `PA` is NULL. (See the section "Selecting or Rejecting Records with Null Values" (REF) above for details.)
 
-The filter above is sneakily doing two things. It obviously eliminates rows where `PA` is equal to zero, but it also eliminates rows where `PA` is NULL.  For people coming from a SQL background, Pig's handling of NULL values will be fairly familiar. NULL values generally disappear without notice from operations, and generally compare as Null. This means NULL is not less than 5.0, it is not greater than 5.0, it is not equal to 5.0. Null is not equal to Null, and is not _unequal_ to Null. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
+// TODO-reviewer: In practice what I would write is what is above, using `1.0f` to get a float value. I want to talk about the integer arithmetic but not have to call this nitty little detail out; it's clarified three paragraphs later. Do we (a) write `1.0f` and sneak it by, describing it below (the way it is now); (b) write `1.0` and then fix it up below, or (c) write `1.0f` and call it out?
 
 In addition to applying arithmetic expressions and functions, there are a set of _operations_ (`ORDER`, `DISTINCT`, `FOREACH`, `FILTER`, `LIMIT`) you can apply to bags within a nested FOREACH. We'll wait until the section on grouping operations to introduce their nested-foreach ("inner bag") forms.
 
@@ -382,12 +389,12 @@ graphable = FOREACH people {
     (birth_date, death_city, death_state, death_country),
     (beg_date,      Null,       Null,        Null),
     (end_date));
-  
+
   GENERATE
     player_id,
     occasions AS occasions:bag{t:(occasion:chararray, year:int, month:int, day:int)},
     places    AS places:tuple( birth:tuple(city, state, country),
-                               death:tuple(city, state, country) )    
+                               death:tuple(city, state, country) )
     ;
 };
 ------
@@ -404,7 +411,7 @@ You can do this inline (non-nested `FOREACH`) but we wouldn't. If you find yours
 
 * parsing a date
 * why we load dates as strings not dates
-* There's only three and a half ways we like to represent dates, and the very first thing we do when it isn't one of these is convert the representation. 
+* There's only three and a half ways we like to represent dates, and the very first thing we do when it isn't one of these is convert the representation.
   - The "half" in our "three and a half acceptable date representations" is "a domain representation chosen judiciously by an expert". Astronomers will use Julian Dates,
   Whatever the case, choose one format, stick with it, and don't tolerate any alternative representations
 * time zones are the second-worst thing besides
@@ -420,7 +427,7 @@ TODO: clean up
 
 * how bag is made
 
-* We may not have needed to write out the types -- it's likely that 
+* We may not have needed to write out the types -- it's likely that
   `occasions:bag{t:(occasion, year, month, day)}` would suffice. But this is another scenario where if you ask the question "Hey, do I need to specify the types or will Pig figure it out?" you've answered the question: yes, state them explicitly. The important point isn't whether Pig will figure it out, it's whether stupider-you at 3 am will figure it out.
 
 * how tupple is made
@@ -476,7 +483,7 @@ In the fourth stanza, the constant was given as a double. However, this time the
 
 ==== Ints and Floats and Rounding, Oh My!
 
-Another occasion for type conversion comes when you are trying to round or truncate a fractional number. The first four fields of the following statement turn the full-precision result of calculating OBP (`0.31827113`) into a result with three fractional digits (`0.318`), as OBP is usually represented. 
+Another occasion for type conversion comes when you are trying to round or truncate a fractional number. The first four fields of the following statement turn the full-precision result of calculating OBP (`0.31827113`) into a result with three fractional digits (`0.318`), as OBP is usually represented.
 
 ------
 rounded = FOREACH bat_seasons GENERATE

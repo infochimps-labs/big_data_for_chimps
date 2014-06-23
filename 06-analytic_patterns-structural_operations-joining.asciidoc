@@ -76,7 +76,7 @@ So that you can effectively reason about the behavior of a JOIN, it's important 
 
 ==== A Join is a COGROUP+FLATTEN
 
-Applying the `COGROUP` operation in place of the JOIN gives us 
+Applying the `COGROUP` operation in place of the JOIN gives us
 
 ------
 slugging_fatness_join = COGROUP
@@ -84,7 +84,7 @@ slugging_fatness_join = COGROUP
   slugging_stats BY player_id;
 ------
 
-As you now know, 
+As you now know,
 
 ------
 Key   Baga   BagB
@@ -164,7 +164,7 @@ reducer do
 	#   player_id, slg,                  # fields from 'A'
 	#   player_id, height_in, weight_lb  # fields from 'B'
 	# ]
-	
+
         #   But Pig then pipelines the post-join FOREACH into the reducer, and so do we:
         yield [player_id, slg, height_in, weight_lb, bmi(height_in, weight_lb)]
       end
@@ -192,7 +192,7 @@ of the big fat slugger is quire true.
 
 It's important to understand how Null keys are handled in Join and Group operations. Briefly:
 
-* In map-reduce, Nulls are respected as keys: 
+* In map-reduce, Nulls are respected as keys:
 * In a single-table Pig `GROUP`, Nulls are also respected as keys.
 * In a multi-table `COGROUP`, Nulls are respected as keys, _but not grouped together_
 * In a `JOIN` operation, rows with Nulls _do not take place in the join_ at all, but are _processed anyway_
@@ -376,7 +376,7 @@ SELECT bin, H, IFNULL(n_H,0)
   ON hist.H = nums.bin
   ORDER BY bin DESC
 ;
------- 
+------
 
 Regular old histogram of career hits, bin size 100
 
@@ -507,6 +507,13 @@ There are three opportunities for optimization here. Though these tables are far
 
 But "more performant" or "possibly more performant" doesn't mean "use it instead".
 
-Eliminating extra fields is almost always worth it, but the explicit projection means extra lines of code and it means an extra alias for the reader to understand. On the other hand, the explicit projection reassures the experienced reader that the projection is for-sure-no-doubt-about-it taking place. That's actually why we chose to be explicit here: we find that the more-complicated script gives the reader less to think about. 
+Eliminating extra fields is almost always worth it, but the explicit projection means extra lines of code and it means an extra alias for the reader to understand. On the other hand, the explicit projection reassures the experienced reader that the projection is for-sure-no-doubt-about-it taking place. That's actually why we chose to be explicit here: we find that the more-complicated script gives the reader less to think about.
 
 In contrast, any SQL user will immediately recognize the join formulation of this as an anti-join. Introducing a RIGHT OUTER join or choosing the cogroup version disrupts that familiarity. Choose the version you find most readable, and then find out if you care whether it's more performant; the simpler explain graph or the smaller left-hand join table _do not_ necessarily imply a faster dataflow. For this particular shape of data, even at much larger scale we'd be surprised to learn that either of the latter two optimizations mattered.
+
+
+// ==== Shooting Yourself in the Foot with `COGROUP`-and-`FLATTEN`
+//
+// Discuss general problem of cross product
+//
+// Discuss common error of flattening on two fields and not on one tuple

@@ -182,4 +182,4 @@ team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
 ------
 
 Notice the lines 'Global sort: false // Secondary sort: true' in the explain output
-  
+
