@@ -1,4 +1,20 @@
 
+===== Pattern in Use
+
+* _Where You'll Use It_  -- 
+* _Standard Snippet_	 -- 
+* _Hello, SQL Users_     -- 
+* _Important to Know_	 -- 
+* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
+* _Records_		 -- 
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- 
+* _See Also_             -- 
+
+
+
+For many of these It's quite difficult to attach _business_ context, because the answer is "everywhere" -- the point of the patterns is that they crop up across all data explorations. So in those cases, I've tried to put in hooks to enough other programming contexts that 
+ Q and I both have the feeling that we should ask our tech reviewers to help with examples of business context.
 
 I see where that's needed for strategic things, and so I tried to frame the "What baseball players have had the greatest careers" as a search for outliers:
 

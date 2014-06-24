@@ -1,16 +1,4 @@
 
-===== Pattern in Use
-
-* _Where You'll Use It_  -- 
-* _Standard Snippet_	 -- 
-* _Hello, SQL Users_     -- 
-* _Important to Know_	 -- 
-* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
-* _Records_		 -- 
-* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
-* _Exercises for You_    -- 
-* _See Also_             -- 
-
 
 == Analytic Patterns: Grouping Operations
 
@@ -514,9 +502,9 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 * _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) { ... ; GENERATE ...; };`
 * _Hello, SQL Users_     -- Directly comparable for the most part.
 * _Important to Know_	  
-  - Say `COUNT_STAR(recs)`, not `COUNT_STAR(recs.myfield)` -- the latter creates a new bag and can prevent combiner'ing
-  - Say `SUM(recs.myfield)`, not `SUM(myfield)` (which isn't in scope).
+  - Say `COUNT_STAR(recs)`, not `COUNT_STAR(recs.myfield)` -- the latter creates a new bag and interferes with combiner'ing.
   - Use `COUNT_STAR` and never `SIZE` on a bag.
+  - Say `SUM(recs.myfield)`, not `SUM(myfield)` (which isn't in scope).
   - Get in the habit of writing `COUNT_STAR` and never `COUNT`, unless you explicitly mean to only count non-nulls.
 * _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values. Big decrease in output size from turning bags into scalars
 * _Records_		  -- Something like `mykey, aggregated_value, aggregated_value, ...`
