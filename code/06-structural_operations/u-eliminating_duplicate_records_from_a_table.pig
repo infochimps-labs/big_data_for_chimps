@@ -13,10 +13,6 @@ teams      = load_teams();
 -- ==== Eliminating Duplicate Records from a Table
 --
 
--- The park_teams table has a row for every season. To find every distinct pair
--- of team and home ballpark, use the DISTINCT operator. This is equivalent to
--- the SQL statement `SELECT DISTINCT player_id, team_id from batting;`.
-
 tm_pk_pairs_many = FOREACH park_teams GENERATE team_id, park_id;
 tm_pk_pairs = DISTINCT tm_pk_pairs_many;
 
@@ -30,28 +26,11 @@ tm_pk_pairs = DISTINCT tm_pk_pairs_many;
 --
 dont_do_this = FOREACH (GROUP tm_pk_pairs_many BY (team_id, park_id)) GENERATE
   group.team_id, group.park_id;
---
--- the DISTINCT operation is able to use a combiner, eliminating duplicates at
--- the mapper before shipping them to the reducer. This is a big win when there
--- are frequent duplicates, especially if duplicates are likely to occur near
--- each other. For example, duplicates in web logs (from refreshes, callbacks,
--- etc) will be sparse globally, but found often in the same log file.
---
--- The combiner may impose a minor penalty when there are very few or very
--- sparse duplicates. In that case, you should still use DISTINCT, but disable
--- combiners with the `pig.exec.nocombiner=true` setting.
-
-
-
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
 -- ==== Eliminating Duplicate Records from a Group
 --
-
--- Eliminate duplicates from a group with the DISTINCT operator inside a nested
--- foreach. Instead of finding every distinct (team, home ballpark) pair as we
--- just did, let's find the list of distinct home ballparks for each team:
 
 team_parkslist = FOREACH (GROUP park_teams BY team_id) {
   parks = DISTINCT park_teams.park_id;
@@ -65,14 +44,6 @@ EXPLAIN team_parkslist;
 -- -- CL3     CLE03|CLE09|GEA01|NEW03
 -- -- CL4     CHI08|CLE03|CLE05|CLL01|DET01|IND06|PHI09|ROC02|ROC03|STL05
 
-
--- SELECT team_id, GROUP_CONCAT(DISTINCT park_id ORDER BY park_id) AS park_ids
---   FROM park_team_years
---   GROUP BY team_id
---   ORDER BY team_id, park_id DESC
---   ;
-
-
 -- (omit from book) The output is a bit more meaningful if we add the team name
 -- and park names to the list:
 --
@@ -83,13 +54,11 @@ team_parksnamed = FOREACH (GROUP tm_pk_named BY team_id) {
   GENERATE group AS team_id, FLATTEN(FirstTupleFromBag(tm_pk_named.team_name, (''))), BagToString(parks, '|');
 };
 
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
 -- ==== Eliminating All But One Duplicate Based on a Key
-
-The DataFu `DistinctBy` UDF selects a single record for each key in a bag.
-.
-It has the nice feature of being order-preserving: only the first record for a key is output, and all records that make it to the output follow the same relative ordering they had in the input bag,
-
-This gives us a clean way to retrieve the distinct teams a player served in, along with the first and last year of their tenure:define DistinctBy
+--
 
 DEFINE DistinctByYear datafu.pig.bags.DistinctBy('0');
 
@@ -99,12 +68,6 @@ player_teams = FOREACH (GROUP pltmyrs BY player_id) {
   pltmyrs = DistinctByYear(pltmyrs);
   GENERATE player_id, BagToString(pltmyrs, '|');
 };
-
-The key is specified with a string argument in the DEFINE statement, naming the positional index(es) of the key's fields as a comma-separated list.
-
-
-
-
 
 
 STORE_TABLE(tm_pk_pairs,     'tm_pk_pairs');
