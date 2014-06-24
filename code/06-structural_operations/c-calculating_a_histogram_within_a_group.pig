@@ -2,78 +2,120 @@ IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/d
 
 sig_seasons = load_sig_seasons();
 
+%DEFAULT yr_binsz 5
+%DEFAULT HH_binsz 25
+%DEFAULT HR_binsz 10
+  ;
 
 -- ***************************************************************************
 --
 -- === Calculating a Histogram Within a Group
 --
 
--- As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization
-
--- http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
-
--- You'll see the
-
 DEFINE CountVals              datafu.pig.bags.CountEach('flatten');
 
 binned = FOREACH sig_seasons GENERATE
-  ( 5 * ROUND(year_id/ 5.0f)) AS year_bin,
-  (20 * ROUND(H      /20.0f)) AS H_bin;
+  ($yr_binsz * (int)FLOOR(1.0f* year_id / $yr_binsz)) AS year_bin,
+  ($HH_binsz * (int)FLOOR(1.0f* H       / $HH_binsz)) AS HH_bin;
 
--- hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
---   H_hist_cts = CountVals(binned.H_bin);
---   GENERATE group AS year_bin, H_hist_cts AS H_hist_cts;
--- };
+year_hists_bags = FOREACH (GROUP binned BY year_bin) {
+  HH_cts = CountVals(binned.HH_bin);
+  GENERATE
+    group  AS year_bin,
+    HH_cts AS HH_cts:bag{t:(bin:int, ct:int)};
+};
 
--- We want to normalize this to be a relative-fraction histogram, so that we can
--- make comparisons across eras even as the number of active players grows.
--- Finding the total count to divide by is a straightforward COUNT_STAR on the
--- group, but a peccadillo of Pig's syntax makes using it a bit frustrating.
--- Annoyingly, a nested FOREACH can only "see" values from the bag it's
--- operating on, so there's no natural way to reference the calculated total
--- from the FOREACH statement.
---
 -- -- Won't work:
--- hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
---   H_hist_cts = CountVals(binned.H_bin);
+-- year_hists_bags = FOREACH (GROUP binned BY year_bin) {
+--   HH_cts = CountVals(binned.HH_bin);
 --   tot        = 1.0f*COUNT_STAR(binned);
---   H_hist_rel = FOREACH H_hist_cts GENERATE H_bin, (float)count/tot;
---   GENERATE group AS year_bin, H_hist_cts AS H_hist_cts, tot AS tot;
+--   HH_hist_rel = FOREACH HH_cts GENERATE bin, (float)count/tot;
+--   GENERATE group AS year_bin, HH_cts AS HH_cts, tot AS tot;
 -- };
 
+-- Workaround: generate bag having just that one value, CROSS it onto each (bin,count) tuple,
+-- divide to find the relative frequency.
 --
--- The best current workaround is to generate the whole-group total in the form
--- of a bag having just that one value. Then we use the CROSS operator to graft
--- it onto each (bin,count) tuple, giving us a bag with (bin,count,total) tuples
--- -- yes, every tuple in the bag will have the same group-wide value. Finally,
--- This lets us iterate across those tuples to find the relative frequency.
---
--- It's more verbose than we'd like, but the performance hit is limited to the
--- CPU and GC overhead of creating three bags (`{(result,count)}`,
--- `{(result,count,total)}`, `{(result,count,freq)}`) in quick order.
---
-hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
-  H_hist_cts = CountVals(binned.H_bin);
-  tot        = COUNT_STAR(binned);
+year_hists_bags = FOREACH (GROUP binned BY year_bin) {
+  HH_cts = CountVals(binned.HH_bin);
+  tot    = COUNT_STAR(binned);
   GENERATE
     group      AS year_bin,
-    H_hist_cts AS H_hist,
+    HH_cts     AS HH_cts:bag{t:(bin:int, ct:int)},
     {(tot)}    AS info:bag{(tot:long)}; -- single-tuple bag we can feed to CROSS
 };
 
-hist_by_year = FOREACH hist_by_year_bags {
-  -- Combines H_hist bag {(100,93),(120,198)...} and dummy tot bag {(882.0)}
+year_hists = FOREACH year_hists_bags {
+  -- Combines HH_hist bag {(100,93),(120,198)...} and dummy tot bag {(882.0)}
   -- to make new (bin,count,total) bag: {(100,93,882.0),(120,198,882.0)...}
-  H_hist_with_tot = CROSS   H_hist, info;
+  HH_hist_with_tot = CROSS   HH_cts, info;
   -- Then turn the (bin,count,total) bag into the (bin,count,freq) bag we want
-  H_hist_rel      = FOREACH H_hist_with_tot
-    GENERATE H_bin, count AS ct, count/((float)tot) AS freq;
-  GENERATE year_bin, H_hist_rel;
+  HH_hist_rel      = FOREACH HH_hist_with_tot
+    GENERATE bin, ct, ct/((float)tot) AS freq;
+  GENERATE year_bin, HH_hist_rel;
 };
 
-DESCRIBE hist_by_year;
+DESCRIBE year_hists;
 
-STORE_TABLE(hist_by_year, 'hist_by_year');
 
+-- ***************************************************************************
+--
+-- Omit from book: do this with H and HR both
+--
+
+binned = FOREACH sig_seasons GENERATE year_id,
+  ($yr_binsz * (int)FLOOR(1.0f* year_id / $yr_binsz)) AS year_bin, 
+  ($HH_binsz * (int)FLOOR(1.0f* H       / $HH_binsz)) AS HH_bin,
+  ($HR_binsz * (int)FLOOR(1.0f* HR      / $HR_binsz)) AS HR_bin;
+
+year_hists_bags = FOREACH (GROUP binned BY year_bin) {
+  HH_cts = CountVals(binned.HH_bin);
+  HR_cts = CountVals(binned.HR_bin);
+  tot    = COUNT_STAR(binned);
+  GENERATE
+    group      AS year_bin,
+    MIN(binned.year_id) AS year_bin_min, MAX(binned.year_id) AS year_bin_max,
+    HH_cts     AS HH_cts:bag{t:(bin:int, ct:int)},
+    HR_cts     AS HR_cts:bag{t:(bin:int, ct:int)},
+    {(tot)}    AS info:bag{(tot:long)}; -- single-tuple bag we can feed to CROSS
+};
+
+year_hists = FOREACH year_hists_bags {
+  -- Make (bin,count,total) bag, turn it into the (bin,count,freq) bag we want
+  HH_hist_with_tot = CROSS   HH_cts, info;
+  HH_hist_rel      = FOREACH HH_hist_with_tot
+    GENERATE bin, ct, ct/((float)tot) AS freq;
+
+  HR_hist_with_tot = CROSS   HR_cts, info;
+  HR_hist_rel      = FOREACH HR_hist_with_tot
+    GENERATE bin, ct, ct/((float)tot) AS freq;
+  GENERATE year_bin, year_bin_min, year_bin_max, HH_hist_rel, HR_hist_rel;
+};
+
+DESCRIBE year_hists;
+
+year_hists_HH = FOREACH year_hists {
+  HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
+  HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
+  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE 
+    SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
+  GENERATE year_bin, BagToString(HH_hist_vis, '  ');
+  };
+
+year_hists_HR = FOREACH year_hists {
+  HR_hist_rel_o = ORDER HR_hist_rel BY bin ASC;
+  HR_hist_rel_x = FILTER HR_hist_rel_o BY (bin >= 0);
+  HR_hist_vis   = FOREACH HR_hist_rel_x GENERATE
+    SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
+  GENERATE year_bin, BagToString(HR_hist_vis, '  ');
+  };
+
+-- SPRINTF((freq < 0.05 ? '%3d: %-4.1f' : '%3d: %-4.0f'), bin, ROUND_TO(100*freq, 1));
+
+STORE_TABLE(year_hists_HH, 'HH_year_hists');
+STORE_TABLE(year_hists_HR, 'HR_year_hists');
+
+sh cat $out_dir/HH_year_hists/part*
+sh cat $out_dir/HR_year_hists/part*
 --
 -- Exercise: generate histograms-by-year

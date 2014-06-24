@@ -66,13 +66,7 @@ Just as a professional mechanic has an assortment of specialized and powerful to
 
 The first step to eliminating (or being selective about) data is to reject records that don't match certain criteria. Pig's `FILTER` statement does this for you. It doesn't remove the data -- all data in Hadoop and thus Pig is immutable -- rather like all Pig operations it creates a new table that omits certain records from the input.
 
-The baseball stats go back to 1871 (!), but it took a few decades for the game to reach its modern form.  Let's say we're only interested in seasons since 1900.  If we were using a relational database, we'd write a `SELECT` statement such as:
-
-------
-SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;
-------
-
-In Pig, the equivalent `FILTER` syntax would be footnote:[In this and in further scripts, we're going omit the `LOAD`, `STORE` and other boilerplate except to prove a point. See the example code (REF) for fully-working snippets]:
+The baseball stats go back to 1871 (!), but it took a few decades for the game to reach its modern form.  Let's say we're only interested in seasons since 1900. In Pig, we apply the `FILTER` operation footnote:[In this and in further scripts, we're going omit the `LOAD`, `STORE` and other boilerplate except to prove a point. See the example code (REF) for fully-working snippets]:
 
 ------
 modern_stats = FILTER bats BY (year_id >= 1900);
@@ -96,6 +90,21 @@ modsig_stats = FILTER bats BY
 //
 // Consulting the output, you'll see that some players' birthplaces are not yet known, and so the corresponding input fields are `Null`. This doesn't cause an error
 // For people coming from a SQL background, Pig's handling of NULL values will be fairly familiar. NULL values generally disappear without notice from operations, and generally compare as Null. This means NULL is not less than 5.0, it is not greater than 5.0, it is not equal to 5.0. Null is not equal to Null, and is not _unequal_ to Null. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
+
+
+===== Pattern in Use
+
+Blocks like the following will show up after each of the patterns or groups of patterns we cover. Not every field will be present every time, since there's not always anything interesting to say.
+
+* _Where You'll Use It_  -- (_The business or programming context._) Everywhere. Like the f-stop on your camera, composing a photo begins and ends with throttling its illumination. 
+* _Standard Snippet_	 -- (_Just enough of the code to remind you how it's spelled._) `somerecords = FILTER myrecords BY (criteria AND criteria ...);`
+* _Hello, SQL Users_     -- (_A sketch of the corresponding SQL command, and important caveats for peopl coming from a SQL background._) `SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;`
+* _Important to Know_	 -- (_Caveats about its use. Things that you won't understand / won't buy into the first time through the book but will probably like to know later._) Filter early, filter often. The best thing you can do with a large data set is make it smaller.
+* _Output Count_	 -- (_How many records in the output: fewer, same, more, explosively more?_) Zero to 100% of the input record count. Data size will decrease accordingly
+* _Records_		 -- (_A sketch of what the records coming out of this operation look like_) Identical to input
+* _Data Flow_		 -- (_The Hadoop jobs this operation gives rise to. In this chapter, all the lines will look like this one; in the next chapters that will change_) Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- (_A mission to carry forward, if you choose. Don't go looking for an answer section -- we haven't done any of them._) Play around with Nulls and the conditional operators until you have a good sense of its quirks.
+* _See Also_             -- (_Besides the patterns in its section of the book, what other topics might apply if you're considering this one? Sometimes this is another section in the book, sometimes it's a pointer elsewhere_) The Distinct operations, some Set operations, and some Joins are also used to eliminate records according to some criteria. See especially the Semi-Join and Anti-Join (REF), which select or reject matches against a large list of keys. 
 
 ==== Selecting Records that Match a Regular Expression (`MATCHES`)
 
@@ -133,6 +142,22 @@ Regular expressions are incredibly powerful and we urge all readers to acquire b
 
 NOTE: Sadly, the Nobel Prize-winning physicists Gerard 't Hooft, Louis-Victor Pierre Raymond de Broglie, or Tomonaga Shin'ichirō never made the major leagues. Or tried out, as far as we know. But their names are great counter-examples to keep in mind when dealing with names. Prof de Broglie's full name is 38 characters long, has a last name that starts with a lowercase letter, and is non-trivial to segment. "Tomonaga" is a family name, though it comes first. You'll see Prof. Tomonaga's name given variously as "Tomonaga Shin'ichirō", "Sin-Itiro Tomonaga", or "朝永 振一郎", each one of them correct, and the others not, depending on context. Prof. 't Hooft\'s last name starts with an apostrophe, a lower-case-letter, and contains a space. You're well advised to start a little curio shelf in your workshop for counterexample collections such as these, and we'll share some of ours throughout the book.
 
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Wherever you need to select records by a string field. For selecting against small lists. For finding ill-formed records. Matching against a subsection of a composite key -- Can you figure out what `game_id MATCHES '...(19|20).*'` in the `games` table does?
+* _Standard Snippet_	 -- `FILTER recs BY (str MATCHES '.*pattern.*')`, sure, but also `FOREACH recs GENERATE (str MATCHES '.*(kitty|cat|meow).*' ? 'cat' : 'notcat') AS catness`.
+* _Hello, SQL Users_     -- Similar to but more powerful than the `LIKE` operator. See the sidebar (ref) for a conversion guide.
+* _Important to Know_	 --
+  - Mostly, that these are incredibly powerful, and even if they seem arcane now they're much easier to learn than it first seems.
+  - You're far better off learning one extra thing to do with a regular expression than most of the other string conditional functions Pig offers.
+  - ... and enough other Importants to Know that we made a sidebar of them (REF).
+* _Records_		 -- You can use this in a filter clause but also anywhere else an expression is permitted, like the preceding  snippet
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- Follow the http://regexp.info/tutorial.html[regexp.info tutorial], but _only up to the part on Grouping & Capturing_. The rest you are far better off picking up once you find you need it.
+* _See Also_             -- The Pig `REGEX_EXTRACT` and http://pig.apache.org/docs/r0.12.0/func.html#replace[`REPLACE`] functions. Java's http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum[Regular Expression] documentation for details on its pecadilloes (but not for an education about regular expressions).
+
+
 ==== Matching Records against a Fixed List of Lookup Values
 
 If you plan to filter by matching against a small static list of values, Pig offers the handy `IN` expression: true if the value is equal (case-sensitive) to any of the listed values. This selects the stadiums used each year by the current teams in baseball's AL-east division:
@@ -142,9 +167,22 @@ al_east_parks = FILTER park_team_years BY
   team_id IN ('BAL', 'BOS', 'CLE', 'DET', 'ML4', 'NYA', 'TBA', 'TOR', 'WS2');
 ------
 
+Sometimes a regular expression alternation can be the right choice instead. `bubba MATCHES 'shrimp (kabobs|creole|gumbo|soup|stew|salad|and potatoes|burger|sandwich)' OR bubba MATCHES '(pineapple|lemon|coconut|pepper|pan.fried|deep.fried|stir.fried) shrimp'` is more readable than `bubba IN ('shrimp kabobs', 'shrimp creole', 'shrimp gumbo', ...)`.
+
 When the list grows somewhat larger, an alternative is to read it into a set-membership data structure footnote:[For a dynamic language such as Ruby, it can often be both faster and cleaner to reformat the table into the language itself than to parse a data file. Loading the table is now a one-liner (`require "lookup_table"`), and there's nothing the Ruby interpreter does faster than interpret Ruby.], but ultimately large data sets belong in data files.
 
 The general case is handled bu using a join, as described in the next chapter (REF) under "Selecting Records Having a Match in Another Table (semi-join)". See in particular the specialized merge join and HashMap (replicated) join, which can offer a great speedup if you meet their qualifications. Finally, you may find yourself with an extremely large table but with few elements expected to match. In that case, a Bloom Filter may be appropriate. They're discussed more in the statistics chapter, where use a Bloom Filter to match every phrase in a large document set against a large list of place names, effectively geolocating the documents.
+
+// IMPROVE: Add Case statement
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- File types or IP addresses to select/reject from web logs. Keys for exemplar records you're tracking through a dataflow. Stock symbols you're researching. Together with "Summarizing Multiple Subsets of a Group Simultaneously" (REF), enumerate members of a cohort (`(state IN ('CA', 'WA', 'OR') ? 1 : 0) AS  is_western, ...`).
+* _Standard Snippet_	 -- `foo IN ('this', 'that', 'the_other')`, or any of the other variants given above
+* _Hello, SQL Users_     -- This isn't anywhere near as powerful as SQL's `IN` expression. Most importantly, you can't supply another table as the list.
+* _Important to Know_	 -- A regular expression alternation is often the right choice instead.
+* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
 
 === Project Only Chosen Columns by Name
 
@@ -178,6 +216,17 @@ DESCRIBE team_scores;
 
 The first projection puts the `home_team_id` into the team slot, renaming it `team`; retains the `year_id` field unchanged; and files the home and away scores under `runs_for` and `runs_against`. Lastly, we slot in an indicator field for home games, supplying both the name and type as a matter of form. Next we generate the corresponding table for away games, then stack them together with the `UNION` operation (to which you'll be properly introduced in a few pages). All the tables have the identical schema shown, even though their values come from different columns in the original tables.
 
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Nearly everywhere. If `FILTER` is the f-stop of our camera, this is the zoom lens.
+* _Standard Snippet_	 -- `FOREACH recs GENERATE only, some, columns;`
+* _Important to Know_	 -- As you can see, we take a lot of care visually aligning subexpressions within the code snippets. That's not because we've tidied up the house for students coming over -- this is what the code we write and the code our teammates expect us to write looks like.
+* _Output Count_	 -- Exactly the same as the input.
+* _Records_		 -- However you define them to be
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _See Also_             -- "Assembling Literals with Complex Type" (REF)
+
 ==== Extracting a Random Sample of Records
 
 Another common operation is to extract a _uniform_ sample -- one where every record has an equivalent chance of being selected.  For example, you could use this to test new code before running it against the entire dataset (and possibly having a long-running job fail due to a large number of mis-handled records).  By calling the `SAMPLE`operator, you ask Pig to pluck out some records at random.
@@ -192,6 +241,17 @@ The `SAMPLE` operation does so by generating a random number to select records, 
 
 Experienced software developers will reach for a "seeding" function -- such as R's `set.seed()` or Python's `random.seed()` --  to make the randomness a little less so.  At the moment, Pig does not have an equivalent function. Even worse, it is not consistent _within the task_ -- if a map task fails on one machine, the retry attempt will generate different data sent to different reducers. This rarely causes problems, but for anyone looking to contribute back to the Pig project, this is a straighforward high-value issue to tackle.
 
+===== Pattern in Use
+
+* _Where You'll Use It_  -- At the start of the exploration, 
+* _Important to Know_
+  - A consistent sample is a much better practice, though we admit that can be more of a hassle. But records that dance around mean you can't Know Thy Data as you should.
+  - The DataFu package has UDFs for sampling with replacement and other advanced features.
+* _Output Count_	 -- Determined by the sampling fraction. As a rule of thumb, variances of things are square-root-ish; expect the size of a 10% sample to be in the 7%-13% range.
+* _Records_		 -- Identical to the input
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- Modify Pig's SAMPLE function to accept a seed parameter, and submit that patch back to the open-source project. This is a bit harder to do than it seems: sampling is key to efficient sorting and so the code to sample data is intertwingled with a lot of core functionality.
+
 ==== Extracting a Consistent Sample of Records by Key
 
 A good way to stabilize the sample from run to run is to use a 'consistent hash digest'. A hash digest function creates a fixed-length fingerprint of a string whose output is otherwise unpredictable from the input and uniformly distributed -- that is, you can't tell which string the function will produce except by computing the digest, and every string is equally likely. For example, the hash function might give the hexadecimal-string digest `3ce3e909` for 'Chimpanzee' but `07a05f9c` for 'Chimp'. Since all hexadecimal strings have effectively equal likelihood, one-sixteenth of them will start with a zero, and so this filter would reject `Chimpanzee` but select `Chimp`.
@@ -205,6 +265,14 @@ some_seasons  = FILTER bat_seasons BY (SUBSTRING(player_id, 0, 1) == 's');
 We called this a terrible hash function, but it does fit the bill. When applied to an arbitrary serial identifier it's not terrible at all -- the Twitter firehose provides a 1% service tier which returns only tweets from users whose numeric ID ends in '00', and a 10% tier with user IDs ending in `0`. We'll return to the subject with a proper hash digest function later on in the chapter, once you're brimming with even more smartitude than you are right now. We'll also have a lot more to say about sampling in the Statistics chapter (REF).
 
 // I don't want to have to explain this, so I'm omitting unless you think I must include: "Make sure you're matching against the end (least significant) digits ... (Explanation why)"
+
+
+* _Where You'll Use It_  -- At the start of the exploration, 
+* _Important to Know_
+  - If you'll be spending a bunch of time with a data set, using any kind of random sample to prepare your development sample might be a stupid idea. You'll notice that Red Sox players show up a lot of times in our examples -- that's because our development samples are "seasons by Red Sox players" and "seasons from 2000-2010", which lets us make good friends with the data.
+* _Output Count_	 -- Determined by the sampling fraction. As a rule of thumb, variances of things are square-root-ish; expect the size of a 10% sample to be in the 7%-13% range.
+* _Records_		 -- Identical to the input
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
 
 ==== Sampling Carelessly by Only Loading Some `part-` Files
 

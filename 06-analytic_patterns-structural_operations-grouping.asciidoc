@@ -1,3 +1,17 @@
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- 
+* _Standard Snippet_	 -- 
+* _Hello, SQL Users_     -- 
+* _Important to Know_	 -- 
+* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
+* _Records_		 -- 
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- 
+* _See Also_             -- 
+
+
 == Analytic Patterns: Grouping Operations
 
 === Introduction
@@ -92,6 +106,15 @@ team_yr_parks = FOREACH(GROUP park_teams BY (year_id, team_id)) GENERATE
 --   (FW1,{(FOR01)})
 ------
 
+===== Pattern in Use
+
+* _Where You'll Use It_ -- Rarely on its own, but otherwise everywhere
+* _Standard Snippet_	  -- `FOREACH (GROUP recs BY (key1, key2)) GENERATE group.key1, group.key2, recs AS bag_of_recs_records;`
+* _Hello, SQL Users_     -- Similar to the windowed functionality supplied by high-end SQL databases. MySQL, PostgreSQL, etc don't have similar functionality.
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
+* _Records_		  -- Output is `group, bag of records`, with record contents within the bag unchanged.
+* _Data Flow_		  -- Map & Reduce
+
 ==== Counting Occurrences of a Key
 
 The typical reason to group records is to operate on the bag of values it forms, and that's how we'll spend much of this chapter -- the data bag is a very powerful concept. Let's take a quickie tour of what we can do to a group; afterwards we'll see the internals of how a group works before moving on to its broader applications.
@@ -115,6 +138,16 @@ DUMP vagabonds;
 Always, always look through the data and seek 'second stories'.
 
 Our script is reporting that CL4 (the Cleveland Spiders) called seven (!) different stadiums home during a season. Is this some weirdness in the data? Could we possibly have messed up this three-line script? Or is it really the case that some teams have had four, five, even seven home stadiums? This demands a closer look.
+
+===== Pattern in Use
+
+* _Where You'll Use It_ -- Anywhere you're summarizing counts
+* _Standard Snippet_	  -- `FOREACH (GROUP recs BY mykey) GENERATE group AS mykey, COUNT_STAR(recs) AS ct;`
+* _Hello, SQL Users_     -- `SELECT key, COUNT(*) as CT from recs GROUP BY key;`. Remember: `COUNT_STAR(recs)`, not `COUNT(*)`.
+* _Important to Know_	  -- See "Pattern in Use" for Aggregate Functions, below (REF)
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
+* _Records_		  -- Output is `mykey, ct:long`
+* _Data Flow_		  -- Map, Combiner & Reduce; combiners very effective unless cardinality extremely high
 
 ==== Representing a Collection of Values with a Delimited String
 
@@ -151,7 +184,7 @@ names of the stadiums used separated by a `^` caret delimiter. Like colon
 commandline; like those and semicolon `;`, pipe `|`, and bang `!`, it is
 visually lightweight and can be avoided within a value.  Don't use the wrong
 delimiter for addresses ("Fargo, ND"), dates ("2014-08-08T12:34:56+00:00"),
-paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`).
+paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`). If you are considering the use of quoting or escaping to make your strings delimiter safe, you're getting carried away. Stop, step away from the delimiter, and see "Representing a Complex Data Structure as a JSON-encoded String" (REF) below. 
 
 Since the park ids are formed from the first characters of the city name, we
 can recognize that the Spiders' home fields include two stadiums in Cleveland
@@ -160,6 +193,16 @@ These aren't close enough to be alternatives in case of repairs, and 1898
 baseball did not call for publicity tours. Were they rotating among these
 fields, or just spending a day or so at each? Let's see how many were played
 at each stadium.
+
+===== Pattern in Use
+
+* _Where You'll Use It_ -- Creating a URL for a batch request. Hiding a list you don't always want to deserialize. Writing a table in a format that will work everywhere.
+* _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) GENERATE group AS mykey, BagToString(recs, '|') AS recs_list;`
+* _Hello, SQL Users_     -- Similar to `GROUP_CONCAT`, but you prepare the input bag first; no fiddly in-line `DISTINCT` calls.
+* _Important to Know_	  -- Be careful with your choice of delimiter. Keep it simple. Don't stringify huge groups.
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
+* _Records_		  -- Output is `mykey, recs_list:chararray`
+* _Data Flow_		  -- Map & Reduce; no real data reduction or explosion as assumedly you're turning all the data into strings.
 
 ==== Representing a Complex Data Structure with a Delimited String
 
@@ -209,6 +252,10 @@ they played 50 straight on the road, won fewer than 13% of their games
 overall (20-134, the worst single-season record ever) and immediately
 disbanded at season's end.
 
+===== Pattern in Use
+
+See Previous.
+
 ==== Representing a Complex Data Structure with a JSON-encoded String
 
 So the result for the Spiders isn't a mistake. Is the team a sole anomalous outlier, or are there other cases, less extreme but similar? The Spiders' season stands out for at least these three reasons: an unusual number of alternate parks; "home" games played in other cities; and a pre-modern (1898) setting. So let's include a field for the city (we'll take the first three characters of the park id to represent the city name) and not throw away the field for year.
@@ -249,8 +296,7 @@ structures. As we'll explain in chapter (REF), those are your three choices:
 TSV with delimited fields; TSV with JSON fields or JSON lines on their own;
 or Parquet/Trevni. We don't recommend anything further.]
 
-TODO: make the code better match the story here, make the record a bit less
-byzantine.
+// TODO: Actually use the JSON function (I'll need to write it first). Also maybe make the record a bit less byzantine
 
 ------
 -- Next, assemble full picture:
@@ -279,6 +325,7 @@ farhome_gms = ORDER farhome_gms BY n_cities DESC, n_farhome_gms DESC;
 
 Here's a sample of the output:
 
+.JSON-formatted Values
 ------
 CL4  1898     	57  17	17  6	CLE:40|PHI:9|ROC:3|STL:2|CLL:2|CHI:1	CLE05:40|PHI09:9|ROC02:2...
 CLE  1902     	65  5 	5   5	CLE:60|FOR:2|COL:1|CAN:1|DAY:1          CLE05:60|FOR03:2|COL03:1...
@@ -291,7 +338,17 @@ CHA  1968  mod	81  9 	9   2	CHI:72|MIL:9                        	CHI10:72|MIL05:
 BRO  1957  mod	77  8 	8   2	NYC:69|JER:8                        	NYC15:69|JER02:8
 ------
 
-So, are the Spiders an anomaly? No. Considered against the teams of their era, they look much more normal. In the early days baseball was still literally getting its act together and teams hopped around frequently. Since 1905, no team has seen home bases in three cities, and the three cases where a team spent any significant time in an alternate city each tell a notable story.
+===== Pattern in Use
+
+* _Where You'll Use It_ -- Creating the POST body for a json batch request. Hiding a complex value you don't always want to deserialize. Writing a table in a format that will work everywhere. Creating a string free of non-keyboard characters.
+* _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) GENERATE group AS mykey, Jsonify(recs) AS recs_json;`
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
+* _Records_		  -- Output is `mykey, recs_json:chararray`
+* _Data Flow_		  -- Map & Reduce; mild data expansion as JSON repeats the sub-field names on each row.
+
+===== Does God Hate Cleveland?
+
+Probably. But are the Spiders a particularly anomalous exhibition? No. Considered against the teams of their era, they look much more normal. In the early days baseball was still literally getting its act together and teams hopped around frequently. Since 1905, no team has seen home bases in three cities, and the three cases where a team spent any significant time in an alternate city each tell a notable story.
 
 In 2003 and 2004, les pauvres Montreal Expos were sentenced to play 22 "home" games in San Juan (Puerto Rico) and only 59 back in Montreal. The rudderless franchise had been sold back to the league itself and was being shopped
 around in preparation for a move to Washington, DC. With no real stars, no
@@ -342,6 +399,7 @@ pipeline operations, we only did so on a season-by-season basis.
 A group-and-aggregate on the seasonal stats starts us on the path to
 characterizing each player's career:
 
+.Aggregate Statistics of a Group
 ------
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
   team_ids = DISTINCT bat_seasons.team_id;
@@ -362,8 +420,19 @@ bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
     OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS
     ;
 };
-
 ------
+
+
+===== Pattern in Use
+
+See the Pattern in Use for the next section too (REF).
+
+* _Where You'll Use It_ -- Everywhere. Turning manufactured items into statistics about batches. Summarizing a cohort. Rolling up census block statistics to state-level statistics.
+* _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) GENERATE group AS mykey, AggregateFunction(recs), AggregateFunction(recs), ...;`
+* _Hello, SQL Users_     -- Directly comparable for the most part.
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values. Big decrease in output size from turning bags into scalars
+* _Records_		  -- Something like `mykey, aggregated_value, aggregated_value, ...`
+* _Data Flow_		  -- Map, Combiner & Reduce; combiners quite effective unless cardinality is very high.
 
 ==== Completely Summarizing a Field
 
@@ -439,6 +508,20 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 
 ------
 
+===== Pattern in Use
+
+* _Where You'll Use It_ -- Everywhere. Quality statistics on manufacturing batches. Response times of webserver requests. A/B testing in eCommerce.
+* _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) { ... ; GENERATE ...; };`
+* _Hello, SQL Users_     -- Directly comparable for the most part.
+* _Important to Know_	  
+  - Say `COUNT_STAR(recs)`, not `COUNT_STAR(recs.myfield)` -- the latter creates a new bag and can prevent combiner'ing
+  - Say `SUM(recs.myfield)`, not `SUM(myfield)` (which isn't in scope).
+  - Use `COUNT_STAR` and never `SIZE` on a bag.
+  - Get in the habit of writing `COUNT_STAR` and never `COUNT`, unless you explicitly mean to only count non-nulls.
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values. Big decrease in output size from turning bags into scalars
+* _Records_		  -- Something like `mykey, aggregated_value, aggregated_value, ...`
+* _Data Flow_		  -- Map, Combiner & Reduce; combiners quite effective unless cardinality is very high.
+
 ==== Summarizing Aggregate Statistics of a Full Table
 
 To summarize the statistics of a full table, we use a `GROUP ALL` statement. That is, instead of `GROUP [table] BY [key]`, write `GROUP [table] ALL`. Everything else is as usual:
@@ -482,8 +565,21 @@ why and the how of algebraic functions and these approximate methods in the
 Statistics chapter.  But you'll get a good feel for what is and isn't
 efficient through the examples in this chapter.)
 
-NOTE: Note the syntax of the full-table group statement. There's no I in
-TEAM, and no `BY` in `GROUP ALL`.
+===== Pattern in Use
+
+Everything we said for "Completely Summarizing a Group" (REF), plus
+
+* _Where You'll Use It_  -- Getting to know your data. Computing relative statistics or normalizing values. Topline totals and summaries.
+* _Standard Snippet_	 -- See the `summarizer_bot_9000.pig` macro
+* _Hello, SQL Users_     -- Aggregate functions _without_ a `GROUP BY`
+* _Important to Know_
+  - You're sending all the data to one reducer, so make sure the aggregate functions are highly reductive
+  - Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`. 
+* _Output Count_	 -- Single row
+* _Data Flow_		 -- Map, Combiner, and **single** reducer
+
+
+(TODO-qem: should "Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`. " be an "Important to Know" or a "NOTE\:"?
 
 ==== Summarizing a String Field
 
@@ -533,8 +629,20 @@ name_first_summary = FOREACH name_first_summary_0 {
     minval, maxval, examples
     ;
 };
-
 ------
+
+===== Pattern in Use
+
+Everything we said for "Completely Summarizing a Group" (REF), plus
+
+* _Where You'll Use It_  -- Getting to know your data. Sizing string lengths for creating a database schema. Making sure there's nothing ill-formed or outrageously huge. Making sure all values for a categorical field or string key is correct.
+* _Standard Snippet_	 -- See the `summarizer_bot_9000.pig` macro
+* _Hello, SQL Users_     -- Corresponding functions _without_ a `GROUP BY`
+* _Important to Know_
+  - You're sending all the data to one reducer, so make sure the aggregate functions are highly reductive
+  - Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`. 
+* _Output Count_	 -- Single row
+* _Data Flow_		 -- Map, Combiner, and **single** reducer
 
 === Calculating the Distribution of Numeric Values with a Histogram
 
@@ -560,9 +668,17 @@ seasons_hist = FOREACH (GROUP vals BY bin) {
 
 So the pattern here is to:
 
-* project only the values,
+* Project only the values,
 * Group by the values,
 * Produce the group as key and the count as value.
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Anywhere you need a more detailed sketch of your data than average/standard deviation or simple quantiles can provide
+* _Standard Snippet_	 -- `vals = FOREACH recs GENERATE myfield AS bin; hist = FOREACH (GROUP vals BY bin) GENERATE group AS bin, COUNT_STAR(vals) AS ct;`. Or see `summarizer_bot_9000.pig` for a macro (REF).
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
+* _Records_		  -- Output is `bin, ct:long`. You've turned records-with-values into values-with-counts
+* _Data Flow_		  -- Map, Combiner & Reduce; combiners very effective unless cardinality extremely high
 
 ==== Binning Data for a Histogram
 
@@ -636,9 +752,11 @@ In contrast, webpage views known to be are one of many phenomena that obey the "
 
 ------
 pagecount_views = LOAD '/data/out/wikipedia/pagecount-views.tsv' AS (val:long);
+SET eps 0.001
+;
 
 view_vals = FOREACH pagecount_views GENERATE
-  (long)EXP( FLOOR(LOG((val == 0 ? 0.001 : val)) * 10)/10.0) AS bin;
+  (long)EXP( FLOOR(LOG((val == 0 ? $eps : val)) * 10)/10.0 ) AS bin;
 hist_wp_view = FOREACH (GROUP view_vals BY bin) GENERATE
   group AS bin, COUNT_STAR(view_vals) AS ct;
 ------
@@ -648,6 +766,14 @@ images::06-histograms-pageviews-loglog.png[Histogram of Wikipedia Hourly Pagevie
 The  result indeed is a nice sharp line on the log-log plot, and the logarithmic bins did a nice job of accumulating robust counts while preserving detail. Logarithmic bins are generally a better choice any time you're using a logarithmic x-axis because it means that the span of each bin is visually the same size, aiding interpretation.
 
 As you can see, you don't have to only bin linearly. Apply any function that takes piecewise segments of the domain and maps them sequentially to the integers, then undo that function to map those integers back to a central value of each segment. The Wikipedia webserver logs data also includes the total _bytes_ transferred per page; this data spans such a large range that we end up binning both logarithmically (to tame the upper range of values) and linearly (to tame the lower range of values) -- see the sample code for details.
+
+===== Pattern in Use
+
+See Pattern in Use for Histograms, above (REF)
+
+* _Where You'll Use It_  -- Anywhere the values make sense exponentially; eg values make sense as 1, 100, 1000, ..., 10 million rather than 1 million, 2 million, ..., 10 million. Anywhere you will use a logarithmic 'X' axis for displaying the bin values.
+* _Important to Know_	 -- The result is a representative value from the bin (eg `100`), and not the log of that value (eg `log(100)`). Decide whether representative should be a central value from the bin or the minimum value in the bin.
+* _Standard Snippet_	 -- `(long)EXP( FLOOR(LOG((val == 0 ? $eps : val)) * bin_sf)/bin_sf )` for scale factor `bin_sf`. Instead of substituting `$eps` for zero you might prefer to filter them out.
 
 ==== Creating Pig Macros for Common Stanzas
 
@@ -755,16 +881,32 @@ one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
 ht = FOREACH one GENERATE peep_stats.cts#'height';
 ------
 
-===== Births
-
-image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
-
 ===== Deaths
+
+These graphs show the relative seasonable distribution of death rates, with adjustment for the fact that there are fewer days in February than July and so forth. As above, the background US rates are shown as darker outlined bars and the results from our data set as solid blue bars.
+
+We were surprised to see how seasonal the death rate is. We all probably have a feel there's more birthday party invitations in September than in March, but hopefully not so much for funerals. This pattern is quite consistent and as you might guess inverted in the Southern Hemisphere. Most surprisingly of all, it http://j.mp/seasonal_deaths[persists even in places with a mild climate]. The most likely cause of fewer deaths in the summer is _not_ fewer snow-covered driveways to shovel, it is that people take vactions -- lowering stress, improving mood, and synthesizing vitamin D. (And there's no clear signal of "hanging on for Christmas" in the data).
+
+The baseball distribution is lumpier, as you'd expect from its smaller sample size footnote:[We don't think the April spike is anything significant ("Hanging on for one more Opening Day celebration?"); sometimes lumpy data is lumpy], but matches the background distribution. Death treats baseball players, at least in this regard, as it does us all.
 
 image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
 
+===== Births
 
-TODO: summarize the findings, just one or two quick sentences
+That is not true for the birth data! The format of the graph is the same as above, and again we see a seasonal distribution -- with a peak nine months after the cold winter temperatures induce people to stay home and find alternative recreations. But the baseball data does _not_ match the background distribution at all. The sharp spike in August following the nadir in May and June appears nowhere in the background data, and its phase (where it crosses the centerline) is shifted later by several months. In this data set, a player born in August is about 25% more likely to make the major leagues than a player born in June; restricting it to players from the United States born after 1950 makes august babies _50%_ more likely to earn a baseball card than June babies.
+
+// DROP TEMPORARY TABLE IF EXISTS birth_pop;
+// CREATE TEMPORARY TABLE birth_pop (SELECT birth_month FROM people WHERE player_id IS NOT NULL AND birth_country = "USA" AND birth_year > 1940 AND birth_month IS NOT NULL);
+// SET @june_ct := (SELECT COUNT(*) FROM birth_pop WHERE birth_month = 6);
+// 
+// SELECT birth_month, COUNT(*) AS ct, ROUND(100*COUNT(*)/@june_ct) AS rel_to_june
+//   FROM birth_pop
+//  GROUP BY birth_month
+// ;
+
+image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
+
+The reason is that since the 1940s, American youth leagues have used July 31st as an age cutoff. If Augusta were born on August 1st, then four calendar years and 364 days later she would still technically be four years old. Julien, who showed up the day before her and thus has spent five years and no days orbiting the Sun, is permitted to join the league as a five-year-old. The Augustas may be initially disappointed, but when they do finally join the league as five-year-and-364-day-old kids, they have nearly an extra year of growth compared to the Juliens who sign up with them, which on the whole provides a huge advantage at young ages. This earns the Augustas extra attention from their coaches, extra validation of their skill, and extra investement of "I'm good at Baseball!" in their identity. 
 
 ==== Don't Trust Distributions at the Tails
 
@@ -793,18 +935,25 @@ HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS n_players;
 The problem is that HR_stats is a single-row table, and so not something we can use directly in a `FOREACH` expression. Pig gives you a piece of syntactic sugar for this specific case of a one-row table footnote:[called 'scalar projection' in Pig terminology]: project the value as tablename.field as if it were an inner bag, but slap the field's type (in parentheses) in front of it like a typecast expression:
 
 ------
-HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS n_total;
+HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS ct;
 HR_hist  = FOREACH (GROUP bats BY HR) {
   ct = COUNT_STAR(bats);
   GENERATE HR as val,
-    ct/( (long)HR_stats.n_total ) AS freq,
+    ct/( (long)HR_stats.ct ) AS freq,
     ct;
 };
 ------
 
 Typecasting the projected field as if you were simply converting the schema of a field from one scalar type to another acts as a promise to Pig  that what looks like column of possibly many values will turn out to have only row. In return, Pig will understand that you want a sort of über-typecast of the projected column into what is effectively its literal value.
 
-==== Re-injecting global values
+===== Pattern in Use
+
+See Pattern in Use for "Histograms", above (REF), and "Re-injecting Global Values", following (REF).
+
+* _Where You'll Use It_  -- Histograms on sampled populations. Whenever you want frequencies rather than counts, i.e. proportions rather than absolute values. 
+* _Standard Snippet_	 -- Same as for a histogram, but with `COUNT_STAR(vals)/((long)recs_info.ct) AS freq`. See `summarizer_bot_9000.pig` for a macro (REF).
+
+==== Re-injecting Global Values
 
 Sometimes things are more complicated, and what you'd like to do is perform light synthesis of the results of some initial Hadoop jobs, then bring them back into your script as if they were some sort of "global variable". But a pig script just orchestrates the top-level motion of data: there's no good intrinsic ways to bring the result of a step into the declaration of following steps. You can use a backhoe to tear open the trunk of your car, but it's not really set up to push the trunk latch button. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
 
@@ -836,8 +985,6 @@ As we said, this is a cheat-to-win scenario: using it to knock three minutes off
 ==== Calculating a Histogram Within a Group
 
 As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization
-
-TODO: this section arrived incomplete
 
 http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
 
@@ -873,16 +1020,16 @@ GENERATE group AS year_bin, H_hist_cts AS H_hist_cts, tot AS tot;
 };
 ------
 
-The best current workaround is to generate the whole-group total in the form
-of a bag having just that one value. Then we use the CROSS operator to graft
-it onto each (bin,count) tuple, giving us a bag with (bin,count,total) tuples
--- yes, every tuple in the bag will have the same group-wide value. Finally,
-This lets us iterate across those tuples to find the relative frequency.
+The best current workaround is to generate the whole-group total in the form of a bag having just
+that one value. Then we use the CROSS operator to graft it onto each (bin,count) tuple, giving us a
+bag with (bin,count,total) tuples -- yes, every tuple in the bag will have the same group-wide
+value. Finally, iterate across the tuples to find the relative frequency.
 
 It's more verbose than we'd like, but the performance hit is limited to the
 CPU and GC overhead of creating three bags (`{(result,count)}`,
 `{(result,count,total)}`, `{(result,count,freq)}`) in quick order.
 
+.Histogram within a Group
 ------
 hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
   H_hist_cts = CountVals(binned.H_bin);
@@ -902,6 +1049,117 @@ hist_by_year = FOREACH hist_by_year_bags {
   GENERATE year_bin, H_hist_rel;
 };
 ------
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Summarizing Cohorts. Comparatively plotting histograms as a small multiples plot (REF) or animation
+* _Standard Snippet_	 -- `DEFINE CountVals datafu.pig.bags.CountEach('flatten'); FOREACH (GROUP recs BY bin) GENERATE group, CountVals(recs.bin);`. Must download and enable the DataFu package (REF)
+* _Important to Know_	 -- This is done largely in-memory at the reducer, so watch your data sizes
+* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values
+* _Records_		  -- Output is `group, bag of (count, bin) tuples`. You've turned bags of records-with-values into bags of values-with-counts
+* _Data Flow_		  -- Map & Reduce. As you'll learn in "Advanced Pig" (REF), `CountEach` is not an algebraic, but is an accumulator
+
+==== Dumping Readable Results
+
+We are of course terribly anxious to find out the results, so much so that having to switch over to R to graph our totals is more delay than we can bear. It's also often nice to have production jobs dump a visual summary of the results that an operator can easily scan and sanity-check. And so let's apply the "Formatting a String According to a Template" (REF) pattern to dump a readable summary of our results to the screen.
+
+------
+year_hists_HH = FOREACH year_hists {
+  HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
+  HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
+  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE 
+    SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
+  GENERATE year_bin, BagToString(HH_hist_vis, '  ');
+  };
+------
+
+TODO-reviewers: previous version without comments, or following? In practice I would write it without comments.
+
+------
+year_hists_HH = FOREACH year_hists {
+  -- put all bins in regular order
+  HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
+  -- The PA threshold makes the lower bins ragged, exclude them
+  HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
+  -- Format each bin/freq into a readable string
+  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE 
+    SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
+  -- Combine those strings into readable table
+  GENERATE year_bin, BagToString(HH_hist_vis, '  ');
+  };
+------
+
+In this snippet, we first put all bins in regular order and exclude the lower bins (the minimum-plate appearances threshold makes them ragged). Next, we transform each bin-count-frequency triple into a readable string using `SPRINTF`. Since we used positional specifiers (the `1$` part of `%1$3d`), it's easy to insert or remove fields in the display depending on what question you're asking. Here, we've omitted the count as it wasn't helpful for the main question we have: "What are the long-term trends in offensive production?". Finally, we use `BagToString` to format the row. We first met that combination of formatting-elements-formatting-bag in "Representing a Complex Data Structure with a Delimited String" (REF) above. (We hope you're starting to feel like Daniel-san in Karate Kid when all his work polishing cars comes together as deadly martial arts moves.)
+
+.Relative Distribution of Total Hits per Season by Five-Year Period, 1900-
+------
+1900    100:   21  125:   38  150:   27  175:    9  200:    2  225:    1
+1905    100:   30  125:   37  150:   20  175:    4  200:    2
+1910    100:   22  125:   40  150:   25  175:    9  200:    1  225:    1
+1915    100:   25  125:   38  150:   20  175:    6  200:    1  225:    0
+1920    100:   12  125:   26  150:   29  175:   21  200:    9  225:    1  250:    0
+1925    100:   13  125:   29  150:   26  175:   19  200:    9  225:    2  250:    0
+1930    100:   12  125:   30  150:   26  175:   20  200:    9  225:    1  250:    0
+1935    100:   13  125:   29  150:   29  175:   19  200:    8  225:    1
+1940    100:   20  125:   35  150:   29  175:   11  200:    2
+1945    100:   26  125:   36  150:   22  175:   11  200:    2  225:    1
+1950    100:   21  125:   29  150:   32  175:   12  200:    3
+1955    100:   27  125:   31  150:   22  175:   14  200:    2
+1960    100:   24  125:   29  150:   29  175:   12  200:    3  225:    0
+1965    100:   26  125:   34  150:   24  175:    8  200:    2  225:    0
+1970    100:   26  125:   35  150:   23  175:    9  200:    2  225:    0
+1975    100:   23  125:   33  150:   26  175:   11  200:    3  225:    0
+1980    100:   22  125:   34  150:   25  175:   11  200:    3  225:    0
+1985    100:   27  125:   31  150:   26  175:    9  200:    3  225:    0
+1990    100:   29  125:   33  150:   24  175:   10  200:    1
+1995    100:   20  125:   31  150:   29  175:   14  200:    3  225:    0
+2000    100:   22  125:   30  150:   29  175:   13  200:    3  225:    0  250:    0
+2005    100:   19  125:   32  150:   28  175:   15  200:    3  225:    0
+2010    100:   22  125:   36  150:   26  175:   11  200:    2
+------
+
+.Relative Distribution of Total Home Runs per Season by Five-Year Period, 1900-
+------
+1900    0:   97   10:    3
+1905    0:   99   10:    1
+1910    0:   93   10:    6   20:    0
+1915    0:   96   10:    3   20:    1
+1920    0:   77   10:   18   20:    3   30:    1   40:    1   50:    0
+1925    0:   71   10:   20   20:    4   30:    3   40:    1   50:    0   60:    0
+1930    0:   62   10:   25   20:    6   30:    5   40:    2   50:    0
+1935    0:   57   10:   27   20:   10   30:    4   40:    1   50:    0
+1940    0:   64   10:   24   20:    8   30:    3   40:    0
+1945    0:   58   10:   27   20:   10   30:    4   40:    1   50:    1
+1950    0:   39   10:   33   20:   18   30:    7   40:    3
+1955    0:   34   10:   32   20:   23   30:    8   40:    4   50:    1
+1960    0:   33   10:   34   20:   22   30:    8   40:    3   50:    0   60:    0
+1965    0:   38   10:   34   20:   19   30:    8   40:    2   50:    0
+1970    0:   39   10:   34   20:   20   30:    5   40:    2
+1975    0:   42   10:   33   20:   19   30:    6   40:    1   50:    0
+1980    0:   41   10:   34   20:   18   30:    6   40:    1
+1985    0:   33   10:   34   20:   25   30:    8   40:    1
+1990    0:   36   10:   35   20:   20   30:    7   40:    2   50:    0
+1995    0:   24   10:   32   20:   25   30:   13   40:    6   50:    1   60:    0   70:    0
+2000    0:   19   10:   35   20:   26   30:   14   40:    5   50:    1   60:    0   70:    0
+2005    0:   22   10:   34   20:   28   30:   12   40:    3   50:    1
+2010    0:   24   10:   37   20:   27   30:   11   40:    2   50:    0
+------
+
+We'll need to draw graphs to get any nuanced insight, but the long-term trends in production of Hits and Home Runs is strong enough that this chart tells a clear story. Baseball has seen two offensive booms: one in the 1920-1939 period, and one in the 1990-2009 period. However, the first was an on-base boom, with a larger proportion of players crossing the 200-hit mark than ever have since. The recent one was decidedly a power-hitting boom. There is an increase in the fraction of players reaching high seasonal hit totals, but the chart above shouts how large the increase in the proportion of players hitting 30-, 40-, and 50-home runs per year is.
+
+// 
+// -- A combination of more teams,
+// -- Interestingly, the is no _statistical_ evidence that the boom is caused by increased use of Performance-e
+
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Production jobs, to give the operator a readable summary that the job not only ran to completion but gave meaningful results. In development, to Know Thy Data.
+* _Standard Snippet_	 -- A mashup of the Format with a Template, Represent Complex Data Structures, and Group-and-Aggregate patterns
+* _Important to Know_	 -- This is more valuable, and more used by experts, than you might think. You'll see.
+* _Records_		 -- Up to you; enough for your brain, not too much for your eyes.
+* _Exercises for you_: Create a macro to generate such a table. It should accept parameters for sprintf template, filter limits and sort key. Consult the `summarizer_bot_9000.pig` file in the example code repository for other examples of macros.
+
 
 === The Summing Trick
 
@@ -1082,6 +1340,15 @@ If you do a sort on the different OPS fields, you'll spot Ted Williams
 players, and top three old players. He's pretty awesome.
 
 
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Summarizing the whole and a small number of discrete subsets: all/true/false, country/region/region/region/.., all visitors/cohort A/cohort B.
+* _Standard Snippet_	 -- Project dummy fields for each subset you'll track, having an ignorable value for records not in that subset. Aggregating over the whole then aggregates only over that subset
+* _Hello, SQL Users_     -- This is a common trick in SQL cookbooks. Thanks y'all!
+* _Important to Know_	 -- You have to manufacture one field per subset. At some point you should use finer-grained grouping instead -- see "Group-Flatten-Decorate" (REF) and "Cube and Rollup" (REF).
+* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
+* _Data Flow_		 -- Similar to any group-and-aggregate. Combiners become highly effective as most of the values will be ignorable
+
 ==== Testing for Absence of a Value Within a Group
 
 We don't need a trick to answer "which players have ever played for the Red Sox" -- just select seasons with team id `BOS` and eliminate duplicate player ids:
@@ -1104,3 +1371,19 @@ player_soxness_g = FILTER
 
 never_sox = FOREACH player_soxness_g GENERATE group AS player_id;
 ------
+
+===== Pattern in Use
+
+* _Where You'll Use It_  -- Security: badges that have "entered reactor core" but no "signed in at front desk" events. Users that clicked on three or more pages but never bought an item. Devices that missed QA screening.
+* _Standard Snippet_	 -- create indicator field: `mt_f = FOREACH recs GENERATE ..., (test_of_fooness ? 1 : 0) is_foo;`; find the non-foos: `non_foos = FILTER (GROUP mt_f BY mykey) BY MAX(is_foo) == 0;` then project just the keys: `non_foos = FOREACH non_foos GENERATE group AS mykey`.
+* _Hello, SQL Users_     -- Another classic pattern from the lore
+* _Important to Know_	 -- If you're thinking "gosh, once I've got that indicator field I could not only test its non-zeroness but sum it and average it and ..." then you're thinking along the right lines.
+* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease dramatically.
+* _Records_		 -- List of keys
+* _Data Flow_		 -- Map, Combiner & Reducer. Combiners should be extremely effective.
+
+=== Refs
+
+* http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0057753[Born at the Wrong Time: Selection Bias in the NHL Draft] by  Robert O. Deaner, Aaron Lowen, Stephen Cobley. February 27, 2013DOI: 10.1371/journal.pone.0057753
+* http://waswatching.com/2013/05/23/the-impact-of-baseball-age-cutoff-date-rules/[The Impact Of Baseball Age-Cutoff Date Rules], waswatching.com, May 23rd, 2013
+* http://www.slate.com/articles/sports/sports_nut/2008/04/the_boys_of_late_summer.html[The Boys of Late Summer], Greg Spira, April 16 2008.
