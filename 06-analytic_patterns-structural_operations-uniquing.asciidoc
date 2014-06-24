@@ -1,0 +1,167 @@
+
+=== Finding Duplicate and Unique Records
+
+==== Eliminating Duplicates from a Table
+
+  -- Every team a player has played for
+SELECT DISTINCT player_id, team_id from batting;
+
+==== Eliminating Duplicates from a Query Result:
+
+------
+  --
+  -- All parks a team has played in
+  --
+SELECT team_id, GROUP_CONCAT(DISTINCT park_id ORDER BY park_id) AS park_ids
+  FROM park_team_years
+  GROUP BY team_id
+  ORDER BY team_id, park_id DESC
+  ;
+------
+
+==== Identifying unique records for a key
+
+
+Distinct: players with a unique first name (once again we urge you: crawl through your data. Big data is a collection of stories; the power of its unusual effectiveness mode comes from the comprehensiveness of those stories. even if you aren't into baseball this celebration of the diversity of our human race and the exuberance of identity should fill you with wonder.)
+
+But have you heard recounted the storied diamond exploits of Firpo Mayberry,
+Zoilo Versalles, Pi Schwert or Bevo LeBourveau?  OK, then how about
+Mysterious Walker, The Only Nolan, or Phenomenal Smith?  Mul Holland, Sixto
+Lezcano, Welcome Gaston or Mox McQuery?  Try asking your spouse to that your
+next child be named for Urban Shocker, Twink Twining, Pussy Tebeau, Bris Lord, Boob
+Fowler, Crazy Schmit, Creepy Crespi, Cuddles Marshall, Vinegar Bend Mizell,
+or Buttercup Dickerson.
+
+------
+SELECT nameFirst, nameLast, COUNT(*) AS n_usages
+  FROM bat_career
+  WHERE    nameFirst IS NOT NULL
+  GROUP BY nameFirst
+  HAVING   n_usages = 1
+  ORDER BY nameFirst
+  ;
+------
+
+* Counting Missing Values
+* Counting and Identifying Duplicates
+* Determining Whether Values are Unique
+
+==== Identifying duplicated records for a key
+
+  -- group by, then emit bags with more than one size; call back to the won-loss example
+
+Once again, what starts out looking like one of the high-level operations turns into a GROUP BY.
+
+Up above, the allstar table almost led us astray due to the little-known fact that some years featured multiple All-Star games. We can pull out the rows matching those fields:
+
+
+------
+  -- Teams who played in more than one stadium in a year
+SELECT COUNT(*) AS n_parks, pty.*
+  FROM park_team_years pty
+  GROUP BY team_id, year_id
+  HAVING n_parks > 1
+------
+
+(Do this with games table?)
+
+==== Eliminating rows that have a duplicated value
+
+(ie the whole row isn't distinct,
+just the field you're distinct-ing on.
+Note: this chooses an arbitrary value from each group
+
+------
+SELECT COUNT(*) AS n_asg, ast.*
+  FROM allstarfull ast
+  GROUP BY year_id, player_id
+  HAVING n_asg > 1
+  ;
+------
+
+=== Set Operations
+We've actually met most of the set operations at this point, but it's worth calling them out specifically. Set operations on groups are particularly straightforward thanks to the Datafu package, which offers Intersect, Difference (...)
+
+TODO check that all the below is cool when there are dupes in a, b or both.
+
+.Set Operation Membership
+------
+	 A	 B	A∪B	A∩B	a-b	b-a	a^b	 ∅
+A B	 T	 T	 T	 T	 F	 F	 F	 F
+A -	 T	 F	 T	 F	 T	 F	 T	 F
+- B	 F	 T	 T	 F	 F	 T	 T	 F
+- -	 F	 F	 F	 F	 F	 F	 F	 F
+------
+
+...
+
+------
+-- for each team year, the set of players for that year and the next, by doing the first part of a self-join
+team_yrpls = FOREACH bat_year GENERATE team_id, year_id, player;
+team_y2y = FOREACH (COGROUP team_yrpls BY (team_id, year_id) AS ty1, team_yrpls BY (team_id, year_id-1) AS ty2) GENERATE
+    group.team_id AS team_id, group.year_id AS year_id,
+    ty1.player_id AS pl1, ty2.player_id AS pl2;
+
+roster_changes_y2y = FOREACH team_y2y {
+
+  -- Distinct Union: the players in each two-year span (given year or the next). SetUnion accepts two or more bags:
+  either_year   = SetUnion(pl1, pl2);
+
+  -- the other set operations require sorted inputs. Keep in mind that an ORDER BY within the nested block of a FOREACH (GROUP BY) is efficient, as it makes use of the secondary sort Hadoop provides.
+  opl1 = ORDER pl1 BY player_id;
+  opl2 = ORDER pl2 BY player_id;
+
+  -- Intersect: for each team-year, the players that stayed for the next year (given year and the next). Requires sorted input. With
+  both_years    = Intersect(opl1, opl2);
+
+  -- Difference: for each team-year, the players that did not stay for next year (A minus B). Requires sorted input. With multiple bags of input, the result is everything that is in the first but not in any other set.
+  y1_undeparted = SetDifference(opl1, opl2);
+
+  -- Symmetric Difference: for each team-year, the players that did not stay for next year (A minus B) plus (B minus A)
+  non_both       = SetUnion(SetDifference(opl1,opl2), SetDifference(opl2,opl1));
+  TODO is there nothing better?
+
+  -- Set Equality: for each team-year, were the players the same?
+
+  is_unchanged =
+    -- if a has no dupes then the elements of a == elements of b if and only if (size(a intersect b) == size(a) == size(b));
+    -- if a has no dupes then the elements of a == elements of b if and only if (size(a minus b) = 0 AND (size(a) == size(b))
+  TODO is there a Datafu for this
+
+  GENERATE team_id, year_id,
+  };
+------
+
+All of those methods use in-memory bag operations, which is generally fine.
+We can also do this using the summing trick
+
+
+For set operations on tables, let's compare at the cities that have ever hosted a major league team compare to the largest cities by population. To prove a point about set operations with duplicates, we will leave in the duplicates from the team cities (the Mets and Yankees both claim NY), and seed the largest cities list by concatenating the top 50 by strict population with the cities in the top 25 metro areas.
+
+------
+cities = LOAD 'cities-top_25_by_pop';
+top_metros = LOAD 'metros-top_25_by_pop';
+top_metros = FOREACH top_metros GENERATE FLATTEN(STRSPLITBAG(name,'-')) AS name;
+
+teams = load_teams;
+bb_g_popc = COGROUP teams BY city, top_cities BY name;
+-- union
+bb_union_popc = FOREACH bb_g_popc GENERATE FLATTEN(...)
+-- intersect
+bb_and_popc = NOT(isEmpty(A) OR isEmpty(B))
+-- set difference
+bb_minus_popc = isEmptyB
+-- symm difference
+bb_xor_popc = isEmpty(A) OR isEmpty(B)
+-- equality
+Count(bb_xor_popc) = 0
+
+-- union if no other fields needed
+bb_union_popc_0 = UNION (FOREACH teams GENERATE city), (FOREACH cities GENERATE name AS city);
+bb_union_popc_d = DISTINCT bb_union_popc_0;
+------
+
+
+This is also how you would do set operations when the bag sizes were too large, or if you wanted to retain columns not considered in the set operation.
+
+

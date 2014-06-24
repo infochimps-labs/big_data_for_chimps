@@ -21,6 +21,26 @@ You'll spot Ted Williams (willite01) as one of the top three young players,
 top three prime players, and top three old players. Ted Williams was pretty
 awesome.
 
+// To put all records in a table in order, it's not sufficient to use the sorting that each reducer applies to its input. If you sorted names from a phonebook, file `part-00000` will have names that start with A, then B, up to Z; `part-00001` will also have names from A-Z; and so on. The collection has a _partial_ order, but we want the 'total order' that Pig's `ORDER BY` operation provides. In a total sort, each record in `part-00000` is in order and precedes every records in `part-00001`; records in `part-00001` are in order and precede every record in `part-00002`; and so forth. From our earlier example to prepare topline batting statistics for players, let's sort the players in descending order by the "OPS" stat (slugging average plus offensive percent, the simplest reasonable estimator of a player's offensive contribution).
+//
+// ------
+// player_seasons = LOAD `player_seasons` AS (...);
+// qual_player_seasons = FILTER player_years BY plapp > what it should be;
+// player_season_stats = FOREACH qual_player_seasons GENERATE
+//    player_id, name, games,
+//    hits/ab AS batting_avg,
+//    whatever AS slugging_avg,
+//    whatever AS offensive_pct
+//    ;
+// player_season_stats_ordered = ORDER player_season_stats BY (slugging_avg + offensive_pct) DESC;
+// STORE player_season_stats INTO '/tmp/baseball/player_season_stats';
+// ------
+//
+// This script will run _two_ Hadoop jobs. One pass is a light mapper-only job to sample the sort key, necessary for Pig to balance the amount of data each reducer receives (we'll learn more about this in the next chapter (TODO ref). The next pass is the map/reduce job that actually sorts the data: output file `part-r-00000` has the earliest-ordered records, followed by `part-r-00001`, and so forth.
+//
+// NOTE: The custom partitioner of an `ORDER` statement subtly breaks the reducer contract: it may send records having the same key to different reducers. This will cause them to be in different output (`part-xxxxx`) files, so make sure anything using the sorted data doesn't assume keys uniquely correspond to files.
+
+
 ==== Sorting by Multiple Fields
 
 Sorting on Multiple fields is as easy as adding them in order with commas.
@@ -183,3 +203,153 @@ team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
 ------
 
 The lines 'Global sort: false // Secondary sort: true' in the explain output indicate that pig is indeed relying on the free secondary sort, rather than quicksorting the bag itself in the reducer.
+
+
+
+==== Select Rows with the Top-K Values for a Field
+
+On its own, `LIMIT` will return the first records it finds.  What if you want to _rank_ the records -- sort by some criteria -- so you don't just return the first ones, but the _top_ ones?
+
+Use the `ORDER` operator before a `LIMIT` to guarantee this "top _K_" ordering.  This technique also applies a clever optimization (reservoir sampling, see TODO ref) that sharply limits the amount of data sent to the reducers.
+
+Let's say you wanted to select the top 20 seasons by number of hits:
+
+------
+TODO: Pig code
+------
+
+In SQL, this would be:
+
+------
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 10
+------
+
+// TODO: not sure what is the second optimization here?
+// TODO: remove the term "N" if it is not used elsewhere in this section.
+
+
+There are two useful optimizations to make when the number of records you will keep (_K_) is much smaller than the number of records in the table (_N_). The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
+
+NOTE: We've cheated on the theme of this chapter (pipeline-only operations) -- sharp eyes will note that `ORDER … LIMIT` will in fact trigger a reduce operation.  We still feel that top-_K_ belongs with the other data elimination pattern, though, so we've included it here.
+
+==== Top K Within a Group
+
+There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements.
+
+TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
+
+
+==== Numbering Records by Sorted Rank
+
+* ORDER by multiple fields: sort on OPS to three places then use games then playerid
+* note value of stabilizing list
+* (how do NULLs sort?)
+* ASC / DESC: fewest strikeouts per plate appearance
+
+==== Rank records in a group using Stitch/Over
+
+
+### ???
+
+* Over / Stitch
+  - Calculating Successive-Record Differences
+  - Generating a Running Total (over and stitch)
+  - Finding Cumulative Sums and Running Averages
+  - age vs y-o-y performance change
+
+
+==== Finding Records Associated with Maximum Values
+
+For each player, find their best significant season by OPS:
+
+------
+  -- For each season by a player, select the team they played the most games for.
+  -- In SQL, this is fairly clumsy (involving a self-join and then elimination of
+  -- ties) In Pig, we can ORDER BY within a foreach and then pluck the first
+  -- element of the bag.
+
+SELECT bat.player_id, bat.year_id, bat.team_id, MAX(batmax.Gmax), MAX(batmax.stints), MAX(team_ids), MAX(Gs)
+  FROM       batting bat
+  INNER JOIN (SELECT player_id, year_id, COUNT(*) AS stints, MAX(G) AS Gmax, GROUP_CONCAT(team_id) AS team_ids, GROUP_CONCAT(G) AS Gs FROM batting bat GROUP BY player_id, year_id) batmax
+  ON bat.player_id = batmax.player_id AND bat.year_id = batmax.year_id AND bat.G = batmax.Gmax
+  GROUP BY player_id, year_id
+  -- WHERE stints > 1
+  ;
+
+  -- About 7% of seasons have more than one stint; only about 2% of seasons have
+  -- more than one stint and more than a half-season's worth of games
+SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT player_id, year_id, IF(COUNT(*) > 1 AND SUM(G) > 77, 1, 0) AS mt1stint FROM batting GROUP BY player_id, year_id) bat
+------
+
+TOP(topN, sort_column_idx, bag_of_tuples)
+must have an explicit field -- can't use an expression
+
+Leaderboard By Season-and-league
+
+GROUP BY year_id, lg_id
+
+There is no good way to find the tuples associated with the minimum value.
+EXERCISE: make a "BTM" UDF, having the same signature as the "TOP" operation,
+to return the lowest-n tuples from a bag.
+
+==== Top K Records within a table using ORDER..LIMIT
+
+Most hr in a season
+Describe pigs optimization of order..limit
+
+* Pulling a Section from the Middle of a Result Set: rank and filter? Modify the quantile/median code?
+
+* Hard in SQL but easy in Pig: Finding Rows Containing Per-Group Minimum or Maximum Value, Displaying One Set of Values While Sorting by Another: - can only ORDER BY an explicit field. In SQL you can omit the sort expression from the table (use expression to sort by)
+* Sorting a Result Set (when can you count on reducer order?)
+
+
+==== Select Rows using a Limit and Offset
+
+A common practice is to express percentiles of your data, that is, to order it and see which records are in the top _K_ percent.  That's another way of saying that those records are better than the remaining 100-_K_ percent, or that they are in the (100-_K_)th percentile.
+
+The first step to calculating percentiles is to determine the number of records in your dataset.  Multiplying that number by 0.01 (that is, 1/100) will show how many records are in one percent of the data.  Multiplying the total by 0.05 (5/100) will show the number of records in five percent of the data, and so on.
+
+For example, thanks to a quick inspection and some `wc -l` action, our baseball dataset holds 41,040 records footnote:[Remember what we said earlier, about "know your data"?] footnote:[In the next chapter, we provide some details on how to inject global values into your Pig scripts, so you needn't hardcode such a value.  For now, please bear with us.].   Five percent of 41,040 is 2,052.  To fetch the top five percent of records -- that is, those records in the 95th percentile -- we would sort the records and extract the top 2,052.
+
+----
+TODO: Pig code
+----
+
+----
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 2052
+----
+
+Instead of fetching all of the records in a given percentile, we sometimes just want to know which is the lowest-ranked record of that percentile.  This tells us which record is the boundary between the ranges above and below the percentile marking.  Calculating this requires an additional step, that both Pig and SQL call `OFFSET`.  To find the 95th percentile values for our topline stats -- assuming a post-1900 game, and players with more than 60 plate appearances -- then, we would run:
+
+----
+TODO: Pig code
+----
+
+----
+SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
+----
+
+If you repeat those steps for the 75th and 50th percentiles, Pig should return the following:
+
+
+----
+-- %ile	  Row	H	 BB	HBP	h2B	h3B	HR	 G	 PA	OBP	SLG	OPS
+-- 95th	 2052	175	75	7	34	9	25	155	669	0.394	0.519	0.895
+-- 75th	10260	124	41	3	21	4	9	132	520	0.347	0.422	0.765
+-- 50th	20521	66	22	1	11	1	3	93	294	0.313	0.359	0.676
+----
+
+WARNING: Be really careful doing this.  As opposed to the `ORDER BY .. LIMIT` pattern, Pig must do a total sort on the full table to calculate percentiles this way.
+
+
+
+====  Shuffle a set of records
+
+See notes on random numbers.
+
+You might also enjoy the random number table, holding 350 million 64-bit numbers directly from random.org (7 GB of 20-digit decimal numbers)
+* 160-bit numbers in hexadecimal form
+* 32 64-bit numbers (2048-bits per row)
+
+cogroup events by team_id
+... there's a way to do this in one less reduce in M/R -- can you in Pig?

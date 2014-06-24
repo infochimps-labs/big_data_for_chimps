@@ -112,3 +112,47 @@ STORE_TABLE(weight_summary, 'weight_summary')
 
 DESCRIBE     name_first_summary;
 STORE_TABLE(name_first_summary, 'name_first_summary');
+
+
+
+
+--
+-- **The SQL Version***
+--
+
+-- SELECT
+--     MIN(nameFirst)                     AS nameFirst_min,
+--     MAX(nameFirst)                     AS nameFirst_max,
+--     --
+--     MIN(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_min,
+--     MAX(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_max,
+--     MIN(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+--     MAX(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+--     AVG(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_avg,
+--     STDDEV_POP(CHAR_LENGTH(nameFirst)) AS nameFirst_strlen_stddev,
+--     LEFT(GROUP_CONCAT(nameFirst),25)   AS nameFirst_examples,
+--     SUM(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_sum,
+--     --
+--     COUNT(*)                           AS n_recs,
+--     COUNT(*) - COUNT(nameFirst)        AS nameFirst_n_nulls,
+--     COUNT(DISTINCT nameFirst)          AS nameFirst_n_distinct
+--   FROM bat_career bat
+-- ;
+--
+-- SELECT
+--   player_id,
+--   MIN(year_id) AS yearBeg,
+--   MAX(year_id) AS yearEnd,
+--   COUNT(*)    AS n_years,
+--     MIN(HR)              AS hr_min,
+--     MAX(HR)              AS hr_max,
+--     AVG(HR)              AS hr_avg,
+--     STDDEV_POP(HR)       AS hr_stddev,
+--     SUM(HR)              AS hr_sum,
+--     COUNT(*)             AS n_recs,
+--     COUNT(*) - COUNT(HR) AS hr_n_nulls,
+--     COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+--   FROM bat_season bat
+--   GROUP BY player_id
+--   ORDER BY hr_max DESC
+-- ;

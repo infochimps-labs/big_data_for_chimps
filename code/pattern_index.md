@@ -150,3 +150,29 @@ We calculate several distributions:
 	-- === Rollup
 	-- ==== Painfully Paginating Through a Result Set
 	-- ==== Eliminating rows that have a duplicated value
+
+
+
+=== In statistics Chapter
+
+==== Cube and rollup
+stats by team, division and league
+
+cogroup events by team_id
+... there's a way to do this in one less reduce in M/R -- can you in Pig?
+
+=== in Time-series chapter
+
+* Running total http://en.wikipedia.org/wiki/Prefix_sum
+* prefix sum value; by combining list ranking, prefix sums, and Euler tours, many important problems on trees may be solved by efficient parallel algorithms.[3]
+* Self join of table on its next row (eg timeseries at regular sample)
+
+=== Don't know how to do these
+
+* Computing Team Standings
+* Producing Master-Detail Lists and Summaries
+* Find Overlapping Rows
+* Find Gaps in Time-Series
+* Find Missing Rows in Series / Count all Values
+* Calculating Differences Between Successive Rows
+* Finding Cumulative Sums and Running Averages

@@ -1,0 +1,350 @@
+
+==== Structural Group Operations (ie non aggregating)
+
+* GROUP/COGROUP To Restructure Tables
+* Group Elements From Multiple Tables On A Common Attribute (COGROUP)
+* Denormalize Normalized
+  - roll up stints
+  - Normalize Denormalized (flatten)
+
+You can group more than one dataset at the same time. In weather data, there is one table listing the location and other essentials of each weather station and a set of tables listing, for each hour, the weather at each station. Here’s one way to combine them into a new table, giving the explicit latitude and longitude of every observation:
+
+------
+G1=GROUP WSTNS BY (ID1,ID2), WOBS BY (ID1,ID2);
+G2=FLATTEN G1…
+G3=FOR EACH G2 …
+------
+
+This is equivalent to the following Wukong job:
+
+------
+(TODO: Wukong job)
+------
+
+(TODO: replace with an example where you would use a pure code group).
+
+=== Group Elements From Multiple Tables On A Common Attribute (COGROUP)
+
+The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation. This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
+
+------
+sightings = LOAD('/data/gold/geo/ufo_sightings/us_ufo_sightings.tsv') AS (...);
+airports     = LOAD('/data/gold/geo/airflights/us_airports.tsv') AS (...);
+cell_sightings_airports = COGROUP
+   sightings by quadkey(lng, lat),
+   airports  by quadkey(lng, lat);
+STORE cell_sightings_locations INTO '...';
+------
+
+In the equivalent Map/Reduce algorithm, you label each record by both the indicated key and a number based on its spot in the COGROUP statement (here, records from sightings would be labeled 0 and records from airports would be labeled 1). Have Hadoop then PARTITION and GROUP on the COGROUP key with a secondary sort on the table index. Here is how the previous Pig script would be done in Wukong:
+
+------
+mapper(partition_keys: 1, sort_keys: 2) do
+ recordize_by_filename(/sightings/ => Wu::Geo::UfoSighting, /airport/ => Wu::Geo::Airport)
+ TABLE_INDEXES = { Wu::Geo::UfoSighting => 0, Wu::Geo::Airport => 1 }
+ def process(record)
+   table_index = TABLE_INDEXES[record.class] or raise("Don't know how to handle records of type '{record.class}'")
+   yield( [Wu::Geo.quadkey(record.lng, record.lat), table_index, record.to_wire] )
+ end
+end
+
+reducer do
+ def recordize(quadkey, table_index, jsonized_record) ; ...; end
+ def start(key, *)
+   @group_key = key ;
+   @groups = [ [], [] ]
+ end
+ def accumulate(quadkey, table_index, record)
+   @groups[table_index.to_i] << record
+ end
+ def finalize
+   yield(@group_key, *groups)
+ end
+end
+------
+
+The Mapper loads each record as an object (using the file name to recognize which class to use) and then emits the quadkey, the table index (0 for sightings, 1 for airports) and the original record's fields. Declaring partition keys 1, sort keys 2 insures all records with the same quadkey are grouped together on the same Reducer and all records with the same table index arrive together. The body of the Reducer makes temporary note of the GROUP key, then accumulates each record into an array based on its type.
+
+The result of the COGROUP statement always has the GROUP key as the first field. Next comes the set of elements from the table named first in the COGROUP statement -- in Pig, this is a bag of tuples, in Wukong, an array of objects. After that comes the set of elements from the next table in the GROUP BY statement and so on.
+
+While a standalone COGROUP like this is occasionally interesting, it is also the basis for many other common patterns, as you'll see over the next chapters.
+
+=== Co-Grouping Elements from Multiple Tables
+
+Let's continue our example of finding the list of home ballparks for each player over their career.
+
+(Yikes just skip this section for now)
+
+------
+parks = LOAD '.../parks.tsv' AS (...);
+player_seasons = LOAD '.../player_seasons.tsv' AS (...);
+team_seasons = LOAD '.../team_seasons.tsv' AS (...);
+
+park_seasons = JOIN parks BY park_id, team_seasons BY park_id;
+park_seasons = FOREACH park_seasons GENERATE
+   team_seasons.team_id, team_seasons.year, parks.park_id, parks.name AS park_name;
+
+player_seasons = FOREACH player_seasons GENERATE
+   player_id, name AS player_name, year, team_id;
+player_season_parks = JOIN
+   parks           BY (year, team_id),
+   player_seasons BY (year, team_id);
+player_season_parks = FOREACH player_season_parks GENERATE player_id, player_name, parks::year AS year, parks::team_id AS team_id, parks::park_id AS park_id;
+
+player_all_parks = GROUP player_season_parks BY (player_id);
+describe player_all_parks;
+Player_parks = FOREACH player_all_parks {
+   player = FirstFromBag(players);
+   home_parks = DISTINCT(parks.park_id);
+   GENERATE group AS player_id,
+       FLATTEN(player.name),
+       MIN(players.year) AS beg_year, MAX(players.year) AS end_year,
+       home_parks; -- TODO ensure this is still tuple-ized
+}
+------
+
+Whoa! There are a few new tricks here.
+
+We would like our output to have one row per player, whose fields have these different flavors:
+
+* Aggregated fields (`beg_year`, `end_year`) come from functions that turn a bag into a simple type (`MIN`, `MAX`).
+* The `player_id` is pulled from the `group` field, whose value applies uniformly to the the whole group by definition. Note that it's also in each tuple of the bagged `player_park_seasons`, but then you'd have to turn many repeated values into the one you want...
+* ... which we have to do for uniform fields (like `name`) that are not part of the group key, but are the same for all elements of the bag. The awareness that those values are uniform comes from our understanding of the data -- Pig doesn't know that the name will always be the same. The FirstFromBag (TODO fix name) function from the Datafu package grabs just first one of those values
+* Inline bag fields (`home_parks`), which continue to have multiple values.
+
+We've applied the `DISTINCT` operation so that each home park for a player appears only once. `DISTINCT` is one of a few operations that can act as a top-level table operation, and can also act on bags within a foreach -- we'll pick this up again in the next chapter (TODO ref). For most people, the biggest barrier to mastery of Pig is to understand how the name and type of each field changes through restructuring operations, so let's walk through the schema evolution.
+
+Nested FOREACH allows CROSS, DISTINCT, FILTER, FOREACH, LIMIT, and ORDER BY (as of Pig 0.12).
+
+We `JOIN`ed player seasons and team seasons on `(year, team_id)`. The resulting schema has those fields twice. To select the name, we use two colons (the disambiguate operator): `players::year`.
+
+After the `GROUP BY` operation, the schema is `group:int, player_season_parks:bag{tuple(player_id, player_name, year, team_id, park_id, park_name)}`. The schema of the new `group` field matches that of the `BY` clause: since `park_id` has type chararray, so does the group field. (If we had supplied multiple fields to the `BY` clause, the `group` field would have been of type `tuple`). The second field, `player_season_parks`, is a bag of size-6 tuples. Be clear about what the names mean here: grouping on the `player_season_parks` _table_ (whose schema has six fields) produced the `player_parks` table. The second field of the `player_parks` table is a tuple of size six (the six fields in the corresponding table) named `player_season_parks` (the name of the corresponding table).
+
+So within the `FOREACH`, the expression `player_season_parks.park_id` is _also_ a bag of tuples (remember, bags only hold tuples!), now size-1 tuples holding only the park_id. That schema is preserved through the `DISTINCT` operation, so `home_parks` is also a bag of size-1 tuples.
+
+------
+   team_park_seasons = LOAD '/tmp/team_parks.tsv' AS (
+       team_id:chararray,
+       park_years: bag{tuple(year:int, park_id:chararray)},
+       park_ids_lookup: map[chararray]
+       );
+   team_parks = FOREACH team_park_seasons { distinct_park_ids = DISTINCT park_years.park_id; GENERATE team_id, FLATTEN(distinct_park_ids) AS park_id; }
+   DUMP team_parks;
+------
+
+TODO add flatten example that crosses the data.
+
+
+==== Ungrouping operations (FOREACH..FLATTEN) expand records
+
+So far, we've seen using a group to aggregate records and (in the form of `JOIN’) to match records between tables.
+Another frequent pattern is restructuring data (possibly performing aggregation at the same time). We used this several times in the first exploration (TODO ref): we regrouped wordbags (labelled with quadkey) for quadtiles containing composite wordbags; then regrouping on the words themselves to find their geographic distribution.
+
+The baseball data is closer at hand, though, so l
+
+------
+team_player_years = GROUP player_years BY (team,year);
+FOREACH team_player_years GENERATE
+   FLATTEN(player_years.player_id), group.team, group.year, player_years.player_id;
+------
+
+In this case, since we grouped on two fields, `group` is a tuple; earlier, when we grouped on just the `player_id` field, `group` was just the simple value.
+
+The contextify / reflatten pattern can be applied even within one table. This script will find the career list of teammates for each player -- all other players with a team and year in common footnote:[yes, this will have some false positives for players who were traded mid-year. A nice exercise would be to rewrite the above script using the game log data, now defining teammate to mean "all other players they took the field with over their career".].
+
+------
+GROUP player_years BY (team,year);
+FOREACH
+   cross all players, flatten each playerA/playerB pair AS (player_a
+FILTER coplayers BY (player_a != player_b);
+GROUP by playerA
+FOREACH {
+   DISTINCT player B
+}
+------
+
+Here's another
+
+The result of the cross operation will include pairing each player with themselves, but since we don't consider a player to be their own teammate we must eliminate player pairs of the form `(Aaronha, Aaronha)`. We did this with a FILTER immediate before the second GROUP (the best practice of removing data before a restructure), but a defensible alternative would be to `SUBTRACT` playerA from the bag right after the `DISTINCT` operation.
+
+==== GROUP/COGROUP To Restructure Tables
+
+This next pattern is one of the more difficult to picture but also one of the most important to master. Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
+
+(TODO: describe this pattern)
+
+==== Group flatten regroup
+
+* OPS+ -- group on season, normalize, reflatten
+* player's highest OPS+: regroup on player, top
+
+Words/tiles:
+
+(Word tile wd_doc_ct doc_tot)
+Group on word find total word count, total doc count
+(Word tile
+    doc-usg:val(wd,doc)
+    doc-tot_usgs:sum(u|*,doc)   doc-n_wds:count(w|*,doc)
+    wd-tot_usgs:sum(u|wd,*)                                                wd-n_docs:count(d|wd,*)
+    tot-usgs:sum(*,*)                  n_wds:count(w|*,*)            ct-docs:count(d|*,*)
+
+   usgs    tile-ct-wds     tile-ct-docs
+
+    pl-yr-ops:val(pl,yr)
+    yr-tot-ops:sum(ops|*,yr)            yr-n-pl:count(pl|*,yr)   yr-avg-ops:avg(ops|*,yr)
+    pl-yr-oz:(pl-yr-ops/yr-avg-ops)
+    pl-max-oz:max(pl-yr-oz|p,*)
+
+    yr-g:(*,y)
+    te-yr-g:(*,te,y)
+
+Name tables for dominating primary keys. If a value is subsumed, omit. Keys are x_id always
+              pl-yr[te,ops]  pk-te-yr[]
+              pl-info[...] -- vertical partition on any other func(pl)
+If Non unique key, assumed that table xx has id xx_id
+
+ Do not get join happy: find year averages, join all on year, group on player
+Just group on year then flatten with records.
+
+Style: n_H, ct_H, H_ct? n_H because the n_* have same schema, and because ^^^
+
+=== Decorate-Flatten-Redecorate
+
+The patterns we've introduced so far  looking at baseball's history
+
+That's the same analysis used to determine whether to go for it on fourth down in American football, and a useful model for predicting asset prices and other "Bayesian" analysis (TECH am I using the right term): given a discrete assessment of the current state, what future outcomes result?
+
+To do this, we need to first determine the final inning and final game outcome for each event, and then determine the distribution of outcomes across all events for each game state. The first requires placing all events into context by inning and game; the second requires placing them into context by event type.
+
+For each combination of <ocuppied bases, game score, outs, inning, game over>, we want to find
+
+* how often that situation crops up -- how often is the home team down 3-0, with two outs in the bottom of the final inning with the bases loaded? In this situation every pitch could result in immediate victory or immediate defeat.
+* from the given situation, how likely is the team to finally prevail? How often does the mighty Casey come through with a four-run "grand-slam" home run, and how often does he
+* on average, how many additional runs will be scored by that team by the end of the inning
+* the number of times a team in that situation has won, lost, or tied.
+
+    inn inn_home beg_outs beg_1b beg_2b beg_3b  beg_score end_inn_score end_gm_score
+
+http://www.baseball-almanac.com/poetry/po_case.shtml
+
+Exercise: the chief promise of big data is to replace ad-hoc reasoning and conventional wisdom with clear direction based on reason and experience. The chief peril of big data is to only analyze what you can measure, discarding expert knowledge in favor of shallow patterns. The "bunt" tactic is a case in point. A batter "bunts" by putting down a difficult-to-field little squib hit. The base runners, who can get a head start, usually advance; the batter, who has to finish the batting motion, is usually thrown out. In effect, a successful bunt exchanges one out for a single-base advance of each base runner, scoring a run if there was someone on third base.
+Suppose bunts were always successful. For each game state with base runners and zero or one outs, what is the difference in expected runs scored in that inning compared to the state with one more out and each runner advanced by a slot, plus one run if there was a base runner on third?
+
+The data very clearly shows that, all things being equal, a bunt is a bad tactic
+
+The consensus is that (a) traditional managers use the bunt far more often than is justified; (b) factors of game theory, psychology, and others that are difficult to quantify say that it should be employed somewhat more often than the data-driven analysis would indicate. But any sport writer looking to kick up a good ol' jocks-vs-nerds donnybrook can reliably do so by claiming that bunts are, or are not, a sound strategy. http://www.lookoutlanding.com/2013/8/5/4589844/the-evolution-of-the-sacrifice-bunt-part-1
+
+We have, thanks to Retrosheet, the record of the more than 9 million plays from 1950-present.
+The game event files have many many fields, but
+
+SELECT
+  game_id, LEFT(game_id,3) AS home_team_id, away_team_id, event_id, DATE(SUBSTRING(game_id, 4,8)) AS game_date, 0+RIGHT(game_id, 1) AS game_seq,
+  inn_ct AS inn, bat_home_id AS inn_home, outs_ct AS beg_outs_ct, 				-- inning and outs
+  IF(inn_end_fl = 'T', 1, 0) AS is_end_inn, IF(game_end_fl = 'T', 1, 0) AS is_end_game,
+  event_outs_ct + outs_ct AS end_outs_ct,
+  -- @runs_on_play := IF(bat_dest_id > 3, 1, 0) + IF(run1_dest_id > 3, 1, 0) + IF(run2_dest_id > 3, 1, 0) + IF(run3_dest_id > 3, 1, 0) AS runs_on_play,
+  @runs_on_play := event_runs_ct AS runs_on_play,
+  event_cd, h_cd, ab_fl,
+  home_score_ct, away_score_ct,
+  @beg_scdiff    := home_score_ct - away_score_ct AS beg_scdiff,		-- score differential
+  @end_scdiff    := @beg_scdiff + IF(bat_home_id = 1, @runs_on_play, -@runs_on_play) AS end_scdiff,
+  pit_id, bat_id, base1_run_id, base2_run_id, base3_run_id,			-- bases state
+  bat_dest_id, run1_dest_id, run2_dest_id, run3_dest_id
+ FROM events
+WHERE (game_id LIKE 'BOS2012%')
+  AND bat_event_fl != 'T'
+  -- AND inn_ct > 6
+ORDER BY game_id, inn, inn_home, outs_ct
+;
+
+group by game, decorate; flatten by game+inning, decorate; flatten
+
+(Shoot this won't work for demonstrating the cogroup-regroup I think)
+
+TODO for geographic count example use the Datafu udf to do the document counts
+
+==== Generate a won-loss record
+
+Using the summing trick footnote:[we're skipping some details such as forfeited games, so the numbers won't agree precisely with the combined team numbers.]
+
+------
+  -- generate a summable value for each game, once for home and once for away:
+home_games = FOREACH games GENERATE
+  home_team_id AS team_id, year_id,
+  IF (home_runs_ct > away_runs_ct, 1,0) AS win,
+  IF (home_runs_ct < away_runs_ct, 1,0) AS loss,
+  If (forfeit == ...) as forf_w, ...
+  ;
+away_games = FOREACH games GENERATE
+  away_team_id AS team_id, year_id,
+  IF (home_runs_ct < away_runs_ct, 1,0) AS win,
+  IF (home_runs_ct > away_runs_ct, 1,0) AS loss
+  ;
+------
+
+Now you might be tempted (especially if you are coming from SQL land) to follow this with a UNION of `home_games` and `away_games`. Don't! Instead, use a COGROUP. Once you've wrapped your head around it, it's simpler and more efficient.
+
+------
+team_games = COGROUP home_games BY (team_id, year_id), away_games BY (team_id, year_id);
+------
+
+Each combination of team and year creates one row with the following fields:
+
+* `group`, a tuple with the `team_id` and `year_id`
+* `home_games`, a bag holding tuples with `team_id`, `year_id`, `win` and `loss`
+* `away_games`, a bag holding tuples with `team_id`, `year_id`, `win` and `loss`
+
+------
+team_games:
+((BOS,2004),  {(BOS,2004,1,0),(BOS,2004,1,0),...}, {(BOS,2004,0,1),(BOS,2004,1,0),...})
+...
+------
+
+You should notice a few things:
+
+* The group values go in a single field (the first one) called `group`.
+* Since we grouped on two fields, the group value is a tuple; if we had grouped on one field it would have the same schema as that field
+* The name of the _table_ in the COGROUP BY statement became the name of the _field_ in the result
+* The group values appear redundantly in each tuple of the bag. That's OK, we're about to project them out.
+
+This is one of those things to think back on when you're looking at a script and saying "man, I just have this feeling this script has more reduce steps than it deserves".
+
+The next step is to calculate the answer:
+
+------
+...
+team_games = COGROUP home_games BY....
+winloss_record = FOREACH team_games {
+  wins   = SUM(home_games.win)    + SUM(away_games.win);
+  losses = SUM(home_games.loss)   + SUM(away_games.loss);
+  G      = COUNT_STAR(home_games) + COUNT_STAR(away_games);
+  G_home = COUNT_STAR(home_games);
+  ties   = G - (wins + losses);
+  GENERATE group.team_id, group.year_id, G, G_home, wins, losses, ties;
+};
+------
+
+Exercise: Do this instead with a single GROUP. Hint: the first FOREACH should have a FLATTEN.
+
+
+
+
+==== Cube and rollup
+
+stats by team, division and league
+
+http://joshualande.com/cube-rollup-pig-data-science/
+https://cwiki.apache.org/confluence/display/Hive/Enhanced+Aggregation,+Cube,+Grouping+and+Rollup#EnhancedAggregation,Cube,GroupingandRollup-CubesandRollups
+
+From manual: "Handling null values in dimensions
+Since null values are used to represent subtotals in cube and rollup operation, in order to differentiate the legitimate null values that already exists as dimension values, CUBE operator converts any null values in dimensions to "unknown" value before performing cube or rollup operation. For example, for CUBE(product,location) with a sample tuple (car,null) the output will be
+`{(car,unknown), (car,null), (null,unknown), (null,null)}`"
+
+------
+http://labs.opendns.com/2013/04/08/pig-jruby/?referred=1
+pairs_r = FOREACH (GROUP raw BY client_ip) {
+  client_queries = FOREACH raw GENERATE ts, name;
+  client_queries = ORDER client_queries BY ts, name;
+  GENERATE client_queries;
+};
+------
