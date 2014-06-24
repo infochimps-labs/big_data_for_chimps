@@ -34,21 +34,23 @@ LIMIT slugging_fatness_join 20; DUMP @;
 ...
 ------
 
-Each output record from a `JOIN` simply consists of all the fields from the first table, in their original order, followed by the fields from a matching record in the second table, all in their original order. If you held up a piece of paper covering the right part of your screen you'd think you were looking at the original table.
-(This is in contrast to the records from a `COGROUP`: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.)
-
-TODO: not sure where this was going?
-
-one thing you'll notice in the snippet is the notation `bat_careers::player_id`.
-
-------
-DESCRIBE slugging_fatness_join;
-{...}
-------
-
+// Each output record from a `JOIN` simply consists of all the fields from the first table, in their original order, followed by the fields from a matching record in the second table, all in their original order. If you held up a piece of paper covering the right part of your screen you'd think you were looking at the original table.
+// (This is in contrast to the records from a `COGROUP`: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.)
+// 
+// TODO: not sure where this was going?
+// 
+// one thing you'll notice in the snippet is the notation `bat_careers::player_id`.
+// 
+// ------
+// DESCRIBE slugging_fatness_join;
+// {...}
+// ------
+// 
 ===== Disambiguating Field Names With `::`
 
-As a consequence of flattening records from the fatness table next to records from the slugging_stats table, the two tables each contribute a field named `player_id`. Although _we_ privately know that both fields have the same value, Pig is right to insist on an unambiguous reference. The schema helpfully carries a prefix on each field disambiguating its table of origin.
+As a consequence of flattening records from the fatness table next to records from the slugging_stats table, the two tables each contribute a field named `player_id`. Although _we_ privately know that both fields have the same value, Pig is right to insist on an unambiguous reference. The schema helpfully prefixes the field names with a slug, separated by `::`, to make it unambiguous.
+
+// TODO finish thought -- caution about  x.y vs x::y
 
 (As of this writing, Pig has no builtin, hands-free way to remove those redundant columns.  You'll need to run a `FOREACH` across the joined data, specifying the qualified names of the fields you want to keep.)
 
@@ -180,7 +182,7 @@ reducer do
 end
 ------
 
-TODO-qem should I show the version that has just the naked join-like output ie. the 'after_the_join' variable? And if so, do I show it as well or instead? --> tough to picture it in my head, but I vote to show both, such that people can see the flow.
+// TODO-qem should I show the version that has just the naked join-like output ie. the 'after_the_join' variable? And if so, do I show it as well or instead? --> tough to picture it in my head, but I vote to show both, such that people can see the flow.
 
 The output of the Join job will have one record for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the secondary sort ensures that for each key the reducer receives all the records for table A strictly followed by all records for table B. We gather all the A records in to an array, then on each B record emit the A records stapled to the B records. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In map/reduce, the table with the largest number of records per key should be assigned the last-occurring field group label; in Pig, that table should be named last in the `JOIN` statement.
 
@@ -189,13 +191,10 @@ stats_and_fatness = FOREACH (JOIN fatness BY player_id, stats BY player_id)
   GENERATE fatness::player_id..BMI, stats::n_seasons..OPS;
 ------
 
-TODO: I (qem) would nix the Exercise sections, unless you have them in every chapter.  Hmm, or, leave this in a sidebar.  Yes, sidebar sounds good.
+===== Pattern in Use
 
-===== Exercise
 
-Exercise: Explore the correspondence of weight, height and BMI to SLG using a
-medium-data tool such as R, Pandas or Excel. Spoiler alert: the stereotypes
-of the big fat slugger is quire true.
+* _Exercise_ -- Explore the correspondence of weight, height and BMI to SLG using a medium-data tool such as R, Pandas or Excel. Spoiler alert: the stereotypes of the big fat slugger is quire true.
 
 ==== Handling Nulls and Non-matches in Joins and Groups
 
@@ -231,18 +230,25 @@ JOIN
 
 Even if there are records whose value is -999, they will have `'Y'` for the indicator, while the null-keyed records will have `'x'`, and so they will not meet up. (For your sanity, if it's possible to choose a replacement value that can't occur in the data set do so). The file `j-important_notes_about_joins.pig` in the sample code repo has a bunch more demonstrations of edge cases in groups and joins.
 
-===== Other topics in JOIN-land:
 
-TODO: (qem) I vote to either nix this section, or put it in a prose form in a sidebar or note.  "We've just barely touched on joins.  Here are some other angles to consider..."
+===== Pattern in Use
 
-* See advanced joins: bag left outer join from DataFu
-* See advanced joins: Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
-* See Time-series: Range query using cross
-* See Time-series: Range query using prefix and UDFs (the ip-to-geo example)
-* See advanced joins: Sparse joins for filtering, with a HashMap (replicated)
-* Out of scope: Bitmap index
-* Out of scope: Bloom filter joins
-* See time-series: Self-join for successive row differences
+* _Where You'll Use It_  -- 
+* _Standard Snippet_	 -- 
+* _Hello, SQL Users_     -- 
+* _Important to Know_	 -- 
+* _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
+* _Records_		 -- 
+* _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- 
+* _See Also_
+  - DataFu's bag left outer join;
+  - Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
+  - Time-series chapter: Range query using cross
+  - Time-series chapter: Range query using prefix and UDFs (the ip-to-geo example)
+  - Time-series chapter: Self-join for successive row differences
+  - Advanced Pig: Sparse joins for filtering, with a HashMap (replicated)
+  - The internet, for information on Bitmap index or Bloom filter joins
 
 === Enumerating a Many-to-Many Relationship
 
@@ -340,7 +346,7 @@ footnote:[Please note that the `batting_hof` table excludes players admitted to 
 
 In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" `JOIN` instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
 
-In a Pig `JOIN` it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (TODO:  REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
+In a Pig `JOIN` it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
 
 NOTE: A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
 
