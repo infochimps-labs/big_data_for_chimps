@@ -243,7 +243,7 @@ TODO: needs code example. (Old example used World Cup data; let's find one that 
 
 * ORDER by multiple fields: sort on OPS to three places then use games then playerid
 * note value of stabilizing list
-* (how do NULLs sort?)
+* (how do `null`s sort?)
 * ASC / DESC: fewest strikeouts per plate appearance
 
 ==== Rank records in a group using Stitch/Over

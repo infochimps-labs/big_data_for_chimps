@@ -36,16 +36,16 @@ LIMIT slugging_fatness_join 20; DUMP @;
 
 // Each output record from a `JOIN` simply consists of all the fields from the first table, in their original order, followed by the fields from a matching record in the second table, all in their original order. If you held up a piece of paper covering the right part of your screen you'd think you were looking at the original table.
 // (This is in contrast to the records from a `COGROUP`: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.)
-// 
+//
 // TODO: not sure where this was going?
-// 
+//
 // one thing you'll notice in the snippet is the notation `bat_careers::player_id`.
-// 
+//
 // ------
 // DESCRIBE slugging_fatness_join;
 // {...}
 // ------
-// 
+//
 ===== Disambiguating Field Names With `::`
 
 As a consequence of flattening records from the fatness table next to records from the slugging_stats table, the two tables each contribute a field named `player_id`. Although _we_ privately know that both fields have the same value, Pig is right to insist on an unambiguous reference. The schema helpfully prefixes the field names with a slug, separated by `::`, to make it unambiguous.
@@ -53,6 +53,29 @@ As a consequence of flattening records from the fatness table next to records fr
 // TODO finish thought -- caution about  x.y vs x::y
 
 (As of this writing, Pig has no builtin, hands-free way to remove those redundant columns.  You'll need to run a `FOREACH` across the joined data, specifying the qualified names of the fields you want to keep.)
+
+
+// Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency.
+//
+// (Replace with the 'people' table)
+//
+// The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
+//
+// hang weight, height and BMI off of their OPS (overall hitting); ISO ("isolated power");
+// and number of stolen bases per time on base (loosely tied to speed)
+//
+// ------
+// SELECT bat.player_id, peep.nameCommon, begYear,
+//     peep.weight, peep.height,
+//     703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
+//     PA, OPS, ISO
+//   FROM bat_career bat
+//   JOIN people peep ON bat.player_id = peep.player_id
+//   WHERE PA > 500 AND begYear > 1910
+//   ORDER BY BMI DESC
+//   ;
+// ------
+
 
 ===== Body Type vs Slugging Average
 
@@ -191,6 +214,9 @@ stats_and_fatness = FOREACH (JOIN fatness BY player_id, stats BY player_id)
   GENERATE fatness::player_id..BMI, stats::n_seasons..OPS;
 ------
 
+// The output of the Join job has one line for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order. We have to accumulate all the A records in memory so we know what rows to emit for each B record. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
+
+
 ===== Pattern in Use
 
 
@@ -233,14 +259,14 @@ Even if there are records whose value is -999, they will have `'Y'` for the indi
 
 ===== Pattern in Use
 
-* _Where You'll Use It_  -- 
-* _Standard Snippet_	 -- 
-* _Hello, SQL Users_     -- 
-* _Important to Know_	 -- 
+* _Where You'll Use It_  --
+* _Standard Snippet_	 --
+* _Hello, SQL Users_     --
+* _Important to Know_	 --
 * _Output Count_	 -- As many records as the cardinality of its key, i.e. the number of distinct values. Data size should decrease greatly.
-* _Records_		 -- 
+* _Records_		 --
 * _Data Flow_		 -- Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
-* _Exercises for You_    -- 
+* _Exercises for You_    --
 * _See Also_
   - DataFu's bag left outer join;
   - Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html

@@ -64,7 +64,7 @@ DESCRIBE year_hists;
 --
 
 binned = FOREACH sig_seasons GENERATE year_id,
-  ($yr_binsz * (int)FLOOR(1.0f* year_id / $yr_binsz)) AS year_bin, 
+  ($yr_binsz * (int)FLOOR(1.0f* year_id / $yr_binsz)) AS year_bin,
   ($HH_binsz * (int)FLOOR(1.0f* H       / $HH_binsz)) AS HH_bin,
   ($HR_binsz * (int)FLOOR(1.0f* HR      / $HR_binsz)) AS HR_bin;
 
@@ -97,7 +97,7 @@ DESCRIBE year_hists;
 year_hists_HH = FOREACH year_hists {
   HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
   HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
-  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE 
+  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE
     SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
   GENERATE year_bin, BagToString(HH_hist_vis, '  ');
   };

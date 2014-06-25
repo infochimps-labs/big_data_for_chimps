@@ -10,8 +10,6 @@ Truth be told, even if you work with every _record_ in a dataset, you may be int
 
 The goal of course isn't to _eliminate_ data, it's to be _selective_ about your data, and so we will introduce you to a variety of techniques for doing so.
 
-
-
 === Selecting Records that Satisfy a Condition: `FILTER` and Friends
 
 The first step to eliminating (or being selective about) data is to reject records that don't match certain criteria. Pig's `FILTER` statement does this for you. It doesn't remove the data -- all data in Hadoop and thus Pig is immutable -- rather like all Pig operations it creates a new table that omits certain records from the input.
@@ -22,39 +20,54 @@ The baseball stats go back to 1871 (!), but it took a few decades for the game t
 modern_stats = FILTER bats BY (year_id >= 1900);
 ------
 
-The range of conditional expressions you'd expect are present: `==` (double-equals) to express an equality condition footnote:[SQL users take note: `==`, not `=`], `!=` for not-equals, and `>`, `>=`, `<`, `<=` for inequalities; `IN` for presence in a list; and `MATCHES` for string pattern matching. (More on those last two in a bit.)
+The range of conditional expressions you'd expect are present: `==` (double-equals) to express an equality condition, `!=` for not-equals, and `>`, `>=`, `<`, `<=` for inequalities; `IN` for presence in a list; and `MATCHES` for string pattern matching. (More on those last two in a bit.)
 
 ==== Selecting Records that Satisfy Multiple Conditions
 
-In a data exploration, it's often important to exclude subjects with sparse data, either to eliminate small-sample-size artifacts, or because they are not in the focus of interest. In our case, we will often want to restrict analysis to regular players -- those who have seen significant playing time in a season -- while allowing for injury or situational replacement. Since major-league players come to bat a bit over 4 times a game on average in a season of 154 to 162 games (it increased in 1960), we can take 450 plate appearances (roughly 2/3 of the maximum)footnote:[Not coincidentally, that figure of 450 PA is close to the "qualified" season threshold of 3.1 plate appearances per team game that are required for seasonal performance awards] as our threshold.
+In a data exploration, it's often important to exclude subjects with sparse data, either to eliminate small-sample-size artifacts, or because they are not in the focus of interest. In our case, we will often want to restrict analysis to regular players -- those who have seen significant playing time in a season -- while allowing for injury or situational replacement. Since major-league players come to bat a bit over 4 times a game on average in a season of 154 to 162 games (it increased in 1960), we can take 450 plate appearances (roughly 2/3 of the maximum) as our threshold footnote:[Not coincidentally, that figure of 450 PA is close to the "qualified" season threshold of 3.1 plate appearances per team game that are required for seasonal performance awards].
 
-In Pig, you can also combine conditional statements with  `AND`, `OR`, `NOT` footnote:[programmers take note: `AND`, not `&&`]. The following selects we'll call "qualified modern seasons": regular players, competing in the modern era, in either of the two modern leagues.
+In Pig, you can also combine conditional statements with  `AND`, `OR`, `NOT`. The following selects we'll call "qualified modern seasons": regular players, competing in the modern era, in either of the two modern leagues.
 
 ------
 modsig_stats = FILTER bats BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
 ------
 
-// ==== Selecting or Rejecting Records with a Null Value
-//
-//
-// Consulting the output, you'll see that some players' birthplaces are not yet known, and so the corresponding input fields are `Null`. This doesn't cause an error
-// For people coming from a SQL background, Pig's handling of NULL values will be fairly familiar. NULL values generally disappear without notice from operations, and generally compare as Null. This means NULL is not less than 5.0, it is not greater than 5.0, it is not equal to 5.0. Null is not equal to Null, and is not _unequal_ to Null. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
+==== Selecting or Rejecting Records with a `null` Value
+
+Another table we'll be working with is the `people` table. It describes players' vital statistics: their name; where and when they were born and died; when their career started and ended; their height and weight; and so forth. The data is quite comprehensive, but in some cases the fields have `null` values. Nulls are used in practice for many things:
+
+* _Missing/unknown Value_ -- the case for a fraction of early players' birthplaces or birth dates
+* _No Value Applies_ -- players who are still alive have `null` in the fields for date and location of death
+* _Ill-formed Value_ -- if a corrupt line creates an unparseable cell (eg a value of `'Bob'` for an int), Pig will write a warning to the log but otherwise load it without complaint as `null`.
+* _Illegal value_ -- Division by zero and similar misbehavior results in a null value (and not an error, warning, or log statement)
+* _"Other"_ -- People will use a `null` value in general to represent "it's complicated, but maybe some other field has details".
+
+We can exclude players whose birth year or birth place is unknown with a `FILTER` statement:
+
+------
+borned = FILTER people BY (birth_year IS NOT NULL) AND (birth_place IS NOT NULL);
+------
+
+For those coming from a SQL background, Pig's handling of `null` values will be fairly familiar. For the rest of us, good luck. Null values generally disappear without notice from operations, and generally compare as `null` (which signifies neither `false` nor `true`). And so `null` is not less than 5.0, it is not greater than 5.0, and it is not equal to 5.0. A null value is not equal to `null`, and is not _unequal_ to `null`. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
 
 
 ===== Pattern in Use
 
 Blocks like the following will show up after each of the patterns or groups of patterns we cover. Not every field will be present every time, since there's not always anything interesting to say.
 
-* _Where You'll Use It_  -- (_The business or programming context._) Everywhere. Like the f-stop on your camera, composing a photo begins and ends with throttling its illumination. 
+* _Where You'll Use It_  -- (_The business or programming context._) Everywhere. Like the f-stop on your camera, composing a photo begins and ends with throttling its illumination.
 * _Standard Snippet_	 -- (_Just enough of the code to remind you how it's spelled._) `somerecords = FILTER myrecords BY (criteria AND criteria ...);`
 * _Hello, SQL Users_     -- (_A sketch of the corresponding SQL command, and important caveats for peopl coming from a SQL background._) `SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;`
-* _Important to Know_	 -- (_Caveats about its use. Things that you won't understand / won't buy into the first time through the book but will probably like to know later._) Filter early, filter often. The best thing you can do with a large data set is make it smaller.
+* _Important to Know_	 -- (_Caveats about its use. Things that you won't understand / won't buy into the first time through the book but will probably like to know later._)
+  - Filter early, filter often. The best thing you can do with a large data set is make it smaller.
+  - SQL users take note: `==`, `!=` -- not `=` or anything else.
+  - Programmers take note: `AND`, `OR` -- not `&&`, `||`.
 * _Output Count_	 -- (_How many records in the output: fewer, same, more, explosively more?_) Zero to 100% of the input record count. Data size will decrease accordingly
 * _Records_		 -- (_A sketch of what the records coming out of this operation look like_) Identical to input
 * _Data Flow_		 -- (_The Hadoop jobs this operation gives rise to. In this chapter, all the lines will look like this one; in the next chapters that will change_) Pipelinable: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
-* _Exercises for You_    -- (_A mission to carry forward, if you choose. Don't go looking for an answer section -- we haven't done any of them._) Play around with Nulls and the conditional operators until you have a good sense of its quirks.
-* _See Also_             -- (_Besides the patterns in its section of the book, what other topics might apply if you're considering this one? Sometimes this is another section in the book, sometimes it's a pointer elsewhere_) The Distinct operations, some Set operations, and some Joins are also used to eliminate records according to some criteria. See especially the Semi-Join and Anti-Join (REF), which select or reject matches against a large list of keys. 
+* _Exercises for You_    -- (_A mission to carry forward, if you choose. Don't go looking for an answer section -- we haven't done any of them. In many cases you'll be the first to find the answer._) Play around with `null`s and the conditional operators until you have a good sense of its quirks.
+* _See Also_             -- (_Besides the patterns in its section of the book, what other topics might apply if you're considering this one? Sometimes this is another section in the book, sometimes it's a pointer elsewhere_) The Distinct operations, some Set operations, and some Joins are also used to eliminate records according to some criteria. See especially the Semi-Join and Anti-Join (REF), which select or reject matches against a large list of keys.
 
 ==== Selecting Records that Match a Regular Expression (`MATCHES`)
 
@@ -91,7 +104,6 @@ Regular expressions are incredibly powerful and we urge all readers to acquire b
 ******
 
 NOTE: Sadly, the Nobel Prize-winning physicists Gerard 't Hooft, Louis-Victor Pierre Raymond de Broglie, or Tomonaga Shin'ichirō never made the major leagues. Or tried out, as far as we know. But their names are great counter-examples to keep in mind when dealing with names. Prof de Broglie's full name is 38 characters long, has a last name that starts with a lowercase letter, and is non-trivial to segment. "Tomonaga" is a family name, though it comes first. You'll see Prof. Tomonaga's name given variously as "Tomonaga Shin'ichirō", "Sin-Itiro Tomonaga", or "朝永 振一郎", each one of them correct, and the others not, depending on context. Prof. 't Hooft\'s last name starts with an apostrophe, a lower-case-letter, and contains a space. You're well advised to start a little curio shelf in your workshop for counterexample collections such as these, and we'll share some of ours throughout the book.
-
 
 ===== Pattern in Use
 
@@ -217,7 +229,7 @@ We called this a terrible hash function, but it does fit the bill. When applied 
 // I don't want to have to explain this, so I'm omitting unless you think I must include: "Make sure you're matching against the end (least significant) digits ... (Explanation why)"
 
 
-* _Where You'll Use It_  -- At the start of the exploration, 
+* _Where You'll Use It_  -- At the start of the exploration,
 * _Important to Know_
   - If you'll be spending a bunch of time with a data set, using any kind of random sample to prepare your development sample might be a stupid idea. You'll notice that Red Sox players show up a lot of times in our examples -- that's because our development samples are "seasons by Red Sox players" and "seasons from 2000-2010", which lets us make good friends with the data.
 * _Output Count_	 -- Determined by the sampling fraction. As a rule of thumb, variances of things are square-root-ish; expect the size of a 10% sample to be in the 7%-13% range.
@@ -262,7 +274,7 @@ birthplaces = FOREACH people GENERATE
     ;
 ------
 
-The syntax should be largely self-explanatory: this runs through the people table, and outputs a table with two columns, the player ID and our synthesized string. In the output you'll see that when `CONCAT` encounters records with `Null` values, it returned `Null` as well without an error.
+The syntax should be largely self-explanatory: this runs through the people table, and outputs a table with two columns, the player ID and our synthesized string. In the output you'll see that when `CONCAT` encounters records with `null` values, it returned `null` as well without an error.
 
 For the benefit of SQL aficionados, here's an equivalent SQL query:
 
@@ -319,7 +331,7 @@ This alternative `{` curly braces form of `FOREACH` lets you describe its transf
 
 You'll notice that we multiplied by `1.0` while calculating `OBP` and `SLG`. If all the operands were integers, Pig would use integer arithmetic; instead of fractions between 0 and 1, the result would always be integer 0. Multiplying by the floating-point value 1.0 forces Pig to use floating-point math, preserving the fraction. Using a typecast -- `SLG = (float)TB / AB` -- as described below is arguably more efficient but inarguably uglier. The above is what we'd write in practice.
 
-By the way, the filter above is sneakily doing two things. It obviously eliminates records where `PA` is equal to zero, but it also eliminates records where `PA` is NULL. (See the section "Selecting or Rejecting Records with Null Values" (REF) above for details.)
+By the way, the filter above is sneakily doing two things. It obviously eliminates records where `PA` is equal to zero, but it also eliminates records where `PA` is `null`. (See the section "Selecting or Rejecting Records with `null` Values" (REF) above for details.)
 
 // TODO-reviewer: In practice what I would write is what is above, using `1.0f` to get a float value. I want to talk about the integer arithmetic but not have to call this nitty little detail out; it's clarified three paragraphs later. Do we (a) write `1.0f` and sneak it by, describing it below (the way it is now); (b) write `1.0` and then fix it up below, or (c) write `1.0f` and call it out?
 
@@ -390,7 +402,7 @@ graphable = FOREACH people {
   places = (
     (birth_date, birth_city, birth_state, birth_country),
     (birth_date, death_city, death_state, death_country),
-    (beg_date,      Null,       Null,        Null),
+    (beg_date,      null,       null,        null),
     (end_date));
 
   GENERATE

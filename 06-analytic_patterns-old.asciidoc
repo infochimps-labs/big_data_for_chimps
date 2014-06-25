@@ -40,8 +40,6 @@ TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
 
 TODO: a JOIN is used for: direct foreign key join; matching records on a criterion, possibly sparsely; set intersection.
 
-For the examples in this chapter and often throughout the book, we will use the Retrosheet.org compendium of baseball data. We will briefly describe tables as we use them, but for a full explanation of its structure see the "Overview of Datasets" appendix (TODO:  REF).
-
 The core operation you will use to put records from one table into context with data from another table is the JOIN. A common application of the JOIN is to reunite data that has been normalized -- that is to say, where the database tables are organized to eliminate any redundancy. For example, each Retrosheet game log lists the ballpark in which it was played but, of course, it does not repeat the full information about that park within every record. Later in the book, (TODO:  REF) we will want to label each game with its geo-coordinates so we can augment each with official weather data measurements.
 
 To join the game_logs table with the parks table, extracting the game time and park geocoordinates, run the following Pig command:
@@ -163,36 +161,6 @@ In this case, if you start by thinking of the group, you'll see you can eliminat
 
 ==== Join Practicalities
 
-The output of the Join job has one line for each discrete combination of A and B. As you will notice in our Wukong version of the Join, the job receives all the A records for a given key in order, strictly followed by all the B records for that key in order. We have to accumulate all the A records in memory so we know what rows to emit for each B record. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In Wukong, you do this by giving it an earlier-occurring field group label; in Pig, always put the table with the largest number of records per key last in the statement.
-
-==== Direct Join: Extend Records with Uniquely Matching Records from Another Table
-
-* Direct Join:
-  - Direct Join: Extend Records with Uniquely Matching Records from Another Table
-  - Direct join on foreign key -- ages for each player season
-  - join		Combining Related Records by Foreign Key (The solution is an example of a join, or more accurately an equi-join, which is a type of inner join. A join is an operation that combines rows from two tables into one. An equi-join is one in which the join condition is based on an equality condition (e.g., where one department number equals another). An inner join is the original type of join; each row returned contains data from each table.)
-
-
-Using a join to extend the records in one table with the fields from one matching record in another is a very common pattern. Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency.
-
-(Replace with the 'people' table)
-
-The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
-
-hang weight, height and BMI off of their OPS (overall hitting); ISO ("isolated power");
-and number of stolen bases per time on base (loosely tied to speed)
-
-------
-SELECT bat.player_id, peep.nameCommon, begYear,
-    peep.weight, peep.height,
-    703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
-    PA, OPS, ISO
-  FROM bat_career bat
-  JOIN people peep ON bat.player_id = peep.player_id
-  WHERE PA > 500 AND begYear > 1910
-  ORDER BY BMI DESC
-  ;
-------
 (add note) Joins on null values are dropped even when both are null. Filter nulls. (I can't come up with a good example of this)
 (add note) in contrast, all elements with null in a group _will_ be grouped as null. This can be dangerous when large number of nulls: all go to same reducer
 
@@ -218,39 +186,3 @@ SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVIN
 TODO: move to the first tuning chapter.
 
 The idea is to have you run through a set of pig scripts with datasets of defined size, measuring the throughput of the core operations. The result is a ready reckoner that lets you estimate how long your job _should_ take (and how many map-reduce stages it will use).
-
-
-The fundamental Map/Reduce operation is to group a set of records and operate on that group. In fact, it’s a one-liner in Pig:
-
-We can use `GROUP` to assemble an inline list of the stadiums each team played for by year:
-
-------
-teams_w_parks = FOREACH (GROUP team_parks BY team_id) GENERATE
-    group as team_id, team_park_years.(year_id, park_id);
-
-  -- (ALT,{(ALT01,ALT,1884,1884-04-30,1884-05-31,18)})
-  -- (ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
-------
-
-
-The result is always a tuple whose first field is named “group” -- holding the individual group keys in order. The next field has a bag of each the full input record with all its keys, even the group key.
-
-Here’s a Wukong script that illustrates what is going on:
-
-------
-(TODO: Wukong script)
-------
-
-* Set operations summary
-  - group2	setops	Determining Whether Two Tables Have the Same Data (is symmetric difference empty)  -
-  - group2	setops	Retrieving Values from One Table That Do Not Exist in Another (set difference; players in batting but not pitching -- or in one but not other (symmetric difference)
-  - group2	setops	Group Elements From Multiple Tables On A Common Attribute (COGROUP)
-  - group2	setops	GROUP/COGROUP To Restructure Tables
-  - group2	setops	Partition a Set into Subsets: SPLIT, but keep in mind that the SPLIT operation doesn't short-circuit.
-  - group2	setops	Union of Sets UNION-then-DISTINCT, or COGROUP (note that it doesn't dedupe, doesn't order, and doesn't check for same schema. career stats tables; do it with cogroup, not union-distinct)
-  - group2	setops	Prepare a Distinct Set from a Collection of Records: DISTINCT
-  - group2	setops	Difference (in a but not in b): cogroup keep only empty (non-allstars)
-  - group2	setops	Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
-  - group2	setops	Equality (use symmetric difference): result should be empty
-  - group2	setops	http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html and http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
-

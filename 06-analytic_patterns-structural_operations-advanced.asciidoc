@@ -23,6 +23,13 @@ This is equivalent to the following Wukong job:
 
 (TODO: replace with an example where you would use a pure code group).
 
+
+==== GROUP/COGROUP To Restructure Tables
+
+This next pattern is one of the more difficult to picture but also one of the most important to master. Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
+
+(TODO: describe this pattern)
+
 === Group Elements From Multiple Tables On A Common Attribute (COGROUP)
 
 The fundamental structural operation in Map/Reduce is the COGROUP:  assembling records from multiple tables into groups based on a common field; this is a one-liner in Pig, using, you guessed it, the COGROUP operation. This script returns, for every world map grid cell, all UFO sightings and all airport locations within that grid cell footnote:[We've used the `quadkey` function to map geocoordinates into grid cells; you'll learn about in the Geodata Chapter (REF)]:
@@ -166,12 +173,6 @@ FOREACH {
 Here's another
 
 The result of the cross operation will include pairing each player with themselves, but since we don't consider a player to be their own teammate we must eliminate player pairs of the form `(Aaronha, Aaronha)`. We did this with a FILTER immediate before the second GROUP (the best practice of removing data before a restructure), but a defensible alternative would be to `SUBTRACT` playerA from the bag right after the `DISTINCT` operation.
-
-==== GROUP/COGROUP To Restructure Tables
-
-This next pattern is one of the more difficult to picture but also one of the most important to master. Once you can confidently recognize and apply this pattern, you can consider yourself a black belt in the martial art of Map/Reduce.
-
-(TODO: describe this pattern)
 
 ==== Group flatten regroup
 

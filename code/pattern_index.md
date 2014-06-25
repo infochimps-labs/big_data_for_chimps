@@ -12,6 +12,8 @@
 * _See Also_             -- 
 
 
+// footnote:[Just as the truly wise physicist knows that the best way to use a barometer to measure the height of the building is to approach the building manager and say "You can have this nifty barometer if you tell me how high your building is"] https://en.wikipedia.org/wiki/Barometer_question
+
 
 For many of these It's quite difficult to attach _business_ context, because the answer is "everywhere" -- the point of the patterns is that they crop up across all data explorations. So in those cases, I've tried to put in hooks to enough other programming contexts that 
  Q and I both have the feeling that we should ask our tech reviewers to help with examples of business context.

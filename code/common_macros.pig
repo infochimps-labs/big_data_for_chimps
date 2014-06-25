@@ -42,8 +42,8 @@ DEFINE SortedQuartile         datafu.pig.stats.Quantile('5');
 DEFINE ApproxQuartile         datafu.pig.stats.StreamingQuantile('5');
 -- DEFINE SortedDecile        datafu.pig.stats.Quantile('10');
 -- DEFINE ApproxDecile        datafu.pig.stats.StreamingQuantile('10');
-DEFINE SortedEdgeile          datafu.pig.stats.Quantile(          '0.01','0.05', '0.10', '0.50', '0.90', '0.95', '0.99');
-DEFINE ApproxEdgeile          datafu.pig.stats.StreamingQuantile( '0.01','0.05', '0.10', '0.50', '0.90', '0.95', '0.99');
+DEFINE SortedEdgeile          datafu.pig.stats.Quantile(          '0.01','0.05', '0.50', '0.95', '0.99');
+DEFINE ApproxEdgeile          datafu.pig.stats.StreamingQuantile( '0.01','0.05', '0.50', '0.95', '0.99');
 -- DEFINE ApproxCardinality   datafu.pig.stats.HyperLogLogPlusPlus();
 -- DEFINE SortedMedian        datafu.pig.stats.Median(); -- requires bag be sorted
 -- DEFINE ApproxMedian        datafu.pig.stats.StreamingMedian();

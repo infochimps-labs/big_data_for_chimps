@@ -5,14 +5,19 @@
 === Introduction
 
 The overriding focus here is to equip you with the toolkit of analytic patterns.
+// AEJ: expand.
 The most meaningful way to introduce these patterns is to demonstrate their use in service of a question of real interest.
-the main storyline of these chapters will be to find quantitative indicators of exceptional performance, and we'll pick that thread up repeatedly.
-But where a pattern has no natural demonstration in service of that primary story, we non-sequitur into questions that could form a necessary piece of some other investigation:
-"here's how you'd track changes in each team's roster over time", "is the stereotypical picture of the big brawny home-run hitter true."
-And at several points, immediately on peeking down a side road the data comes forth with a story of its own, and so there are also a few brief side trips to follow such a tale.
-But as we revisit the player-performance exploration, you should recognize not just a way for fantasy baseball players to get an edge, but strategies for quantifying the behavior of any sort of outlier. Here, it's baseball players, but similar questions will apply when examining agents posing security threats, load factor on public transit routes, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance.
+The main storyline of the next few chapters on "Analytic Patterns" will be to find quantitative indicators of exceptional performance, and we'll pick that thread up repeatedly.
+But where a pattern has no natural demonstration in service of that primary story, we find questions that could support an investigation of their own: "How can we track changes in each team's roster over time?", "Is the stereotypical picture of the big brawny home-run hitter true?"
+Usually we stop at the trailhead, but sometime the data comes forth with a story of its own -- "Does God really hate Cleveland?", "Why are baseball players far more likely to die in January and be born in August?" -- so interesting it demands a side trip to follow the tale.
+
+But as we pursue the player-performance exploration, you should recognize not just a way for fantasy baseball players to get an edge, but strategies for quantifying the behavior of any sort of outlier. Here, it's baseball players, but similar questions will apply when examining agents posing security threats, load factor on public transit routes, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance.
+
+// AEJ: Where are we going with this? What is the section going to teach them?
 
 === Grouping Records into a Bag by Key
+
+// AEJ: why is it at the heart of every structural operation?
 
 The GROUP BY operation is at the heart of every structural operation. It's a one-liner in Pig to collect all the stadiums a team has played for in its history:
 
@@ -20,11 +25,9 @@ The GROUP BY operation is at the heart of every structural operation. It's a one
 park_teams_g = GROUP park_teams BY team_id;
 ------
 
-The result of a group is always a field called 'group', having the schema of
-the key (atom) or keys (tuple); and then one field per grouped table, each
-named for the table it came from. Notice that the name we used to refer to
-the _table_ is now also the name for a _field_. This will confuse you at
-first, but soon become natural. Until then, use `DESCRIBE` liberally.
+The result of a `GROUP BY` operation is always a field called 'group', followed by one field per grouped table, each named for the table it came from.  The shape of the `group` field depends on whether you specified one or many group keys. If you specified a single key, the new `group` field is a scalar with the same schema. If you specified multiple keys, the new `group` field is a tuple whose schema corresponds to those keys. In this example, we grouped on the `team_id` chararray, and so the `group` field is a scalar chararray as well. In a moment we'll group on `year_id` and `team_id`, and so the `group` field would have schema `group:tuple(year_id:int, team_id:chararray)`.
+
+Each of the following fields is a bag, holding tuples whose schema matches the corresponding table. Notice that the name we used to refer to the _table_ is now also the name for a _field_. This will confuse you at first, but soon become natural, especially if you use `DESCRIBE` liberally:
 
 ------
 DESCRIBE park_teams_g;
@@ -107,6 +110,9 @@ team_yr_parks = FOREACH(GROUP park_teams BY (year_id, team_id)) GENERATE
 
 The typical reason to group records is to operate on the bag of values it forms, and that's how we'll spend much of this chapter -- the data bag is a very powerful concept. Let's take a quickie tour of what we can do to a group; afterwards we'll see the internals of how a group works before moving on to its broader applications.
 
+// AEJ: why is the data bag a powerful concept?
+// IMPROVEME: give a diagram of GROUP by; show data bag
+
 You'll notice from the result of the last query that sometimes a team has more than one "home" stadium in a season. That's a bit unexpected, but on consideration teams occasionally face stadium repairs or late-season makeups for cancelled games. But cases where there were even three home parks should be quite rare. Let's confirm our feel for the data using `COUNT_STAR`, which counts all elements of a bag:
 
 ------
@@ -141,16 +147,7 @@ Our script is reporting that CL4 (the Cleveland Spiders) called seven (!) differ
 
 Let's keep the count of parks, but also list the parks themselves for inspection.  We could keep dumping the values in Pig's oddball output format, but this is a good opportunity to introduce a very useful pattern: denormalizing a collection of values into a single delimited field.
 
-The format Pig uses to dump bags and tuples to disk wastes characters and is not safe to use in
-general: any string containing a comma or bracket will cause its record to be mis-interpreted. For
-simple data structures such as a list, we are better off concatenating the values together using a
-delimiter: a character with no other meaning that does not appear in any of the values. This
-preserves the rows-and-columns representation of the table that Pig handles best. It also lets us
-keep using the oh-so-simple TSV format for interchange with Excel, `cut` and other commandline
-tools, and later runs of Pig itself. Storing data this way means we do have to pack and unpack the
-value ourselves, which is an added burden when we need access to the array members. But if accessing
-the list contents is less frequent this can act as a positive feature: we can move the field around
-as a simple string and only pay the cost of constructing the full data structure when necessary.
+The format Pig uses to dump bags and tuples to disk wastes characters and is not safe to use in general: any string containing a comma or bracket will cause its record to be mis-interpreted. For simple data structures such as a list, we are better off concatenating the values together using a delimiter: a character with no other meaning that does not appear in any of the values. This preserves the rows-and-columns representation of the table that Pig handles best. It also lets us keep using the oh-so-simple TSV format for interchange with Excel, `cut` and other commandline tools, and later runs of Pig itself. Storing data this way means we do have to pack and unpack the value ourselves, which is an added burden when we need access to the array members. But if accessing the list contents is less frequent this can act as a positive feature: we can move the field around as a simple string and only pay the cost of constructing the full data structure when necessary.
 
 The BagToString function will serialize a bag of values into a single
 delimited field as follows:
@@ -172,7 +169,7 @@ names of the stadiums used separated by a `^` caret delimiter. Like colon
 commandline; like those and semicolon `;`, pipe `|`, and bang `!`, it is
 visually lightweight and can be avoided within a value.  Don't use the wrong
 delimiter for addresses ("Fargo, ND"), dates ("2014-08-08T12:34:56+00:00"),
-paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`). If you are considering the use of quoting or escaping to make your strings delimiter safe, you're getting carried away. Stop, step away from the delimiter, and see "Representing a Complex Data Structure as a JSON-encoded String" (REF) below. 
+paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`). If you are considering the use of quoting or escaping to make your strings delimiter safe, you're getting carried away. Stop, step away from the delimiter, and see "Representing a Complex Data Structure as a JSON-encoded String" (REF) below.
 
 Since the park ids are formed from the first characters of the city name, we
 can recognize that the Spiders' home fields include two stadiums in Cleveland
@@ -194,11 +191,7 @@ at each stadium.
 
 ==== Representing a Complex Data Structure with a Delimited String
 
-Instead of a simple list of park ids, we'd now like to serialize a collection
-of (park id, number of games) pairs. We can handle this case, and the case
-where we want to serialize an object with simple attribute-value pairs, by
-using two delimiters: one for separating list elements and one for delimiting
-its contents.
+Instead of serializing the simple list of park ids we had before, we'd now like to prepare and serialize the collection of (park id, number of games) pairs. We can handle this by using two delimiters: one for separating list elements and one for delimiting its contents. (This is also how you would handle an object with simple attribute-value pairs such as a hash map.)
 
 --------
 team_year_w_pkgms = FOREACH (GROUP park_teams BY (team_id,year_id)) {
@@ -378,38 +371,42 @@ Some of the happiest moments you can have analyzing a massive data set come when
 
 ==== Aggregate Statistics of a Group
 
-In the previous chapter, we used each player's seasonal counting stats --
-hits, home runs, and so forth -- to estimate seasonal rate stats -- how well
-they get on base (OPS), how well they clear the bases (SLG) and an overall
-estimate of offensive performance (OBP). But since we were focused on
-pipeline operations, we only did so on a season-by-season basis.
-
-A group-and-aggregate on the seasonal stats starts us on the path to
-characterizing each player's career:
+In the previous chapter, we used each player's seasonal counting stats -- hits, home runs, and so forth -- to estimate seasonal rate stats -- how well they get on base (OPS), how well they clear the bases (SLG) and an overall estimate of offensive performance (OBP). But since we were focused on pipeline operations, we only did so on a season-by-season basis. The group-and-aggregate pattern lets us combine those seasonal stats in order to characterize each player's career.
 
 .Aggregate Statistics of a Group
 ------
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
-  team_ids = DISTINCT bat_seasons.team_id;
-  totG   = SUM(bat_seasons.G);   totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
-  totH   = SUM(bat_seasons.H);   totBB  = SUM(bat_seasons.BB);  totHBP = SUM(bat_seasons.HBP); totR   = SUM(bat_seasons.R);
-  toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B); toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR);
+  totG   = SUM(bat_seasons.G);
+  totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
+  totHBP = SUM(bat_seasons.HBP); totSH  = SUM(bat_seasons.SH);
+  totBB  = SUM(bat_seasons.BB);  totH   = SUM(bat_seasons.H);
+  toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B);
+  toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR);
+  totR   = SUM(bat_seasons.R);   totRBI = SUM(bat_seasons.RBI);
   OBP    = 1.0*(totH + totBB + totHBP) / totPA;
   SLG    = 1.0*(toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
+  team_ids = DISTINCT bat_seasons.team_id;
   GENERATE
     group                          AS player_id,
     COUNT_STAR(bat_seasons)        AS n_seasons,
-    COUNT_STAR(team_ids)           AS n_distinct_teams,
-    MIN(bat_seasons.year_id)	     AS beg_year,
+    COUNT_STAR(team_ids)           AS card_teams,
+    MIN(bat_seasons.year_id)	   AS beg_year,
     MAX(bat_seasons.year_id)       AS end_year,
-    totG   AS G,   totPA  AS PA,  totAB  AS AB,
-    totH   AS H,   totBB  AS BB,  totHBP AS HBP,
-    toth1B AS h1B, toth2B AS h2B, toth3B AS h3B, totHR AS HR,
-    OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS
+    totG   AS G,
+    totPA  AS PA,  totAB  AS AB,  totHBP AS HBP,    --  $6 -  $8
+    totSH  AS SH,  totBB  AS BB,  totH   AS H,      --  $9 - $11
+    toth1B AS h1B, toth2B AS h2B, toth3B AS h3B,    -- $12 - $14
+    totHR AS HR,   totR   AS R,   totRBI AS RBI,    -- $15 - $17
+    OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS      -- $18 - $20
     ;
 };
 ------
 
+We first gather together all seasons by a player by grouping on `player_id`, then throw a barrage of `SUM`, `COUNT_STAR`, `MIN` and `MAX` functions at the accumulated fields to find the career totals. Using the nested `FOREACH` form means we can use intermediate values such as `totPA` in both the calculation of `OBP` and as a field in the new table directly.
+
+The nested `FOREACH` also lets us apply the `DISTINCT` bag operation, creating a new bag holding only the distinct `team_id` values across all seasons. That statement has, in principle, two steps: projection of a bag-with-just-team_id followed by `DISTINCT` to eliminate duplicates. But behind the scenes, Pig uses a special kind of bag (`DistinctDataBag`) that in all respects meets the data bag interface, but which uses an efficient internal data structure to eliminate duplicates as they're added. So rather than (list of seasons) -> (list of team_ids) -> (list of distinct team_ids) you only have to pay for (list of seasons) -> (list of distinct team_ids)
+
+We will use the `bat_careers` table in several later demonstrations, so keep its output file around.
 
 ===== Pattern in Use
 
@@ -438,10 +435,10 @@ with but more importantly we make it possible to comprehend.
 The following functions are built in to Pig:
 
 * Count of all values: `COUNT_STAR(bag)`
-* Count of non-Null values: `COUNT(bag)`
-* Minimum / Maximum non-Null value: `MIN(bag)` / `MAX(bag)`
-* Sum of non-Null values: `SUM(bag)`
-* Average of non-Null values: `AVG(bag)`
+* Count of non-`null` values: `COUNT(bag)`
+* Minimum / Maximum non-`null` value: `MIN(bag)` / `MAX(bag)`
+* Sum of non-`null` values: `SUM(bag)`
+* Average of non-`null` values: `AVG(bag)`
 
 There are a few additional summary functions that aren't native features of Pig, but are offered by
 Linkedin's might-as-well-be-native DataFu package. footnote:[If you've forgotten/never quite learned
@@ -457,8 +454,8 @@ Bob Ross: "Anyone can paint, all you need is a dream in your heart and a little 
 hopefully you're feeling the same way about Big Data analysis.].
 
 * Cardinality (i.e. the count of distinct values): combine the `DISTINCT` operation and the `COUNT_STAR` function as demonstrated below, or use the DataFu `HyperLogLogPlusPlus` UDF
-* Variance of non-Null values: `VAR(bag)`, using the `datafu.pig.stats.VAR` UDF
-* Standard Deviation of non-Null values: `SQRT(VAR(bag))`
+* Variance of non-`null` values: `VAR(bag)`, using the `datafu.pig.stats.VAR` UDF
+* Standard Deviation of non-`null` values: `SQRT(VAR(bag))`
 * Quantiles: `Quantile(bag)` or `StreamingQuantile(bag)`
 * Median (50th Percentile Value) of a Bag: `Median(bag)` or `StreamingMedian(bag)`
 
@@ -501,11 +498,11 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 * _Where You'll Use It_ -- Everywhere. Quality statistics on manufacturing batches. Response times of webserver requests. A/B testing in eCommerce.
 * _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) { ... ; GENERATE ...; };`
 * _Hello, SQL Users_     -- Directly comparable for the most part.
-* _Important to Know_	  
+* _Important to Know_
   - Say `COUNT_STAR(recs)`, not `COUNT_STAR(recs.myfield)` -- the latter creates a new bag and interferes with combiner'ing.
   - Use `COUNT_STAR` and never `SIZE` on a bag.
   - Say `SUM(recs.myfield)`, not `SUM(myfield)` (which isn't in scope).
-  - Get in the habit of writing `COUNT_STAR` and never `COUNT`, unless you explicitly mean to only count non-nulls.
+  - Get in the habit of writing `COUNT_STAR` and never `COUNT`, unless you explicitly mean to only count non-`null`s.
 * _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values. Big decrease in output size from turning bags into scalars
 * _Records_		  -- Something like `mykey, aggregated_value, aggregated_value, ...`
 * _Data Flow_		  -- Map, Combiner & Reduce; combiners quite effective unless cardinality is very high.
@@ -562,7 +559,7 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 * _Hello, SQL Users_     -- Aggregate functions _without_ a `GROUP BY`
 * _Important to Know_
   - You're sending all the data to one reducer, so make sure the aggregate functions are highly reductive
-  - Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`. 
+  - Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`.
 * _Output Count_	 -- Single row
 * _Data Flow_		 -- Map, Combiner, and **single** reducer
 
@@ -628,7 +625,7 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 * _Hello, SQL Users_     -- Corresponding functions _without_ a `GROUP BY`
 * _Important to Know_
   - You're sending all the data to one reducer, so make sure the aggregate functions are highly reductive
-  - Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`. 
+  - Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`.
 * _Output Count_	 -- Single row
 * _Data Flow_		 -- Map, Combiner, and **single** reducer
 
@@ -780,7 +777,7 @@ DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
   all_bins = FOREACH numbers GENERATE (num0 * $binsize) AS bin;
   all_bins = FILTER  all_bins BY (bin <= $maxval);
   $dist = FOREACH (COGROUP vals BY bin, all_bins BY bin) GENERATE
-    group AS bin, (COUNT_STAR(vals) == 0L ? Null : COUNT_STAR(vals)) AS ct;
+    group AS bin, (COUNT_STAR(vals) == 0L ? null : COUNT_STAR(vals)) AS ct;
 };
 ------
 
@@ -886,7 +883,7 @@ That is not true for the birth data! The format of the graph is the same as abov
 // DROP TEMPORARY TABLE IF EXISTS birth_pop;
 // CREATE TEMPORARY TABLE birth_pop (SELECT birth_month FROM people WHERE player_id IS NOT NULL AND birth_country = "USA" AND birth_year > 1940 AND birth_month IS NOT NULL);
 // SET @june_ct := (SELECT COUNT(*) FROM birth_pop WHERE birth_month = 6);
-// 
+//
 // SELECT birth_month, COUNT(*) AS ct, ROUND(100*COUNT(*)/@june_ct) AS rel_to_june
 //   FROM birth_pop
 //  GROUP BY birth_month
@@ -894,7 +891,7 @@ That is not true for the birth data! The format of the graph is the same as abov
 
 image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
 
-The reason is that since the 1940s, American youth leagues have used July 31st as an age cutoff. If Augusta were born on August 1st, then four calendar years and 364 days later she would still technically be four years old. Julien, who showed up the day before her and thus has spent five years and no days orbiting the Sun, is permitted to join the league as a five-year-old. The Augustas may be initially disappointed, but when they do finally join the league as five-year-and-364-day-old kids, they have nearly an extra year of growth compared to the Juliens who sign up with them, which on the whole provides a huge advantage at young ages. This earns the Augustas extra attention from their coaches, extra validation of their skill, and extra investement of "I'm good at Baseball!" in their identity. 
+The reason is that since the 1940s, American youth leagues have used July 31st as an age cutoff. If Augusta were born on August 1st, then four calendar years and 364 days later she would still technically be four years old. Julien, who showed up the day before her and thus has spent five years and no days orbiting the Sun, is permitted to join the league as a five-year-old. The Augustas may be initially disappointed, but when they do finally join the league as five-year-and-364-day-old kids, they have nearly an extra year of growth compared to the Juliens who sign up with them, which on the whole provides a huge advantage at young ages. This earns the Augustas extra attention from their coaches, extra validation of their skill, and extra investement of "I'm good at Baseball!" in their identity.
 
 ==== Don't Trust Distributions at the Tails
 
@@ -938,7 +935,7 @@ Typecasting the projected field as if you were simply converting the schema of a
 
 See Pattern in Use for "Histograms", above (REF), and "Re-injecting Global Values", following (REF).
 
-* _Where You'll Use It_  -- Histograms on sampled populations. Whenever you want frequencies rather than counts, i.e. proportions rather than absolute values. 
+* _Where You'll Use It_  -- Histograms on sampled populations. Whenever you want frequencies rather than counts, i.e. proportions rather than absolute values.
 * _Standard Snippet_	 -- Same as for a histogram, but with `COUNT_STAR(vals)/((long)recs_info.ct) AS freq`. See `summarizer_bot_9000.pig` for a macro (REF).
 
 ==== Re-injecting Global Values
@@ -1055,7 +1052,7 @@ We are of course terribly anxious to find out the results, so much so that havin
 year_hists_HH = FOREACH year_hists {
   HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
   HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
-  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE 
+  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE
     SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
   GENERATE year_bin, BagToString(HH_hist_vis, '  ');
   };
@@ -1070,7 +1067,7 @@ year_hists_HH = FOREACH year_hists {
   -- The PA threshold makes the lower bins ragged, exclude them
   HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
   -- Format each bin/freq into a readable string
-  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE 
+  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE
     SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
   -- Combine those strings into readable table
   GENERATE year_bin, BagToString(HH_hist_vis, '  ');
@@ -1135,7 +1132,7 @@ In this snippet, we first put all bins in regular order and exclude the lower bi
 
 We'll need to draw graphs to get any nuanced insight, but the long-term trends in production of Hits and Home Runs is strong enough that this chart tells a clear story. Baseball has seen two offensive booms: one in the 1920-1939 period, and one in the 1990-2009 period. However, the first was an on-base boom, with a larger proportion of players crossing the 200-hit mark than ever have since. The recent one was decidedly a power-hitting boom. There is an increase in the fraction of players reaching high seasonal hit totals, but the chart above shouts how large the increase in the proportion of players hitting 30-, 40-, and 50-home runs per year is.
 
-// 
+//
 // -- A combination of more teams,
 // -- Interestingly, the is no _statistical_ evidence that the boom is caused by increased use of Performance-e
 
@@ -1211,7 +1208,7 @@ career_standards = FOREACH (GROUP standards BY player_id) GENERATE
 The summing trick involves projecting a new field whose value is based on
 whether it's in the desired set, forming the desired groups, and aggregating
 on those new fields. Irrelevant records are assigned a value that will be
-ignored by the aggregate function (typically zero or NULL), and so although
+ignored by the aggregate function (typically zero or `null`), and so although
 we operate on the group as a whole, only the relevant records contribute.
 
 In this case, instead of sending all the hit, home run, etc figures directly
@@ -1311,9 +1308,9 @@ career_epochs = FOREACH (GROUP age_seasons BY player_id) {
     MAX(age_seasons.year_id)  AS end_year,
     --
     OBP_all   + SLG_all       AS OPS_all:float,
-    (PA_young >= 700 ? OBP_young + SLG_young : Null) AS OPS_young:float,
-    (PA_prime >= 700 ? OBP_prime + SLG_prime : Null) AS OPS_prime:float,
-    (PA_older >= 700 ? OBP_older + SLG_older : Null) AS OPS_older:float,
+    (PA_young >= 700 ? OBP_young + SLG_young : null) AS OPS_young:float,
+    (PA_prime >= 700 ? OBP_prime + SLG_prime : null) AS OPS_prime:float,
+    (PA_older >= 700 ? OBP_older + SLG_older : null) AS OPS_older:float,
     --
     COUNT_STAR(age_seasons)   AS n_seasons,
     SUM(age_seasons.is_young) AS n_young,
