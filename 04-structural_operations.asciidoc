@@ -15,7 +15,7 @@ That night they watched, spellbound, as Olga performed monstrous feats of calcul
 
 Once settled in at a bar down the street, JT broke the ice. "Olga, your show was amazing. When you rattled off Duluth, Minnesota's daily low and high temperatures from 1973 to 1987, chills ran down my spine. But I can't quite figure out what kind of help C&E Corp can provide for you?" Nanette chimed in, "Actually, I think I have an idea -- but I'd like to hear your thoughts first, Olga."
 
-As olga explained, "I first heard about you from my publisher -- my friend Charlotte and I wrote a book about web crawlers, and thanks to your work we're selling as many copies overseas as we are domestically. But it wasn't until I visited the translation floor that I really appreciated the scale of content you guys were moving. And that's what I'm looking for -- high scale.
+As Olga explained, "I first heard about you from my publisher -- my friend Charlotte and I wrote a book about web crawlers, and thanks to your work we're selling as many copies overseas as we are domestically. But it wasn't until I visited the translation floor that I really appreciated the scale of content you guys were moving. And that's what I'm looking for -- high scale.
 
 "You might know that besides my stage act I consult on the side for companies who need a calculating animal savant. I love that just as much as being on stage, but the fact is that what I can do for my clients just seems so _limited_. I've got insurance companies who want to better judge tornado risk so they can help people protect their homes; but to do this right means using the full historical weather data. I have to explain to them that I'm just one pig -- I'd melt down if I tried to work with that much information.
 
@@ -37,6 +37,21 @@ Nanette leaned in. "So here's the thing. Elephants and Pigs have amazing memorie
 
 "Well," Nanette said with a grin, "Pack a suitcase with a very warm jacket. We're going to take a trip up north -- way north."
 
+// TODO fix up story
+
+// Olga is playing nightclubs, just what she can do in her head. Wants to start doing stadiums
+// she knows the patterns -- the vaudeville routines. (Make JT blush with one)
+// question is how to translate the small-venue act to massive scale.
+// 22 panels that always work http://momentofcerebus.blogspot.com/2012/07/wally-woods-22-panels-that-always-work.html
+// find people with the same birthday, complete tax reforms of all attendees, 
+// (farrowed - litter of 10 piglets.) no, keep Pig as the thing coordinating a map/reduce flow.
+// 
+
+// ch 5 baseball: score keeping? 
+// ch 6 pig performance, show group
+// ch 7 joining
+// ch 8 
+
 
 === Pig Helps Hadoop work with Tables, not Records
 
@@ -52,6 +67,8 @@ GROUP ON MONTHS
 COUNT WITHIN GROUPS
 STORE INTO OUTPUT FILE
 ----
+
+// TODO fix up script
 
 In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping. In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
 
@@ -103,7 +120,7 @@ Run the script just as you did above:
 (TODO: command to run the script)
 ----
 
-Up until now, we have described Pig as authoring the same Map/Reduce job you would. In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part. If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although x bytes were read by the Mapper, only y bytes were output. Pig instructed Hadoop to use a Combiner. In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (TODO: REF), the Mapper output files have already been partitioned and sorted. Hadoop offers you the opportunity to do pre-Aggregation on those groups. Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
+Up until now, we have described Pig as authoring the same Map/Reduce job you would. In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part. If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although TODO:x bytes were read by the Mapper, only TODO:y bytes were output. Pig instructed Hadoop to use a Combiner. In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (REF), the Mapper output files have already been partitioned and sorted. Hadoop offers you the opportunity to do pre-Aggregation on those groups. Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
 
 ----
 SIDEBAR:  You can write Combiners in Wukong, too. (TODO: Insert example with Combiners)
@@ -115,51 +132,82 @@ What we want instead is a total sort, the earliest records in the first numbered
 
 Hadoop, however, has no intrinsic way to make that mapping happen. Even if it figured out, say, that the earliest buckets were in 2008 and the latest buckets were in 2012, if we fed it a dataset with skyrocketing traffic in 2013, we would end up sending an overwhelming portion of results to that Reducer. In the second job, Pig sampled the set of output keys, brought them to the same Reducer, and figured out the set of partition breakpoints to distribute records fairly.
 
-In general, Pig offers many more optimizations beyond these and we will talk more about them in the chapter on Advanced Pig (TODO: REF). In our experience, the only times Pig will author a significantly less-performant dataflow than would an expert comes when Pig is overly aggressive about introducing an optimization. The chief example you’ll hit is that often, the intermediate stage in the total sort to calculate partitions has a larger time penalty than doing a bad job of partitioning would; you can disable that by (TODO: Describe how).
-
+In general, Pig offers many more optimizations beyond these and we will talk more about them in the chapter on Advanced Pig (REF). In our experience, as long as you're willing to give Pig a bit of coaching, the only times it will author a dataflow that is significantly less performant comes when Pig is _overly_ aggressive about introducing an optimization. And in those cases the impact is more like a bunch of silly piglets making things take 50% longer than they should, rather than a stampede of boars blowing up your cluster. The `ORDER BY` example is a case in point: for small-to-medium tables the intermediate sampling stage to calculate partitions can have a larger time cost than the penalty for partitioning badly would carry. Sometimes you're stuck paying an extra 20 seconds on top of each one-minute job so that Pig and Hadoop can save you an order of magnitude off your ten-minute-and-up jobs.
 
 === Fundamental Data Operations
 
-TODO-qem / TODO-flip: move this section to the head of the next chapter, or the very end of this chapter? Having shuffled certain content to chapter 5, this has become a chapter on Pig Basics, whereas the next chapter is very much about Pig (and MapReduce) In Action.
+Pig's operators -- and fundamental Hadoop processing patterns -- can be grouped into several families.
 
+A pipelinable operation is one that does not require a reduce step of its own: the records can each be handled in isolation, and so they do not have to be expensively assembled into context
 
-TODO-qem: should this be "the fundamental Hadoop patterns can be grouped into several families"? And should it be instead or in addition to the following? (We could say "here's the previous table, expanded and modified to describe the m/r patterns and not just the single pig commands")
+**Control Operations**
 
-
-Pig's operators can be grouped into several families.
-
-* Simple processing operations (FOREACH, ASSERT, STREAM, UNION) modify the contents of records individually. These become Mapper-Only jobs with exactly the same count of output records as input records.
-* Simple filtering operations (FILTER, SAMPLE, LIMIT, SPLIT) accept or reject each record individually; these also produce Mapper-Only jobs with the same or fewer number of records and each record has the same contents and schema as its input. (SPLIT is effectively several FILTERs run simultaneously, so its total output record count is the sum of what each of its filters would produce)
-* Ungrouping operations (FOREACH..FLATTEN) turn records that have bags of tuples into records with each such tuple from the bags in combination. It is most commonly seen after a grouping operation (and thus occurs within the Reduce) but just produces a Mapper-Only job when used on its own. Records with empty bags will disappear in the output while, if you FLATTEN a record having one bag field with three tuples and another bag field with four tuples, you will get 12 output records, one for each of the bags in combination.
-* Grouping operations (JOIN, GROUP, COGROUP, CUBE, DISTINCT, CROSS) place records into context with each other. They make no modifications to their input records. You will often find them followed by a FOREACH that is able to take advantage of the group context. These jobs require a Map and Reduce phase. The GROUP and COGROUP yield themselves one output record per distinct GROUP value. A JOIN is simply an optimized GROUP/FLATTEN/FOREACH sequence, so its output size follows the same logic as FLATTEN.
-* Sorting operations (ORDER BY, RANK) perform a total sort on their input; every record in file 00000 is in sorted order and comes before all records in 00001 and so forth for the number of output files. These require two jobs:  first, a light Mapper-Only pass to understand the distribution of sort keys, next a Map/Reduce job to perform the sort.
 * Serialization operations (LOAD, STORE) load and store data into file systems or datastores.
 * Directives (DESCRIBE, ILLUSTRATE, REGISTER, and others) to Pig itself. These do not modify the data, they modify Pig's execution: outputting debug information, registering external UDFs, and so forth.
 
-That's it. That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps. For example, a GROUP followed by a FOREACH and a FILTER will only require one map phase and one reduce phase. In that case, the FOREACH and FILTER will be done in the reduce step -- and in the right circumstances, pig will "push" part of the `FOREACH` and `FILTER` _before_ the `JOIN`, potentially eliminating a great deal of processing.
+**Pipelinable Operations**
 
-// TODO: tweak the following paragraph to reflect our plan for the next chapter: show Pig and MapReduce impls side-by-side
-// In the remainder of this chapter, we'll illustrate the essentials for each family of operations, demonstrating them in actual use. In the following chapter (TODO ref), we'll learn how to implement the corresponding patterns in a plain map-reduce approach -- and therefore how to reason about their performance. Finally, the chapter on Advanced Pig (TODO ref) will cover some deeper-level topics, such as a few important optimized variants of the JOIN statement and how to endow Pig with new functions and loaders.
+With no structural operations, these operations create a mapper-only job with the composed pipeline. When they come before or after a structural operation, they are composed into the mapper or reducer. 
 
-We will not explore every nook and cranny of its syntax, only illustrate its patterns of use. We've omitted operations whose need hasn't arisen naturally in the explorations later, along with fancy but rarely-used options or expressions footnote:[For example, it's legal in Pig to load data without a schema -- but you shouldn't, and so we're not going to tell you how.]
+// TODO explain better
+
+* Transformation operations (FOREACH, FOREACH..FLATTEN(tuple)) modify the contents of records individually. The count of output records is exactly the same as the count of input records, but the contents and schema of the records can change arbitrarily.
+* Filtering operations (FILTER, SAMPLE, LIMIT, ASSERT) accept or reject each record individually. These can yield the same or fewer number of records, but each record has the same contents and schema as its input.
+* Repartitioning operations (SPLIT, UNION) don't change records, they just distribute them into new tables or data flows. UNION outputs exactly as many records as the sum of its inputs. Since SPLIT is effectively several FILTERs run simultaneously, its total output record count is the sum of what each of its filters would produce.
+* Ungrouping operations (FOREACH..FLATTEN(bag)) turn records that have bags of tuples into records with each such tuple from the bags in combination. It is most commonly seen after a grouping operation (and thus occurs within the Reduce) but can be used on its own (in which case like the other pipelinable operations it produces a Mapper-Only job). The FLATTEN itself leaves the bag contents unaltered and substitutes the bag field's schema with the schema of its contents. When flattening on a single field, the count of output records is exactly the count of elements in all bags. (Records with empty bags will disappear in the output). Multiple FLATTEN clauses yield a record for each possible combination of elements, which can be explosively higher than the input count.
+
+**Structural Operations**
+
+These jobs require a Map and Reduce phase. 
+
+* Grouping operations (GROUP, COGROUP, CUBE, ROLLUP) place records into context with each other. They make no modifications to the input records'  contents, but do rearrange their schema. You will often find them followed by a FOREACH that is able to take advantage of the group context. The GROUP and COGROUP yield one output record per distinct GROUP value. 
+
+* Joining operations (JOIN, CROSS) match records between tables. JOIN is simply an optimized COGROUP/FLATTEN/FOREACH sequence, but it is importantly enough different in use that we'll  so its output size follows the same logic as FLATTEN. (CROSS too, except for the "important" part: we'll have very little to say about it and discourage its use).
+
+* Sorting operations (ORDER BY, RANK) perform a total sort on their input; every record in file 00000 is in sorted order and comes before all records in 00001 and so forth for the number of output files. These require two jobs:  first, a light Mapper-Only pass to understand the distribution of sort keys, next a Map/Reduce job to perform the sort.
+
+* Uniquing and (DISTINCT, specific COGROUP forms) select/reject/collapse duplicates, or find records associated with unique or duplicated records. 
+these are typically accomplished with specific combinations of the above, but involve 
+
+// ... Composed to advanced patterns: Set Operations, Graph operations, ...
+
+That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps. For example, a GROUP followed by a FOREACH and a FILTER will only require one map phase and one reduce phase. In that case, the FOREACH and FILTER will be done in the reduce step -- and in the right circumstances, pig will "push" part of the `FOREACH` and `FILTER` _before_ the `JOIN`, potentially eliminating a great deal of processing.
+
+Pig is an extremely sparse language. By having very few Operators and very uniform syntax footnote:[Something SQL users but non-enthusiasts like your authors appreciate.], the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
+
+We will not explore every nook and cranny of its syntax, only illustrate its patterns of use. The online Pig manual at http://pig.apache.org/ is quite good and for a deeper exploration, consult _Programming Pig_ by Alan Gates (http://shop.oreilly.com/product/0636920018087.do). If the need for a construction never arose naturally in a pattern demonstration or exploration footnote:[An example of the first is `UNION ONSCHEMA` -- useful but not used.], we omitted it, along with options or alternate forms of construction that are either dangerous or rarely-used footnote:[it's legal in Pig to load data without a schema -- but you shouldn't, and so we're not going to tell you how.].
+
+In the remainder of this chapter, we'll illustrate the mechanics of using Pig and the essential of its control flow operations by demonstrating them in actual use. In the following several chapters (REF), we'll cover patterns of pipelinable and of structural operations. In each case the goal is not only to understand its use, but to understand how to implement the corresponding patterns in a plain map-reduce approach -- and therefore how to reason about their performance. Finally, the chapter on Advanced Pig (TODO ref) will cover some deeper-level topics, such as a few important optimized variants of the JOIN statement and how to extend Pig with new functions and loaders.
+
 
 === LOAD..AS gives the location and schema of your source data
 
-Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the words 'Hadoop':
+Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
 
 ----
-articles = LOAD './data/wp/articles.tsv' AS (page_id: long, namespace: int, wikipedia_id: chararray, revision_id: long, timestamp: long, title: chararray, redirect: chararray, text: chararray);
-hadoop_articles = FILTER articles BY text matches '.*Hadoop.*';
+articles = LOAD './data/wp/articles.tsv' AS (
+  page_id: long, namespace: int, wikipedia_id: chararray, 
+  revision_id: long, timestamp: long, 
+  title: chararray, redirect: chararray,
+  text: chararray);
+hadoop_articles = FILTER articles BY text MATCHES '.*Hadoop.*';
 STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
 ----
 
 ==== Simple Types ====
 
-As you can see, the `LOAD` statement not only tells pig where to find the data, it also describes the table's schema. Pig understands ten kinds of simple type. Six of them are numbers: signed machine integers, as `int` (32-bit) or `long` (64-bit); signed floating-point numbers, as `float` (32-bit) or `double` (64-bit); arbitrary-length integers as `biginteger`; and arbitrary-precision real numbers, as `bigdecimal`. If you're supplying a literal value for a long, you should append a capital 'L' to the quantity: `12345L`; if you're supplying a literal float, use an 'F': `123.45F`.
+As you can see, the `LOAD` statement not only tells pig where to find the data, it also describes the table's schema. Pig understands ten kinds of simple type. Six of them are numbers: signed machine integers, as `int` (32-bit) or `long` (64-bit); signed floating-point numbers, as `float` (32-bit) or `double` (64-bit); arbitrary-length integers as `biginteger`; and arbitrary-precision real numbers, as `bigdecimal`. If you're supplying a literal value for a long, you should append a capital 'L' to the quantity: `12345L`; if you're supplying a literal float, use an 'f': `123.45f`.
 
 The `chararray` type loads text as UTF-8 encoded strings (the only kind of string you should ever traffic in). String literals are contained in single quotes -- `'hello, world'`. Regular expressions are supplied as string literals, as in the example above: `'.*[Hh]adoop.*'. The `bytearray` type does no interpretation of its contents whatsoever, but be careful -- the most common interchange formats (`tsv`, `xml` and `json`) cannot faithfully round-trip data that is truly freeform.
 
-Lastly, there are two special-purpose simple types. Time values are described with `datetime`, and should be serialised in the the ISO-8601 format: `1970-01-01T00:00:00.000+00:00`. Boolean values are described with `boolean`, and should bear the values `true` or `false`.
+Lastly, there are two special-purpose simple types. Time values are described with `datetime`, and should be serialised in the the ISO-8601 format: `1970-01-01T00:00:00.000+00:00`. Boolean values are described with `boolean`, and should bear the values `true` or `false`. 
+
+// ===== Choosing a data type
+
+Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, and you will notice rough edges around their use. 
+// We most often represent boolean fields C-style: as an `int` holding 0 or 1. 
+// Dates 
+// TODO between here and the part of the FOREACH section where we assemble a complex type, give our policy on dates and booleans. As we do, make sure that we really feel that way about bools
 
 ==== Complex Type 1: Tuples are fixed-length sequences of typed fields ====
 
@@ -176,28 +224,42 @@ Pig also has three complex types, representing collections of fields. A `tuple` 
     STORE ballparks_in_texas INTO '/tmp/ballparks_in_texas.tsv'
 ----
 
-Pig displays tuples using parentheses: it would dump a line from the input file as `BOS07,Fenway Park,(4 Yawkey Way,Boston,MA,02215),(-71.097378,42.3465909)'. As shown above, you address single values within a tuple using `tuple_name.subfield_name` -- `address.state` will have the schema `state:chararray`. You can also project fields in a tuple into a new tuple by writing `tuple_name.(subfield_a, subfield_b, ...)` -- `address.(zip, city, state)` will have schema `address_zip_city_state:tuple(zip:chararray, city:chararray, state:chararray)`. (Pig helpfully generated a readable name for the tuple).
+Pig displays tuples using parentheses: it would dump a line from the input file as `BOS07,Fenway Park,(4 Yawkey Way,Boston,MA,02215),(-71.097378,42.3465909)'. As shown above, you address single values within a tuple using `tuple_name.subfield_name` -- for example, `address.state` will have the schema `state:chararray`. You can also create a new tuple that projects or rearranges fields from a tuple by writing `tuple_name.(subfield_a, subfield_b, ...)` -- for example, `address.(zip, city, state)` will have schema `address_zip_city_state:tuple(zip:chararray, city:chararray, state:chararray)`. (Pig helpfully generated a readable name for the tuple).
 
-Tuples can contain values of any type, even bags and other tuples, but that's nothing to be proud of. You'll notice we follow almost every structural operation with a `FOREACH` to simplify its schema as soon as possible, and so should you -- it doesn't cost anything and it makes your code readable.
+Tuples can contain values of any type, even bags and other tuples, but that's nothing to be proud of. We follow almost every structural operation with a `FOREACH` to simplify its schema as soon as possible, and so should you -- it doesn't cost anything and it makes your code readable.
 
 ==== Complex Type 2: Bags hold zero one or many tuples ====
 
-A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized tuples; but again for pretend's sake we can load a dataset listing for each team the year and park id of the ballparks it played in:
+A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Again for pretend's sake we can load a dataset listing for each team the year and park id of the ballparks it played in:
 
 ----
     team_park_seasons = LOAD 'team_parks' AS (
         team_id:chararray,
         park_years: bag{tuple(year:int, park_id:chararray)}
         );
-----
+----I
 
-You address values within a bag again using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples -- you'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
+You can also address values within a bag using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples. You'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
 
 ==== Complex Type 3: Maps hold collections of key-value pairs for lookup ====
 
 Pig offers a `map` datatype to represent a collection of key-value pairs. The only context we've seen them used is for loading JSON data. A tweet from the twitter firehose has a sub-hash holding info about the user; the following snippet loads raw JSON data, immediately fixes the schema, and then describes the new schema to you:
 
 ----
+REGISTER piggybank.jar
+raw_tweets = LOAD '/tmp/tweets.json' USING org.apache.pig.piggybank.storage.JsonLoader(
+             'created_at:chararray, text:chararray, user:map[]');
+----
+
+A `map` schema is described using square brackets: `map[value_schema]`. You can leave the value schema blank if you supply one later (as in the example that follows). The keys of a map are _always_ of type chararray; the values can be any simple type. Pig renders a map as `[key#value,key#value,...]`: Flip's twitter user record as a hash would look like `[name#Philip (flip) Kromer,id#1554031,screen_name#mrflip]'.
+
+Apart from loading complex data, the `map` type is surprisingly useless. You might think it would be useful to carry around a lookup-table in a map field -- a mapping from ids to names, say -- and then index into it using the value of some other field, but a) you cannot do so and b) it isn't useful. The only thing you can do with a `map` field is dereference by a constant string, as we did above (`user#'id'`). Carrying around such a lookup table would be kind of silly, anyway, as you'd be duplicating it on every row. What you most likely want is either an off-the-cuff UDF or to use Pig's "replicated" `JOIN` operation; both are described in the chapter on Advanced Pig (TODO ref).
+
+==== Defining the Schema of a Transformed Record
+
+Since the map type is mostly useless, we'll seize the teachable moment and use this space to illustrate the other way schema are constructed: using a `FOREACH`. As always when given a complex schema, we took the first available opportunity to simplify it. The `FOREACH` in the snippet above dereferences the elements of the user `map` and supplies a schema for each new field with the `AS <schema>` clauses. The `DESCRIBE` directive that follows causes Pig to dump the schema to console: in this case, you should see `tweets: {created_at: chararray,text: chararray,user_id: long,user_name: chararray,user_screen_name: chararray}`.
+
+------
 REGISTER piggybank.jar
 raw_tweets = LOAD '/tmp/tweets.json' USING org.apache.pig.piggybank.storage.JsonLoader(
              'created_at:chararray, text:chararray, user:map[]');
@@ -208,17 +270,9 @@ tweets = FOREACH raw_tweets GENERATE
         user#'name' AS user_name:chararray,
         user#'screen_name' AS user_screen_name:chararray;
 DESCRIBE tweets;
-----
+------
 
-A `map` schema is described using square brackets: `map[value_schema]`. You can leave the value schema blank if you supply one later (as in the example that follows). The keys of a map are _always_ of type chararray; the values can be any simple type. Pig renders a map as `[key#value,key#value,...]`: my twitter user record as a hash would look like `[name#Philip Kromer,id#1554031,screen_name#mrflip]'.
-
-Apart from loading complex data, the `map` type is surprisingly useless. You might think it would be useful to carry around a lookup-table in a map field -- a mapping from ids to names, say -- and then index into it using the value of some other field, but a) you cannot do so and b) it isn't useful. The only thing you can do with a `map` field is dereference by a constant string, as we did above (`user#'id'`). Carrying around such a lookup table would be kind of silly, anyway, as you'd be duplicating it on every row. What you most likely want is either an off-the-cuff UDF or to use Pig's "replicated" `JOIN` operation; both are described in the chapter on Advanced Pig (TODO ref).
-
-Since the map type is mostly useless, we'll seize the teachable moment and use this space to illustrate the other way schema are constructed: using a `FOREACH`. As always when given a complex schema, we took the first available opportunity to simplify it. The `FOREACH` in the snippet above dereferences the elements of the user `map` and supplies a schema for each new field with the `AS <schema>` clauses. The `DESCRIBE` directive that follows causes Pig to dump the schema to console: in this case, you should see `tweets: {created_at: chararray,text: chararray,user_id: long,user_name: chararray,user_screen_name: chararray}`.
-
-(TODO ensure these topics are covered later: combining input splits in Pig; loading different data formats)
-
-
+In the chapter on Advanced Pig (REF), we'll cover some further topics: loading from alternate file formats or from databases; how Pig and Hadoop assign input file splits to mappers; and custom load/store functions.
 
 === STORE operation serializes to disk
 
@@ -249,9 +303,11 @@ The behavior of only evaluating on demand is an incredibly useful feature for de
         important_milestone = LOAD './data/tmp/important_milestone' AS (...schema...);
 ----
 
+// TODO cover the STORE_TABLE / LOAD_RESULT macros
+
 In development, once you've run the job past the `STORE important_milestone` line, you can comment it out to make pig skip all the preceding steps -- since there's nothing tying the graph to an output operation, nothing will be computed on behalf of `important_milestone`, and so execution will start with the following `LOAD`. The gratuitous save and load does impose a minor cost, so in production, comment out both the `STORE` and its following `LOAD` to eliminate the checkpoint step.
 
-These checkpoints bring two other benefits: an inspectable copy of your data at that checkpoint, and a description of its schema in the re-`LOAD` line. Many newcomers to Big Data processing resist the idea of checkpointing often. It takes a while to accept that a terabyte of data on disk is cheap -- but the cluster time to generate that data is far less cheap, and the programmer time to create the job to create the data is most expensive of all. We won't include the checkpoint steps in the printed code snippets of the book, but we've left them in the example code.
+These checkpoints bring another benefit: an inspectable copy of your data at that checkpoint. Many newcomers to Big Data processing resist the idea of checkpointing often. It takes a while to accept that a terabyte of data on disk is cheap -- but the cluster time to generate that data is far less cheap, and the programmer time to create the job to create the data is most expensive of all. We won't include the checkpoint steps in the printed code snippets of the book, but we've left them in the example code.
 
 === Directives that aid development: DESCRIBE, ASSERT, EXPLAIN, LIMIT..DUMP, ILLUSTRATE
 
@@ -265,21 +321,11 @@ The `ASSERT` operation applies a test to each record as it goes by, and fails th
 
 ==== `DUMP` shows data on the console with great peril
 
-The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. We hope that someday the DUMP command will gain an intrinsic LIMIT capability, but until then you can write footnote:[That snippet has some funny syntactical shortcuts that apart from this one snippet we don't like encouraging people to adopt. But look in the Pig documentation if you want to know about `=>` and `@`]
+The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. So you should never use a `DUMP` statement except as in the following stanza: `dumpable = LIMIT table_to_dump 10; DUMP dumpable;`.
+(ATTN tech reviewers: should we even discuss `DUMP`? Is there a good alternative, given `ILLUSTRATE`s flakiness?)
 
-------
-=> LIMIT player_year_stats 25; DUMP @;
-------
-
-What's more, the presence anywhere of a DUMP command has hidden consequences, such as disabling parallel execution of different dataflows in a script. If your output is in a text format, a preferred alternative is to run your script using the appropriate pair of commands below. Separating the two commands with `&&` means that the dumper command will not run if the pig script fails.
-
-------
-# Local mode script (Output is on local filesystem)
-time pig -x local  my_script.pig  && head -n 100 its_output/part-*00000
-# Mapreduce mode script (Output is on HDFS)
-time pig -x mapred my_script.pig  && hadoop fs -cat its_output/part-\*00000 | head -n 100
-------
-
+// TODO sh head?
+// sh egrep -- note escaping -- include an || true
 
 ==== `ILLUSTRATE` magically simulates your script's actions, except when it fails to work
 
@@ -288,11 +334,47 @@ Even if you only want to see an example line or two of your output, using a `DUM
 
 However, not all parts of Pig's functionality work with ILLUSTRATE, meaning that it often fails to run. When is the `ILLUSTRATE` command is most valuable? When applied to less-widely-used operations and complex sequences of statements, of course. What parts of Pig are most likely to lack `ILLUSTRATE` support or trip it up? Well, less-widely-used operations and complex sequences of statements, of course. And when it fails, it does so with perversely opaque error messages, leaving you to wonder if there's a problem in your script or if `ILLUSTRATE` has left you short. If you, eager reader, are looking for a good place to return some open-source karma: consider making `ILLUSTRATE` into the tool it could be. Until somebody does, you should checkpoint often (described along with the `STORE` command above) and use the strategies for subuniverse sampling from the Statistics chapter (TODO ref).
 
-Lastly, while we're on the subject of development tools that don't work perfectly in Pig: the Pig shell gets confused too easily to be useful. You're best off just running your script directly.
+Lastly, while we're on the subject of development tools that don't work perfectly in Pig: the Pig shell gets confused too easily to be useful. You're best off just running your script directly. For local mode development, tools like watchr (REF) can intelligently relaunch a script every time you hit save, streamlining development.
 
 ==== `EXPLAIN` shows Pig's execution graph
 
 The `EXPLAIN` directive writes the "execution graph" of your job to the console. It's extremely verbose, showing _everything_ pig will do to your data, down to the typecasting it applies to inputs as they are read. We mostly find it useful when trying to understand whether Pig has applied some of the optimizations you'll learn about in Tuning for the Wise and Lazy (TODO ref). (QUESTION for tech reviewers: move this section to advanced Pig and explain EXPLAIN?)
 
+=== Pig Functions act on fields
 
+Pig wouldn't be complete without a way to _act_ on the various fields.  It offers a sparse but essential set of built-in functions -- the Pig cheatsheet (TODO ref) at the end of the book gives a full list. The whole middle of the book is devoted to examples of Pig and map/reduce programs in practice (and in particular a chapter on Statistics), so we'll just list the highlights here:
 
+* *Math functions* for all the things you'd expect to see on a good calculator: `LOG`/`LOG10`/`EXP`, `RANDOM`, `ROUND`/’DOUND_TO`/`FLOOR`/`CEIL`, `ABS`, trigonometric functions, and so forth.
+* *String comparison*:
+ - `matches` tests a value against a regular expression:
+ - Compare strings directly using `==`. `EqualsIgnoreCase` does a case-insensitive match, while `STARTSWITH`/`ENDSWITH` test whether one string is a prefix or suffix of the other.
+ - `SIZE` returns the number of characters in a `chararray`, and the number of bytes in a `bytearray`. Be reminded that characters often occupy more than one byte: the string 'Motörhead' has nine characters, but because of its umlaut-ed 'ö' the string occupies ten bytes. You can use `SIZE` on other types, too; but to find the number of elements in a bag, use `COUNT_STAR` and not `SIZE`.
+ - `INDEXOF` finds the character position of a substring within a `chararray`
+* *Transform strings*:
+ - `CONCAT` concatenates all its inputs into a new string; `SPRINTF` uses a supplied template to format its inputs into a new string; BagToString joins the contents of a bag into a single string, separated by a supplied delimiter
+ - `LOWER` converts a string to lowercase characters; `UPPER` to all uppercase
+ - `TRIM` strips leading and trailing whitespace
+ - `REPLACE(string, 'regexp', 'replacement')` substitutes the replacement string wherever the given regular expression matches, as implemented by `java.string.replaceAll`. If there are no matches, the input string is passed through unchanged.
+ - `REGEX_EXTRACT(string, regexp, index)` applies the given regular expression and returns the contents of the indicated matched group. If the regular expression does not match, it returns NULL. The `REGEX_EXTRACT_ALL` function is similar, but returns a tuple of the matched groups.
+ - `STRSPLIT` splits a string at each match of the given regular expression
+ - `SUBSTRING` selects a portion of a string based on position
+* *Datetime Functions*, such as `CurrentTime`, `ToUnixTime`, `SecondsBetween` (duration between two given datetimes)
+* *Aggregate functions* that act on bags:
+ - `AVG`, `MAX`, `MIN`, `SUM`
+ - `COUNT_STAR` reports the number of elements in a bag, including nulls; `COUNT` reports the number of non-null elements. `IsEmpty` tests that a bag has elements. Don't use the quite-similar-sounding `SIZE` function on bags: it's much less efficient.
+* *Bag Functions* TODO COMPLETE LIST
+  - Extremal
+  - FirstTupleInBag
+  - BagConcat
+  - Stitch / Over
+  - `SUBTRACT(bag_a, bag_b)` returns a new bag having all the tuples that are in the first but not in the second, and `DIFF(bag_a, bag_b)` returns a new bag having all tuples that are in either but not in both. These are rarely used, as the bags must be of modest size -- in general us an inner JOIN as described below.
+  - `TOP(num, column_index, bag)` selects the top `num` of elements from each tuple in the given bag, as ordered by `column_index`. This uses a clever algorithm that doesn't require an expensive total sort of the data -- you'll learn about it in the Statistics chapter (TODO ref)
+* *Conversion Functions* to perform higher-level type casting: `TOTUPLE`, `TOBAG`, `TOMAP`
+
+* Add all the DataFu operations: http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html and coalesce http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html and maybe others
+  - Hasher
+  
+
+=== Moving right along …
+
+This chapter was a gentle introduction to Pig and its basic operations.  In the next two chapters, we'll see Pig in action. footnote:[Your authors struggled to not make a "see Pig fly" joke. Oh, wait, looks like we did …]
