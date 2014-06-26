@@ -1,6 +1,6 @@
 [[hadoop_basics]]
 
-== Chimpanzee and Elephant Start a Business
+=== Chimpanzee and Elephant Start a Business
 
 A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant Corporation (C&E Corp for short) was born.
 
