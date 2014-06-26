@@ -117,14 +117,48 @@ formatted = FOREACH bat_seasons GENERATE
 --     ;
 -- };
 
+date_converted = FOREACH people {
+  birth_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1)));
+  death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
+  beg_dt   = ToDate(CONCAT(beg_date, 'T00:00:00.000Z'));
+  end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
+  
+  GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt,
+    -- birth_year, birth_month, birth_day, 
+    -- (birth_month IS NULL ? 'HIMOM' : ''),
+    name_first, name_last;
+};
 
-graphable = FOREACH people GENERATE player_id,
-  {
-      ('birth', birth_year, birth_month, birth_day),
-      ('death', death_year, death_month, death_day),
-      ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
-      ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
-    } AS occasions:bag{t:(occasion:chararray, year, month, day)};
+graphable = FOREACH people {
+  birth_date = SPRINTF('%s-%s-%s', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1));
+  death_date = SPRINTF('%s-%s-%s', death_year, Coalesce(death_month,1), Coalesce(death_day,1));
+
+  birth_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1)));
+  death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
+  beg_dt   = ToDate(CONCAT(beg_date, 'T00:00:00.000Z'));
+  end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
+
+  occasions = {
+      ('birth', birth_dt, YearsBetween(birth_dt, birth_dt), birth_city, birth_state, birth_country),
+      ('death', death_dt, YearsBetween(death_dt, birth_dt), death_city, death_state, death_country),
+      ('debut', beg_dt,     YearsBetween(beg_dt,   birth_dt), (chararray)NULL, (chararray)NULL, (chararray)NULL),
+      ('lastg', end_dt,     YearsBetween(end_dt,   birth_dt), (chararray)NULL, (chararray)NULL, (chararray)NULL)
+    };
+
+  GENERATE
+    player_id,
+    occasions AS occasions:bag{t:(
+      occasion:chararray, dt:datetime, age:long, city:chararray, state:chararray, country:chararray)}
+    -- ,
+    -- places    AS places:tuple(
+    --   birth:tuple(dt:datetime, city:chararray, state:chararray, country:chararray),
+    --   death:tuple(dt:datetime, city:chararray, state:chararray, country:chararray)
+    --   -- ,
+    --   -- debut:tuple(dt:datetime, city:chararray, state:chararray, country:chararray),
+    --   -- final:tuple(dt:datetime, city:chararray, state:chararray, country:chararray)
+    -- )
+    ;
+};
 
 -- => LIMIT obp_1     10; DUMP @; DESCRIBE obp_1  ;
 -- => LIMIT obp_2     10; DUMP @; DESCRIBE obp_2  ;
@@ -136,12 +170,13 @@ graphable = FOREACH people GENERATE player_id,
 -- STORE_TABLE(birthplaces, 'birthplaces');
 -- STORE_TABLE(core_stats,  'core_stats');
 
+-- STORE_TABLE(date_converted,  'date_converted');
 STORE_TABLE(graphable,  'graphable');
 -- STORE_TABLE(formatted, 'formatted');
 
 -- From the commandline:
-sh egrep '^..\\(54.aaron\\|87.gwynnto\\|07.pedro\\|70.carewro\\|97.ansonca\\|95.vanlaw\\|41.willite\\)' /data/out/baseball/formatted/part-m-00000
-sh egrep '^\\(aaronha\\|gwynnto\\|pedrodu\\|carewro\\|ansonca\\|vanlaw\\|willite01\\)' /data/out/baseball/graphable/part-m-00000
+sh egrep '^\\(aaronha01\\|gwynnto02\\|pedrodu01\\|carewro01\\|ansonca01\\|vanlaw01\\|reedeic01\\|willite01\\)\\|HIMOM' /data/out/baseball/graphable/part\* | wu-lign
+-- sh egrep '^\\(aaronha01\\|gwynnto02\\|pedrodu01\\|carewro01\\|ansonca01\\|vanlaw01\\|reedeic01\\|willite01\\)\\|HIMOM' /data/out/baseball/date_converted/part\* | wu-lign
 
 
 --   full_name  = CONCAT(name_first, ' ', name_last);

@@ -1,12 +1,17 @@
 == Analytic Patterns part 1: Pipeline Operations
 
-The operations in this chapter require no reduce phase of their own. When they stand alone, they lead to map-only jobs. When they are combined with the grouping / sorting operations you'll meet in the next chapter, they become additional pipeline stages of the mapper or reducer (depending on whether they come before or after).
+This chapter focuses exclusively on what we'll call 'pipelineable operations'.
+A pipelineable operations is one that can handle each record in isolation, like the translator chimps from Chimpanzee & Elephant's first job. That property makes those operations trivially parallelizable: they require no reduce phase of their own.
+
+When a script has only pipelineable operations, they give rise to one mapper-only job which executes the composed pipeline stages. When pipelinable operations are combined with the structural operations you'll meet in the next chapter, they are composed with the stages of the mapper or reducer (depending on whether they come before or after the structural operation).
+
+All of these are listed first and together for two reasons. One, they are largely fundamental; it's hard to get much done without `FILTER` or `FOREACH`. Two, the way you reason about the performance impact of these operations is largely the same. Since these operations are trivially paralellizable, they scale efficiently and the computation cost rarely impedes throughput. And when pipelined, their performance cost can be summarized as "kids eat free with purchase of adult meal". For datasets of any material size, it's very rare that the cost of preliminary or follow-on processing rivals the cost of the reduce phase. Finally, since these operations handle records in isolation, their memory impact is modest. So learn to think of these together. 
 
 === Eliminating Data
 
-For this first round, we'll focus on patterns that somehow shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally develop models based on the entire population, not a sample thereof, so why should we scale down our data?
+The first round of patterns will focus on methods to shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally develop models based on the entire population, not a sample thereof, so why should we scale down our data?
 
-Truth be told, even if you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research.  For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are first provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.]  Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
+The primary reason is to focus on a subset of records: only website requests with an external referrer, only security events with high threat levels, only accounts of than $1 million. And even when you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research. For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are first provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.] Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
 
 The goal of course isn't to _eliminate_ data, it's to be _selective_ about your data, and so we will introduce you to a variety of techniques for doing so.
 
@@ -307,8 +312,6 @@ The stats in the `bat_seasons` table are all "counting stats" -- total numbers o
 
 * 'On-base-plus-slugging' (`OPS`) combines on-base and slugging percentages to give a simple and useful estimate of overall offensive contribution. It's found by simply adding the figures: (`OBP + SLG`). Anything above 0.900 is very good.
 
-TODO-reviewer: I repeated the above in full from the content in the sidebar. Full explanation here also, or brief recap and reference?
-
 Doing this with the simple form of `FOREACH` we've been using would be annoying and hard to read -- for one thing, the expressions for OBP and SLG would have to be repeated in the expression for OPS, since the full statement is evaluated together. Pig provides a fancier form of `FOREACH` (a 'nested' `FOREACH`) that allows intermediate expressions:
 
 ----
@@ -382,13 +385,63 @@ The parts of the template are as follows:
 
 We won't go any further into the details, as the `SPRINTF` function is well documented (REF) and examples of printf-style templating abound on the web. But this is a useful and versatile tool, and if you're able to mimic the elements used above you understand its essentials.
 
-==== Assembling Literals with  Complex Type
+==== Assembling Literals with  Complex Types
 
-Another reason you may need the nested form of `FOREACH` is to assemble a complex literal. If we wanted to draw key events in a player's history -- birth, death, start and end of career -- on a timeline, or wanted to place the location of their birth and death on a map, it would make sense to prepare generic baskets of events and location records. Let's use that problem to demonstrate assembling complex types from simple fields.
+Another reason you may need the nested form of `FOREACH` is to assemble a complex literal. If we wanted to draw key events in a player's history -- birth, death, start and end of career -- on a timeline, or wanted to place the location of their birth and death on a map, it would make sense to prepare generic baskets of events and location records. We will solve this problem in a few different ways to demonstrate assembling complex types from simple fields.
+
+===== Parsing a Date
+
+.Assembling Complex Types
+------
+date_converted = FOREACH people {
+  beg_dt   = ToDate(CONCAT(beg_date, 'T00:00:00.000Z'));
+  end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
+  birth_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1)));
+  death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
+  
+  GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt, name_first, name_last;
+};
+-------
+
+One oddity of the people table's structure as it arrived to us is that the birth/death dates are given with separate fields, while the beginning/end of career dates are given as ISO date strings. We left that alone because this kind of inconsistency is the reality of data sets in practice -- in fact, this is about as mild a case as you'll find. So one thing we'll have to do is pick a uniform date representation and go forward with it.
+
+You may have heard the saying "The two hardest things in Computer Science are cache coherency and naming things". Our nominations for the two most horrible things in Computer Science are time zones and character encoding footnote:[Many people add "...and off-by-one errors" to the hardest-things list. If we are allowed to re-use the same joke, the two most horrible things in Computer Science are #1 Time Zones, #2 Character Enco, #2 Threads.ding.] Elsewhere you'll hear ". Our rule for Time Zones is "put it in UTC _immediately_ and never speak of it again footnote:[Maybe you can guess our rule for character encodings: "put it in UTF-8 _immediately_ and never speak of it again]. A final step in rendering data for an end-user interface may convert to local time, but at no point in data analysis should you tolerate anything but UTC. We're only working with dates right here, but we'll repeat that rule every chance we have in the book.
+
+There are two and a half defensible ways to represent a date or time:
+
+* As an **https://en.wikipedia.org/wiki/ISO_8601[ISO 8601 Date/Time] string in the UTC time zone**. It sounds scary when we say "ISO 8601", but it's self-explanatory and you see all over the place: `'2007-08-09T10:11:12Z'` is an example of a time, and `'2007-08-09'` is an example of a date. It's compact enough to not worry about, there's little chance of it arriving in that format by accident, everything everywhere can parse it, and you can do ad-hoc manipulation of it using string functions (eg `(int)SUBSTRING(end_date,0,4)` to extract a year). Use this format only if you are representing instants that come after the 1700s, only need seconds-level precision, and where human readability is more important than compactness (which we encourage).
+* As an **integer number of epoch milliseconds in the UTC time zone**, which is to say as the number of elapsed milliseconds since midnight January 1st, 1970 UTC. (You may see this referred to as 'UNIX time'.) It allows you to easily calculate durations, and is nearly universal as well. Its value fits nicely in an unsigned 64-bit `long`. We believe using fractional epoch time -- e.g. 1186654272892.657 to mean 657 microseconds into the given second -- is carrying the joke too far. If you care about micro- or nano-seconds, then you need to care about floating point error, and the leading part of the number consumes too much of your precision. Use this format only if you are representing instants that come after the start of the epoch; only need millisecond precision; and don't care about leap seconds.
+* A **domain representation chosen judiciously by an expert**. If neither of the above two representations will work for you then sorry: you need to get serious. Astronomers and anyone else working at century scale will likely use some form of https://en.wikipedia.org/wiki/Julian_date[Julian Date]; those working at nanosecond scale should look at https://en.wikipedia.org/wiki/International_Atomic_Time[TAI]; there are dozens of others. You'll probably have to learn things about leap seconds or sidereal times or the fluid space-time discontinuum that is the map of Time Zones, and you will wish you didn't have to. We're not going to deal with this category as it's far, far beyond the scope of the book.
+
+In general we will leave times in their primitive data type (`long` for epoch milliseconds, `chararray` for ISO strings) until we need them to be proper `datetime` data structures. The lines above show a couple ways to create `datetime` values; here's the fuller catalog.
+
+Epoch milliseconds are easily converted by calling `ToDate(my_epoch_millis)`. For an ISO format string with date, time and time zone, pass it as a single `chararray` string argument: `ToDate(beg_date)`. If its lacks the time-of-day or time zone part, you must fill it out first: `ToDate(CONCAT(beg_date, 'T00:00:00.000Z'))`. If the string has a non-standard format, supply two additional arguments: a template according to Java's http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html[SimpleDateFormat], and unless the input has a timezone, the UTC time zone string '+0000'. For example, `ToDate(end_date, 'yyyy-MM-dd', '+0000')` demonstrates anoter way to parse an ISO date string: viable, but more expensive than the one-arg version.
+
+For composite year-month-day-etc fields, create an ISO-formatted string and pass it to `ToDate`. Here's the snippet we used, in slow motion this time:
+
+------
+ToDate(
+  SPRINTF('%s-%s-%sT00:00:00Z',		     -- ISO format template
+    birth_year,				     -- if year is NULL, value will be null
+    (birth_month IS NULL ? 1 : birth_month), -- but coerce null month or day to 1
+    (birth_day IS NULL ? 1 : birth_day)
+  ));
+------    
+
+NOTE: Apart from subtracting one epoch milliseconds from another to get a duration in milliseconds, you must _never do any date/time manipulation except through a best-in-class date library_. You can't calculate the difference of one year by adding one to the year field (which brought down Microsoft's http://azure.microsoft.com/blog/2012/03/09/summary-of-windows-azure-service-disruption-on-feb-29th-2012/[cloud storage product] on the leap day of February 29th, 2012), and you can't assume that the time difference from one minute to the next is 60 seconds (which http://blog.cloudera.com/blog/2012/07/watching-the-clock-clouderas-response-to-leap-second-troubles/[brought down HBase servers worldwide] when the leap second of `2012-06-30T23:59:60Z` -- note the `:60` -- occurred). This is no joke -- companies go out of business because of mistakes like these.
+ 
+===== Assembling a Bag
 
 .Assembling Complex Types
 ------
 graphable = FOREACH people {
+  birth_month = Coalesce(birth_month, 1); birth_day = Coalesce(birth_day, 1); 
+  death_month = Coalesce(death_month, 1); death_day = Coalesce(death_day, 1); 
+  beg_dt   = ToDate(beg_date);
+  end_dt   = ToDate('yyyy-MM-dd', end_date);
+  birth_dt = ToDate(SPRINTF('%s-%s-%s', birth_year, birth_month, birth_day));
+  death_dt = ToDate(SPRINTF('%s-%s-%s', death_year, death_month, death_day));
+  --
   occasions = {
       ('birth', birth_year, birth_month, birth_day),
       ('death', death_year, death_month, death_day),
@@ -396,14 +449,11 @@ graphable = FOREACH people {
       ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
     };
   --
-  birth_date = ToDate('yyyy-MM-dd', SPRINTF('%s-%s-%s', birth_year, birth_month, birth_day));
-  death_date = ToDate('yyyy-MM-dd', SPRINTF('%s-%s-%s', death_year, death_month, death_day));
-  --
   places = (
-    (birth_date, birth_city, birth_state, birth_country),
-    (birth_date, death_city, death_state, death_country),
-    (beg_date,      null,       null,        null),
-    (end_date));
+    (birth_dt, birth_city, birth_state, birth_country),
+    (birth_dt, death_city, death_state, death_country),
+    (beg_dt,   null,       null,        null),
+    (end_dt));
 
   GENERATE
     player_id,
@@ -414,23 +464,10 @@ graphable = FOREACH people {
 };
 ------
 
-TODO: clean up
 
-===== Assembling a Bag
-
-* how bag is made
+The `occasions` intermediate alias is a bag of event tuples holding a chararray and three ints. Bags are disordered (unless you have transiently applied an explicit sorted), and so we've prefixed each event with a slug naming the occasion. 
 
 You can do this inline (non-nested `FOREACH`) but we wouldn't. If you find yourself with the error `Error during parsing. Encountered " "as" "AS "" at line X`, just pay for the ext
-
-===== Parsing a Date
-
-* parsing a date
-* why we load dates as strings not dates
-* There's only three and a half ways we like to represent dates, and the very first thing we do when it isn't one of these is convert the representation.
-  - The "half" in our "three and a half acceptable date representations" is "a domain representation chosen judiciously by an expert". Astronomers will use Julian Dates,
-  Whatever the case, choose one format, stick with it, and don't tolerate any alternative representations
-* time zones are the second-worst thing besides
-  You may have heard the saying "The two hardest things in Computer Science are cache coherency and naming things. And off-by-one errors". Well our nominations for the two worst things in Computer Science are character encoding and time zones.
 
 ===== Assembing a Tuple
 
@@ -597,7 +634,7 @@ udf.import.list=\
 ****
 Nate Silver calls Baseball the "perfect data set".  There are not many human-centered systems for which this comprehensive degree of detail is available, and no richer set of tables for truly demonstrating the full range of analytic patterns.
 
-For readers who are not avid baseball fans, we provide a simple -- some might say "oversimplified" -- description of the sport and its key statistics.  Please refer to Joseph Adler's _Baseball Hacks_ (O'Reilly) or [TODO the one with Baseball and R] for more details.
+For readers who are not avid baseball fans, we provide a simple -- some might say "oversimplified" -- description of the sport and its key statistics.  Please refer to Joseph Adler's _Baseball Hacks_ (O'Reilly) or Marchi and Albert's _Analyzing Baseball Data with R_ (Chapman & Hall) for more details.
 
 The stats come in tables at multiple levels of detail.
 Putting people first as we like to do, the `people` table lists each player's name and personal stats such as height and weight, birth year, and so forth. It has a primary key, the `player_id`, formed from the first five letters of their last name, first two letters of their first name, and a two digit disambiguation slug. There are also primary tables for ballparks (`parks`) listing information on every stadium that has ever hosted a game and for teams (`teams`) giving every major-league team back to the birth of the game.

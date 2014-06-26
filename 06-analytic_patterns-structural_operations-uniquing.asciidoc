@@ -324,6 +324,16 @@ All of those methods use in-memory bag operations, which is generally fine.
 We can also do this using the summing trick
 
 
+To demonstrate set operations on grouped records, let's look at the
+year-to-year churn of mainstay players footnote:[using our definition of a
+significant season: post-1900 and 450 or more plate appearances] on each
+team.
+
+Other applications of the procedure we follow here would include analyzing
+how the top-10 products on a website change over time, or identifying sensors
+that report values over threshold in N consecutive hours (by using an N-way
+COGROUP).
+
 ==== Constructing a Sequence of Sets
 
 To construct a sequence of sets, perform a self-cogroup that collects the

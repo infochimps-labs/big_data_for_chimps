@@ -25,7 +25,7 @@ awesome.
 //
 // ------
 // player_seasons = LOAD `player_seasons` AS (...);
-// qual_player_seasons = FILTER player_years BY plapp > what it should be;
+// qual_player_seasons = FILTER player_years BY PA > what it should be;
 // player_season_stats = FOREACH qual_player_seasons GENERATE
 //    player_id, name, games,
 //    hits/ab AS batting_avg,

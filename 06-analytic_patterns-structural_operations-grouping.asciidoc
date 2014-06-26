@@ -1,19 +1,6 @@
-
-
 == Analytic Patterns: Grouping Operations
 
 === Introduction
-
-The overriding focus here is to equip you with the toolkit of analytic patterns.
-// AEJ: expand.
-The most meaningful way to introduce these patterns is to demonstrate their use in service of a question of real interest.
-The main storyline of the next few chapters on "Analytic Patterns" will be to find quantitative indicators of exceptional performance, and we'll pick that thread up repeatedly.
-But where a pattern has no natural demonstration in service of that primary story, we find questions that could support an investigation of their own: "How can we track changes in each team's roster over time?", "Is the stereotypical picture of the big brawny home-run hitter true?"
-Usually we stop at the trailhead, but sometime the data comes forth with a story of its own -- "Does God really hate Cleveland?", "Why are baseball players far more likely to die in January and be born in August?" -- so interesting it demands a side trip to follow the tale.
-
-But as we pursue the player-performance exploration, you should recognize not just a way for fantasy baseball players to get an edge, but strategies for quantifying the behavior of any sort of outlier. Here, it's baseball players, but similar questions will apply when examining agents posing security threats, load factor on public transit routes, factors causing manufacturing defects, cell strains with a significantly positive response, and many other topics of importance.
-
-// AEJ: Where are we going with this? What is the section going to teach them?
 
 === Grouping Records into a Bag by Key
 
@@ -712,6 +699,8 @@ image::images/06-histograms-career_G-binsize_2.png[]
 The bin size we chose, 50 games, works well. It's a meaningful number (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, and yet preserves the gaps that demonstrate the epic scope of Pete Rose and our other outliers' careers.
 
 image::images/06-histograms-career_G-binsize_2.png[]
+
+// The takeaway is that this is where your skill as a storyteller
 
 ==== Interpreting Histograms and Quantiles
 
