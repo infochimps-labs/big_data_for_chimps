@@ -166,7 +166,7 @@ game_scores = FOREACH games GENERATE
 
 You're not limited to simply restricting the number of columns; you can also rename and reorder them in a projection. Each record in the table above has _two_ game outcomes, one for the home team and one for the away team. We can represent the same data in a table listing outcomes purely from each team's perspective:
 
-----
+------
 games_a = FOREACH games GENERATE
   year_id, home_team_id AS team,
   home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
@@ -179,7 +179,7 @@ team_scores = UNION games_a, games_b;
 
 DESCRIBE team_scores;
 --   team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
-----
+------
 
 The first projection puts the `home_team_id` into the team slot, renaming it `team`; retains the `year_id` field unchanged; and files the home and away scores under `runs_for` and `runs_against`. Lastly, we slot in an indicator field for home games, supplying both the name and type as a matter of form. Next we generate the corresponding table for away games, then stack them together with the `UNION` operation (to which you'll be properly introduced in a few pages). All the tables have the identical schema shown, even though their values come from different columns in the original tables.
 
@@ -200,9 +200,9 @@ Another common operation is to extract a _uniform_ sample -- one where every rec
 
 The following Pig code will return a randomly-selected 10% (that is, 1/10 = 0.10) of the records from our baseball dataset:
 
----
+------
 some_seasons_samp = SAMPLE bat_seasons 0.10;
----
+------
 
 The `SAMPLE` operation does so by generating a random number to select records, which means each run of a script that uses `SAMPLE` will yield a different set of records.  Sometimes this is what you want, or in the very least, you don't mind.  In other cases, you may want to draw a uniform sample once, then repeatedly work through those _same_ records.  (Consider our example of spot-checking new code against a dataset: you'd need to run your code against the same sample in order to confirm your changes work as expected.)
 
@@ -249,9 +249,9 @@ Sometimes you just want to knock down the data size while developing your script
 
 A much blunter way to create a smaller dataset is to take some fixed number 'K' of records. Pig offers the `LIMIT` operator for this purpose. To select 25 records from our `bat_seasons` data, you would run:
 
-----
+------
 some_players = LIMIT player_year_stats 25;
-----
+------
 
 This is somewhat similar to running the `head` command in Unix-like operating systems, or using the `LIMIT` clause in a SQL `SELECT` statement.
 However, unless you have explicitly imparted some order to the table (probably by sorting it with `ORDER`, which we'll cover later (REF)), Pig gives you _no guarantee over which records it selects_. In the big data regime, where your data is striped across many machines, there's no intrinsic notion of a record order. Changes in the number of mappers or reducers, in the data, or in the cluster may change which records are selected. In practice, you'll find that it takes the first 'K' records of the first-listed file (and so, as opposed to `SAMPLE`, generally gives the same outcome run-to-run), but it's irresponsible to rely on that.
@@ -314,7 +314,7 @@ The stats in the `bat_seasons` table are all "counting stats" -- total numbers o
 
 Doing this with the simple form of `FOREACH` we've been using would be annoying and hard to read -- for one thing, the expressions for OBP and SLG would have to be repeated in the expression for OPS, since the full statement is evaluated together. Pig provides a fancier form of `FOREACH` (a 'nested' `FOREACH`) that allows intermediate expressions:
 
-----
+------
 bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
 core_stats  = FOREACH bat_seasons {
   TB   = h1B + 2*h2B + 3*h3B + 4*HR;
@@ -328,7 +328,7 @@ core_stats  = FOREACH bat_seasons {
     H,    h1B, h2B, h3B,  HR,  R,  RBI, -- $13-$19
     SLG, OBP, OPS;                      -- $20-$22
 };
-----
+------
 
 This alternative `{` curly braces form of `FOREACH` lets you describe its transformations in smaller pieces, rather than smushing everything into the single `GENERATE` clause. New identifiers within the curly braces (such as `player`) only have meaning within those braces, but they do inform the schema.
 
@@ -401,7 +401,7 @@ date_converted = FOREACH people {
   
   GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt, name_first, name_last;
 };
--------
+------
 
 One oddity of the people table's structure as it arrived to us is that the birth/death dates are given with separate fields, while the beginning/end of career dates are given as ISO date strings. We left that alone because this kind of inconsistency is the reality of data sets in practice -- in fact, this is about as mild a case as you'll find. So one thing we'll have to do is pick a uniform date representation and go forward with it.
 
@@ -426,7 +426,7 @@ ToDate(
     (birth_month IS NULL ? 1 : birth_month), -- but coerce null month or day to 1
     (birth_day IS NULL ? 1 : birth_day)
   ));
-------    
+------
 
 NOTE: Apart from subtracting one epoch milliseconds from another to get a duration in milliseconds, you must _never do any date/time manipulation except through a best-in-class date library_. You can't calculate the difference of one year by adding one to the year field (which brought down Microsoft's http://azure.microsoft.com/blog/2012/03/09/summary-of-windows-azure-service-disruption-on-feb-29th-2012/[cloud storage product] on the leap day of February 29th, 2012), and you can't assume that the time difference from one minute to the next is 60 seconds (which http://blog.cloudera.com/blog/2012/07/watching-the-clock-clouderas-response-to-leap-second-troubles/[brought down HBase servers worldwide] when the leap second of `2012-06-30T23:59:60Z` -- note the `:60` -- occurred). This is no joke -- companies go out of business because of mistakes like these.
  

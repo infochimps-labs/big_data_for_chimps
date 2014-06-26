@@ -59,14 +59,14 @@ Pig is an open-source, high-level language that enables you to create efficient 
 
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
-----
+------
 PARALLEL 1; (USE 1 REDUCER) (DISABLE COMBINERS)
 LOAD UFO table
 EXTRACT MONTH FROM EACH LINE
 GROUP ON MONTHS
 COUNT WITHIN GROUPS
 STORE INTO OUTPUT FILE
-----
+------
 
 // TODO fix up script
 
@@ -84,9 +84,9 @@ In a Wukong script or traditional Hadoop job, the focus is on the record and you
 
 To run the Pig job, go into the ‘EXAMPLES/UFO’ directory and run
 
-----
+------
 pig monthly_visit_counts.pig /data_UFO_sightings.tsv /dataresults monthly_visit_counts-pig.tsv
-----
+------
 
 // To run the Wukong job, go into the (REF) directory and run
 // 
@@ -102,7 +102,7 @@ If you consult the Job Tracker Console, you should see a single Map/Reduce for e
 
 Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
 
-----
+------
 LOAD SOURCE FILE
 PARALLEL 3
 TURN RECORD INTO HOUR PART OF TIMESTAMP AND COUNT
@@ -110,7 +110,7 @@ GROUP BY HOUR
 SUM THE COUNTS BY HOUR
 ORDER THE RESULTS BY HOUR
 STORE INTO FILE
-----
+------
 
 // (TODO: If you do an order and then group, is Pig smart enough to not add an extra REDUCE stage?)
 
@@ -183,7 +183,7 @@ In the remainder of this chapter, we'll illustrate the mechanics of using Pig an
 
 Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
 
-----
+------
 articles = LOAD './data/wp/articles.tsv' AS (
   page_id: long, namespace: int, wikipedia_id: chararray, 
   revision_id: long, timestamp: long, 
@@ -191,28 +191,29 @@ articles = LOAD './data/wp/articles.tsv' AS (
   text: chararray);
 hadoop_articles = FILTER articles BY text MATCHES '.*Hadoop.*';
 STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
-----
+------
 
 ==== Simple Types ====
 
 As you can see, the `LOAD` statement not only tells pig where to find the data, it also describes the table's schema. Pig understands ten kinds of simple type. Six of them are numbers: signed machine integers, as `int` (32-bit) or `long` (64-bit); signed floating-point numbers, as `float` (32-bit) or `double` (64-bit); arbitrary-length integers as `biginteger`; and arbitrary-precision real numbers, as `bigdecimal`. If you're supplying a literal value for a long, you should append a capital 'L' to the quantity: `12345L`; if you're supplying a literal float, use an 'f': `123.45f`.
 
-The `chararray` type loads text as UTF-8 encoded strings (the only kind of string you should ever traffic in). String literals are contained in single quotes -- `'hello, world'`. Regular expressions are supplied as string literals, as in the example above: `'.*[Hh]adoop.*'. The `bytearray` type does no interpretation of its contents whatsoever, but be careful -- the most common interchange formats (`tsv`, `xml` and `json`) cannot faithfully round-trip data that is truly freeform.
+The `chararray` type loads text as UTF-8 encoded strings (the only kind of string you should ever traffic in). String literals are contained in single quotes -- `'hello, world'`. Regular expressions are supplied as string literals, as in the example above: `'.*[Hh]adoop.*'`. The `bytearray` type does no interpretation of its contents whatsoever, but be careful -- the most common interchange formats (`tsv`, `xml` and `json`) cannot faithfully round-trip data that is truly freeform.
 
 Lastly, there are two special-purpose simple types. Time values are described with `datetime`, and should be serialised in the the ISO-8601 format: `1970-01-01T00:00:00.000+00:00`. Boolean values are described with `boolean`, and should bear the values `true` or `false`. 
 
 // ===== Choosing a data type
 
 Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, and you will notice rough edges around their use. 
+
 // We most often represent boolean fields C-style: as an `int` holding 0 or 1. 
 // Dates 
 // TODO between here and the part of the FOREACH section where we assemble a complex type, give our policy on dates and booleans. As we do, make sure that we really feel that way about bools
 
-==== Complex Type 1: Tuples are fixed-length sequences of typed fields ====
+==== Complex Type 1: Tuples are fixed-length sequences of typed fields
 
 Pig also has three complex types, representing collections of fields. A `tuple` is a fixed-length sequence of fields, each of which has its own schema. They're ubiquitous in the results of the various structural operations you're about to learn. We usually don't serialize tuples, but so far `LOAD` is the only operation we've taught you, so for pretend's sake here's how you'd load a listing of major-league ballpark locations:
 
-----
+------
     -- The address and geocoordinates are stored as tuples. Don't do that, though.
     ballpark_locations = LOAD 'ballpark_locations' AS (
         park_id:chararray, park_name:chararray,
@@ -221,7 +222,7 @@ Pig also has three complex types, representing collections of fields. A `tuple` 
     );
     ballparks_in_texas = FILTER ballpark_locations BY (address.state == 'TX');
     STORE ballparks_in_texas INTO '/tmp/ballparks_in_texas.tsv'
-----
+------
 
 Pig displays tuples using parentheses: it would dump a line from the input file as `BOS07,Fenway Park,(4 Yawkey Way,Boston,MA,02215),(-71.097378,42.3465909)'. As shown above, you address single values within a tuple using `tuple_name.subfield_name` -- for example, `address.state` will have the schema `state:chararray`. You can also create a new tuple that projects or rearranges fields from a tuple by writing `tuple_name.(subfield_a, subfield_b, ...)` -- for example, `address.(zip, city, state)` will have schema `address_zip_city_state:tuple(zip:chararray, city:chararray, state:chararray)`. (Pig helpfully generated a readable name for the tuple).
 
@@ -231,12 +232,12 @@ Tuples can contain values of any type, even bags and other tuples, but that's no
 
 A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Again for pretend's sake we can load a dataset listing for each team the year and park id of the ballparks it played in:
 
-----
+------
     team_park_seasons = LOAD 'team_parks' AS (
         team_id:chararray,
         park_years: bag{tuple(year:int, park_id:chararray)}
         );
-----I
+------
 
 You can also address values within a bag using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples. You'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
 
@@ -244,11 +245,11 @@ You can also address values within a bag using `bag_name.(subfield_a, subfield_b
 
 Pig offers a `map` datatype to represent a collection of key-value pairs. The only context we've seen them used is for loading JSON data. A tweet from the twitter firehose has a sub-hash holding info about the user; the following snippet loads raw JSON data, immediately fixes the schema, and then describes the new schema to you:
 
-----
+------
 REGISTER piggybank.jar
 raw_tweets = LOAD '/tmp/tweets.json' USING org.apache.pig.piggybank.storage.JsonLoader(
              'created_at:chararray, text:chararray, user:map[]');
-----
+------
 
 A `map` schema is described using square brackets: `map[value_schema]`. You can leave the value schema blank if you supply one later (as in the example that follows). The keys of a map are _always_ of type chararray; the values can be any simple type. Pig renders a map as `[key#value,key#value,...]`: Flip's twitter user record as a hash would look like `[name#Philip (flip) Kromer,id#1554031,screen_name#mrflip]'.
 
@@ -277,11 +278,11 @@ In the chapter on Advanced Pig (REF), we'll cover some further topics: loading f
 
 The STORE operation writes your data to the destination you specify (typically the HDFS).
 
-----
+------
 articles = LOAD './data/wp/articles.tsv' AS (page_id: long, namespace: int, wikipedia_id: chararray, revision_id: long, timestamp: long, title: chararray, redirect: chararray, text: chararray);
 hadoop_articles = FILTER articles BY matches('.*[Hh]adoop.*');
 STORE hadoop_articles INTO './data/tmp/hadoop_articles.tsv';
-----
+------
 
 As with any Hadoop job, Pig creates a _directory_ (not a file) at the path you specify; each task generates a file named with its task ID into that directory. In a slight difference from vanilla Hadoop, If the last stage is a reduce, the files are named like `part-r-00000` (`r` for reduce, followed by the task ID); if a map, they are named like `part-m-00000`.
 
@@ -290,7 +291,7 @@ Try removing the STORE line from the script above, and re-run the script. You'll
 [[checkpointing_your_data]]
 The behavior of only evaluating on demand is an incredibly useful feature for development work. One of the best pieces of advice we can give you is to checkpoint all the time. Smart data scientists iteratively develop the first few transformations of a project, then save that result to disk; working with that saved checkpoint, develop the next few transformations, then save it to disk; and so forth. Here's a demonstration:
 
-----
+------
     great_start = LOAD '...' AS (...);
     -- ...
     -- lots of stuff happens, leading up to
@@ -300,7 +301,7 @@ The behavior of only evaluating on demand is an incredibly useful feature for de
     -- reached an important milestone, so checkpoint to disk.
     STORE important_milestone INTO './data/tmp/important_milestone';
         important_milestone = LOAD './data/tmp/important_milestone' AS (...schema...);
-----
+------
 
 // TODO cover the STORE_TABLE / LOAD_RESULT macros
 
