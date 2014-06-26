@@ -6,7 +6,7 @@ Data is worthless. Actually, it's worse than worthless: it requires money and ef
 
 What's valuable is _insight_ -- summaries, patterns and connections that lead to deeper understanding and better decisions. And insight comes from synthesizing data in context. We can predict air flight delays by placing commercial flight arrival times in context with hourly global weather data (as we do in Chapter (REF)). Take the mountain of events in a large website's log files, and regroup using context defined by the paths users take through the site, and you'll illuminate articles of similar interest (see Chapter (REF)). In Chapter (REF), we'll dismantle the text of every article on Wikipedia, then reassemble the words from each article about a physical place into context groups defined by the topic's location -- and produce insights into human language not otherwise quantifiable.
 
-Within each of those examples are two competing forces that move them out of the domain of traditional data analysis and into the topic of this book: "big data" analytics: due to the volume of data, it is far too large to comfortably analyze on a single machine; and due to the comprehensiveness of the data, simple analytic methods are able to extract patterns not visible in the small.
+Within each of those examples are two competing forces that move them out of the domain of traditional data analysis and into the topic of this book: "big data" analytics and simple analytics. Due to the volume of data, it is far too large to comfortably analyze on a single machine; and due to the comprehensiveness of the data, simple methods are able to extract patterns not visible in the small.
 
 === Big Data: Tools to Solve the Crisis of Comprehensive Data
 
@@ -20,15 +20,24 @@ We conduct a presidential election by sending people to local polling places, di
 
 // ...
 
+TODO: you say "first" here, but I don't see a second or third.  I'd remove the word "first" unless you plan complete that thought.
+
 So our first definition of Big Data is a response to a crisis: "A collection of practical data analysis tools and processes that continue to scale even as the volume of data for justified synthesis exceeds some limit of available computation".
 
-In Chapter 6 (REF) we'll map out the riotous diversity of tools in the Big Data ecosystem,
-Hadoop is the ubiquitous choice for processing batches of data at high
-Hadoop is the tool to use when you want to understand how patterns in data from your manufacturing devices corresponds to defective merchandise returned months later, or how patterns in patients' postoperative medical records correspond to the likelihood they'll be re-admitted with complications.
+// In Chapter 6 (REF) we'll map out the riotous diversity of tools in the Big Data ecosystem,
+// Hadoop is the ubiquitous choice for processing batches of data at high
+// Hadoop is the tool to use when you want to understand how patterns in data from your manufacturing devices corresponds to defective merchandise returned months later, or how patterns in patients' postoperative medical records correspond to the likelihood they'll be re-admitted with complications.
 
 One solution to the big data crisis is high-performance supercomputing (HPC): push back the limits of computation with brute force. We could conduct our election by gathering supporters of one candidate on a set of cornfields in Iowa, supporters of the other on cornfields in Iowa, and using satellite imaging to tally the result. HPC solutions are exceptionally expensive, require the kind of technology seen only when military and industrial get complex, and though the traditional "all data is local" methods continue to work, they lose their essential straightforward flavor. A supercomputer is not one giant connected room, it's a series of largish rooms connected by very wide multidimensional hallways; HPC programmers have to constantly think about the motion of data among caches, processors, and backing store.
 
-Hadoop's approach is effectively the opposite. Instead of full control over all aspects of computation and the illusion of data locality, Hadoop revokes almost all control over the motion of data and supports only one type of program, one that fits the "map / reduce" paradigm. Imagine a publisher that banned all literary forms except the haiku:
+
+TODO: not sure whether we should say "map-reduce" or "Map/Reduce" or "MapReduce."  I thought the latter was the preferred form, but maybe I (qem) am wrong?
+
+A competing solution tp HPC, then, is Apache Hadoop. (TODO: link to hadoop.apache.org) Hadoop's approach is effectively the opposite of HPC. Instead of full control over all aspects of computation and the illusion of data locality, Hadoop revokes almost all control over the motion of data.  Furthermore, unlike the HPC solutions of yore, Hadoop runs on commodity hardware and addresses a wide range of problem domains (finance, medicine, marketing; images, logfiles, mathmatical computation).
+
+This power comes at a cost, though: Hadoop speaks in a limited vocabulary known as MapReduce, and you'll need to learn that vocabulary if Hadoop is to do any work for you.
+
+To get a taste of MapReduce, imagine a publisher that banned all literary forms except the haiku:
 
     data flutters by
         elephants make sturdy piles
@@ -42,7 +51,17 @@ Our Map/Reduce haiku illustrates Hadoop's template:
 
 While it would be unworkable to have every novel, critical essay, or sonnet be composed of haikus, map/reduce is surprisingly more powerful. From this single primitive, we can construct the familiar relational operations (such as GROUPs and ROLLUPs) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.
 
-If you've ever  probably written a map-reduce script
+In the coming chapters, we'll walk you through MapReduce in its pure form.  We recognize that raw MapReduce can be intimidating and inefficient to develop, so we'll also spend a fair amount of time on MapReduce abstractions such as Wukong and Pig.
+
+Wukong is a thin layer atop Hadoop using the Ruby programming language. It's the most easily-readable way for us to demonstrate the patterns of data analysis, and you will be able to lift its content into the programming language of your choice footnote:[In the spirit of this book's open-source license, if an eager reader submits a "translation" of the example programs into the programming language of their choice we would love to fold it into in the example code repository and acknowledge the contribution in future printings.]. It's also a powerful tool you won't grow out of.
+
+The high-level Pig programming language has you describe the kind of full-table transformations familiar to database programmers (selecting filtered data, groups and aggregations, joining records from multiple tables). Pig carries out those transformations using efficient map/reduce scripts in Hadoop, based on optimized algorithms you'd otherwise have to reimplement or do without. To hit the sweet spot of "common things are simple, complex things remain possible", you can extend Pig with User-Defined Functions (UDFs), covered in chapter (REF).
+
+This book's code will be roughly 30% Wukong, 60% Pig, and 10% using Java to extend Pig.
+
+Let's take a quick look at some code to compare the two tools.
+
+First, here's a Wukong script.  Don't worry about understanding it in full; just try to get a feel for the flow.
 
     # CODE validate script, column number, file naming
     cat ufo_sightings.tsv		      | \
@@ -66,7 +85,6 @@ If you've ever  probably written a map-reduce script
       each{|ct,key| outfile << [ct, key].join("\t") << "\n" }
     outfile.close
 
-
 We simply _load_ a table, _project_ one field from its contents, _sort_ the values (and in so doing, group each state name's occurrences in a contiguous run), _aggregate_ each group into value and count, and _store_ them into an output file.
 
 ----
@@ -79,7 +97,7 @@ We simply _load_ a table, _project_ one field from its contents, _sort_ the valu
     end
 ----
 
-In Pig:
+Here's a similar operation using Pig:
 
 ----
     sightings = LOAD '/Users/flip/ics/core/wukong/data/geo/ufo_sightings/ufo_sightings.tsv'  AS (
@@ -93,10 +111,7 @@ In Pig:
     STORE state_sightings_ct INTO '$out_dir/state_sightings_ct_pig';
 ----
 
-
-We will demonstrate map/reduce using Wukong, a thin layer atop Hadoop using the Ruby programming language. It's the most easily-readable way for us to demonstrate the patterns of data analysis, and you will be able to lift its content into the programming language of your choice footnote:[In the spirit of this book's open-source license, if an eager reader submits a "translation" of the example programs into the programming language of their choice we would love to fold it into in the example code repository and acknowledge the contribution in future printings.]. It's also a powerful tool you won't grow out of -- we perform code mixture is roughly 30% Wukong, 60% Pig (see the next paragraph) and 10% using Java to extend Pig.
-
-The high-level Pig programming language has you describe the kind of full-table transformations familiar to database programmers (selecting filtered data, groups and aggregations, joining records from multiple tables). Pig carries out those transformations using efficient map/reduce scripts in Hadoop, based on optimized algorithms you'd otherwise have to reimplement or do without. To hit the sweet spot of "common things are simple, complex things remain possible", you can extend Pig with User-Defined Functions (UDFs), covered in chapter (REF).
+=== The triad: batch, stream, scale
 
 Earlier, we defined insight as deeper understanding and better decisions. Hadoop's ability to process data of arbitrary scale, combined with our increasing ability to comprehensively instrument every aspect of an enterprise, represent a fundamental improvement in how we expose patterns and the range of human endeavors available for pattern mining.
 
@@ -108,6 +123,12 @@ Streaming Analytics gets you _fast relevant insight_ to go with Hadoop's _deep g
 // On way to think of Trident is as a tool to do your query on the way _in_ to the database. Rather than insisting every application use the same database and same data model,
 
 This triad -- Batch Analytics, Stream Analytics, and Scalable Datastores -- are the three legs of the Big Data toolset. Together they let you analyze data at terabytes and petabytes, data at milliseconds, and data from ponderously many sources.
+
+
+
+TODO: I (qem) propose cutting chapter 1 here, and ending on some quick description of where we're taking the reader (both short-term and long-term)
+
+- - - - - - - - - - - - - - - - - - - - 
 
 === Big Data: Tools to Capitalize on the Opportunity of Comprehensive Data
 
