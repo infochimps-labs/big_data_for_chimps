@@ -80,33 +80,33 @@ image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 [[map_reduce]]
 == Chimpanzee and Elephant Save Christmas ==
 
-=== Outline ===
-
-Tell about map/reduce, but don't yet worry about partition/group/secondary sort
-
-03a: story
-
-03b:
-* Example: group & aggregate on UFO visit stats
-  - mapper and its output
-  - reducer and its output
-* sidebar on "why hadoop vs databases"
-
-* map/reduce haiku - admits to notion of group sort, but doesn't mention it in detail
-* mappers at lightest detail or mappers at modest detail
-* reducers at lightest detail
-* ?? what mapper / reducer / hadoop do, phenomenologically
-
-03c:
-* interlude part 2
-
-03d: specializations of the reducer
-* code example: join: walk through code, makes clear the idea of sort + naming groups (explain how sorting is essential to how join works)
-* clarify concepts of partition, group, secondary sort
-* see effects of over/underspecifying partitions and group keys
-* Hadoop contract -- casually formal description of the contract
-* how Hadoop manages mid-stream data: mapper spills, partitioners, reducers receive data and merge-sort it, reducers read records, reducers write output data and commit
-
+// === Outline ===
+// 
+// Tell about map/reduce, but don't yet worry about partition/group/secondary sort
+// 
+// 03a: story
+// 
+// 03b:
+// * Example: group & aggregate on UFO visit stats
+//   - mapper and its output
+//   - reducer and its output
+// * sidebar on "why hadoop vs databases"
+// 
+// * map/reduce haiku - admits to notion of group sort, but doesn't mention it in detail
+// * mappers at lightest detail or mappers at modest detail
+// * reducers at lightest detail
+// * ?? what mapper / reducer / hadoop do, phenomenologically
+// 
+// 03c:
+// * interlude part 2
+// 
+// 03d: specializations of the reducer
+// * code example: join: walk through code, makes clear the idea of sort + naming groups (explain how sorting is essential to how join works)
+// * clarify concepts of partition, group, secondary sort
+// * see effects of over/underspecifying partitions and group keys
+// * Hadoop contract -- casually formal description of the contract
+// * how Hadoop manages mid-stream data: mapper spills, partitioners, reducers receive data and merge-sort it, reducers read records, reducers write output data and commit
+// 
 // Make this less "in the previous chapter" and be "now we're learning (building on...)
 // add **more** philosophy
 // how **I** think about how to think about it
@@ -248,12 +248,12 @@ What's more, traditional database applications lend themselves very well to low-
 
 Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested, Hadoop instead focuses purely on the throughput case.
 
-TODO explain disk is the new tape It takes X to seek but
-
-The typical Hadoop operation streams large swaths of data
-The locality
-
-TODO: finish this content
+// TODO explain disk is the new tape It takes X to seek but
+// 
+// The typical Hadoop operation streams large swaths of data
+// The locality
+// 
+// TODO: finish this content
 
 
 
@@ -304,8 +304,6 @@ TODO: neato diagram
 
 ==== reducers in lightest detail
 
-// TODO-qem: this is vague; I need to rewrite
-
 Whereas the mapper sees one record, a reducer receives one key (the label) and _all_ of the values that match that key.  In other words, a reducer operates on a group related values.  It can count them, find the largest (or smallest) value, run some summary statistics, and so on.
 
 In the end, a reducer outputs its own key/value pair.  The output key is often the same key the reducer received on the way in, and the output value is the result of the calculation across the group of input values.
@@ -354,15 +352,15 @@ Toys were soon coming off the line at a tremendous pace, far exceeding what the 
 
 And that's the story of how Elephant and Chimpanzee saved Christmas.
 
-OUTLINE: 03d: specializations of the reducer
-
-* code example: join: walk through code, makes clear the idea of sort + naming groups (explain how sorting is essential to how join works)
-* clarify concepts of partition, group, secondary sort
-* see effects of over/underspecifying partitions and group keys
-* Hadoop contract -- casually formal description of the contract
-* how Hadoop manages mid-stream data: mapper spills, partitioners, reducers receive data and merge-sort it, reducers read records, reducers write output data and commit
-
-TODO-qem: goal is to introduce group-sort notion first, but not overburden user with distinction of partition-group-secondarysort; then do join example; then discuss the technical part.
+// OUTLINE: 03d: specializations of the reducer
+// 
+// * code example: join: walk through code, makes clear the idea of sort + naming groups (explain how sorting is essential to how join works)
+// * clarify concepts of partition, group, secondary sort
+// * see effects of over/underspecifying partitions and group keys
+// * Hadoop contract -- casually formal description of the contract
+// * how Hadoop manages mid-stream data: mapper spills, partitioners, reducers receive data and merge-sort it, reducers read records, reducers write output data and commit
+// 
+// TODO-qem: goal is to introduce group-sort notion first, but not overburden user with distinction of partition-group-secondarysort; then do join example; then discuss the technical part.
 
 
 ==== Close Encounters of the Reindeer Kind (part 2)
