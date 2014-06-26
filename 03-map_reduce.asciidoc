@@ -381,14 +381,14 @@ Within the group, the records are sent in the order given by the sort key.  When
 
 This means that
 
-// => [".hello.", "12345", "42", "Apple", "Internationalization", "Iñtërnâtiônàlizætiøn", "Zebra", "apple", "kosme", "~hello~", "κόσμε"]
+// => [".hello.", "12345", "42", "Apple", "Internationalization", "Iñtërnâtiônàlizætiøn", "Zoo", "apple", "kosme", "~hello~", "κόσμε"]
 
-* `Zebra` comes after `Apple`, because `A` comes before `Z`
-* `Zebra` comes _before_ `apple`, because upper-case characters precede lower-case characters
-* `12345` comes before `42`, and both of them come before `Apple`, `Zebra` or `apple`
+* `Zoo` comes after `Apple`, because `A` comes before `Z`
+* `Zoo` comes _before_ `apple`, because upper-case characters precede lower-case characters
+* `12345` comes before `42`, and both of them come before `Apple`, `Zoo` or `apple`
 * `12345` comes after `   42` because we used spaces to pad out the number 42 to five characters.
-* `apple` and `zebra` come before `шимпанзе1, because the basic ASCII-like characters (like the ones on a US keyboard) precede extended unicode-like characters (like the russian characters in the word for "chimpanzee").
-* `#hello#` comes before `Apple` and `zebra`; and `|hello|` comes after all of them. This is useful for forcing a set of records to the top or bottom of your input, a trick we'll use in the geodata chapter (REF). The dot (`.`), hyphen (-) .+ # and a few other characters follow the 7-bit ASCII alphanumeric set.. The tilde (`~`), pipe (`|`) and a few other punctuation marks come at the end of the 7-bit ASCII character set. All of them precede extended-character words like `шимпанзе`
+* `apple` and `zoo` come before `шимпанзе1, because the basic ASCII-like characters (like the ones on a US keyboard) precede extended unicode-like characters (like the russian characters in the word for "chimpanzee").
+* `###` (hash marks) come before `Apple` and `zoo`; and `||||` (pipes) comes after all of them. Remember these characters -- they are is useful for forcing a set of records to the top or bottom of your input, a trick we'll use in the geodata chapter (REF). The dot (`.`), hyphen (`-`), plus (`+`) hash (`#`) come near the start of the 7-bit ASCII alphanumeric set. The tilde (`~`), pipe (`|`) come at the end. All of them precede extended-character words like `шимпанзе`.
 
 NOTE: It's very important to recognize that _numbers are not sorted by their numeric value unless you have control over their Java type_.   The simplest way to get numeric sorting of positive numbers is to pad numeric outputs a constant width by prepended spaces.  In Ruby, the expression `%10d" % val` produces an ten-character wide string (wide enough for all positive thirty-two bit numbers). There's no good way in basic Hadoop Streaming to get negative numbers to sort properly -- yes, this is very annoying. (TECHREVIEW: is there a good way?)
 
@@ -396,29 +396,7 @@ In the common case, the partition key, group key and sort key are the same, beca
 
 The set defined by the partition key must be identical or a superset of the sets defined by the group key, or your groups will be meaningless.  Hadoop doesn't impose that constraint on you, so just be sure to think at least once. The easiest way to do this (and the way we almost always to this) is to have the partition key be the same as or an extension of the group key, and the sort key be the same as or an extension of the group key.
 
-.The Hadoop Contract
-**********
-Here is a casually rigorous summation of the very few guarantees Hadoop provides your Map/Reduce program.  Understanding these is a critical tool for helping you to create and reason about Hadoop workflows.
-
-*  Each record is processed in whole by _exactly one_ Mapper.
-*  Each Mapper receives records from  _exactly one_ contiguous split of input data, in the same order as those records appear in the source.
-*  There are no guarantees on how long a split is, how many there are, the order in which they are processed or the assignment of split to Mapper slot.
-*  In both Mapper and Reducer, there is no requirement on you to use any of the structure described here or even to use the records' contents at all.  You do not have to do anything special when a partition or group begins or ends and your program can emit as much or as little data as you like before, during or after processing its input stream.
-*  In a Mapper-only job, each Mapper's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.  There are no further relevant guarantees for a Mapper-Only job.
-*  Each Mapper output record is processed in whole by _exactly one_ Reducer.
-*  Your program must provide each output record with a label consisting of a partition key, group key and sort key; these expressly govern how Hadoop assigns records to Reducers.
-*  All records sharing a partition key are sent to the same Reducer; if a Reducer sees one record from a partition, it will see all records from that partition, and no other Reducer will see any record from that partition.
-*  Partitions are sent contiguously to the Reducer; if a Reducer receives one record from a partition, it will receive all of them in a stretch, and will never again see a record from a prior partition.
-*  Partitions themselves are ordered by partition key within the Reducer input.
-*  A custom partitioner can assign each partition to specific Reducer, but you should not depend on any pairing provided by the default partitioner (the `HashPartitioner`) .
-*  Within each partition, records are sent within contiguous groups; if a Reducer receives one record from a group, it will receive all of them in a stretch, and will never again see a record from a prior group.
-*  Within a partition, records are sorted first by the group key, then by the sort key; this means groups themselves are ordered by group key within the Reducer input.  (TECHREVIEW: Check that this is consistent with the Java API and the Pig UDF API.)
-*  Each Reducer's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.
-
-(TECHREVIEW: What key governs the sorting of partitions within the Reduce and what key governs the sorting of groups within the partition?)
-
-You can tell how important we feel it is for you to internalize this list of guarantees, or we would not have gotten all, like, formal and stuff.
-**********
+// (TECHREVIEW: What key governs the sorting of partitions within the Reduce and what key governs the sorting of groups within the partition?)
 
 // TODO: Make sure we talk about what happens when a Mapper fails and when a Reducer fails.
 
@@ -493,6 +471,29 @@ For another extreme example, Hadoop's 'distcp' utility, used to copy data from c
 While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.
 
 The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.
+
+.The Hadoop Contract
+**********
+Here in one place is a casually rigorous summation of the very few guarantees Hadoop provides your Map/Reduce program.  Understanding these is a critical tool for helping you to create and reason about Hadoop workflows.
+
+*  Each record is processed in whole by _exactly one_ Mapper.
+*  Each Mapper receives records from  _exactly one_ contiguous split of input data, in the same order as those records appear in the source.
+*  There are no guarantees on how long a split is, how many there are, the order in which they are processed or the assignment of split to Mapper slot.
+*  In both Mapper and Reducer, there is no requirement on you to use any of the structure described here or even to use the records' contents at all.  You do not have to do anything special when a partition or group begins or ends and your program can emit as much or as little data as you like before, during or after processing its input stream.
+*  In a Mapper-only job, each Mapper's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.  There are no further relevant guarantees for a Mapper-Only job.
+*  Each Mapper output record is processed in whole by _exactly one_ Reducer.
+*  Your program must provide each output record with a label consisting of a partition key, group key and sort key; these expressly govern how Hadoop assigns records to Reducers.
+*  All records sharing a partition key are sent to the same Reducer; if a Reducer sees one record from a partition, it will see all records from that partition, and no other Reducer will see any record from that partition.
+*  Partitions are sent contiguously to the Reducer; if a Reducer receives one record from a partition, it will receive all of them in a stretch, and will never again see a record from a prior partition.
+*  Partitions themselves are ordered by partition key within the Reducer input.
+*  A custom partitioner can assign each partition to specific Reducer, but you should not depend on any pairing provided by the default partitioner (the `HashPartitioner`) .
+*  Within each partition, records are sent within contiguous groups; if a Reducer receives one record from a group, it will receive all of them in a stretch, and will never again see a record from a prior group.
+*  Within a partition, records are sorted first by the group key, then by the sort key; this means groups themselves are ordered by group key within the Reducer input.  (TECHREVIEW: Check that this is consistent with the Java API and the Pig UDF API.)
+*  Each Reducer's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.
+
+You can tell how important we feel it is for you to internalize this list of guarantees, or we would not have gotten all, like, formal and stuff.
+**********
+
 
 === How Hadoop Manages Midstream Data
 
