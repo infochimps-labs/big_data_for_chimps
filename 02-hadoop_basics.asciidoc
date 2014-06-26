@@ -1,7 +1,7 @@
 [[hadoop_basics]]
 
-=== Chimpanzee and Elephant Start a Business
-
+.Chimpanzee and Elephant Start a Business
+******
 A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant Corporation (C&E Corp for short) was born.
 
 The publishing firm’s project was to translate the works of Shakespeare into every language known to man, so JT and Nanette devised the following scheme. Their crew set up a large number of cubicles, each with one elephant-sized desk and one or more chimp-sized desks, and a command center where JT and Nanette can coordinate the action.
@@ -13,7 +13,7 @@ When workers clock in for the day, they check with JT, who hands off the day's t
 If you were to walk by a cubicle mid-workday, you would see a highly-efficient interplay between chimpanzee and elephant, ensuring the expert translators rarely had a wasted moment. As soon as JT radios back what passage to translate next, the elephant hands it across. The chimpanzee types up the translation on a new scroll, hands it back to its librarian partner and radios for the next passage. The librarian runs the scroll through a fax machine to send it to two of its counterparts at other cubicles, producing the redundant copies Nanette's scheme requires.
 
 The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the Chimpanzee & Elephant, Inc. crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
-
+******
 
 == Hadoop Basics
 
@@ -34,38 +34,38 @@ We may not be as clever as JT's multilingual chimpanzees, but even we can transl
 [[pig_latin_translator]]
 .Igpay Atinlay translator, actual version
 ----
-        CONSONANTS   = "bcdfghjklmnpqrstvwxz"
-        UPPERCASE_RE = /[A-Z]/
-        PIG_LATIN_RE = %r{
-          \b                    # word boundary
-          ([#{CONSONANTS}]*)    # all initial consonants
-          ([\w\']+)             # remaining wordlike characters
-        }xi
+CONSONANTS   = "bcdfghjklmnpqrstvwxz"
+UPPERCASE_RE = /[A-Z]/
+PIG_LATIN_RE = %r{
+  \b                    # word boundary
+  ([#{CONSONANTS}]*)    # all initial consonants
+  ([\w\']+)             # remaining wordlike characters
+}xi
 
-        each_line do |line|
-          latinized = line.gsub(PIG_LATIN_RE) do
-            head, tail = [$1, $2]
-            head        = 'w' if head.blank?
-            tail.capitalize! if head =~ UPPERCASE_RE
-            "#{tail}-#{head.downcase}ay"
-          end
-          yield(latinized)
-        end
+each_line do |line|
+  latinized = line.gsub(PIG_LATIN_RE) do
+    head, tail = [$1, $2]
+    head        = 'w' if head.blank?
+    tail.capitalize! if head =~ UPPERCASE_RE
+    "#{tail}-#{head.downcase}ay"
+  end
+  yield(latinized)
+end
 ----
 
 [[pig_latin_translator]]
 .Igpay Atinlay translator, pseudocode
 ----
-        for each line,
-          recognize each word in the line
-          and change it as follows:
-            separate the head consonants (if any) from the tail of the word
-            if there were no initial consonants, use 'w' as the head
-            give the tail the same capitalization as the word
-            thus changing the word to "{tail}-#{head}ay"
-          end
-          having changed all the words, emit the latinized version of the line
-        end
+for each line,
+  recognize each word in the line
+  and change it as follows:
+    separate the head consonants (if any) from the tail of the word
+    if there were no initial consonants, use 'w' as the head
+    give the tail the same capitalization as the word
+    thus changing the word to "{tail}-#{head}ay"
+  end
+  having changed all the words, emit the latinized version of the line
+end
 ----
 
 .Ruby helper
