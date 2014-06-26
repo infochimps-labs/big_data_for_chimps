@@ -1,7 +1,7 @@
 [[hadoop_basics]]
 
-=== Chimpanzee and Elephant Start a Business ===
-
+.Chimpanzee and Elephant Start a Business
+******
 A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant Corporation (C&E Corp for short) was born.
 
 The publishing firm’s project was to translate the works of Shakespeare into every language known to man, so JT and Nanette devised the following scheme. Their crew set up a large number of cubicles, each with one elephant-sized desk and one or more chimp-sized desks, and a command center where JT and Nanette can coordinate the action.
@@ -13,7 +13,7 @@ When workers clock in for the day, they check with JT, who hands off the day's t
 If you were to walk by a cubicle mid-workday, you would see a highly-efficient interplay between chimpanzee and elephant, ensuring the expert translators rarely had a wasted moment. As soon as JT radios back what passage to translate next, the elephant hands it across. The chimpanzee types up the translation on a new scroll, hands it back to its librarian partner and radios for the next passage. The librarian runs the scroll through a fax machine to send it to two of its counterparts at other cubicles, producing the redundant copies Nanette's scheme requires.
 
 The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the Chimpanzee & Elephant, Inc. crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
-
+******
 
 == Hadoop Basics
 
@@ -34,38 +34,38 @@ We may not be as clever as JT's multilingual chimpanzees, but even we can transl
 [[pig_latin_translator]]
 .Igpay Atinlay translator, actual version
 ----
-	CONSONANTS   = "bcdfghjklmnpqrstvwxz"
-	UPPERCASE_RE = /[A-Z]/
-	PIG_LATIN_RE = %r{
-    	  \b              	# word boundary
-  	  ([#{CONSONANTS}]*)    # all initial consonants
-  	  ([\w\']+)       	# remaining wordlike characters
-  	}xi
+CONSONANTS   = "bcdfghjklmnpqrstvwxz"
+UPPERCASE_RE = /[A-Z]/
+PIG_LATIN_RE = %r{
+  \b                    # word boundary
+  ([#{CONSONANTS}]*)    # all initial consonants
+  ([\w\']+)             # remaining wordlike characters
+}xi
 
-	each_line do |line|
-  	  latinized = line.gsub(PIG_LATIN_RE) do
-    	    head, tail = [$1, $2]
-    	    head   	= 'w' if head.blank?
-    	    tail.capitalize! if head =~ UPPERCASE_RE
-    	    "#{tail}-#{head.downcase}ay"
-  	  end
-  	  yield(latinized)
-	end
+each_line do |line|
+  latinized = line.gsub(PIG_LATIN_RE) do
+    head, tail = [$1, $2]
+    head        = 'w' if head.blank?
+    tail.capitalize! if head =~ UPPERCASE_RE
+    "#{tail}-#{head.downcase}ay"
+  end
+  yield(latinized)
+end
 ----
 
 [[pig_latin_translator]]
 .Igpay Atinlay translator, pseudocode
 ----
-	for each line,
-  	  recognize each word in the line
-	  and change it as follows:
-    	    separate the head consonants (if any) from the tail of the word
-	    if there were no initial consonants, use 'w' as the head
-    	    give the tail the same capitalization as the word
-    	    thus changing the word to "{tail}-#{head}ay"
-  	  end
-  	  having changed all the words, emit the latinized version of the line
-	end
+for each line,
+  recognize each word in the line
+  and change it as follows:
+    separate the head consonants (if any) from the tail of the word
+    if there were no initial consonants, use 'w' as the head
+    give the tail the same capitalization as the word
+    thus changing the word to "{tail}-#{head}ay"
+  end
+  having changed all the words, emit the latinized version of the line
+end
 ----
 
 .Ruby helper
@@ -78,11 +78,11 @@ We may not be as clever as JT's multilingual chimpanzees, but even we can transl
 
 It's best to begin developing jobs locally on a subset of data. Run your Wukong script directly from your terminal's commandline:
 
-	wu-local examples/text/pig_latin.rb data/magi.txt -
+        wu-local examples/text/pig_latin.rb data/magi.txt -
 
 The `-` at the end tells wukong to send its results to standard out (STDOUT) rather than a file -- you can pipe its output into other unix commands or Wukong scripts. In this case, there is no consumer and so the output should appear on your terminal screen. The last line should read:
 
-	Everywhere-way ey-thay are-way isest-way. Ey-thay are-way e-thay agi-may.
+        Everywhere-way ey-thay are-way isest-way. Ey-thay are-way e-thay agi-may.
 
 That's what it looks like when a `cat` is feeding the program data; let's see how it works when an elephant sets the pace.
 
@@ -98,8 +98,8 @@ On the other hand, if you have access to a cluster, your jobs run in fully-distr
 
 Run the following commands to copy your data to HDFS:
 
-	hadoop fs -mkdir ./data
-	hadoop fs -put   wukong_example_data/text ./data/
+        hadoop fs -mkdir ./data
+        hadoop fs -put   wukong_example_data/text ./data/
 
 These commands understand `./data/text` to be a path on the HDFS, not your local disk; the dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `wu-put` command, which takes a list of local paths and copies them to the HDFS, treats its final argument as an HDFS path by default, and all the preceding paths as being local.
 
@@ -111,7 +111,7 @@ These commands understand `./data/text` to be a path on the HDFS, not your local
 First, let's test on the same tiny little file we used at the commandline.
 // Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without Hadoop.
 
-	wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
+        wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
 
 // TODO-CODE: something about what the reader can expect to see on screen
 
@@ -142,18 +142,18 @@ Lastly, near the top of a page is a long URL that ends with "job.xml". Do not go
 
 You can compare its output to the earlier by running
 
-	hadoop fs -cat ./output/latinized_magi/\*
+        hadoop fs -cat ./output/latinized_magi/\*
 
 That command, like the Unix ‘cat’ command, dumps the contents of a file to standard out, so you can pipe it into any other command line utility. It produces the full contents of the file, which is what you would like for use within scripts but if your file is hundreds of MB large, as HDFS files typically are, dumping its entire contents to your terminal screen is ill appreciated. We typically, instead, use the Unix ‘head’ command to limit its output (in this case, to the first ten lines).
 
-	hadoop fs -cat ./output/latinized_magi/\* | head -n 10
+        hadoop fs -cat ./output/latinized_magi/\* | head -n 10
 
 Since you wouldn't want to read a whole 10GB file just to see whether the right number of closing braces come at the end, there is also a `hadoop fs -tail` command that dumps the terminal one kilobyte of a file.
 
 Here's what the head and tail of your output should contain:
 
-	CODE screenshot of hadoop fs -cat ./output/latinized_magi/\* | head -n 10
-	CODE screenshot of hadoop fs -tail ./output/latinized_magi/\*
+        CODE screenshot of hadoop fs -cat ./output/latinized_magi/\* | head -n 10
+        CODE screenshot of hadoop fs -tail ./output/latinized_magi/\*
 
 ==== See Progress and Results
 
@@ -161,7 +161,7 @@ Till now, we've run small jobs so you could focus on learning. Hadoop is built f
 
 So let's run it on a corpus large enough to show off the power of distributed computing. Shakespeare's combined works are too small -- at (CODE find size) even the prolific bard's lifetime of work won't make Hadoop break a sweat. Luckily, we've had a good slice of humanity typing thoughts into wikipedia for several years, and the corpus containing every single wikipedia article is enough to warrant Hadoop's power (and tsoris footnote:[trouble and suffering]).
 
-	wukong launch examples/text/pig_latin.rb ./data/text/wikipedia/wp_articles ./output/latinized_wikipedia
+        wukong launch examples/text/pig_latin.rb ./data/text/wikipedia/wp_articles ./output/latinized_wikipedia
 
 CODE screenshot of output, and fix up filenames
 
@@ -189,4 +189,8 @@ As you have gathered, each Hadoop worker runs a tasktracker daemon to coordinate
 The one important detail to learn in all this is that _task trackers do not run your job, they only launch it_. Your job executes in a completely independent child process with its own Java settings and library dependencies. In fact, if you are using Hadoop streaming programs like Wukong, your job runs in even yet its own process, spawned by the Java child process. We've seen people increase the tasktracker memory sizes thinking it will improve cluster performance -- the only impact of doing so is to increase the likelihood of out-of-memory errors.
 ********
 
+=== Outro
+
 In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

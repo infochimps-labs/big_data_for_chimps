@@ -1,8 +1,11 @@
-=== Chimpanzee and Elephant Save Christmas (pt 1) ===
+******
+[float]
+== Chimpanzee and Elephant Save Christmas (pt 1)
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But one year several years ago, the world had grown just a bit too much. The elves just could not keep up with the scale of requests -- Christmas was in danger! Luckily, their friends at the Elephant & Chimpanzee Corporation were available to help. Packing their typewriters and good winter coats, JT, Nanette and the crew headed to the Santaplex, the headquarters for toy manufacture at the North Pole. Here's what they found.
 
-==== Letters Cannot be Stored with the Right Context for Toy-Making ====
+[float]
+==== Trouble in Toyland
 
 As you know, each year children from every corner of the earth write to Santa to request toys, and Santa -- knowing who's been naughty and who's been nice -- strives to meet the wishes of every good little boy and girl who writes him. He employs a regular army of toymaker elves, each of whom specializes in certain kinds of toy: some elves make Action Figures and Dolls, others make Xylophones and Yo-Yos.
 
@@ -20,7 +23,8 @@ image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 .Little boys and girls' mail is less so.
 image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
-==== Chimpanzees Process Letters into Labelled Toy Requests ====
+[float]
+==== Chimpanzees Process Letters into Labelled Toy Requests
 
 In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate.
 
@@ -34,7 +38,7 @@ The chimps' job was to take letters one after another from a mailbag, and fill o
                                                        doll  | type="green hair"  recipient="Joe's sister Julia"
         I wood like a doll for me and
         and an optimus prime robot for my
-	brother joe
+        brother joe
 
         I have been good this year
 
@@ -63,7 +67,8 @@ image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
 The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms, while the third one yields a toyform directing Santa to put coal in his stocking.
 
-==== Pygmy Elephants Carry Each Toyform to the Appropriate Workbench ====
+[float]
+=== Pygmy Elephants Carry Each Toyform to the Appropriate Workbench
 
 Here's the new wrinkle on top of the system used in the translation project. Next to every desk now stood a line of pygmy elephants, each dressed in a capes that listed the types of toy it would deliver. Each desk had a pygmy elephant for Archery Kits and Dolls, another one for Xylophones and Yo-Yos, and so forth -- matching the different specialties of toymaker elves.
 
@@ -78,7 +83,7 @@ Toymaker elves now began producing a steady stream of toys, no longer constraine
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
 [[map_reduce]]
-== Chimpanzee and Elephant Save Christmas ==
+== Introduction to Hadoop
 
 // === Outline ===
 // 
@@ -126,7 +131,7 @@ The one thing we won't be doing too much of yet is actually writing lots of Hado
 
 // For two good reasons, we're going to use very particular language whenever we discuss how to design a map/reduce dataflow. First, because it will help you reason by comparison as you meet more and more map/reduce patterns. The second reason is that those core patterns are not specific to the map/reduce paradigm. You'll see them in different dress but with the same essentials when we dive into the Streaming Analytics paradigm (REF) later in the book, and then generalized into a conceptual model for distributed analytics in Chapter (REF). Using the terms from that conceptual model will help you see the essential core of these patterns throughout the book.
 
-=== Summarizing UFO Sightings using Map/Reduce ===
+=== Summarizing UFO Sightings using Map/Reduce
 
 Santa Claus and his elves are busy year-round, but Santa's flying reindeer have few responsibilities outside the holiday season. As flying objects themselves, they spend a good part of their multi-month break pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the data set of more than 60,000 documented UFO sightings we worked with in the first chapter.
 
@@ -136,20 +141,20 @@ Sixty thousand sightings is much higher than a reindeer can count (only four hoo
 
 The data model for a UFO sighting has fields for: date of sighting and of report; human-entered location; duration; shape of craft; and eye-witness description.
 
-----
-	class SimpleUfoSighting
-  	include Wu::Model
-  	field :sighted_at,   Time
-  	field :reported_at,  Time
-  	field :shape,    	Symbol
-  	field :city, String
-  	field :state, String
-  	field :country, String
-  	field :duration_str, String
-  	field :location_str, String
-  	field :description,  String
-	end
-----
+------
+        class SimpleUfoSighting
+        include Wu::Model
+          field :sighted_at,   Time
+          field :reported_at,  Time
+          field :shape,        Symbol
+          field :city,         String
+          field :state,        String
+          field :country,      String
+          field :duration_str, String
+          field :location_str, String
+          field :description,  String
+        end
+------
 
 ==== Group the UFO Sightings by Time Bucket
 
@@ -171,28 +176,30 @@ We're going to write a Hadoop _mapper_ that performs a similar purpose:
 
 The program looks like this:
 
-  	mapper(:count_ufo_shapes) do
-  	consumes UfoSighting, from: json
-  	#
-  	process do |ufo_sighting|  	# for each record
-    	record = 1               	# create a dummy payload,
-    	label  = ufo_sighting.shape  # label with the shape,
-        	yield [label, record]    	# and send it downstream for processing
-  	end
-	end
+------
+        mapper(:count_ufo_shapes) do
+          consumes UfoSighting, from: json
+        #
+        process do |ufo_sighting|       # for each record
+        record = 1                      # create a dummy payload,
+        label  = ufo_sighting.shape  # label with the shape,
+                yield [label, record]           # and send it downstream for processing
+        end
+        end
 
 You can test the mapper on the commandline:
 
-    	$ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
-    	./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
-    	head -n25 | wu-lign
- 	disk   	1972-06-16T05:00:00Z	1999-03-02T06:00:00Z	Provo (south of), UT     	disk     	several min.   	Str...
- 	sphere   	1999-03-02T06:00:00Z	1999-03-02T06:00:00Z	Dallas, TX              	sphere  	60 seconds     	Whi...
- 	triangle  1997-07-03T05:00:00Z	1999-03-09T06:00:00Z	Bochum (Germany),       	triangle	ca. 2min       	Tri...
- 	light   	1998-11-19T06:00:00Z	1998-11-19T06:00:00Z	Phoenix (west valley), AZ	light   	15mim          	Whi...
- 	triangle  1999-02-27T06:00:00Z	1999-02-27T06:00:00Z	San Diego, CA            	triangle	10 minutes     	cha...
- 	triangle  1997-09-15T05:00:00Z	1999-02-17T06:00:00Z	Wedgefield, SC             	triangle	15 min         	Tra...
-	...
+        $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
+        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
+        head -n25 | wu-lign
+        disk    1972-06-16T05:00:00Z    1999-03-02T06:00:00Z    Provo (south of), UT            disk            several min.    Str...
+        sphere          1999-03-02T06:00:00Z    1999-03-02T06:00:00Z    Dallas, TX                      sphere          60 seconds      Whi...
+        triangle  1997-07-03T05:00:00Z  1999-03-09T06:00:00Z    Bochum (Germany),               triangle        ca. 2min        Tri...
+        light           1998-11-19T06:00:00Z    1998-11-19T06:00:00Z    Phoenix (west valley), AZ       light           15mim           Whi...
+        triangle  1999-02-27T06:00:00Z  1999-02-27T06:00:00Z    San Diego, CA                   triangle        10 minutes      cha...
+        triangle  1997-09-15T05:00:00Z  1999-02-17T06:00:00Z    Wedgefield, SC                  triangle        15 min          Tra...
+        ...
+------
 
 The output is simply the partitioning label (UFO shape), followed by the attributes of the signing, separated by tabs. The framework uses the first field to group/sort by default; the rest is cargo.
 
@@ -200,16 +207,18 @@ The output is simply the partitioning label (UFO shape), followed by the attribu
 
 Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each record to the _reducer_, the second stage of our job.
 
-  	reducer(:count_sightings) do
-    	def process_group(label, group)
-  	count = 0
-  	group.each do |record|       	# on each record,
-    	count += 1                 	#   increment the count
-    	yield record               	#   re-output the record
-  	end                          	#
-  	yield ['# count:', label, count] # at end of group, summarize
-    	end
-  	end
+------
+reducer(:count_sightings) do
+  def process_group(label, group)
+    count = 0
+    group.each do |record|      # on each record,
+      count += 1                #   increment the count
+      yield record              #   re-output the record
+    end                         #
+    yield ['    %%%% end of group %%%%     ct:', count, label] # at end of group, summarize
+  end
+end
+------
 
 The elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type.
 
@@ -217,36 +226,37 @@ Similarly, the reducer receives a series of records, grouped by label, with a gu
 
 Test the full mapper-sort-reducer stack from the commandline:
 
-----
-	$ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json  	|
-    	./examples/geo/ufo_sightings/count_ufo_shapes.rb --map	| sort |
-    	./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | wu-lign
+------
+$ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json    | \
+  ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map    | \
+  sort							    | \
+  ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | \
+  wu-lign
 
-	1985-06-01T05:00:00Z	1999-01-14T06:00:00Z	North Tonawanda, NY  	chevron  	1 hr 	7 lights in a chevron shape not sure it was one object lighted or 7 s
-	1999-01-20T06:00:00Z	1999-01-31T06:00:00Z	Olney, IL            	chevron  	10 seconds        	Stargazing, saw a dimly lit V-shape coming overhaed from west t east,
-	1998-12-16T06:00:00Z	1998-12-16T06:00:00Z	Lubbock, TX          	chevron  	3 minutes         	Object southbound, displaying three white lights, slowed, hovered, qu
-	# count:	chevron	3
-	1999-01-16T06:00:00Z	1999-01-16T06:00:00Z	Deptford, NJ         	cigar    	2 Hours           	An aircraft of some type was seen in the sky with approximately five
-	# count:	cigar	1
-	1947-10-15T06:00:00Z	1999-02-25T06:00:00Z	Palmira,             	circle   	1 hour            	After a concert given in the small town of Palmira, Colombia,  a grou
-	1999-01-10T06:00:00Z	1999-01-11T06:00:00Z	Tyson's Corner, VA   	circle   	1 to 2 sec        	Bright green circularly shaped light moved downward and easterly thro
-	...
-----
+1985-06-01T05:00:00Z    1999-01-14T06:00:00Z    North Tonawanda, NY chevron  1 hr       7 lights in a chevron shape...
+1999-01-20T06:00:00Z    1999-01-31T06:00:00Z    Olney, IL           chevron  10 seconds Stargazing, saw a dimly lit V-shape ...
+1998-12-16T06:00:00Z    1998-12-16T06:00:00Z    Lubbock, TX         chevron  3 minutes  Object southbound, slowed, hovered, ...
+    %%%% end of group %%%%      ct:  3	chevron 
+1999-01-16T06:00:00Z    1999-01-16T06:00:00Z    Deptford, NJ        cigar    2 Hours    An aircraft of some type...
+    %%%% end of group %%%%      ct:  1	cigar  
+1947-10-15T06:00:00Z    1999-02-25T06:00:00Z    Palmira,            circle   1 hour     After a concert...
+1999-01-10T06:00:00Z    1999-01-11T06:00:00Z    Tyson's Corner, VA  circle   1 to 2 sec Bright green circular light..
+...
+------
 
 
 When people work with data, their end goal is to uncover some answer or pattern.  They most often employ Hadoop to turn Big Data into small data, then use traditional analytics techniques to turn small data into insight.  One such technique is to _plot_ the information.  If a picture is worth a thousand words, then even a basic data plot is worth reams of statistical analysis. (TODO-qem: I think that line is original, but it sounds familiar.  Must check around to make sure I didn't just pinch someone's quote.) That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result.  Here, we've used the free, open-source tool R footnote:[http://r-project.org/] to see how UFO sightings are distributed around the country. footnote:[That said, people sometimes want to run R _inside_ Hadoop, to analyze large-scale datasets. If you're interested in using R and Hadoop together, please check out Q's other book, _Parallel R_ (O'Reilly) http://shop.oreilly.com/product/0636920021421.do]
 
-CODE: add simple R code to make a graph (and justify the following note)
+// CODE: add simple R code to make a graph (and justify the following note)
 
-
-
-=== SIDEBAR Hadoop vs Traditional Databases ===
-
-Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then there is no "locality of access" for records retrieved by, say, type of toy -- records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the drive platter, and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
-
-What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
-
-Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested, Hadoop instead focuses purely on the throughput case.
+// === SIDEBAR Hadoop vs Traditional Databases
+// 
+// Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then there is no "locality of access" for records retrieved by, say, type of toy -- records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the drive platter, and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
+// 
+// What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
+// 
+// Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested, Hadoop instead focuses purely on the throughput case.
+// 
 
 // TODO explain disk is the new tape It takes X to seek but
 // 
@@ -255,25 +265,23 @@ Hadoop solves the scaling problem by not solving the data organization problem. 
 // 
 // TODO: finish this content
 
-
-
-=== The Map-Reduce Haiku ===
+=== The Map-Reduce Haiku
 
 As you recall, the bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:
 
-  	data flutters by
-      	elephants make sturdy piles
-    	context yields insight
+        data flutters by
+        elephants make sturdy piles
+        context yields insight
 
 More prosaically:
 
 [options="header"]
-|====
-| description                       	| phase   | explanation
-| *process and label*               	| map 	| turn each input record into any number of labelled records
-| *sorted context groups*           	| shuffle | hadoop groups those records uniquely under each label, in a sorted order
+|======
+| description                           | phase   | explanation
+| *process and label*                   | map     | turn each input record into any number of labelled records
+| *sorted context groups*               | shuffle | hadoop groups those records uniquely under each label, in a sorted order
 | *synthesize (process context groups)* | reduce  | for each group, process its records in order; emit anything you want.
-|====
+|======
 
 The trick lies in the 'group/sort' step: assigning the same label to two records in the 'label' step ensures that they will become local in the reduce step.
 
@@ -283,7 +291,7 @@ As each pile of output products starts to accumulate, we can begin to group them
 
 If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
 
-==== mappers in lightest detail
+==== Mappers, in Light Detail
 
 Digging a little deeper into the mechanics of it all, a mapper receives one record at a time.  By default, Hadoop works on text files, and a record is one line of text.  (Hadoop supports other storage formats, but for this book, we'll focus on line-by-line text processing.)
 
@@ -291,27 +299,25 @@ The whole point of the mapper is to "label" the record somehow, so the shuffle p
 
 Hadoop feeds the mapper that one record, and in turn, the mapper spits out one or more _key/value pairs._  The key would be the label, mentioned above.  The value can be the entire record, though more commonly, it's some subset of fields relevant to the analysis at hand.
 
-TODO: would be cool to have an image here, showing a record entering a box, which outputs a key and value
+// TODO: would be cool to have an image here, showing a record entering a box, which outputs a key and value
 
-
-==== the shuffle in lightest detail
+==== Merge/Sort/Group, in Light Detail
 
 In the shuffle phase, Hadoop groups all of the values that have the same key (label), and passes them to a reducer.
 
 What's nice about the shuffle is that you don't have to do anything for it.  The Hadoop takes care of moving the data around for you.  We mention it here for the sake of completeness.
 
-TODO: neato diagram
+// TODO: neato diagram
 
-==== reducers in lightest detail
+==== Reducers, in Light Detail
 
 Whereas the mapper sees one record, a reducer receives one key (the label) and _all_ of the values that match that key.  In other words, a reducer operates on a group related values.  It can count them, find the largest (or smallest) value, run some summary statistics, and so on.
 
 In the end, a reducer outputs its own key/value pair.  The output key is often the same key the reducer received on the way in, and the output value is the result of the calculation across the group of input values.
 
+// TODO: would be cool to have an image here, showing a key/set-of-values entering a box, which outputs a key and value
 
-TODO: would be cool to have an image here, showing a key/set-of-values entering a box, which outputs a key and value
-
-==== a quick note on storage (HDFS)
+==== A Quick Note on Storage (HDFS)
 
 If you're a Hadoop _administrator_ responsible for cluster setup and maintenance, you'll want to know a lot about Hadoop's underlying storage mechanism, called HDFS.  As an _analyst_ who writes jobs to run on a Hadoop cluster, though, you need to know just one key fact:
 
@@ -321,11 +327,9 @@ Put another way, _HDFS doesn't like small files,_ and "small" is "anything that 
 
 This often leads people to ask: "How do I use Hadoop on, say, image analysis? I want to a large number of images that are only a few kilobytes in size."  For that, check out a Hadoop storage format called a _SequenceFile_.  footnote:[Also, Q wrote a handy tool to wrap up your small files into big SequenceFiles.  Check out _forqlift_ at http://qethanm.cc/projects/forqlift/]
 
-
 // When you put a file into HDFS, Hadoop _blocks_ and _replicates_ the file.  That is, Hadoop breaks the file into smaller pieces (the default block size is 64MB) and copies each piece to at least three nodes.  Splitting a file into blocks speeds up processing, because each node can operate on the piece of that file it holds locally.  The replication protects you from a failed disk drive in a node, or when a node fails altogether.
 
-
-=== Elephant and Chimpanzee Save Christmas pt 2: A Critical Bottleneck Emerges===
+=== Elephant and Chimpanzee Save Christmas pt 2: A Critical Bottleneck Emerges
 
 After a day or two of the new toyform process, Mrs. Claus reported dismaying news. Even though productivity was much improved over the Big-Tree system, it wasn't going to be enough to hit the Christmas deadline.
 
@@ -339,8 +343,8 @@ The next day, they made several changes to the toy-making workflow.  First, they
 
 Now, here is the truly ingenious part that JT struck upon that night. Before, the chimpanzees placed their toy forms onto the back of each pygmy elephant in no particular order. JT replaced these baskets with standing file folders -- the kind you might see on an organized person's desk. He directed the chimpanzees to insert each toy form into the file folder according to the alphabetical order of its ID. (Chimpanzees are exceedingly dextrous, so this did not appreciably impact their speed.) Meanwhile, at the parts warehouse Nanette directed a crew of elvish carpenters to add a clever set of movable set of frames to each of the part carts. She similarly prompted the parts pickers to put each cart's parts in the place properly preserving the alphabetical order of their toyform IDs.
 
-image::images/paper_sorter.jpg[paper sorter]
-//// Perhaps a smaller sizing for the image? Amy////
+image::images/paper_sorter.jpg["Paper Sorter",scaledwidth="75%]
+
 
 After a double shift that night by the parts department and the chimpanzees, the toymakers arrived in the morning to find, next to each workbench, the pygmy elephants with their toy forms and a set of carts from each warehouse section holding the parts they'd need.  As work proceeded, a sense of joy and relief soon spread across the shop.
 
@@ -352,17 +356,6 @@ Toys were soon coming off the line at a tremendous pace, far exceeding what the 
 
 And that's the story of how Elephant and Chimpanzee saved Christmas.
 
-// OUTLINE: 03d: specializations of the reducer
-// 
-// * code example: join: walk through code, makes clear the idea of sort + naming groups (explain how sorting is essential to how join works)
-// * clarify concepts of partition, group, secondary sort
-// * see effects of over/underspecifying partitions and group keys
-// * Hadoop contract -- casually formal description of the contract
-// * how Hadoop manages mid-stream data: mapper spills, partitioners, reducers receive data and merge-sort it, reducers read records, reducers write output data and commit
-// 
-// TODO-qem: goal is to introduce group-sort notion first, but not overburden user with distinction of partition-group-secondarysort; then do join example; then discuss the technical part.
-
-
 ==== Close Encounters of the Reindeer Kind (part 2)
 
 Since our reindeer friends want to spend their summer months visiting the locations of various UFO sighting, they would like more information to help plan their trip.  The Geonames dataset (REF) provides more than seven million well-described points of interest, so we can extend each UFO sighting whose location matches a populated place name with its longitude, latitude, population and more.
@@ -373,39 +366,39 @@ Your authors have additionally run the free-text locations -- "Merrimac, WI" or 
 
 When you are writing a Map/Reduce job, the first critical question is how to group the records in context for the Reducer to synthesize.  In this case, we want to match every UFO sighting against the corresponding Geonames record with the same city, state and country, so the Mapper labels each record with those three fields. This ensures records with the same location name all are received by a single Reducer in a single group, just as we saw with toys sent to the same workbench or visits "sent" to the same time bucket. The Reducer will also need to know which records are sightings and which records are places, so we have extended the label with an "A" for places and a "B" for sightings.  (You will see in a moment why we chose those letters.)  While we are at it, we will also eliminate Geonames records that are not populated places.
 
-----
-(CODE code for UFO sighting geolocator mapper)
-----
+// ----
+// (CODE code for UFO sighting geolocator mapper)
+// ----
 
-----
-	class UfoSighting
-	  include Wu::Model
-	  field :sighted_at,   Time
-	  field :reported_at,  Time
-	  field :shape,        Symbol
-	  field :city, String
-	  field :state, String
-	  field :country, String
-	  field :duration_str, String
-	  field :location_str, String
-	  #
-	  field :longitude,  Float
-	  field :latitude,   Float
-	  field :city,  String
-	  field :region,  String
-	  field :country,  String
-	  field :population,  Integer
-	  field :quadkey,    String
-              #
-	  field :description,  String
-	end
-----
+------
+class UfoSighting
+  include Wu::Model
+  field :sighted_at,   Time
+  field :reported_at,  Time
+  field :shape,        Symbol
+  field :city,	       String
+  field :state,	       String
+  field :country,      String
+  field :duration_str, String
+  field :location_str, String
+  #
+  field :longitude,    Float
+  field :latitude,     Float
+  field :city,	       String
+  field :region,       String
+  field :country,      String
+  field :population,   Integer
+  field :quadkey,      String
+      #
+  field :description,  String
+end
+------
 
 ==== Extend The UFO Sighting Records In Each Location Co-Group With Place Data
 
 Building a toy involved selecting, first, the toy form, then each of the corresponding parts, so the elephants carrying toy forms stood at the head of the workbench next to all the parts carts.  While the first part of the label (the partition key) defines how records are grouped, the remainder of the label (the sort key) describes how they are ordered within the group.  Denoting places with an "A" and sightings with a "B" ensures our Reducer always first receives the place for a given location name followed by the sightings.  For each group, the Reducer holds the place record in a temporary variable and appends the places fields to those of each sighting that follows.  Iin the happy case where a group holds both place and sightings, the Reducer iterates over each sighting.  There are many places that match no UFO sightings; these are discarded.  There are some UFO sightings without reconcilable location data; we will hold onto those but leave the place fields blank.  Even if these groups had been extremely large, this matching required no more memory overhead than the size of a place record.
 
-=== Partition, Group and Secondary Sort ===
+=== Partition, Group and Secondary Sort
 
 As we mentioned in the opening, the fundamental challenge of Big Data is how to put records into relevant context, even when it is distributed in a highly non-local fashion.  Traditional databases and high-performance computing approaches use a diverse set of methods and high-cost hardware to brute-force the problem but at some point, the joint laws of physics and economics win out.  Hadoop, instead, gives you exactly and _only one_ "locality" primitive -- only one way to express which records should be grouped in context -- namely, _partition-group-sort_ -'ing the records by their label.  The sidebar (REF) about the Hadoop contract describes the precise properties of this operation but here is a less formal explanation of its essential behavior.
 
@@ -417,7 +410,7 @@ For a given cluster with a given number of Reduce slots, the assignment of parti
 
 We assume that the elves did not want the same workbench handling both ponies and pocket watches, so the naive `HashPartitioner` would not work for them; for us too, some operations require a specific partitioning scheme (as you will see later in the book (REF to total sort)).  But this is rarely necessary and, indeed, your authors have gone their whole careers without ever writing one.  If you find yourself considering writing a custom partitioner, stop to consider whether you are going against the grain of Hadoop's framework.  Hadoop knows what to do with your data and, typically, the fewer constraints you place on its operation, the better it can serve you.
 
-(TODO: coal)
+// (TODO: coal)
 
 The group key governs, well, the actual groups your program sees.  All the records within a group arrive together -- once you see a record from one group, you will see all of them in a row and you will never again see a record from a preceding group.
 
@@ -425,14 +418,14 @@ Within the group, the records are sent in the order given by the sort key.  When
 
 This means that
 
-// => [".hello.", "12345", "42", "Apple", "Internationalization", "Iñtërnâtiônàlizætiøn", "Zebra", "apple", "kosme", "~hello~", "κόσμε"]
+// => [".hello.", "12345", "42", "Apple", "Internationalization", "Iñtërnâtiônàlizætiøn", "Zoo", "apple", "kosme", "~hello~", "κόσμε"]
 
-* `Zebra` comes after `Apple`, because `A` comes before `Z`
-* `Zebra` comes _before_ `apple`, because upper-case characters precede lower-case characters
-* `12345` comes before `42`, and both of them come before `Apple`, `Zebra` or `apple`
+* `Zoo` comes after `Apple`, because `A` comes before `Z`
+* `Zoo` comes _before_ `apple`, because upper-case characters precede lower-case characters
+* `12345` comes before `42`, and both of them come before `Apple`, `Zoo` or `apple`
 * `12345` comes after `   42` because we used spaces to pad out the number 42 to five characters.
-* `apple` and `zebra` come before `шимпанзе1, because the basic ASCII-like characters (like the ones on a US keyboard) precede extended unicode-like characters (like the russian characters in the word for "chimpanzee").
-* `#hello#` comes before `Apple` and `zebra`; and `|hello|` comes after all of them. This is useful for forcing a set of records to the top or bottom of your input, a trick we'll use in the geodata chapter (REF). The dot (`.`), hyphen (-) .+ # and a few other characters follow the 7-bit ASCII alphanumeric set.. The tilde (`~`), pipe (`|`) and a few other punctuation marks come at the end of the 7-bit ASCII character set. All of them precede extended-character words like `шимпанзе`
+* `apple` and `zoo` come before `шимпанзе1, because the basic ASCII-like characters (like the ones on a US keyboard) precede extended unicode-like characters (like the russian characters in the word for "chimpanzee").
+* `###` (hash marks) come before `Apple` and `zoo`; and `||||` (pipes) comes after all of them. Remember these characters -- they are is useful for forcing a set of records to the top or bottom of your input, a trick we'll use in the geodata chapter (REF). The dot (`.`), hyphen (`-`), plus (`+`) hash (`#`) come near the start of the 7-bit ASCII alphanumeric set. The tilde (`~`), pipe (`|`) come at the end. All of them precede extended-character words like `шимпанзе`.
 
 NOTE: It's very important to recognize that _numbers are not sorted by their numeric value unless you have control over their Java type_.   The simplest way to get numeric sorting of positive numbers is to pad numeric outputs a constant width by prepended spaces.  In Ruby, the expression `%10d" % val` produces an ten-character wide string (wide enough for all positive thirty-two bit numbers). There's no good way in basic Hadoop Streaming to get negative numbers to sort properly -- yes, this is very annoying. (TECHREVIEW: is there a good way?)
 
@@ -440,11 +433,85 @@ In the common case, the partition key, group key and sort key are the same, beca
 
 The set defined by the partition key must be identical or a superset of the sets defined by the group key, or your groups will be meaningless.  Hadoop doesn't impose that constraint on you, so just be sure to think at least once. The easiest way to do this (and the way we almost always to this) is to have the partition key be the same as or an extension of the group key, and the sort key be the same as or an extension of the group key.
 
-----
+// (TECHREVIEW: What key governs the sorting of partitions within the Reduce and what key governs the sorting of groups within the partition?)
 
-SIDEBAR:  The Hadoop Contract
+// TODO: Make sure we talk about what happens when a Mapper fails and when a Reducer fails.
 
-Here is a casually rigorous summation of the very few guarantees Hadoop provides your Map/Reduce program.  Understanding these is a critical tool for helping you to create and reason about Hadoop workflows.
+==== Playing with Partitions: How Partition, Group and Sort affect a Job
+
+// (TODO qem: make this be a rollup (multi-level aggregation) -- this makes it require the secondary sort too)
+// (TODO: qem:  add a segment to the exercise that uses a completely unrelated partition and group key, e.g., shape and date.)
+// TODO-qem -- expand the prose with sample code and output as you think reasonable
+// TODO-qem -- determine whether to hand-hold here, or add code examples
+// TODO: make this use the UFO data instead (pageview example won't be introduced until ch. 4 or 5.
+
+It is very important to get a good grasp of how the partition and group keys relate, so let's step through an exercise illustrating their influence on the distribution of records.
+
+Here's another version of the script to total wikipedia pageviews. We've modified the mapper to emit separate fields for the century, year, month, day and hour (you wouldn't normally do this; we're trying to prove a point). The reducer intends to aggregate the total pageviews across all pages by year and month: a count for December 2010, for January 2011, and so forth. We've also directed it to use twenty reducers, enough to illustrate a balanced distribution of reducer data.
+
+Run the script on the subuniverse pageview data with `--partition_keys=3 --sort_keys=3` (CODE check params), and you'll see it use the first three keys (century/year/month) as both partition keys and sort keys. Each reducer's output will tend to have months spread across all the years in the sample, and the data will be fairly evenly distributed across all the reducers. In our runs, the `-00000` file held the months of (CODE insert observed months), while the `-00001` file held the months of (CODE insert observed months); all the files were close to (CODE size) MB large. (CODE consider updating to "1,2,3" syntax, perhaps with a gratuitous randomizing field as well. If not, make sure wukong errors on a partition_keys larger than the sort_keys). Running with  `--partition_keys=3 --sort_keys=4` doesn't change anything: the `get_key` method in this particular reducer only pays attention to the century/year/month, so the ordering within the month is irrelevant.
+
+Running it instead with `--partition_keys=2 --sort_keys=3` tells Hadoop to _partition_ on the century/year, but do a secondary sort on the month as well. All records that share a century and year now go to the same reducer, while the reducers still see months as continuous chunks. Now there are only six (or fewer) reducers that receive data -- all of 2008 goes to one reducer, similarly 2009, 2010, and the rest of the years in the dataset. In our runs, we saw years X and Y (CODE adjust reducer count to let us prove the point, insert numbers) land on the same reducer. This uneven distribution of data across the reducers should cause the job to take slightly longer than the first run. To push that point even farther, running with  `--partition_keys=1 --sort_keys=3` now partitions on the century -- which all the records share. You'll now see 19 reducers finish promptly following the last mapper, and the job should take nearly twenty times as long as with `--partition_keys=3`.
+
+Finally, try running it with  `--partition_keys=4 --sort_keys=4`, causing records to be partitioned by century/year/month/day. Now the days in a month will be spread across all the reducers: for December 2010, we saw `-00000` receive X, Y and `-00001` receive X, Y, Z; out of 20 reducers, X of them received records from that month (CODE insert numbers). Since our reducer class is coded to aggregate by century/year/month, each of those reducers prepared its own meaningless total pageview count for December 2010, each of them a fraction of the true value. You must always ensure that all the data you'll combine in an aggregate lands on the same reducer.
+
+=== Hadoop's Contract
+
+We will state very precisely what Hadoop guarantees, so that you can both
+attach a rigorous understanding to the haiku-level discussion and see how _small_ the contract is.
+This formal understanding of the contract is very useful for reasoning about how Hadoop jobs work and perform.
+
+Hadoop imposes a few seemingly-strict constraints and provides a very few number of guarantees in return. As you're starting to see, that simplicity provides great power and is not as confining as it seems. You can gain direct control over things like partitioning, input splits and input/output formats. We'll touch on a very few of those, but for the most part this book concentrates on using Hadoop from the outside -- (REF) _Hadoop: The Definitive Guide_ covers this stuff (definitively).
+
+==== The Mapper Guarantee
+
+The contract Hadoop presents for a map task is simple, because there isn't much of one. Each mapper will get a continuous slice (or all) of some file, split at record boundaries, and in order within the file. You won't get lines from another input file, no matter how short any file is; you won't get partial records; and though you have no control over the processing order of chunks ("file splits"), within a file split all the records are in the same order as in the original file.
+
+For a job with no reducer -- a "mapper-only" job -- you can then output anything you like; it is written straight to disk. For a Wukong job with a reducer, your output should be tab-delimited data, one record per line. You can designate the fields to use for the partition key, the sort key and the group key. (By default, the first field is used for all three.)
+
+The typical job turns each input record into zero, one or many records in a predictable manner, but such decorum is not required by Hadoop. You can read in lines from Shakespeare and emit digits of _pi_; read in all input records, ignore them and emit nothing; or boot into an Atari 2600 emulator, publish the host and port and start playing Pac-Man. Less frivolously: you can accept URLs or filenames (local or HDFS) and emit their contents; accept a small number of simulation parameters and start a Monte Carlo simulation; or accept a database query, issue it against a datastore and emit each result.
+
+==== The Group/Sort Guarantee
+
+When Hadoop does the group/sort, it establishes the following guarantee for the data that arrives at the reducer:
+
+* each labelled record belongs to exactly one sorted group;
+* each group is processed by exactly one reducer;
+* groups are sorted lexically by the chosen group key;
+* and records are further sorted lexically by the chosen sort key.
+
+It's very important that you understand what that unlocks, so I'm going to redundantly spell it out a few different ways:
+
+* Each mapper-output record goes to exactly one reducer, solely determined by its key.
+* If several records have the same key, they will all go to the same reducer.
+* From the reducer's perspective, if it sees any element of a group it will see all elements of the group.
+
+You should typically think in terms of groups and not about the whole reduce set: imagine each partition is sent to its own reducer. It's important to know, however, that each reducer typically sees multiple partitions. (Since it's more efficient to process large batches, a certain number of reducer processes are started on each machine. This is in contrast to the mappers, who run one task per input split.) Unless you take special measures, the partitions are distributed arbitrarily among the reducers footnote:[Using a "consistent hash"; see (REF) the chapter on Statistics]. They are fed to the reducer in order by key.
+
+Similar to a mapper-only task, your reducer can output anything you like, in any format you like. It's typical to output structured records of the same or different shape, but you're free engage in any of the shenanigans listed above.
+
+=== The Map Phase Processes Records Individually
+
+//TODO-qem: Are there parts of this that dive into the weeds, and if so we could move them to 06a-Hadoop Internals
+// TODO-qem: does anything here get tangled with the "hadoop contract" section
+
+The Map phase receives 0, 1 or many records individually, with no guarantees from Hadoop about their numbering, order or allocation.  (FOOTNOTE: In special cases, you may know that your input bears additional guarantees -- for example, the MERGE/JOIN described in Chapter (REF) requires its inputs to be in total sorted order. It is on you, however, to enforce and leverage those special properties.)  Hadoop does guarantee that every record arrives in whole to exactly one Map task and that the job will only succeed if every record is processed without error.
+
+The Mapper receives those records sequentially -- it must fully process one before it receives the next -- and can emit 0, 1 or many inputs of any shape or size.  The chimpanzees working on the SantaCorp project received letters but dispatched toy forms.  Julia's thoughtful note produced two toy forms, one for her doll and one for Joe's robot, while the spam letter produced no toy forms.
+
+You can take this point to an arbitratry extreme. Now, the right way to bring in data from an external resource is by creating a custom loader or input format (see the chapter on Advanced Pig (REF)), which decouples loading data from processing data and allows Hadoop to intelligently manage tasks. There's also a poor-man's version of a custom loader, useful for one-offs, is to prepare a small number of file names, URLs, database queries or other external handles as input and emit the corresponding contents.
+
+Please be aware, however, that it is only appropriate to access external resources from within a Hadoop job in exceptionally rare cases.  Hadoop processes data in batches, which means failure of a single record results in the retry of the entire batch.  It also means that when the remote resource is unavailable or responding sluggishly, Hadoop will spend several minutes and unacceptably many retries before abandoning the effort.  Lastly, Hadoop is designed to drive every system resource at its disposal to its performance limit.  (FOOTNOTE: We will drive this point home in the chapter on Event Log Processing (REF), where we will stress test a web server to its performance limit by replaying its request logs at full speed.)
+
+For another extreme example, Hadoop's 'distcp' utility, used to copy data from cluster to cluster, moves around a large amount of data yet has only a trivial input and trivial output. In a distcp job, each mapper's input is a remote file to fetch; the action of the mapper is to write the file's contents directly to the HDFS as a datanode client; and the mapper's output is a summary of what was transferred.
+
+While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.
+
+The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.
+
+.The Hadoop Contract
+**********
+Here in one place is a casually rigorous summation of the very few guarantees Hadoop provides your Map/Reduce program.  Understanding these is a critical tool for helping you to create and reason about Hadoop workflows.
 
 *  Each record is processed in whole by _exactly one_ Mapper.
 *  Each Mapper receives records from  _exactly one_ contiguous split of input data, in the same order as those records appear in the source.
@@ -461,97 +528,15 @@ Here is a casually rigorous summation of the very few guarantees Hadoop provides
 *  Within a partition, records are sorted first by the group key, then by the sort key; this means groups themselves are ordered by group key within the Reducer input.  (TECHREVIEW: Check that this is consistent with the Java API and the Pig UDF API.)
 *  Each Reducer's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.
 
-(TECHREVIEW: What key governs the sorting of partitions within the Reduce and what key governs the sorting of groups within the partition?)
-
 You can tell how important we feel it is for you to internalize this list of guarantees, or we would not have gotten all, like, formal and stuff.
-
------
-TODO: Make sure we talk about what happens when a Mapper fails and when a Reducer fails.
+**********
 
 
-==== Playing with Partitions: How Partition, Group and Sort affect a Job
-
-(TODO qem: make this be a rollup (multi-level aggregation) -- this makes it require the secondary sort too)
-
-(TODO: qem:  add a segment to the exercise that uses a completely unrelated partition and group key, e.g., shape and date.)
-
-TODO-qem -- expand the prose with sample code and output as you think reasonable
-
-TODO-qem -- determine whether to hand-hold here, or add code examples
-
-TODO: make this use the UFO data instead (pageview example won't be introduced until ch. 4 or 5.
-
-It is very important to get a good grasp of how the partition and group keys relate, so let's step through an exercise illustrating their influence on the distribution of records.
-
-Here's another version of the script to total wikipedia pageviews. We've modified the mapper to emit separate fields for the century, year, month, day and hour (you wouldn't normally do this; we're trying to prove a point). The reducer intends to aggregate the total pageviews across all pages by year and month: a count for December 2010, for January 2011, and so forth. We've also directed it to use twenty reducers, enough to illustrate a balanced distribution of reducer data.
-
-Run the script on the subuniverse pageview data with `--partition_keys=3 --sort_keys=3` (CODE check params), and you'll see it use the first three keys (century/year/month) as both partition keys and sort keys. Each reducer's output will tend to have months spread across all the years in the sample, and the data will be fairly evenly distributed across all the reducers. In our runs, the `-00000` file held the months of (CODE insert observed months), while the `-00001` file held the months of (CODE insert observed months); all the files were close to (CODE size) MB large. (CODE consider updating to "1,2,3" syntax, perhaps with a gratuitous randomizing field as well. If not, make sure wukong errors on a partition_keys larger than the sort_keys). Running with  `--partition_keys=3 --sort_keys=4` doesn't change anything: the `get_key` method in this particular reducer only pays attention to the century/year/month, so the ordering within the month is irrelevant.
-
-Running it instead with `--partition_keys=2 --sort_keys=3` tells Hadoop to _partition_ on the century/year, but do a secondary sort on the month as well. All records that share a century and year now go to the same reducer, while the reducers still see months as continuous chunks. Now there are only six (or fewer) reducers that receive data -- all of 2008 goes to one reducer, similarly 2009, 2010, and the rest of the years in the dataset. In our runs, we saw years X and Y (CODE adjust reducer count to let us prove the point, insert numbers) land on the same reducer. This uneven distribution of data across the reducers should cause the job to take slightly longer than the first run. To push that point even farther, running with  `--partition_keys=1 --sort_keys=3` now partitions on the century -- which all the records share. You'll now see 19 reducers finish promptly following the last mapper, and the job should take nearly twenty times as long as with `--partition_keys=3`.
-
-Finally, try running it with  `--partition_keys=4 --sort_keys=4`, causing records to be partitioned by century/year/month/day. Now the days in a month will be spread across all the reducers: for December 2010, we saw `-00000` receive X, Y and `-00001` receive X, Y, Z; out of 20 reducers, X of them received records from that month (CODE insert numbers). Since our reducer class is coded to aggregate by century/year/month, each of those reducers prepared its own meaningless total pageview count for December 2010, each of them a fraction of the true value. You must always ensure that all the data you'll combine in an aggregate lands on the same reducer.
-
-=== Hadoop's Contract ===
-
-// TODO: this should not mix in details of how, only talk about the guarantee -- consolidate the mapper and group/sort guarantees. Goal of the contract section should just be to attach a rigorous understanding to the haiku-level discussion
-
-We will state very precisely what Hadoop guarantees, so that you can both
-attach a rigorous understanding to the haiku-level discussion and see how _small_ the contract is.
-This formal understanding of the contract is very useful for reasoning about how Hadoop jobs work and perform.
-
-Hadoop imposes a few seemingly-strict constraints and provides a very few number of guarantees in return. As you're starting to see, that simplicity provides great power and is not as confining as it seems. You can gain direct control over things like partitioning, input splits and input/output formats. We'll touch on a very few of those, but for the most part this book concentrates on using Hadoop from the outside -- (REF) _Hadoop: The Definitive Guide_ covers this stuff (definitively).
-
-==== The Mapper Guarantee ====
-
-The contract Hadoop presents for a map task is simple, because there isn't much of one. Each mapper will get a continuous slice (or all) of some file, split at record boundaries, and in order within the file. You won't get lines from another input file, no matter how short any file is; you won't get partial records; and though you have no control over the processing order of chunks ("file splits"), within a file split all the records are in the same order as in the original file.
-
-For a job with no reducer -- a "mapper-only" job -- you can then output anything you like; it is written straight to disk. For a Wukong job with a reducer, your output should be tab-delimited data, one record per line. You can designate the fields to use for the partition key, the sort key and the group key. (By default, the first field is used for all three.)
-
-The typical job turns each input record into zero, one or many records in a predictable manner, but such decorum is not required by Hadoop. You can read in lines from Shakespeare and emit digits of _pi_; read in all input records, ignore them and emit nothing; or boot into an Atari 2600 emulator, publish the host and port and start playing Pac-Man. Less frivolously: you can accept URLs or filenames (local or HDFS) and emit their contents; accept a small number of simulation parameters and start a Monte Carlo simulation; or accept a database query, issue it against a datastore and emit each result.
-
-==== The Group/Sort Guarantee ====
-
-When Hadoop does the group/sort, it establishes the following guarantee for the data that arrives at the reducer:
-
-* each labelled record belongs to exactly one sorted group;
-* each group is processed by exactly one reducer;
-* groups are sorted lexically by the chosen group key;
-* and records are further sorted lexically by the chosen sort key.
-
-It's very important that you understand what that unlocks, so I'm going to redundantly spell it out a few different ways:
-
-* Each mapper-output record goes to exactly one reducer, solely determined by its key.
-* If several records have the same key, they will all go to the same reducer.
-* From the reducer's perspective, if it sees any element of a group it will see all elements of the group.
-
-You should typically think in terms of groups and not about the whole reduce set: imagine each partition is sent to its own reducer. It's important to know, however, that each reducer typically sees multiple partitions. (Since it's more efficient to process large batches, a certain number of reducer processes are started on each machine. This is in contrast to the mappers, who run one task per input split.) Unless you take special measures, the partitions are distributed arbitrarily among the reducers footnote:[Using a "consistent hash"; see (REF) the chapter on Sampling]. They are fed to the reducer in order by key.
-
-Similar to a mapper-only task, your reducer can output anything you like, in any format you like. It's typical to output structured records of the same or different shape, but you're free engage in any of the shenanigans listed above.
-
-=== The Map Phase Processes Records Individually
-
-TODO-qem: Are there parts of this that dive into the weeds, and if so we could move them to 06a-Hadoop Internals
-TODO-qem: does anything here get tangled with the "hadoop contract" section
-
-The Map phase receives 0, 1 or many records individually, with no guarantees from Hadoop about their numbering, order or allocation.  (FOOTNOTE: In special cases, you may know that your input bears additional guarantees -- for example, the MERGE/JOIN described in Chapter (REF) requires its inputs to be in total sorted order. It is on you, however, to enforce and leverage those special properties.)  Hadoop does guarantee that every record arrives in whole to exactly one Map task and that the job will only succeed if every record is processed without error.
-
-The Mapper receives those records sequentially -- it must fully process one before it receives the next -- and can emit 0, 1 or many inputs of any shape or size.  The chimpanzees working on the SantaCorp project received letters but dispatched toy forms.  Julia's thoughtful note produced two toy forms, one for her doll and one for Joe's robot, while the spam letter produced no toy forms.
-
-You can take this point to an arbitratry extreme. Now, the right way to bring in data from an external resource is by creating a custom loader or input format (see the chapter on Advanced Pig (REF)), which decouples loading data from processing data and allows Hadoop to intelligently manage tasks. There's also a poor-man's version of a custom loader, useful for one-offs, is to prepare a small number of file names, URLs, database queries or other external handles as input and emit the corresponding contents.
-
-Please be aware, however, that it is only appropriate to access external resources from within a Hadoop job in exceptionally rare cases.  Hadoop processes data in batches, which means failure of a single record results in the retry of the entire batch.  It also means that when the remote resource is unavailable or responding sluggishly, Hadoop will spend several minutes and unacceptably many retries before abandoning the effort.  Lastly, Hadoop is designed to drive every system resource at its disposal to its performance limit.  (FOOTNOTE: We will drive this point home in the chapter on Event Log Processing (REF), where we will stress test a web server to its performance limit by replaying its request logs at full speed.)
-
-For another extreme example, Hadoop's 'distcp' utility, used to copy data from cluster to cluster, moves around a large amount of data yet has only a trivial input and trivial output. In a distcp job, each mapper's input is a remote file to fetch; the action of the mapper is to write the file's contents directly to the HDFS as a datanode client; and the mapper's output is a summary of what was transferred.
-
-While a haiku with only its first line is no longer a haiku, a Hadoop job with only a Mapper is a perfectly acceptable Hadoop job, as you saw in the Pig Latin translation example.  In such cases, each Map Task's output is written directly to the HDFS, one file per Map Task, as you've seen.  Such jobs are only suitable, however, for so-called "embarrassingly parallel problems" -- where each record can be processed on its own with no additional context.
-
-The Map stage in a Map/Reduce job has a few extra details.  It is responsible for labeling the processed records for assembly into context groups.  Hadoop files each record into the equivalent of the pigmy elephants' file folders:  an in-memory buffer holding each record in sorted order.  There are two additional wrinkles, however, beyond what the pigmy elephants provide.  First, the Combiner feature lets you optimize certain special cases by preprocessing partial context groups on the Map side; we will describe these more in a later chapter (REF). Second, if the sort buffer reaches or exceeds a total count or size threshold, its contents are "spilled" to disk and subsequently merge/sorted to produce the Mapper's proper output.
-
-=== How Hadoop Manages Midstream Data ===
+=== How Hadoop Manages Midstream Data
 
 The first part of this chapter (REF) described the basics of what Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.
 
-==== Mappers Spill Data In Sorted Chunks ===
+==== Mappers Spill Data In Sorted Chunks
 
 As your Map task produces each labeled record, Hadoop inserts it into a memory buffer according to its order.  Like the dextrous chimpanzee, the current performance of CPU and memory means this initial ordering imposes negligible overhead compared to the rate that data can be read and processed.  When the Map task concludes or that memory buffer fills, its contents are flushed as a stream to disk.  The typical Map task operates on a single HDFS block and produces an output size not much larger.  A well-configured Hadoop cluster sets the sort buffer size accordingly (FOOTNOTE:  The chapter on Hadoop Tuning For The Brave And Foolish (REF) shows you how); that most common case produces only a single spill.
 
@@ -563,10 +548,9 @@ As you know, each record is sent to exactly one Reducer.  The label for each rec
 
 The default partitioner, which we find meets almost all our needs, is called the "RandomPartitioner."  (FOOTNOTE:  In the next chapter (REF), you will meet another partitioner, when you learn how to do a total sort.)  It aims to distribute records uniformly across the Reducers by giving each key the same chance to land on any given Reducer.  It is not really random in the sense of nondeterministic; running the same job with the same configuration will distribute records the same way.  Rather, it achieves a uniform distribution of keys by generating a cryptographic digest -- a number produced from the key with the property that any change to that key would instead produce an arbitrarily distinct number.  Since the numbers thus produced have high and uniform distribution, the digest MODULO the number of Reducers reliably balances the Reducer's keys, no matter their raw shape and size.  (FOOTNOTE:  If you will recall, x MODULO y gives the remainder after dividing x and y.  You can picture it as a clock with y hours on it:  15 MODULO 12 is 3; 4 MODULO 12 is 4; 12 MODULO 12 is 0).
 
-NOTE
-The default partitioner aims to provide a balanced distribution of _keys_ -- which does not at all guarantee a uniform distribution of _records_ !  If 40-percent of your friends have the last name Chimpanzee and 40-percent have the last name Elephant, running a Map/Reduce job on your address book, partitioned by last name, will send all the Chimpanzees to some Reducer and all the Elephants to some Reducer (and if you are unlucky, possibly even the same one).  Those unlucky Reducers will struggle to process 80-percent of the data while the remaining Reducers race through their unfairly-small share of what is left.  This situation is far more common and far more difficult to avoid than you might think, so large parts of this book's intermediate chapters are, in effect, tricks to avoid that situation.
+NOTE: The default partitioner aims to provide a balanced distribution of _keys_ -- which does not at all guarantee a uniform distribution of _records_ !  If 40-percent of your friends have the last name Chimpanzee and 40-percent have the last name Elephant, running a Map/Reduce job on your address book, partitioned by last name, will send all the Chimpanzees to some Reducer and all the Elephants to some Reducer (and if you are unlucky, possibly even the same one).  Those unlucky Reducers will struggle to process 80-percent of the data while the remaining Reducers race through their unfairly-small share of what is left.  This situation is far more common and far more difficult to avoid than you might think, so large parts of this book's intermediate chapters are, in effect, tricks to avoid that situation.
 
-(TODO:  Move merge/sort description here??)
+// (TODO:  Move merge/sort description here??)
 
 ==== Reducers Receive Sorted Chunks From Mappers
 
@@ -584,20 +568,13 @@ Your program's Reducer receives the records from each group in sorted order, out
 
 As your Reducers emit records, they are streamed directly to the job output, typically the HDFS or S3.  Since this occurs in parallel with reading and processing the data, the primary spill to the Datanode typically carries minimal added overhead.
 
-TODO a bit more about the fact that data *is* written to disk
-TODO: mention commit phase
-TODO: check that we have here or in chapter 2 talked about the highest-level detail of how data is written to disk
+// TODO a bit more about the fact that data *is* written to disk
+// TODO: mention commit phase
+// TODO: check that we have here or in chapter 2 talked about the highest-level detail of how data is written to disk
 
 You may wish to send your job's output not to the HDFS or S3 but to a scalable database or other external data store.  (We'll show an example of this in the chapter on HBase (REF))  While your job is in development, though, it is typically best to write its output directly to the HDFS (perhaps at replication factor 1), then transfer it to the external target in a separate stage.  The HDFS is generally the most efficient output target and the least likely to struggle under load.  This checkpointing also encourages the best practice of sanity-checking your output and asking questions.
 
-// ===== Exercise: Cube/Rollup Aggregation =====
-//
-// As an exercise, modify the script to do what's called
-
-=== Outro ===
+=== Outro
 
 You've just seen how records move through a map/reduce workflow, along with aggregation of records and matching records betweent datasets -- patterns that will recur in many explorations. Next, JT and Nanette will make a new friend, and we'll see another model for Hadoop analytics based on those patterns.
-
-
-
 
