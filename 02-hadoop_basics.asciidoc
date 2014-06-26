@@ -1,4 +1,9 @@
+== Insight comes from Data in Context
+
+(placeholder to keep chapter numbering)
+
 [[hadoop_basics]]
+== Hadoop Basics
 
 .Chimpanzee and Elephant Start a Business
 ******
@@ -15,7 +20,7 @@ If you were to walk by a cubicle mid-workday, you would see a highly-efficient i
 The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the Chimpanzee & Elephant, Inc. crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
 ******
 
-== Hadoop Basics
+=== Introduction
 
 Hadoop is a large and complex beast. There's a lot to learn before one can even begin to use the system, much less become meaningfully adept at doing so. While Hadoop has stellar documentation, not everyone is comfortable diving right in to the menagerie of Mappers, Reducers, Shuffles, and so on. For that crowd, we've taken a different route, in the form of a story.
 
@@ -78,17 +83,21 @@ end
 
 It's best to begin developing jobs locally on a subset of data. Run your Wukong script directly from your terminal's commandline:
 
-        wu-local examples/text/pig_latin.rb data/magi.txt -
+------
+wu-local examples/text/pig_latin.rb data/magi.txt -
+------
 
 The `-` at the end tells wukong to send its results to standard out (STDOUT) rather than a file -- you can pipe its output into other unix commands or Wukong scripts. In this case, there is no consumer and so the output should appear on your terminal screen. The last line should read:
 
-        Everywhere-way ey-thay are-way isest-way. Ey-thay are-way e-thay agi-may.
+------
+Everywhere-way ey-thay are-way isest-way. Ey-thay are-way e-thay agi-may.
+------
 
 That's what it looks like when a `cat` is feeding the program data; let's see how it works when an elephant sets the pace.
 
 [NOTE]
 .Are you running on a cluster?
-====
+======
 
 If you've skimmed Hadoop's documentation already, you've probaby seen the terms _fully-distributed,_ _pseudo-distributed,_ and _local,_ bandied about. Those describe different ways to setup your Hadoop cluster, and they're relevant to how you'll run the examples in this chapter.
 
@@ -98,20 +107,24 @@ On the other hand, if you have access to a cluster, your jobs run in fully-distr
 
 Run the following commands to copy your data to HDFS:
 
-        hadoop fs -mkdir ./data
-        hadoop fs -put   wukong_example_data/text ./data/
+------
+hadoop fs -mkdir ./data
+hadoop fs -put   wukong_example_data/text ./data/
+------
 
 These commands understand `./data/text` to be a path on the HDFS, not your local disk; the dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `wu-put` command, which takes a list of local paths and copies them to the HDFS, treats its final argument as an HDFS path by default, and all the preceding paths as being local.
 
 (Note: if you don't have access to a Hadoop cluster, Appendix 1 (REF) lists resources for acquiring one.)
-====
+======
 
 ==== Run the Job ====
 
 First, let's test on the same tiny little file we used at the commandline.
 // Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without Hadoop.
 
-        wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
+------
+wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
+------
 
 // TODO-CODE: something about what the reader can expect to see on screen
 
@@ -142,18 +155,24 @@ Lastly, near the top of a page is a long URL that ends with "job.xml". Do not go
 
 You can compare its output to the earlier by running
 
-        hadoop fs -cat ./output/latinized_magi/\*
+------
+hadoop fs -cat ./output/latinized_magi/\*
+------
 
 That command, like the Unix ‘cat’ command, dumps the contents of a file to standard out, so you can pipe it into any other command line utility. It produces the full contents of the file, which is what you would like for use within scripts but if your file is hundreds of MB large, as HDFS files typically are, dumping its entire contents to your terminal screen is ill appreciated. We typically, instead, use the Unix ‘head’ command to limit its output (in this case, to the first ten lines).
 
-        hadoop fs -cat ./output/latinized_magi/\* | head -n 10
+------
+hadoop fs -cat ./output/latinized_magi/\* | head -n 10
+------
 
 Since you wouldn't want to read a whole 10GB file just to see whether the right number of closing braces come at the end, there is also a `hadoop fs -tail` command that dumps the terminal one kilobyte of a file.
 
 Here's what the head and tail of your output should contain:
 
-        CODE screenshot of hadoop fs -cat ./output/latinized_magi/\* | head -n 10
-        CODE screenshot of hadoop fs -tail ./output/latinized_magi/\*
+------
+CODE screenshot of hadoop fs -cat ./output/latinized_magi/\* | head -n 10
+CODE screenshot of hadoop fs -tail ./output/latinized_magi/\*
+------
 
 ==== See Progress and Results
 
@@ -161,7 +180,9 @@ Till now, we've run small jobs so you could focus on learning. Hadoop is built f
 
 So let's run it on a corpus large enough to show off the power of distributed computing. Shakespeare's combined works are too small -- at (CODE find size) even the prolific bard's lifetime of work won't make Hadoop break a sweat. Luckily, we've had a good slice of humanity typing thoughts into wikipedia for several years, and the corpus containing every single wikipedia article is enough to warrant Hadoop's power (and tsoris footnote:[trouble and suffering]).
 
-        wukong launch examples/text/pig_latin.rb ./data/text/wikipedia/wp_articles ./output/latinized_wikipedia
+------
+wukong launch examples/text/pig_latin.rb ./data/text/wikipedia/wp_articles ./output/latinized_wikipedia
+------
 
 CODE screenshot of output, and fix up filenames
 
@@ -192,5 +213,3 @@ The one important detail to learn in all this is that _task trackers do not run 
 === Outro
 
 In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.
-
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

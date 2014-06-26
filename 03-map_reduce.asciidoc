@@ -1,6 +1,8 @@
+[[map_reduce]]
+== Hadoop Basics
+
+.Chimpanzee and Elephant Save Christmas
 ******
-[float]
-== Chimpanzee and Elephant Save Christmas (pt 1)
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But one year several years ago, the world had grown just a bit too much. The elves just could not keep up with the scale of requests -- Christmas was in danger! Luckily, their friends at the Elephant & Chimpanzee Corporation were available to help. Packing their typewriters and good winter coats, JT, Nanette and the crew headed to the Santaplex, the headquarters for toy manufacture at the North Pole. Here's what they found.
 
@@ -24,7 +26,7 @@ image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
 [float]
-==== Chimpanzees Process Letters into Labelled Toy Requests
+==== Chimpanzees Process Letters into Labelled Toy Forms
 
 In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate.
 
@@ -32,40 +34,43 @@ Postal clerks still stored each letter on the Big Tree (allowing the legacy ship
 
 The chimps' job was to take letters one after another from a mailbag, and fill out a toyform for each request. A toyform has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Nice/Naughty Status, Location, and so forth. You can see some examples here:
 
-        # Good kids, generates a toy for Julia and a toy for her brother
+------
+Deer SANTA
 
-        Deer SANTA                                     robot | type="optimus prime" recipient="Joe"
-                                                       doll  | type="green hair"  recipient="Joe's sister Julia"
-        I wood like a doll for me and
-        and an optimus prime robot for my
-        brother joe
+I wood like a doll for me and
+and an optimus prime robot for my
+brother joe
 
-        I have been good this year
+I have been good this year
 
-        love julia
+love julia
 
-        # Spam, no action
+# Good kids, generates a toy for Julia and a toy for her brother
+# Toy Forms:
+#   doll  | type="green hair"  recipient="Joe's sister Julia"
+#   robot | type="optimus prime" recipient="Joe"
 
-        Greetings to you Mr Claus, I came to know
-        of you in my search for a  reliable and
-        reputable person to handle a very confidential
-        business transaction, which involves the
-        transfer of a huge sum of money...
+Greetings to you Mr Claus, I came to know of you in my search for a reliable and
+reputable person to handle a very confidential business transaction, which involves
+the transfer of a large sum of money...
 
+# Spam
+# (no toy forms)
 
-        # Frank is not only a jerk but a Yankees fan. He will get coal.
+HEY SANTA I WANT A YANKEES HAT AND NOT
+ANY DUMB BOOKS THIS YEAR
 
-        HEY SANTA I WANT A YANKEES HAT AND NOT             coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
-        ANY DUMB BOOKS THIS YEAR
+FRANK
 
-        FRANK
-
-        ---------------------------------------         # Spam, no action
+# Frank is a jerk. He will get a lump of coal.
+# Toy Forms:
+#   coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
+----
 
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
-The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms, while the third one yields a toyform directing Santa to put coal in his stocking.
+The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms. The third one yields a toyform directing Santa to put coal in Frank's stocking.
 
 [float]
 === Pygmy Elephants Carry Each Toyform to the Appropriate Workbench
@@ -82,36 +87,12 @@ Toymaker elves now began producing a steady stream of toys, no longer constraine
 
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 
-[[map_reduce]]
-== Introduction to Hadoop
+******
+// end of C&E save xmas
 
-// === Outline ===
-// 
-// Tell about map/reduce, but don't yet worry about partition/group/secondary sort
-// 
-// 03a: story
-// 
-// 03b:
-// * Example: group & aggregate on UFO visit stats
-//   - mapper and its output
-//   - reducer and its output
-// * sidebar on "why hadoop vs databases"
-// 
-// * map/reduce haiku - admits to notion of group sort, but doesn't mention it in detail
-// * mappers at lightest detail or mappers at modest detail
-// * reducers at lightest detail
-// * ?? what mapper / reducer / hadoop do, phenomenologically
-// 
-// 03c:
-// * interlude part 2
-// 
-// 03d: specializations of the reducer
-// * code example: join: walk through code, makes clear the idea of sort + naming groups (explain how sorting is essential to how join works)
-// * clarify concepts of partition, group, secondary sort
-// * see effects of over/underspecifying partitions and group keys
-// * Hadoop contract -- casually formal description of the contract
-// * how Hadoop manages mid-stream data: mapper spills, partitioners, reducers receive data and merge-sort it, reducers read records, reducers write output data and commit
-// 
+=== Introduction
+
+//
 // Make this less "in the previous chapter" and be "now we're learning (building on...)
 // add **more** philosophy
 // how **I** think about how to think about it
@@ -131,7 +112,7 @@ The one thing we won't be doing too much of yet is actually writing lots of Hado
 
 // For two good reasons, we're going to use very particular language whenever we discuss how to design a map/reduce dataflow. First, because it will help you reason by comparison as you meet more and more map/reduce patterns. The second reason is that those core patterns are not specific to the map/reduce paradigm. You'll see them in different dress but with the same essentials when we dive into the Streaming Analytics paradigm (REF) later in the book, and then generalized into a conceptual model for distributed analytics in Chapter (REF). Using the terms from that conceptual model will help you see the essential core of these patterns throughout the book.
 
-=== Summarizing UFO Sightings using Map/Reduce
+=== Example: Reindeer Games
 
 Santa Claus and his elves are busy year-round, but Santa's flying reindeer have few responsibilities outside the holiday season. As flying objects themselves, they spend a good part of their multi-month break pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the data set of more than 60,000 documented UFO sightings we worked with in the first chapter.
 
@@ -142,18 +123,18 @@ Sixty thousand sightings is much higher than a reindeer can count (only four hoo
 The data model for a UFO sighting has fields for: date of sighting and of report; human-entered location; duration; shape of craft; and eye-witness description.
 
 ------
-        class SimpleUfoSighting
-        include Wu::Model
-          field :sighted_at,   Time
-          field :reported_at,  Time
-          field :shape,        Symbol
-          field :city,         String
-          field :state,        String
-          field :country,      String
-          field :duration_str, String
-          field :location_str, String
-          field :description,  String
-        end
+class SimpleUfoSighting
+include Wu::Model
+  field :sighted_at,   Time
+  field :reported_at,  Time
+  field :shape,        Symbol
+  field :city,         String
+  field :state,        String
+  field :country,      String
+  field :duration_str, String
+  field :location_str, String
+  field :description,  String
+end
 ------
 
 ==== Group the UFO Sightings by Time Bucket
@@ -177,28 +158,30 @@ We're going to write a Hadoop _mapper_ that performs a similar purpose:
 The program looks like this:
 
 ------
-        mapper(:count_ufo_shapes) do
-          consumes UfoSighting, from: json
-        #
-        process do |ufo_sighting|       # for each record
-        record = 1                      # create a dummy payload,
-        label  = ufo_sighting.shape  # label with the shape,
-                yield [label, record]           # and send it downstream for processing
-        end
-        end
+mapper(:count_ufo_shapes) do
+  consumes UfoSighting, from: json
+  #
+  process do |ufo_sighting|     # for each record
+    record = 1                  # create a dummy payload,
+    label  = ufo_sighting.shape # label with the shape,
+    yield [label, record]       # and send it downstream for processing
+  end
+end
+------
 
 You can test the mapper on the commandline:
 
-        $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
-        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
-        head -n25 | wu-lign
-        disk    1972-06-16T05:00:00Z    1999-03-02T06:00:00Z    Provo (south of), UT            disk            several min.    Str...
-        sphere          1999-03-02T06:00:00Z    1999-03-02T06:00:00Z    Dallas, TX                      sphere          60 seconds      Whi...
-        triangle  1997-07-03T05:00:00Z  1999-03-09T06:00:00Z    Bochum (Germany),               triangle        ca. 2min        Tri...
-        light           1998-11-19T06:00:00Z    1998-11-19T06:00:00Z    Phoenix (west valley), AZ       light           15mim           Whi...
-        triangle  1999-02-27T06:00:00Z  1999-02-27T06:00:00Z    San Diego, CA                   triangle        10 minutes      cha...
-        triangle  1997-09-15T05:00:00Z  1999-02-17T06:00:00Z    Wedgefield, SC                  triangle        15 min          Tra...
-        ...
+------
+$ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
+./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
+head -n25 | wu-lign
+disk      1972-06-16T05:00:00Z  1999-03-02T06:00:00Z    Provo (south of), UT      disk      several min.    Str...
+sphere    1999-03-02T06:00:00Z  1999-03-02T06:00:00Z    Dallas, TX                sphere    60 seconds      Whi...
+triangle  1997-07-03T05:00:00Z  1999-03-09T06:00:00Z    Bochum (Germany),         triangle  ca. 2min        Tri...
+light     1998-11-19T06:00:00Z  1998-11-19T06:00:00Z    Phoenix (west valley), AZ light     15mim           Whi...
+triangle  1999-02-27T06:00:00Z  1999-02-27T06:00:00Z    San Diego, CA             triangle  10 minutes      cha...
+triangle  1997-09-15T05:00:00Z  1999-02-17T06:00:00Z    Wedgefield, SC            triangle  15 min          Tra...
+...
 ------
 
 The output is simply the partitioning label (UFO shape), followed by the attributes of the signing, separated by tabs. The framework uses the first field to group/sort by default; the rest is cargo.
@@ -229,51 +212,52 @@ Test the full mapper-sort-reducer stack from the commandline:
 ------
 $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json    | \
   ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map    | \
-  sort							    | \
+  sort                                                      | \
   ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | \
   wu-lign
 
 1985-06-01T05:00:00Z    1999-01-14T06:00:00Z    North Tonawanda, NY chevron  1 hr       7 lights in a chevron shape...
 1999-01-20T06:00:00Z    1999-01-31T06:00:00Z    Olney, IL           chevron  10 seconds Stargazing, saw a dimly lit V-shape ...
 1998-12-16T06:00:00Z    1998-12-16T06:00:00Z    Lubbock, TX         chevron  3 minutes  Object southbound, slowed, hovered, ...
-    %%%% end of group %%%%      ct:  3	chevron 
+    %%%% end of group %%%%      ct:  3  chevron
 1999-01-16T06:00:00Z    1999-01-16T06:00:00Z    Deptford, NJ        cigar    2 Hours    An aircraft of some type...
-    %%%% end of group %%%%      ct:  1	cigar  
+    %%%% end of group %%%%      ct:  1  cigar
 1947-10-15T06:00:00Z    1999-02-25T06:00:00Z    Palmira,            circle   1 hour     After a concert...
 1999-01-10T06:00:00Z    1999-01-11T06:00:00Z    Tyson's Corner, VA  circle   1 to 2 sec Bright green circular light..
 ...
 ------
 
+===== Plot the Data
 
 When people work with data, their end goal is to uncover some answer or pattern.  They most often employ Hadoop to turn Big Data into small data, then use traditional analytics techniques to turn small data into insight.  One such technique is to _plot_ the information.  If a picture is worth a thousand words, then even a basic data plot is worth reams of statistical analysis. (TODO-qem: I think that line is original, but it sounds familiar.  Must check around to make sure I didn't just pinch someone's quote.) That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result.  Here, we've used the free, open-source tool R footnote:[http://r-project.org/] to see how UFO sightings are distributed around the country. footnote:[That said, people sometimes want to run R _inside_ Hadoop, to analyze large-scale datasets. If you're interested in using R and Hadoop together, please check out Q's other book, _Parallel R_ (O'Reilly) http://shop.oreilly.com/product/0636920021421.do]
 
 // CODE: add simple R code to make a graph (and justify the following note)
 
 // === SIDEBAR Hadoop vs Traditional Databases
-// 
+//
 // Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then there is no "locality of access" for records retrieved by, say, type of toy -- records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the drive platter, and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
-// 
+//
 // What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
-// 
+//
 // Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested, Hadoop instead focuses purely on the throughput case.
-// 
-
+//
 // TODO explain disk is the new tape It takes X to seek but
-// 
 // The typical Hadoop operation streams large swaths of data
-// The locality
-// 
+//
 // TODO: finish this content
 
 === The Map-Reduce Haiku
 
 As you recall, the bargain that Map/Reduce proposes is that you agree to only write programs that fit this Haiku:
 
-        data flutters by
-        elephants make sturdy piles
-        context yields insight
+[verse, The Map/Reduce Haiku]
+____________________________________________________________________
+data flutters by
+    elephants make sturdy piles
+  context yields insight
+____________________________________________________________________
 
-More prosaically:
+More prosaically,
 
 [options="header"]
 |======
@@ -329,7 +313,10 @@ This often leads people to ask: "How do I use Hadoop on, say, image analysis? I 
 
 // When you put a file into HDFS, Hadoop _blocks_ and _replicates_ the file.  That is, Hadoop breaks the file into smaller pieces (the default block size is 64MB) and copies each piece to at least three nodes.  Splitting a file into blocks speeds up processing, because each node can operate on the piece of that file it holds locally.  The replication protects you from a failed disk drive in a node, or when a node fails altogether.
 
-=== Elephant and Chimpanzee Save Christmas pt 2: A Critical Bottleneck Emerges
+.Elephant and Chimpanzee Save Christmas part 2: A Critical Bottleneck Emerges
+******
+[float]
+
 
 After a day or two of the new toyform process, Mrs. Claus reported dismaying news. Even though productivity was much improved over the Big-Tree system, it wasn't going to be enough to hit the Christmas deadline.
 
@@ -343,8 +330,7 @@ The next day, they made several changes to the toy-making workflow.  First, they
 
 Now, here is the truly ingenious part that JT struck upon that night. Before, the chimpanzees placed their toy forms onto the back of each pygmy elephant in no particular order. JT replaced these baskets with standing file folders -- the kind you might see on an organized person's desk. He directed the chimpanzees to insert each toy form into the file folder according to the alphabetical order of its ID. (Chimpanzees are exceedingly dextrous, so this did not appreciably impact their speed.) Meanwhile, at the parts warehouse Nanette directed a crew of elvish carpenters to add a clever set of movable set of frames to each of the part carts. She similarly prompted the parts pickers to put each cart's parts in the place properly preserving the alphabetical order of their toyform IDs.
 
-image::images/paper_sorter.jpg["Paper Sorter",scaledwidth="75%]
-
+image::images/paper_sorter.jpg["Paper Sorter",height=120]
 
 After a double shift that night by the parts department and the chimpanzees, the toymakers arrived in the morning to find, next to each workbench, the pygmy elephants with their toy forms and a set of carts from each warehouse section holding the parts they'd need.  As work proceeded, a sense of joy and relief soon spread across the shop.
 
@@ -355,8 +341,9 @@ Not only did work now proceed with an unbroken swing, but the previously clutter
 Toys were soon coming off the line at a tremendous pace, far exceeding what the elves had ever been able to achieve. By the second day of the new system, Mrs. Claus excitedly reported the news everyone was hoping to hear: they were fully on track to hit the Christmas Eve deadline!
 
 And that's the story of how Elephant and Chimpanzee saved Christmas.
+******
 
-==== Close Encounters of the Reindeer Kind (part 2)
+=== Example: Close Encounters of the Reindeer Kind
 
 Since our reindeer friends want to spend their summer months visiting the locations of various UFO sighting, they would like more information to help plan their trip.  The Geonames dataset (REF) provides more than seven million well-described points of interest, so we can extend each UFO sighting whose location matches a populated place name with its longitude, latitude, population and more.
 
@@ -376,20 +363,20 @@ class UfoSighting
   field :sighted_at,   Time
   field :reported_at,  Time
   field :shape,        Symbol
-  field :city,	       String
-  field :state,	       String
+  field :city,         String
+  field :state,        String
   field :country,      String
   field :duration_str, String
   field :location_str, String
   #
   field :longitude,    Float
   field :latitude,     Float
-  field :city,	       String
+  field :city,         String
   field :region,       String
   field :country,      String
   field :population,   Integer
   field :quadkey,      String
-      #
+  #
   field :description,  String
 end
 ------
@@ -531,7 +518,6 @@ Here in one place is a casually rigorous summation of the very few guarantees Ha
 You can tell how important we feel it is for you to internalize this list of guarantees, or we would not have gotten all, like, formal and stuff.
 **********
 
-
 === How Hadoop Manages Midstream Data
 
 The first part of this chapter (REF) described the basics of what Hadoop supplies to a Reducer: each record is sent to exactly one reducer; all records with a given label are sent to the same Reducer; and all records for a label are delivered in a continuous ordered group.  Let's understand the remarkably economical motion of data Hadoop uses to accomplish this.
@@ -577,4 +563,3 @@ You may wish to send your job's output not to the HDFS or S3 but to a scalable d
 === Outro
 
 You've just seen how records move through a map/reduce workflow, along with aggregation of records and matching records betweent datasets -- patterns that will recur in many explorations. Next, JT and Nanette will make a new friend, and we'll see another model for Hadoop analytics based on those patterns.
-

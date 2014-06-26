@@ -179,7 +179,7 @@ We will not explore every nook and cranny of its syntax, only illustrate its pat
 In the remainder of this chapter, we'll illustrate the mechanics of using Pig and the essential of its control flow operations by demonstrating them in actual use. In the following several chapters (REF), we'll cover patterns of pipelinable and of structural operations. In each case the goal is not only to understand its use, but to understand how to implement the corresponding patterns in a plain map-reduce approach -- and therefore how to reason about their performance. Finally, the chapter on Advanced Pig (TODO ref) will cover some deeper-level topics, such as a few important optimized variants of the JOIN statement and how to extend Pig with new functions and loaders.
 
 
-=== LOAD..AS gives the location and schema of your source data
+=== `LOAD` Locates and Describes Your Data
 
 Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
 
@@ -209,7 +209,7 @@ Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, a
 // Dates
 // TODO between here and the part of the FOREACH section where we assemble a complex type, give our policy on dates and booleans. As we do, make sure that we really feel that way about bools
 
-==== Complex Type 1: Tuples are fixed-length sequences of typed fields
+==== Complex Type 1, Tuples: Fixed-length Sequence of Typed Fields
 
 Pig also has three complex types, representing collections of fields. A `tuple` is a fixed-length sequence of fields, each of which has its own schema. They're ubiquitous in the results of the various structural operations you're about to learn. We usually don't serialize tuples, but so far `LOAD` is the only operation we've taught you, so for pretend's sake here's how you'd load a listing of major-league ballpark locations:
 
@@ -228,7 +228,7 @@ Pig displays tuples using parentheses: it would dump a line from the input file 
 
 Tuples can contain values of any type, even bags and other tuples, but that's nothing to be proud of. We follow almost every structural operation with a `FOREACH` to simplify its schema as soon as possible, and so should you -- it doesn't cost anything and it makes your code readable.
 
-==== Complex Type 2: Bags hold zero one or many tuples ====
+==== Complex Type 2, Bags: Unbounded Collection of Tuples
 
 A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Again for pretend's sake we can load a dataset listing for each team the year and park id of the ballparks it played in:
 
@@ -241,7 +241,7 @@ A `bag` is an arbitrary-length collection of tuples, all of which are expected t
 
 You can also address values within a bag using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples. You'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
 
-==== Complex Type 3: Maps hold collections of key-value pairs for lookup ====
+==== Complex Type 3, Maps: Collection of Key-Value Pairs for Lookup
 
 Pig offers a `map` datatype to represent a collection of key-value pairs. The only context we've seen them used is for loading JSON data. A tweet from the twitter firehose has a sub-hash holding info about the user; the following snippet loads raw JSON data, immediately fixes the schema, and then describes the new schema to you:
 
@@ -274,7 +274,7 @@ DESCRIBE tweets;
 
 In the chapter on Advanced Pig (REF), we'll cover some further topics: loading from alternate file formats or from databases; how Pig and Hadoop assign input file splits to mappers; and custom load/store functions.
 
-=== STORE operation serializes to disk
+=== `STORE` Writes Data to Disk
 
 The STORE operation writes your data to the destination you specify (typically the HDFS).
 
@@ -309,7 +309,7 @@ In development, once you've run the job past the `STORE important_milestone` lin
 
 These checkpoints bring another benefit: an inspectable copy of your data at that checkpoint. Many newcomers to Big Data processing resist the idea of checkpointing often. It takes a while to accept that a terabyte of data on disk is cheap -- but the cluster time to generate that data is far less cheap, and the programmer time to create the job to create the data is most expensive of all. We won't include the checkpoint steps in the printed code snippets of the book, but we've left them in the example code.
 
-=== Directives that aid development: DESCRIBE, ASSERT, EXPLAIN, LIMIT..DUMP, ILLUSTRATE
+=== Development Aids: `DESCRIBE`, `ASSERT`, `EXPLAIN`, `LIMIT..DUMP`, `ILLUSTRATE`
 
 ==== `DESCRIBE` shows the schema of a table
 
