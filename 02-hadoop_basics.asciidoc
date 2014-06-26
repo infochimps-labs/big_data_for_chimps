@@ -189,4 +189,8 @@ As you have gathered, each Hadoop worker runs a tasktracker daemon to coordinate
 The one important detail to learn in all this is that _task trackers do not run your job, they only launch it_. Your job executes in a completely independent child process with its own Java settings and library dependencies. In fact, if you are using Hadoop streaming programs like Wukong, your job runs in even yet its own process, spawned by the Java child process. We've seen people increase the tasktracker memory sizes thinking it will improve cluster performance -- the only impact of doing so is to increase the likelihood of out-of-memory errors.
 ********
 
+=== Outro
+
 In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
