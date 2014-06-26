@@ -168,16 +168,18 @@ The output is simply the partitioning label (UFO shape), followed by the attribu
 
 Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each record to the _reducer_, the second stage of our job.
 
-        reducer(:count_sightings) do
-        def process_group(label, group)
-        count = 0
-        group.each do |record|          # on each record,
-        count += 1                      #   increment the count
-        yield record                    #   re-output the record
-        end                             #
-        yield ['# count:', label, count] # at end of group, summarize
-        end
-        end
+------
+reducer(:count_sightings) do
+  def process_group(label, group)
+    count = 0
+    group.each do |record|      # on each record,
+      count += 1                #   increment the count
+      yield record              #   re-output the record
+    end                         #
+    yield ['    %%%% end of group %%%%     ct:', count, label] # at end of group, summarize
+  end
+end
+------
 
 The elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type.
 
@@ -186,44 +188,42 @@ Similarly, the reducer receives a series of records, grouped by label, with a gu
 Test the full mapper-sort-reducer stack from the commandline:
 
 ------
-        $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json        |
-        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map  | sort |
-        ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | wu-lign
+$ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json    | \
+  ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map    | \
+  sort							    | \
+  ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | \
+  wu-lign
 
-        1985-06-01T05:00:00Z    1999-01-14T06:00:00Z    North Tonawanda, NY     chevron         1 hr    7 lights in a chevron shape not sure it was one object lighted or 7 s
-        1999-01-20T06:00:00Z    1999-01-31T06:00:00Z    Olney, IL               chevron         10 seconds              Stargazing, saw a dimly lit V-shape coming overhaed from west t east,
-        1998-12-16T06:00:00Z    1998-12-16T06:00:00Z    Lubbock, TX             chevron         3 minutes               Object southbound, displaying three white lights, slowed, hovered, qu
-        # count:        chevron 3
-        1999-01-16T06:00:00Z    1999-01-16T06:00:00Z    Deptford, NJ            cigar           2 Hours                 An aircraft of some type was seen in the sky with approximately five
-        # count:        cigar   1
-        1947-10-15T06:00:00Z    1999-02-25T06:00:00Z    Palmira,                circle          1 hour                  After a concert given in the small town of Palmira, Colombia,  a grou
-        1999-01-10T06:00:00Z    1999-01-11T06:00:00Z    Tyson's Corner, VA      circle          1 to 2 sec              Bright green circularly shaped light moved downward and easterly thro
-        ...
+1985-06-01T05:00:00Z    1999-01-14T06:00:00Z    North Tonawanda, NY chevron  1 hr       7 lights in a chevron shape...
+1999-01-20T06:00:00Z    1999-01-31T06:00:00Z    Olney, IL           chevron  10 seconds Stargazing, saw a dimly lit V-shape ...
+1998-12-16T06:00:00Z    1998-12-16T06:00:00Z    Lubbock, TX         chevron  3 minutes  Object southbound, slowed, hovered, ...
+    %%%% end of group %%%%      ct:  3	chevron 
+1999-01-16T06:00:00Z    1999-01-16T06:00:00Z    Deptford, NJ        cigar    2 Hours    An aircraft of some type...
+    %%%% end of group %%%%      ct:  1	cigar  
+1947-10-15T06:00:00Z    1999-02-25T06:00:00Z    Palmira,            circle   1 hour     After a concert...
+1999-01-10T06:00:00Z    1999-01-11T06:00:00Z    Tyson's Corner, VA  circle   1 to 2 sec Bright green circular light..
+...
 ------
 
 
 When people work with data, their end goal is to uncover some answer or pattern.  They most often employ Hadoop to turn Big Data into small data, then use traditional analytics techniques to turn small data into insight.  One such technique is to _plot_ the information.  If a picture is worth a thousand words, then even a basic data plot is worth reams of statistical analysis. (TODO-qem: I think that line is original, but it sounds familiar.  Must check around to make sure I didn't just pinch someone's quote.) That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result.  Here, we've used the free, open-source tool R footnote:[http://r-project.org/] to see how UFO sightings are distributed around the country. footnote:[That said, people sometimes want to run R _inside_ Hadoop, to analyze large-scale datasets. If you're interested in using R and Hadoop together, please check out Q's other book, _Parallel R_ (O'Reilly) http://shop.oreilly.com/product/0636920021421.do]
 
-CODE: add simple R code to make a graph (and justify the following note)
+// CODE: add simple R code to make a graph (and justify the following note)
 
-
-
-=== SIDEBAR Hadoop vs Traditional Databases
-
-Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then there is no "locality of access" for records retrieved by, say, type of toy -- records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the drive platter, and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
-
-What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
-
-Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested, Hadoop instead focuses purely on the throughput case.
-
-TODO explain disk is the new tape It takes X to seek but
-
-The typical Hadoop operation streams large swaths of data
-The locality
-
-TODO: finish this content
-
-
+// === SIDEBAR Hadoop vs Traditional Databases
+// 
+// Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations. To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then there is no "locality of access" for records retrieved by, say, type of toy -- records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the drive platter, and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
+// 
+// What's more, traditional database applications lend themselves very well to low-latency operations (such as rendering a webpage showing the toys you requested), but very poorly to high-throughput operations (such as requesting every single doll order in sequence). Unless you invest specific expertise and effort, you have little ability to organize requests for efficient retrieval. You either suffer a variety of non-locality and congestion based inefficiencies, or wind up with an application that caters to the database more than to its users. You can to a certain extent use the laws of economics to bend the laws of physics -- as the commercial success of Oracle and Netezza show -- but the finiteness of time, space and memory present an insoluble scaling problem for traditional databases.
+// 
+// Hadoop solves the scaling problem by not solving the data organization problem. Rather than insist that the data be organized and indexed as it's written to disk, catering to every context that could be requested, Hadoop instead focuses purely on the throughput case.
+// 
+// TODO explain disk is the new tape It takes X to seek but
+// 
+// The typical Hadoop operation streams large swaths of data
+// The locality
+// 
+// TODO: finish this content
 
 === The Map-Reduce Haiku
 
@@ -236,12 +236,12 @@ As you recall, the bargain that Map/Reduce proposes is that you agree to only wr
 More prosaically:
 
 [options="header"]
-|
+|======
 | description                           | phase   | explanation
-| *process and label*                   | map   | turn each input record into any number of labelled records
+| *process and label*                   | map     | turn each input record into any number of labelled records
 | *sorted context groups*               | shuffle | hadoop groups those records uniquely under each label, in a sorted order
 | *synthesize (process context groups)* | reduce  | for each group, process its records in order; emit anything you want.
-|
+|======
 
 The trick lies in the 'group/sort' step: assigning the same label to two records in the 'label' step ensures that they will become local in the reduce step.
 
@@ -251,7 +251,7 @@ As each pile of output products starts to accumulate, we can begin to group them
 
 If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
 
-==== mappers in lightest detail
+==== Mappers, in Light Detail
 
 Digging a little deeper into the mechanics of it all, a mapper receives one record at a time.  By default, Hadoop works on text files, and a record is one line of text.  (Hadoop supports other storage formats, but for this book, we'll focus on line-by-line text processing.)
 
@@ -259,18 +259,17 @@ The whole point of the mapper is to "label" the record somehow, so the shuffle p
 
 Hadoop feeds the mapper that one record, and in turn, the mapper spits out one or more _key/value pairs._  The key would be the label, mentioned above.  The value can be the entire record, though more commonly, it's some subset of fields relevant to the analysis at hand.
 
-TODO: would be cool to have an image here, showing a record entering a box, which outputs a key and value
+// TODO: would be cool to have an image here, showing a record entering a box, which outputs a key and value
 
-
-==== the shuffle in lightest detail
+==== Merge/Sort/Group, in Light Detail
 
 In the shuffle phase, Hadoop groups all of the values that have the same key (label), and passes them to a reducer.
 
 What's nice about the shuffle is that you don't have to do anything for it.  The Hadoop takes care of moving the data around for you.  We mention it here for the sake of completeness.
 
-TODO: neato diagram
+// TODO: neato diagram
 
-==== reducers in lightest detail
+==== Reducers, in Light Detail
 
 // TODO-qem: this is vague; I need to rewrite
 
@@ -278,10 +277,9 @@ Whereas the mapper sees one record, a reducer receives one key (the label) and _
 
 In the end, a reducer outputs its own key/value pair.  The output key is often the same key the reducer received on the way in, and the output value is the result of the calculation across the group of input values.
 
+// TODO: would be cool to have an image here, showing a key/set-of-values entering a box, which outputs a key and value
 
-TODO: would be cool to have an image here, showing a key/set-of-values entering a box, which outputs a key and value
-
-==== a quick note on storage (HDFS)
+==== A Quick Note on Storage (HDFS)
 
 If you're a Hadoop _administrator_ responsible for cluster setup and maintenance, you'll want to know a lot about Hadoop's underlying storage mechanism, called HDFS.  As an _analyst_ who writes jobs to run on a Hadoop cluster, though, you need to know just one key fact:
 
@@ -335,27 +333,27 @@ When you are writing a Map/Reduce job, the first critical question is how to gro
 // ----
 
 ------
-        class UfoSighting
-          include Wu::Model
-          field :sighted_at,   Time
-          field :reported_at,  Time
-          field :shape,        Symbol
-          field :city,	       String
-          field :state,	       String
-          field :country,      String
-          field :duration_str, String
-          field :location_str, String
-          #
-          field :longitude,    Float
-          field :latitude,     Float
-          field :city,	       String
-          field :region,       String
-          field :country,      String
-          field :population,   Integer
-          field :quadkey,      String
-              #
-          field :description,  String
-        end
+class UfoSighting
+  include Wu::Model
+  field :sighted_at,   Time
+  field :reported_at,  Time
+  field :shape,        Symbol
+  field :city,	       String
+  field :state,	       String
+  field :country,      String
+  field :duration_str, String
+  field :location_str, String
+  #
+  field :longitude,    Float
+  field :latitude,     Float
+  field :city,	       String
+  field :region,       String
+  field :country,      String
+  field :population,   Integer
+  field :quadkey,      String
+      #
+  field :description,  String
+end
 ------
 
 ==== Extend The UFO Sighting Records In Each Location Co-Group With Place Data
@@ -541,7 +539,3 @@ You may wish to send your job's output not to the HDFS or S3 but to a scalable d
 === Outro
 
 You've just seen how records move through a map/reduce workflow, along with aggregation of records and matching records betweent datasets -- patterns that will recur in many explorations. Next, JT and Nanette will make a new friend, and we'll see another model for Hadoop analytics based on those patterns.
-
-
-
-
