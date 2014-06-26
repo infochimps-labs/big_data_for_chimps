@@ -1,20 +1,5 @@
 [[hadoop_basics]]
 
-[NOTE]
-.Outline from outline (in Google Docs)
-====
-Intro to Hadoop
-
-* C&E translate Shakespeare: distributed computation
-* Simple Mechanics of Using Hadoop
-* embarrassingly parallel job -- igpay atinlay
-* mappers at moderate detail
-====
-
-== Hadoop Basics
-
-Hadoop is a large and complex beast. There's a lot to learn before one can even begin to use the system, much less become meaningfully adept at doing so. While Hadoop has stellar documentation, not everyone is comfortable diving right in to the menagerie of Mappers, Reducers, Shuffles, and so on. For that crowd, we've taken a different route, in the form of a story.
-
 === Chimpanzee and Elephant Start a Business ===
 
 A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant Corporation (C&E Corp for short) was born.
@@ -27,13 +12,18 @@ When workers clock in for the day, they check with JT, who hands off the day's t
 
 If you were to walk by a cubicle mid-workday, you would see a highly-efficient interplay between chimpanzee and elephant, ensuring the expert translators rarely had a wasted moment. As soon as JT radios back what passage to translate next, the elephant hands it across. The chimpanzee types up the translation on a new scroll, hands it back to its librarian partner and radios for the next passage. The librarian runs the scroll through a fax machine to send it to two of its counterparts at other cubicles, producing the redundant copies Nanette's scheme requires.
 
-The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the Chimpanzee & Elephant, Inc. crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy -- right up there with the foolish proposal one could harness superheated water orfg controlled explosions of marsh gas to replace the motive power of an Elephant!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
+The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the Chimpanzee & Elephant, Inc. crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
+
+
+== Hadoop Basics
+
+Hadoop is a large and complex beast. There's a lot to learn before one can even begin to use the system, much less become meaningfully adept at doing so. While Hadoop has stellar documentation, not everyone is comfortable diving right in to the menagerie of Mappers, Reducers, Shuffles, and so on. For that crowd, we've taken a different route, in the form of a story.
 
 === Map-only Jobs: Process Records Individually ===
 
 Having read that short allegory, you've just learned a lot about how Hadoop operates under the hood. We can now use it to walk you through some examples. This first example uses only the _Map_ phase of MapReduce, to take advantage of what some people call an "embarrassingly parallel" problem.
 
-We might not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_ footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._  That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latinizing the term "Pig Latin" -- for this example.]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
+We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_ footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._  That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
 
 * If the word begins with a consonant-sounding letter or letters, move them to the end of the word adding "ay": "happy" becomes "appy-hay", "chimp" becomes "imp-chay" and "yes" becomes "es-yay".
 * In words that begin with a vowel, just append the syllable "way": "another" becomes "another-way", "elephant" becomes "elephant-way".
@@ -47,19 +37,19 @@ We might not be as clever as JT's multilingual chimpanzees, but even we can tran
 	CONSONANTS   = "bcdfghjklmnpqrstvwxz"
 	UPPERCASE_RE = /[A-Z]/
 	PIG_LATIN_RE = %r{
-  	\b              	# word boundary
-  	([#{CONSONANTS}]*)  # all initial consonants
-  	([\w\']+)       	# remaining wordlike characters
+    	  \b              	# word boundary
+  	  ([#{CONSONANTS}]*)    # all initial consonants
+  	  ([\w\']+)       	# remaining wordlike characters
   	}xi
 
 	each_line do |line|
-  	latinized = line.gsub(PIG_LATIN_RE) do
-    	head, tail = [$1, $2]
-    	head   	= 'w' if head.blank?
-    	tail.capitalize! if head =~ UPPERCASE_RE
-    	"#{tail}-#{head.downcase}ay"
-  	end
-  	yield(latinized)
+  	  latinized = line.gsub(PIG_LATIN_RE) do
+    	    head, tail = [$1, $2]
+    	    head   	= 'w' if head.blank?
+    	    tail.capitalize! if head =~ UPPERCASE_RE
+    	    "#{tail}-#{head.downcase}ay"
+  	  end
+  	  yield(latinized)
 	end
 ----
 
@@ -67,13 +57,14 @@ We might not be as clever as JT's multilingual chimpanzees, but even we can tran
 .Igpay Atinlay translator, pseudocode
 ----
 	for each line,
-  	recognize each word in the line and change it as follows:
-    	separate the head consonants (if any) from the tail of the word
-	if there were no initial consonants, use 'w' as the head
-    	give the tail the same capitalization as the word
-    	change the word to "{tail}-#{head}ay"
-  	end
-  	emit the latinized version of the line
+  	  recognize each word in the line
+	  and change it as follows:
+    	    separate the head consonants (if any) from the tail of the word
+	    if there were no initial consonants, use 'w' as the head
+    	    give the tail the same capitalization as the word
+    	    thus changing the word to "{tail}-#{head}ay"
+  	  end
+  	  having changed all the words, emit the latinized version of the line
 	end
 ----
 
@@ -122,13 +113,12 @@ First, let's test on the same tiny little file we used at the commandline.
 
 	wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
 
-CODE: something about what the reader can expect to see on screen
+// TODO-CODE: something about what the reader can expect to see on screen
 
 While the script outputs a bunch of happy robot-ese to your screen, open up the jobtracker in your browser window (see the sidebar REF). The job should appear on the jobtracker window within a few seconds -- likely in more time than the whole job took to complete.
 
-----
-SIDEBAR:  The Jobtracker Console
-
+.The Jobtracker Console
+********
 When you are running on a distributed Hadoop cluster, the jobtracker offers a built-in console for monitoring and diagnosing jobs. You typically access it by pointing your web browser at 'http://hostname.of.jobtracker:50030' (replace "hostname.of.jobtracker" with, you know, the hostname of your jobtracker and if that jobtracker is running on your local machine, you can use http://hostname.of.jobtracker:50030`). At the top, the cluster summary shows how many jobs are running and how many worker slots exist. Clicking on the hyperlinked value under "nodes" will take you to a screen summarizing all the task trackers in the cluster. Keep an eye out for other such hyperlinked values within the jobtracker console -- they lead to screens describing those elements in details.
 
 Further down the page, you will see sections for running, completed and failed jobs. The last part of each job's name is an index showing the order it was received and appears in the flurry of messages when you launched your job.
@@ -148,21 +138,7 @@ Above  the job progress bar graphs is a hot mess of a table showing all sorts of
 Above that section is a smaller table giving the count of pending, running, complete, killed and failed jobs. Most of the values in that table are hyperlinks that begin the annoyingly long trip required to see your logs. Clicking on the completed tasks number takes you to a screen listing all the tasks; clicking on a task ID takes you to a screen listing the machine or machines running it. Clicking on the attempt ID shows a page describing that machine's progress through the task; and all the way on the right side of the table on that page, you will find three sets of links reading "4KB," "8KB," "All."  (TECH: check details). Those links lead, at long last, to the log files for that job on that machine. The "All" link shows you the full contents but if your job is so screwed up that the log file will flood your browser, the "8KB" link shows the truncated tale.
 
 Lastly, near the top of a page is a long URL that ends with "job.xml". Do not go there now; it is a monstrous file listing every single configuration value set by your job but keep it in mind for when you have run out of ideas as to why a job is failing.
-----
-
-...
-
-----
-SIDEBAR: How a job is born, the thumbnail version
-
-Apart from one important detail, the mechanics of how a job is born should never become interesting to a Hadoop user. But since some people's brains won't really believe that the thing actually works unless we dispel some of the mystery, here's a brief synopsis.
-
-When you run `wukong ...` or `pig ...` or otherwise launch a Hadoop job, your local program contacts the jobtracker to transfer information about the job and the Java `.jar` file each worker should execute. If the input comes from an HDFS, the jobtracker (TECH: ?job client?) consults its namenode for details about the input blocks, figures out a job ID and any other remaining configuration settings, and accepts the job. It replies to your job client with the job ID and other information, leading to the happy mess of log messages your program emits. (TECH: check the details on this) Your local program continues to run during the full course of the job so that you can see its progress, but is now irrelevant -- logging out or killing the local program has no impact on the job's success.
-
-As you have gathered, each Hadoop worker runs a tasktracker daemon to coordinate the tasks run by that machine. Like JT's chimpanzees, those tasktrackers periodically report progress to the jobtracker, requesting new work whenever there is an idle slot. The jobtracker never makes outward contact with a task tracker -- this ensures work is only distributed to healthy machines at a rate they can handle. Just as JT strives to ensure that chimpanzees are only assigned passages held by their cubicle mates, the jobtracker schedules strives to assign each map attempt to a machine that holds its input blocks (known as "mapper-local" task). But if too many blocks of a file hotspot on a small number of datanodes, mapper slots with no remaining mapper-local blocks to handle still receive task attempts, and simply pull in their input data over the network.
-
-The one important detail to learn in all this is that _task trackers do not run your job, they only launch it_. Your job executes in a completely independent child process with its own Java settings and library dependencies. In fact, if you are using Hadoop streaming programs like Wukong, your job runs in even yet its own process, spawned by the Java child process. We've seen people increase the tasktracker memory sizes thinking it will improve cluster performance -- the only impact of doing so is to increase the likelihood of out-of-memory errors.
-----
+******
 
 You can compare its output to the earlier by running
 
@@ -200,5 +176,17 @@ Annoyingly, the Job view does not directly display the Mapper input data, only t
 You can also estimate how large the output should be, using the "Gift of the Magi" sample we ran earlier (one of the benefits of first running in local mode). That job had an input size of x bytes and an output size of y bytes, for an expansion factor of z, and there is no reason to think the expansion factor on the whole Wikipedia corpus should be much different. In fact, dividing the HDFS bytes written by the HDFS bytes read line shows an expansion factor of q.
 
 We cannot stress enough how important it is to validate that your scripts are doing what you think they are. The whole problem of Big Data is that it is impossible to see your data in its totality. You can spot-check your data, and you should, but without independent validations like these you're vulnerable to a whole class of common defects. This habit -- of validating your prediction of the job’s execution -- is not a crutch offered to the beginner, unsure of what will occur; it is a best practice, observed most diligently by the expert, and one every practitioner should adopt.
+
+.How a job is born, the thumbnail version
+*********
+
+Apart from one important detail, the mechanics of how a job is born should never become interesting to a Hadoop user. But since some people's brains won't really believe that the thing actually works unless we dispel some of the mystery, here's a brief synopsis.
+
+When you run `wukong ...` or `pig ...` or otherwise launch a Hadoop job, your local program contacts the jobtracker to transfer information about the job and the Java `.jar` file each worker should execute. If the input comes from an HDFS, the jobtracker (TECH: ?job client?) consults its namenode for details about the input blocks, figures out a job ID and any other remaining configuration settings, and accepts the job. It replies to your job client with the job ID and other information, leading to the happy mess of log messages your program emits. (TECH: check the details on this) Your local program continues to run during the full course of the job so that you can see its progress, but is now irrelevant -- logging out or killing the local program has no impact on the job's success.
+
+As you have gathered, each Hadoop worker runs a tasktracker daemon to coordinate the tasks run by that machine. Like JT's chimpanzees, those tasktrackers periodically report progress to the jobtracker, requesting new work whenever there is an idle slot. The jobtracker never makes outward contact with a task tracker -- this ensures work is only distributed to healthy machines at a rate they can handle. Just as JT strives to ensure that chimpanzees are only assigned passages held by their cubicle mates, the jobtracker schedules strives to assign each map attempt to a machine that holds its input blocks (known as "mapper-local" task). But if too many blocks of a file hotspot on a small number of datanodes, mapper slots with no remaining mapper-local blocks to handle still receive task attempts, and simply pull in their input data over the network.
+
+The one important detail to learn in all this is that _task trackers do not run your job, they only launch it_. Your job executes in a completely independent child process with its own Java settings and library dependencies. In fact, if you are using Hadoop streaming programs like Wukong, your job runs in even yet its own process, spawned by the Java child process. We've seen people increase the tasktracker memory sizes thinking it will improve cluster performance -- the only impact of doing so is to increase the likelihood of out-of-memory errors.
+********
 
 In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.

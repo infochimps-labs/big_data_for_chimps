@@ -1,5 +1,7 @@
 == Analytic Patterns: Finding Duplicate and Unique Records
 
+=== Handling Duplicates
+
 ==== Eliminating Duplicate Records from a Table
 
 The park_teams table has a row for every season. To find every distinct pair of team and home ballpark, use the DISTINCT operator. This is equivalent to the SQL statement `SELECT DISTINCT player_id, team_id from batting;`.
@@ -24,11 +26,6 @@ dont_do_this = FOREACH (GROUP tm_pk_pairs_many BY (team_id, park_id)) GENERATE
 The DISTINCT operation is able to use a combiner, eliminating duplicates at the mapper before shipping them to the reducer. This is a big win when there are frequent duplicates, especially if duplicates are likely to occur near each other. For example, duplicates in web logs (from refreshes, callbacks, etc) will be sparse globally, but found often in the same log file.
 
 The combiner may impose a minor penalty when there are very few or very sparse duplicates. In that case, you should still use DISTINCT, but disable combiners with the `pig.exec.nocombiner=true` setting.
-
-------
-  -- Every team a player has played for
-SELECT DISTINCT player_id, team_id from batting;
-------
 
 ==== Eliminating Duplicate Records from a Group
 
@@ -83,66 +80,58 @@ The key is specified with a string argument in the DEFINE statement, naming the 
 The DISTINCT operation is useful when you want to eliminate duplicates based on the whole record. But to instead find only rows having a unique
 record for its key, or to find only rows having multiple records for its key, do a GROUP BY and then filter on the size of the resulting bag.
 
-On a broadcast a couple years ago, announcer Tim McCarver paused from his regular delivery of the obvious and the officious to note that second baseman Asdrubal Cabrera "is the only player in the majors with that first name". This raises the question: how many other people in the history of baseball similarly are uniquely yclept footnote:[yclept /iˈklept/: by the name of; called.]?
+On a broadcast a couple years ago, announcer Tim McCarver paused from his regular delivery of the obvious and the officious to note that second baseman Asdrubal Cabrera "is the only player in the majors with that first name". This raises the question: how many other people in the history of baseball similarly are uniquely yclept footnote:[yclept /iˈklept/: by the name of; called.]? Let's create a table for the biography site awarding players the "Asdrubal" badge if they are the only one in possession of their first name.
 
 ------
 uniquely_yclept_g = GROUP   people BY name_first;
 uniquely_yclept_f = FILTER  uniquely_yclept_g BY COUNT_STAR(people) == 1;
 uniquely_yclept   = FOREACH uniquely_yclept_f GENERATE
   group AS name_first,
-  FLATTEN(people.(name_last, player_id, beg_date, end_date)) AS (name_last, player_id, beg_date, end_date);
+  FLATTEN(people.(name_last, player_id, beg_date, end_date));
 ------
 
-Some of you may be familiar with Honus Wagner, Eppa Rixey, Boog Powell or Yogi Berra. But have you heard recounted the storied diamond exploits of Firpo Mayberry, Zoilo Versalles, Pi Schwert or Bevo LeBourveau?  OK, then how about Mysterious Walker, The Only Nolan, or Phenomenal Smith?  Mul Holland, Sixto
-Lezcano, Welcome Gaston or Mox McQuery?  Try asking your spouse to that your next child be named for Urban Shocker, Twink Twining, Pussy Tebeau, Bris
-Lord, Boob Fowler, Crazy Schmit, Creepy Crespi, Cuddles Marshall, Vinegar Bend Mizell, or Buttercup Dickerson.
+This approach should be getting familiar. We group on the key (name_first) and eliminate all rows posessing more than one record for the key. Since there is only one element in the bag, the `FLATTEN` statement just acts to push the bag's fields up into the record itself.
 
-.SQL Equivalent for "Selecting Records with Unique Values for a Key"
-------
-SELECT nameFirst, nameLast, COUNT(*) AS n_usages
-  FROM people
-  WHERE    nameFirst IS NOT NULL
-  GROUP BY nameFirst
-  HAVING   n_usages = 1
-  ORDER BY nameFirst
-  ;
-------
+There are some amazing names in this list. You might be familiar with Honus Wagner, Eppa Rixey, Boog Powell or Yogi Berra, some of the more famous in the list. But have you heard recounted the diamond exploits of Firpo Mayberry, Zoilo Versalles, Pi Schwert or Bevo LeBourveau? Mul Holland, Sixto Lezcano, Welcome Gaston and Mox McQuery are names that really should come attached to a film noir detective; the villains
+could choose among Mysterious Walker, The Only Nolan, or Phenomenal Smith for their name. For a good night's sleep on the couch, tell your spouse that your next child must be named for Urban Shocker, Twink Twining, Pussy Tebeau, Bris Lord, Boob Fowler, Crazy Schmit, Creepy Crespi, Cuddles Marshall, Vinegar Bend Mizell, or Buttercup Dickerson.
 
-==== More fun with uniques
+// .SQL Equivalent for "Selecting Records with Unique Values for a Key"
+// ------
+// SELECT nameFirst, nameLast, COUNT(*) AS n_usages
+//   FROM people
+//   WHERE    nameFirst IS NOT NULL
+//   GROUP BY nameFirst
+//   HAVING   n_usages = 1
+//   ORDER BY nameFirst
+//   ;
+// ------
 
-* Counting Missing Values
-* Counting and Identifying Duplicates
-
-==== Identifying duplicated records for a key
-
-  -- group by, then emit bags with more than one size; call back to the won-loss example
-
-Once again, what starts out looking like one of the high-level operations turns into a GROUP BY.
-
-Up above, the allstar table almost led us astray due to the little-known fact that some years featured multiple All-Star games. We can pull out the rows matching those fields:
-
-------
-  -- Teams who played in more than one stadium in a year
-SELECT COUNT(*) AS n_parks, pty.*
-  FROM park_team_years pty
-  GROUP BY team_id, year_id
-  HAVING n_parks > 1
-------
-
-(Do this with games table?)
-
-==== Eliminating rows that have a duplicated value
-
-(ie the whole row isn't distinct, just the field you're distinct-ing on.)
-Note: this chooses an arbitrary value from each group
-
-------
-SELECT COUNT(*) AS n_asg, ast.*
-  FROM allstarfull ast
-  GROUP BY year_id, player_id
-  HAVING n_asg > 1
-  ;
-------
+// ==== Identifying duplicated records for a key
+// 
+// Once again, what starts out looking like one of the high-level operations turns into a GROUP BY.
+// 
+// Up above, the allstar table almost led us astray due to the little-known fact that some years featured multiple All-Star games. We can pull out the rows matching those fields:
+// 
+// ------
+//   -- Teams who played in more than one stadium in a year
+// SELECT COUNT(*) AS n_parks, pty.*
+//   FROM park_team_years pty
+//   GROUP BY team_id, year_id
+//   HAVING n_parks > 1
+// ------
+// 
+// ==== Eliminating rows that have a duplicated value
+// 
+// (ie the whole row isn't distinct, just the field you're distinct-ing on.)
+// Note: this chooses an arbitrary value from each group
+// 
+// ------
+// SELECT COUNT(*) AS n_asg, ast.*
+//   FROM allstarfull ast
+//   GROUP BY year_id, player_id
+//   HAVING n_asg > 1
+//   ;
+// ------
 
 === Set Operations
 
