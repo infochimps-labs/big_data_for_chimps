@@ -281,7 +281,7 @@ The machines in stage 1 ('label') are out of context. They see each record exact
 
 As each pile of output products starts to accumulate, we can begin to group them. Every group is assigned to its own reducer. When a pile reaches a convenient size, it is shipped to the appropriate reducer while the mapper keeps working. Once the map finishes, we organize those piles for its reducer to process, each in proper order.
 
-If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.  
+If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of monkeys flinging poo, we now have a dignified elephant parade conducted in concert with the efforts of our diligent workers.
 
 ==== mappers in lightest detail
 
@@ -306,7 +306,7 @@ TODO: neato diagram
 
 // TODO-qem: this is vague; I need to rewrite
 
-Whereas the mapper sees one record, a reducer receives one key (the label) and _all_ of the values that match that key.  In other words, a reducer operates on a group related values.  It can count them, find the largest (or smallest) value, run some summary statistics, and so on.  
+Whereas the mapper sees one record, a reducer receives one key (the label) and _all_ of the values that match that key.  In other words, a reducer operates on a group related values.  It can count them, find the largest (or smallest) value, run some summary statistics, and so on.
 
 In the end, a reducer outputs its own key/value pair.  The output key is often the same key the reducer received on the way in, and the output value is the result of the calculation across the group of input values.
 
@@ -409,15 +409,15 @@ Building a toy involved selecting, first, the toy form, then each of the corresp
 
 === Partition, Group and Secondary Sort ===
 
-As we mentioned in the opening, the fundamental challenge of Big Data is how to put records into relevant context, even when it is distributed in a highly non-local fashion.  Traditional databases and high-performance computing approaches use a diverse set of methods and high-cost hardware to brute-force the problem but at some point, the joint laws of physics and economics win out.  Hadoop, instead, gives you exactly and _only one_ "locality" primitive -- only one way to express which records should be grouped in context -- namely, _partition-group-sort_ -'ing the records by their label.  The sidebar (REF) about the Hadoop contract describes the precise properties of this operation but here is a less formal explanation of its essential behavior.  
+As we mentioned in the opening, the fundamental challenge of Big Data is how to put records into relevant context, even when it is distributed in a highly non-local fashion.  Traditional databases and high-performance computing approaches use a diverse set of methods and high-cost hardware to brute-force the problem but at some point, the joint laws of physics and economics win out.  Hadoop, instead, gives you exactly and _only one_ "locality" primitive -- only one way to express which records should be grouped in context -- namely, _partition-group-sort_ -'ing the records by their label.  The sidebar (REF) about the Hadoop contract describes the precise properties of this operation but here is a less formal explanation of its essential behavior.
 
-The partition key portion of the label governs how records are assigned to Reducers; it is analogous to the tear-sheet that mapped which toy types went to which workbench.  Just as there was only one workbench for dolls and one workbench for ponies, each partition maps to _exactly one_ Reducer.  Since there are generally a small number of Reducers and an arbitrary number of partitions, each Reducer will typically see many partitions.  
+The partition key portion of the label governs how records are assigned to Reducers; it is analogous to the tear-sheet that mapped which toy types went to which workbench.  Just as there was only one workbench for dolls and one workbench for ponies, each partition maps to _exactly one_ Reducer.  Since there are generally a small number of Reducers and an arbitrary number of partitions, each Reducer will typically see many partitions.
 
-The default partitioner (`HashPartitioner`) assigns partitions to Reducers arbitrarily, in order to give a reasonably uniform distribution of records to Reducers.  It does not know anything specific about your data, though, so you could get unlucky and find that you have sent all the tweets by Justin Bieber and Lady Gaga to the same Reducer or all the census forms for New York, L.A. and Chicago to the same Reducer, leaving it with an unfairly large portion of the midstream data.  If the partitions themselves would be manageable and you are simply unlucky as to which became neighbors, just try using one fewer Reduce slots -- this will break up the mapping into a different set of neighbors.  
+The default partitioner (`HashPartitioner`) assigns partitions to Reducers arbitrarily, in order to give a reasonably uniform distribution of records to Reducers.  It does not know anything specific about your data, though, so you could get unlucky and find that you have sent all the tweets by Justin Bieber and Lady Gaga to the same Reducer or all the census forms for New York, L.A. and Chicago to the same Reducer, leaving it with an unfairly large portion of the midstream data.  If the partitions themselves would be manageable and you are simply unlucky as to which became neighbors, just try using one fewer Reduce slots -- this will break up the mapping into a different set of neighbors.
 
-For a given cluster with a given number of Reduce slots, the assignment of partitions by the hash Reducer will be stable from run to run but you should not count on it any more than that.  
+For a given cluster with a given number of Reduce slots, the assignment of partitions by the hash Reducer will be stable from run to run but you should not count on it any more than that.
 
-We assume that the elves did not want the same workbench handling both ponies and pocket watches, so the naive `HashPartitioner` would not work for them; for us too, some operations require a specific partitioning scheme (as you will see later in the book (REF to total sort)).  But this is rarely necessary and, indeed, your authors have gone their whole careers without ever writing one.  If you find yourself considering writing a custom partitioner, stop to consider whether you are going against the grain of Hadoop's framework.  Hadoop knows what to do with your data and, typically, the fewer constraints you place on its operation, the better it can serve you.  
+We assume that the elves did not want the same workbench handling both ponies and pocket watches, so the naive `HashPartitioner` would not work for them; for us too, some operations require a specific partitioning scheme (as you will see later in the book (REF to total sort)).  But this is rarely necessary and, indeed, your authors have gone their whole careers without ever writing one.  If you find yourself considering writing a custom partitioner, stop to consider whether you are going against the grain of Hadoop's framework.  Hadoop knows what to do with your data and, typically, the fewer constraints you place on its operation, the better it can serve you.
 
 (TODO: coal)
 
@@ -438,34 +438,34 @@ This means that
 
 NOTE: It's very important to recognize that _numbers are not sorted by their numeric value unless you have control over their Java type_.   The simplest way to get numeric sorting of positive numbers is to pad numeric outputs a constant width by prepended spaces.  In Ruby, the expression `%10d" % val` produces an ten-character wide string (wide enough for all positive thirty-two bit numbers). There's no good way in basic Hadoop Streaming to get negative numbers to sort properly -- yes, this is very annoying. (TECHREVIEW: is there a good way?)
 
-In the common case, the partition key, group key and sort key are the same, because all you care is that records are grouped. But of course it's also common to have the three keys not be the same. The prior example, (REF) a JOIN of two tables, demonstrated a common pattern for use of the secondary sort; and the roll-up aggregation example that follows illustrates both a secondary sort and a larger partition key than group key. 
+In the common case, the partition key, group key and sort key are the same, because all you care is that records are grouped. But of course it's also common to have the three keys not be the same. The prior example, (REF) a JOIN of two tables, demonstrated a common pattern for use of the secondary sort; and the roll-up aggregation example that follows illustrates both a secondary sort and a larger partition key than group key.
 
-The set defined by the partition key must be identical or a superset of the sets defined by the group key, or your groups will be meaningless.  Hadoop doesn't impose that constraint on you, so just be sure to think at least once. The easiest way to do this (and the way we almost always to this) is to have the partition key be the same as or an extension of the group key, and the sort key be the same as or an extension of the group key. 
+The set defined by the partition key must be identical or a superset of the sets defined by the group key, or your groups will be meaningless.  Hadoop doesn't impose that constraint on you, so just be sure to think at least once. The easiest way to do this (and the way we almost always to this) is to have the partition key be the same as or an extension of the group key, and the sort key be the same as or an extension of the group key.
 
 ----
 
 SIDEBAR:  The Hadoop Contract
 
-Here is a casually rigorous summation of the very few guarantees Hadoop provides your Map/Reduce program.  Understanding these is a critical tool for helping you to create and reason about Hadoop workflows.  
+Here is a casually rigorous summation of the very few guarantees Hadoop provides your Map/Reduce program.  Understanding these is a critical tool for helping you to create and reason about Hadoop workflows.
 
-*  Each record is processed in whole by _exactly one_ Mapper. 
+*  Each record is processed in whole by _exactly one_ Mapper.
 *  Each Mapper receives records from  _exactly one_ contiguous split of input data, in the same order as those records appear in the source.
-*  There are no guarantees on how long a split is, how many there are, the order in which they are processed or the assignment of split to Mapper slot.  
+*  There are no guarantees on how long a split is, how many there are, the order in which they are processed or the assignment of split to Mapper slot.
 *  In both Mapper and Reducer, there is no requirement on you to use any of the structure described here or even to use the records' contents at all.  You do not have to do anything special when a partition or group begins or ends and your program can emit as much or as little data as you like before, during or after processing its input stream.
 *  In a Mapper-only job, each Mapper's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.  There are no further relevant guarantees for a Mapper-Only job.
 *  Each Mapper output record is processed in whole by _exactly one_ Reducer.
 *  Your program must provide each output record with a label consisting of a partition key, group key and sort key; these expressly govern how Hadoop assigns records to Reducers.
-*  All records sharing a partition key are sent to the same Reducer; if a Reducer sees one record from a partition, it will see all records from that partition, and no other Reducer will see any record from that partition.  
+*  All records sharing a partition key are sent to the same Reducer; if a Reducer sees one record from a partition, it will see all records from that partition, and no other Reducer will see any record from that partition.
 *  Partitions are sent contiguously to the Reducer; if a Reducer receives one record from a partition, it will receive all of them in a stretch, and will never again see a record from a prior partition.
 *  Partitions themselves are ordered by partition key within the Reducer input.
-*  A custom partitioner can assign each partition to specific Reducer, but you should not depend on any pairing provided by the default partitioner (the `HashPartitioner`) . 
+*  A custom partitioner can assign each partition to specific Reducer, but you should not depend on any pairing provided by the default partitioner (the `HashPartitioner`) .
 *  Within each partition, records are sent within contiguous groups; if a Reducer receives one record from a group, it will receive all of them in a stretch, and will never again see a record from a prior group.
 *  Within a partition, records are sorted first by the group key, then by the sort key; this means groups themselves are ordered by group key within the Reducer input.  (TECHREVIEW: Check that this is consistent with the Java API and the Pig UDF API.)
-*  Each Reducer's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.  
+*  Each Reducer's output is placed in _exactly one_ uniquely-named, immutable output file in the order the records were emitted.
 
 (TECHREVIEW: What key governs the sorting of partitions within the Reduce and what key governs the sorting of groups within the partition?)
 
-You can tell how important we feel it is for you to internalize this list of guarantees, or we would not have gotten all, like, formal and stuff.  
+You can tell how important we feel it is for you to internalize this list of guarantees, or we would not have gotten all, like, formal and stuff.
 
 -----
 TODO: Make sure we talk about what happens when a Mapper fails and when a Reducer fails.
@@ -475,7 +475,7 @@ TODO: Make sure we talk about what happens when a Mapper fails and when a Reduce
 
 (TODO qem: make this be a rollup (multi-level aggregation) -- this makes it require the secondary sort too)
 
-(TODO: qem:  add a segment to the exercise that uses a completely unrelated partition and group key, e.g., shape and date.)  
+(TODO: qem:  add a segment to the exercise that uses a completely unrelated partition and group key, e.g., shape and date.)
 
 TODO-qem -- expand the prose with sample code and output as you think reasonable
 
@@ -483,7 +483,7 @@ TODO-qem -- determine whether to hand-hold here, or add code examples
 
 TODO: make this use the UFO data instead (pageview example won't be introduced until ch. 4 or 5.
 
-It is very important to get a good grasp of how the partition and group keys relate, so let's step through an exercise illustrating their influence on the distribution of records.  
+It is very important to get a good grasp of how the partition and group keys relate, so let's step through an exercise illustrating their influence on the distribution of records.
 
 Here's another version of the script to total wikipedia pageviews. We've modified the mapper to emit separate fields for the century, year, month, day and hour (you wouldn't normally do this; we're trying to prove a point). The reducer intends to aggregate the total pageviews across all pages by year and month: a count for December 2010, for January 2011, and so forth. We've also directed it to use twenty reducers, enough to illustrate a balanced distribution of reducer data.
 
@@ -498,7 +498,7 @@ Finally, try running it with  `--partition_keys=4 --sort_keys=4`, causing record
 // TODO: this should not mix in details of how, only talk about the guarantee -- consolidate the mapper and group/sort guarantees. Goal of the contract section should just be to attach a rigorous understanding to the haiku-level discussion
 
 We will state very precisely what Hadoop guarantees, so that you can both
-attach a rigorous understanding to the haiku-level discussion and see how _small_ the contract is. 
+attach a rigorous understanding to the haiku-level discussion and see how _small_ the contract is.
 This formal understanding of the contract is very useful for reasoning about how Hadoop jobs work and perform.
 
 Hadoop imposes a few seemingly-strict constraints and provides a very few number of guarantees in return. As you're starting to see, that simplicity provides great power and is not as confining as it seems. You can gain direct control over things like partitioning, input splits and input/output formats. We'll touch on a very few of those, but for the most part this book concentrates on using Hadoop from the outside -- (REF) _Hadoop: The Definitive Guide_ covers this stuff (definitively).
@@ -584,7 +584,7 @@ Your program's Reducer receives the records from each group in sorted order, out
 
 ==== Reducers Write Output Data and Commit
 
-As your Reducers emit records, they are streamed directly to the job output, typically the HDFS or S3.  Since this occurs in parallel with reading and processing the data, the primary spill to the Datanode typically carries minimal added overhead. 
+As your Reducers emit records, they are streamed directly to the job output, typically the HDFS or S3.  Since this occurs in parallel with reading and processing the data, the primary spill to the Datanode typically carries minimal added overhead.
 
 TODO a bit more about the fact that data *is* written to disk
 TODO: mention commit phase

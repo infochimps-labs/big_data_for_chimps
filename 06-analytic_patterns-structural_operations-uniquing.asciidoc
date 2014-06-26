@@ -1,6 +1,4 @@
-
-=== Finding Duplicate and Unique Records
-
+== Analytic Patterns: Finding Duplicate and Unique Records
 
 ==== Eliminating Duplicate Records from a Table
 
@@ -23,7 +21,6 @@ dont_do_this = FOREACH (GROUP tm_pk_pairs_many BY (team_id, park_id)) GENERATE
   group.team_id, group.park_id;
 ------
 
-
 The DISTINCT operation is able to use a combiner, eliminating duplicates at the mapper before shipping them to the reducer. This is a big win when there are frequent duplicates, especially if duplicates are likely to occur near each other. For example, duplicates in web logs (from refreshes, callbacks, etc) will be sparse globally, but found often in the same log file.
 
 The combiner may impose a minor penalty when there are very few or very sparse duplicates. In that case, you should still use DISTINCT, but disable combiners with the `pig.exec.nocombiner=true` setting.
@@ -34,7 +31,6 @@ SELECT DISTINCT player_id, team_id from batting;
 ------
 
 ==== Eliminating Duplicate Records from a Group
-
 
 Eliminate duplicates from a group with the DISTINCT operator inside a nested foreach. Instead of finding every distinct (team, home ballpark) pair as we just did, let's find the list of distinct home ballparks for each team:
 
@@ -73,7 +69,8 @@ DEFINE DistinctByYear datafu.pig.bags.DistinctBy('0');
 
 pltmyrs = FOREACH bat_seasons GENERATE player_id, year_id, team_id;
 player_teams = FOREACH (GROUP pltmyrs BY player_id) {
-  pltmyrs_o = ORDER pltmyrs.(team_id, year_id) BY team_id; -- TODO does this use secondary sort, or cause a POSort?
+  -- TODO does this use secondary sort, or cause a POSort?
+  pltmyrs_o = ORDER pltmyrs.(team_id, year_id) BY team_id;
   pltmyrs = DistinctByYear(pltmyrs);
   GENERATE player_id, BagToString(pltmyrs, '|');
 };
@@ -136,8 +133,7 @@ SELECT COUNT(*) AS n_parks, pty.*
 
 ==== Eliminating rows that have a duplicated value
 
-(ie the whole row isn't distinct,
-just the field you're distinct-ing on.
+(ie the whole row isn't distinct, just the field you're distinct-ing on.)
 Note: this chooses an arbitrary value from each group
 
 ------
@@ -149,180 +145,169 @@ SELECT COUNT(*) AS n_asg, ast.*
 ------
 
 === Set Operations
-We've actually met most of the set operations at this point, but it's worth calling them out specifically. Set operations on groups are particularly straightforward thanks to the Datafu package, which offers Intersect, Difference (...)
+
+Set operations -- intersection, union, set difference and so forth -- are a valuable strategic formulation for the structural operations we've been learning. In terms of set operations, "Which users both clicked on ad for shirts and bought a shirt?" becomes "find the intersection of shirt-ad-clickers set with the shirt-buyers set". "What patients either were ill but did not test positive, or tested positive but were not ill?" becomes "find the symmetric difference of the actually-ill patients and the tested-positive patients". The relational logic that powers traditional database engines is, at its core, the algebra of sets. We've actually met many of the set operations in certain alternate guises, but set operations are so important it's worth calling them out specifically.
+
+When we say 'set', we mean an unordered collection of distinct elements. Those elements could be full records, or they could be key fields in a record -- allowing us to intersect the shirt-ad-clickers and the shirt-buyers while carrying along information about the ad they clicked on and the shirt they bought.
+
+In the next several sections, you'll learn how to combine sets in the following ways:
+
+* 'Distinct Union' (`A ∪ B`)	  -- all distinct elements that are in 'A' or in 'B'.
+* 'Set Intersection' (`A ∩ B`)	  -- all distinct elements that are in 'A' and also in 'B'.
+* 'Set Difference' (`A - B`)	  -- all distinct elements that are in 'A' but are _not_ in 'B'.
+* 'Symmetric Difference' (`a ^ b`) -- all distinct elements that are in 'A' or in 'B' but not both. Put another way, it's all distinct elements that are in 'A' but not 'B' as well as all distinct elements that are in 'B' but not 'A'.
+* 'Set Equality' (`A == B`)  -- every element in 'A' is also in 'B'. The result of the set equality operation is a boolean true or false, as opposed to a set as in the above operations.
+
+
+The following table may help. The rows correspond to the kind of elements that are in both A and B; A but not B; and B but not A. Under the column for each operator, only the kinds of elements marked 'T' will be present in the result.
+
+.Set Operation Membership
+------
+                        Union   Inters  Diff    Diff    Sym.Diff
+	 A	 B	A∪B	A∩B	a-b	b-a	a^b
+A B	 T	 T	 T	 T	 -	 -	 -
+A -	 T	 -	 T	 -	 T	 -	 T
+- B	 -	 T	 T	 -	 -	 T	 T
+------
+
+The mechanics of working with sets depends on whether the set elements are represented as records in a bag or as rows in a full table. Set operations on bags are particularly straightforward thanks to the purpose-built UDFs in the Datafu package. Set operations on tables are done using a certain `COGROUP`-and-`FILTER` combination -- wordier, but no more difficult. Let's start with the patterns that implement set operations on full tables.
+
 
 ==== Set Operations on Full Tables
 
-To demonstrate full-table set operations, we can relate the locations of
-baseball stadiums with the set of major US cities footnote:[We'll take "major
-city" to mean one of the top 60 incorporated places in the United States or
-Puerto Rico; see the "Overview of Datasets" (REF) for source information].
+To demonstrate full-table set operations, we can relate the set of major US cities footnote:[We'll take "major city" to mean one of the top 60 incorporated places in the United States or Puerto Rico; see the "Overview of Datasets" (REF) for source information]
+with the set of US cities that have hosted a significant number (more than 50) of major-league games. To prove a point about set operations with duplicates, we will leave in the duplicates from the team cities (the Mets and Yankees both claim NY).
 
-We've actually met most of the set operations at this point, but it's worth
-calling them out specifically. Set operations on groups are particularly
-straightforward thanks to the Datafu package, which offers Intersect,
-Difference (...)
-
-
-
-
-Limit our attention to prominent US stadiums:
-
+.Preparation for Set Operations on Full Tables
 ------
-main_parks   = FILTER parks       BY n_games >=  50 AND country_id == 'US';
+parks        = load_parks();
+main_parks   = FILTER parks BY n_games >=  50 AND country_id == 'US';
+major_cities = load_us_city_pops();
+--
+bball_city_names = FOREACH main_parks   GENERATE city;
+major_city_names = FOREACH major_cities GENERATE city;
 ------
 
 ==== Distinct Union
 
 If the only contents of the tables are the set membership keys, finding the
-distinct union of two tables is done just how it's spelled: apply union, then
-distinct.
+distinct union is done how it sounds: apply union, then distinct.
 
 ------
-bball_city_names = FOREACH main_parks   GENERATE city;
-major_city_names = FOREACH major_cities GENERATE city;
 major_or_bball    = DISTINCT (UNION bball_city_names, major_city_names);
 ------
 
-
-For all the other set operations, or when you want to base the distinct union
-on keys (rather than the full record), simply do a COGROUP and accept or
-reject rows based on what showed up in the relevant groups.
-
-Two notes. First, since COUNT_STAR returns a value of type long, we do the
-comparison against `0L` (a long) and not `0` (an int). Second, we test
-against `COUNT_STAR(bag)`, and not `SIZE(bag)` or `IsEmpty(bag)`. Those
-latter two require actually materializing the bag -- all the data is sent to
-the reducer, and no combiners can be used.
-
 ==== Distinct Union (alternative method)
 
-Every row in combined comes from one table or the other, so we don't need to
-filter.  To prove the point about doing the set operation on a key (rather
-than the full record) let's keep around the state, population, and all
-park_ids from the city.
+For all the other set operations, or when the elements are keys within a record (rather than the full record), we will use some variation on a COGROUP to generate the result.
+
+// Every row in combined comes from one table or the other, so we don't need to
+// filter.  To prove the point about doing the set operation on a key (rather
+// than the full record) let's keep around the state, population, and all
+// park_ids from the city.
 
 ------
 combined     = COGROUP major_cities BY city, main_parks BY city;
 
-major_or_parks    = FOREACH combined
-  GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
+major_or_parks    = FOREACH combined GENERATE
+  group AS city,
+  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
+  main_parks.park_id AS park_ids;
 ------
 
+The DataFu `FirstTupleFromBag` UDF is immensely simplifying. Since the city value is a unique key for the `major_cities` table, we know that the `major_cities` bag has only a single element. Applying `FirstTupleFromBag` turns the bag-of-one-tuple into a tuple-of-two-fields, and applying `FLATTEN` lifts the tuple-of-two-fields into top-level fields for state and for population. When the `city` key has no match in the `major_cities` table, the second argument to FirstTupleFromBag forces those fields to have `NULL` values.
 
+As we mentioned, there are potentially many park records for each city, and so the main_parks bag can have zero, one or many records. Above, we keep the list of parks around as a single field.
 
 ==== Set Intersection
 
 Records lie in the set intersection when neither bag is empty.
 
-major_and_parks   = FOREACH (FILTER combined BY (COUNT_STAR(major_cities) > 0L) AND (COUNT_STAR(main_parks) > 0L))
-  GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
+------
+major_and_parks_f = FILTER combined BY
+  (COUNT_STAR(major_cities) > 0L) AND (COUNT_STAR(main_parks) > 0L);
+major_and_parks   = FOREACH major_and_parks_f GENERATE
+  group AS city,
+  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
+  main_parks.park_id AS park_ids;
+------
+
+Two notes. First, we test against `COUNT_STAR(bag)`, and not `SIZE(bag)` or `IsEmpty(bag)`. Those latter two require actually materializing the bag -- all the data is sent to the reducer, and no combiners can be used. Second, since COUNT_STAR returns a value of type long, it's best to do the comparison against `0L` (a long) and not `0` (an int).
 
 ==== Set Difference
 
-Records lie in A-B when the second bag is empty.
+Records lie in A minus B when the second bag is empty, and they lie in B minus A when the first bag is empty.
 
-major_minus_parks = FOREACH (FILTER combined BY (COUNT_STAR(main_parks) == 0L))
-  GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
+------
+major_minus_parks_f = FILTER combined BY (COUNT_STAR(main_parks) == 0L);
+major_minus_parks   = FOREACH major_minus_parks_f GENERATE
+  group AS city,
+  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
+  main_parks.park_id AS park_ids;
 
-parks_minus_major = FOREACH (FILTER combined BY (COUNT_STAR(major_cities) == 0L))
-  GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
+parks_minus_major_f = FILTER combined BY (COUNT_STAR(major_cities) == 0L);
+parks_minus_major   = FOREACH parks_minus_major_f GENERATE
+  group AS city,
+  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
+  main_parks.park_id AS park_ids;
+------
 
 ==== Symmetric Set Difference: (A-B)+(B-A)
 
 Records lie in the symmetric difference when one or the other bag is
 empty. (We don't have to test for them both being empty -- there wouldn't be
-a row if that were the case)
+a row if that were the case.)
 
-major_xor_parks   = FOREACH (FILTER combined BY (COUNT_STAR(major_cities) == 0L) OR (COUNT_STAR(main_parks) == 0L))
-  GENERATE group AS city, FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ('',0))), main_parks.park_id AS park_ids;
+------
+major_xor_parks_f   = FILTER combined BY
+  (COUNT_STAR(major_cities) == 0L) OR (COUNT_STAR(main_parks) == 0L);
+
+major_xor_parks     = FOREACH major_xor_parks_f GENERATE
+  group AS city,
+  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
+  main_parks.park_id AS park_ids;
+------
 
 ==== Set Equality
 
-Any of the tests described under "Set Operations within Groups" (REF) will
-work to determine set equality, but unless you're already calculating one of
-the set operations above you should use the "symmetric difference is empty"
-test. Doing so is a bit more fiddly than you'd think.
+Set Equality indicates whether the elements of each set are identical -- here, would tell us whether the set of keys in the major_cities table and the set of keys in the main_parks table were
+identical.
 
-To illustrate the problem, we'll use a pair of trivially equal tables:
+There are several ways to determine full-table set equality, but likely the most efficient is to see whether the two sets' symmetric difference is empty. An empty symmetric difference implies that every element of 'A' is in 'B', and that every element of 'B' is in 'A' -- which is exactly what it means for two sets to be equal.
+
+// (There are alternative tests described later under "Set Operations within Groups" (REF), but unless you're already calculating one of the set operations above you should use the "symmetric difference is empty" test.
+
+Properly testing whether a table is empty so is a bit more fiddly than you'd think. To illustrate the problem, first whip up a set that should compare as equal to the `major_cities` table, run the symmetric difference stanza from above, and then test whether the table is empty:
 
 ------
 major_city_names_also = FOREACH major_cities GENERATE city;
-major_xor_major = FILTER (COGROUP major_city_names BY city, major_city_names_also BY city)
+major_xor_major = FILTER
+  (COGROUP major_city_names BY city, major_city_names_also BY city)
   BY ((COUNT_STAR(major_city_names) == 0L) OR (COUNT_STAR(major_city_names_also) == 0L));
-------
 
-Now you'd think that counting the elements of `major_xor_major` would work.
-But since `major_xor_major` is empty, _the FOREACH has no lines to operate
-on_. When the two sets of keys are equal, the output file is not a `1` as
-you'd expect, it's an empty file.
-
-------
--- Does not work: file is empty when sets are equal
+-- Does not work
 major_equals_major_fail = FOREACH (GROUP major_xor_major ALL) GENERATE
    (COUNT_STAR(major_xor_major) == 0L ? 1 : 0) AS is_equal;
 ------
 
+The last statement of the code block attempts to measure whether the count of records in `major_xor_major` is zero. And if the two tables were unequal, this would have worked. But `major_xor_major` is empty and so _the FOREACH has no lines to operate on_. The output file is not a
+`1` as you'd expect, it's an empty file.
 
-Our integer table to the rescue! We keep around a one-record version called
-'one_line.tsv' having fields uno (value `1`) and zilch (value `0`)
-
-Now do a COGROUP with our one_line friend and the constant value `1`. Since
-there is exactly one possible value for the group key, there will only be one
-row in the output.
+Our integer table to the rescue! Actually we'll use her baby brother 'one_line.tsv': it has one record, with fields uno (value `1`) and zilch (value `0`). Instead of a `GROUP..ALL`, do a COGROUP of one_line on a constant value `1`. Since there is exactly one possible value for the group key, there will be exactly one row in the output.
 
 ------
 one_line = LOAD '$data_dir/stats/numbers/one_line.tsv' AS (uno:int, zilch:int);
 
 -- will be `1` (true)
-major_equals_major = FOREACH (COGROUP one_line BY uno, major_xor_major BY 1)
+major_equals_major = FOREACH (COGROUP one_line BY 1, major_xor_major BY 1)
   GENERATE (COUNT_STAR(major_xor_major) == 0L ? 1 : 0) AS is_equal;
 
 -- will be `0` (false)
-major_equals_parks = FOREACH (COGROUP one_line BY uno, major_xor_parks BY 1)
+major_equals_parks = FOREACH (COGROUP one_line BY 1, major_xor_parks BY 1)
   GENERATE (COUNT_STAR(major_xor_parks) == 0L ? 1 : 0) AS is_equal;
 ------
 
-------
--- for each team year, the set of players for that year and the next, by doing the first part of a self-join
-team_yrpls = FOREACH bat_year GENERATE team_id, year_id, player;
-team_y2y = FOREACH (COGROUP team_yrpls BY (team_id, year_id) AS ty1, team_yrpls BY (team_id, year_id-1) AS ty2) GENERATE
-    group.team_id AS team_id, group.year_id AS year_id,
-    ty1.player_id AS pl1, ty2.player_id AS pl2;
-
-roster_changes_y2y = FOREACH team_y2y {
-
-  -- Distinct Union: the players in each two-year span (given year or the next). SetUnion accepts two or more bags:
-  either_year   = SetUnion(pl1, pl2);
-
-  -- the other set operations require sorted inputs. Keep in mind that an ORDER BY within the nested block of a FOREACH (GROUP BY) is efficient, as it makes use of the secondary sort Hadoop provides.
-  opl1 = ORDER pl1 BY player_id;
-  opl2 = ORDER pl2 BY player_id;
-
-  -- Intersect: for each team-year, the players that stayed for the next year (given year and the next). Requires sorted input. With
-  both_years    = Intersect(opl1, opl2);
-
-  -- Difference: for each team-year, the players that did not stay for next year (A minus B). Requires sorted input. With multiple bags of input, the result is everything that is in the first but not in any other set.
-  y1_undeparted = SetDifference(opl1, opl2);
-
-  -- Symmetric Difference: for each team-year, the players that did not stay for next year (A minus B) plus (B minus A)
-  non_both       = DIFF(opl1,opl2)
-  -- TODO validate; also compare SUBTRACT
-
-  -- Set Equality: for each team-year, were the players the same?
-
-  is_unchanged =
-    -- if a has no dupes then the elements of a == elements of b if and only if (size(a intersect b) == size(a) == size(b));
-    -- if a has no dupes then the elements of a == elements of b if and only if (size(a minus b) = 0 AND (size(a) == size(b))
-  TODO is there a Datafu for this
-
-  GENERATE team_id, year_id,
-  };
-------
-
-All of those methods use in-memory bag operations, which is generally fine.
-We can also do this using the summing trick
-
+TODO: clean up transition to set ops on groups
 
 To demonstrate set operations on grouped records, let's look at the
 year-to-year churn of mainstay players footnote:[using our definition of a
@@ -364,193 +349,173 @@ rosters = FOREACH year_to_year_players GENERATE
   ;
 -- The first and last years of existence don't have anything interesting to compare, so reject them.
 rosters = FILTER rosters BY (COUNT_STAR(pl1) == 0L OR COUNT_STAR(pl2) == 0L);
------ 
+-----
 
+==== Set Operations Within a Group
 
-==== Set operations within group
+The content of `rosters` is a table with two key columns: team and year; and
+two bags: the set of players from that year and the set of players from the
+following year.
 
+Applying the set operations lets us describe the evolution of the team from
+year to year.
 
 ------
--- The content of `rosters` is a table with two key columns: team and year; and
--- two bags: the set of players from that year and the set of players from the
--- following year.
---
--- Applying the set operations lets us describe the evolution of the team from
--- year to year:
---
-
 roster_changes_y2y = FOREACH rosters {
-
-  -- The Distinct Union (A union B, which we'll find using the DataFu `SetUnion`
-  -- UDF) describes players on the roster in either year of our two-year span.
-  --
+  -- Distinct Union (doesn't need pre-sorting)
   either_year  = SetUnion(pl1, pl2);
-
-  --
-  -- All the DataFu set operations here tolerate inputs containing duplicates,
-  -- and all of them return bags that contain no duplicates. They also each
-  -- accept two or more bags, enabling you to track sequences longer than two
-  -- adjacent elements.
-  --
-  -- As opposed to SetUnion, the other set operations require sorted
-  -- inputs. That's not as big a deal as if we were operating on a full table,
-  -- since a nested ORDER BY makes use of Hadoop's secondary sort. As long as
-  -- the input and output bags fit efficiently in memory, these operations are
-  -- efficient.
+  -- The other operations require sorted bags.
   pl1_o = ORDER pl1 BY player_id;
   pl2_o = ORDER pl2 BY player_id;
 
-  -- The Set Intersection (A intersect B, which we'll find using the DataFu
-  -- SetIntersect UDF) describes the players that played in the first year and
-  -- also stayed to play in the second year.
+  -- Set Intersection
   stayed      = SetIntersect(pl1_o, pl2_o);
-
-  -- The Set Difference (A minus B, using the SetDifference UDF) contains the
-  -- elements in the first bag that are not present in the remaining bags.  The
-  -- first line therefore describes players that did _not_ stay for the next
-  -- year, and the second describes players that newly arrived in the next year.
+  -- Set Difference
   y1_departed = SetDifference(pl1_o, pl2_o);
   y2_arrived  = SetDifference(pl2_o, pl1_o);
+  -- Symmetric Difference
+  non_stayed  = DIFF(y1_departed, y2_arrived);
+  -- Set Equality
+  is_equal    = ( (COUNT_STAR(non_stayed) == 0L) ? 1 : 0);
 
-  -- The Symmetric Difference contains all elements that are in one set or the
-  -- other but not both.  You can find this using either `(A minus B) union (B
-  -- minus A)` -- players who either departed after the first year or newly
-  -- arrived in the next year -- or `((A union B) minus (A intersect B))` --
-  -- players who were present in either season but not both seasons.
-  non_stayed  = SetUnion(y1_departed, y2_arrived);
-
-  -- Set Equality indicates whether the elements of each set are identical --
-  -- here, it selects seasons where the core set of players remained the
-  -- same. There's no direct function for set equality, but you can repurpose
-  -- any of the set operations to serve.
-  --
-  -- If A and B each have no duplicate records, then A and B are equal if and only if
-  --
-  -- * `size(A) == size(B) AND size(A union B) == size(A)`
-  -- * `size(A) == size(B) AND size(A intersect B) == size(A)`
-  -- * `size(A) == size(B) AND size(A minus B) == 0`
-  -- * `size(symmetric difference(A,B)) == 0`
-  --
-  -- For multiple sets of distinct elements, `A, B, C...` are equal if and only
-  -- if all the sets and their intersection have the same size:
-  -- `size(intersect(A,B,C,...)) == size(A) == size(B) == size(C) == ...`
-  --
-  -- If you're already calculating one of the functions, use the test that
-  -- reuses its result. Otherwise, prefer the A minus B test if most rows will
-  -- have equal sets, and the A intersect B test if most will not or if there
-  -- are multiple sets.
-  --
-
-  n_pl1         = SIZE(pl1);
-  n_pl2         = SIZE(pl2);
-  n_union       = SIZE(either_year);
-  n_intersect   = SIZE(stayed);
-  n_y1_minus_y2 = SIZE(y1_departed);
-  n_y2_minus_y1 = SIZE(y2_arrived);
-  n_xor         = SIZE(non_stayed);
-  is_equal_via_union     = ( ((n_pl1 == n_pl2) AND (n_union       == n_pl1)) ? 1 : 0);
-  is_equal_via_intersect = ( ((n_pl1 == n_pl2) AND (n_intersect   == n_pl1)) ? 1 : 0);
-  is_equal_via_minus     = ( ((n_pl1 == n_pl2) AND (n_y1_minus_y2 == 0L))    ? 1 : 0);
-  is_equal_via_xor       = ( (n_xor == 0L) ? 1 : 0);
-
-  -- -- (omit from book)
-  -- -- For your amusement, some invariants that hold for any sets
-  -- world_makes_sense = AssertUDF( ((
-  --   is_equal_via_union == is_equal_via_intersect AND
-  --   is_equal_via_union == is_equal_via_minus     AND
-  --   is_equal_via_union == is_equal_via_xor       AND
-  --   (n_union           == n_intersect + n_xor)   AND
-  --   (n_union           == n_pl1 + n_pl2 - n_intersect) AND
-  --   (n_xor             == n_y1_minus_y2 + n_y2_minus_y1)
-  --   ) ? 1 : 0) );
-
-  GENERATE
-    year_id, team_id,
-    n_pl1            AS n_pl1,
-    n_pl2            AS n_pl2,
-    --
-    n_union          AS n_union,
-    n_intersect      AS n_intersect,
-    n_y1_minus_y2    AS n_y1_minus_y2,
-    n_y2_minus_y1    AS n_y2_minus_y1,
-    n_xor            AS n_xor,
-    --
-    either_year      AS either_year,
-    stayed           AS stayed,
-    y1_departed      AS y1_departed,
-    y2_arrived       AS y2_arrived,
-    non_stayed       AS non_stayed,
-    --
-    is_equal_via_xor AS is_equal
-    ;
+  GENERATE year_id, team_id,
+    either_year, stayed, y1_departed, y2_arrived, non_stayed, is_equal;
 };
 ------
 
-For set operations on tables, let's compare at the cities that have ever hosted a major league team compare to the largest cities by population. To prove a point about set operations with duplicates, we will leave in the duplicates from the team cities (the Mets and Yankees both claim NY), and seed the largest cities list by concatenating the top 50 by strict population with the cities in the top 25 metro areas.
+The Distinct Union (A union B, which we'll find using the DataFu `SetUnion` UDF) describes players
+on the roster in either year of our two-year span.
 
 ------
-cities = LOAD 'cities-top_25_by_pop';
-top_metros = LOAD 'metros-top_25_by_pop';
-top_metros = FOREACH top_metros GENERATE FLATTEN(STRSPLITBAG(name,'-')) AS name;
+  either_year  = SetUnion(pl1, pl2);
+------
 
-teams = load_teams;
-bb_g_popc = COGROUP teams BY city, top_cities BY name;
--- union
-bb_union_popc = FOREACH bb_g_popc GENERATE FLATTEN(...)
--- intersect
-bb_and_popc = NOT(isEmpty(A) OR isEmpty(B))
--- set difference
-bb_minus_popc = isEmptyB
--- symm difference
-bb_xor_popc = isEmpty(A) OR isEmpty(B)
--- equality
-Count(bb_xor_popc) = 0
+All the DataFu set operations here tolerate inputs containing duplicates, and all of them return
+bags that contain no duplicates. They also each accept two or more bags, enabling you to track
+sequences longer than two adjacent elements.
 
--- union if no other fields needed
-bb_union_popc_0 = UNION (FOREACH teams GENERATE city), (FOREACH cities GENERATE name AS city);
-bb_union_popc_d = DISTINCT bb_union_popc_0;
+As opposed to SetUnion, the other set operations require sorted inputs. That's not as big a deal as
+if we were operating on a full table, since a nested ORDER BY makes use of Hadoop's secondary
+sort. As long as the input and output bags fit efficiently in memory, these operations are
+efficient.
+
+------
+  pl1_o = ORDER pl1 BY player_id;
+  pl2_o = ORDER pl2 BY player_id;
+------
+
+The Set Intersection (A intersect B, which we'll find using the DataFu
+SetIntersect UDF) describes the players that played in the first year and
+also stayed to play in the second year.
+
+------
+  stayed      = SetIntersect(pl1_o, pl2_o);
+------
+
+The Set Difference (A minus B, using the SetDifference UDF) contains the elements in the first bag
+that are not present in the remaining bags.  The first line therefore describes players that did
+_not_ stay for the next year, and the second describes players that newly arrived in the next year.
+
+------
+  y1_departed = SetDifference(pl1_o, pl2_o);
+  y2_arrived  = SetDifference(pl2_o, pl1_o);
+------
+
+The Symmetric Difference contains all elements that are in one set or the other but not both.  You
+can find this using either `(A minus B) union (B minus A)` -- players who either departed after the
+first year or newly arrived in the next year -- or `((A union B) minus (A intersect B))` -- players
+who were present in either season but not both seasons.
+
+------
+  non_stayed  = SetUnion(y1_departed, y2_arrived);
+------
+
+Set Equality indicates whether the elements of each set are identical --
+here, it selects seasons where the core set of players remained the
+same. There's no direct function for set equality, but you can repurpose
+any of the set operations to serve.
+
+If A and B each have no duplicate records, then A and B are equal if and only if
+
+* `size(A) == size(B) AND size(A union B) == size(A)`
+* `size(A) == size(B) AND size(A intersect B) == size(A)`
+* `size(A) == size(B) AND size(A minus B) == 0`
+* `size(symmetric difference(A,B)) == 0`
+
+For multiple sets of distinct elements, `A, B, C...` are equal if and only
+if all the sets and their intersection have the same size:
+`size(intersect(A,B,C,...)) == size(A) == size(B) == size(C) == ...`
+
+If you're already calculating one of the functions, use the test that
+reuses its result. Otherwise, prefer the A minus B test if most rows will
+have equal sets, and the A intersect B test if most will not or if there
+are multiple sets.
+
+------
+  is_equal    = ( (COUNT_STAR(non_stayed) == 0L) ? 1 : 0);
 ------
 
 
-This is also how you would do set operations when the bag sizes were too large, or if you wanted to retain columns not considered in the set operation.
+//   n_pl1         = SIZE(pl1);
+//   n_pl2         = SIZE(pl2);
+//   n_union       = SIZE(either_year);
+//   n_intersect   = SIZE(stayed);
+//   n_y1_minus_y2 = SIZE(y1_departed);
+//   n_y2_minus_y1 = SIZE(y2_arrived);
+//   n_xor         = SIZE(non_stayed);
+//   is_equal_via_union     = ( ((n_pl1 == n_pl2) AND (n_union       == n_pl1)) ? 1 : 0);
+//   is_equal_via_intersect = ( ((n_pl1 == n_pl2) AND (n_intersect   == n_pl1)) ? 1 : 0);
+//   is_equal_via_minus     = ( ((n_pl1 == n_pl2) AND (n_y1_minus_y2 == 0L))    ? 1 : 0);
+//   is_equal_via_xor       = ( (n_xor == 0L) ? 1 : 0);
+//
+//   GENERATE
+//     year_id, team_id,
+//     n_pl1            AS n_pl1,
+//     n_pl2            AS n_pl2,
+//     --
+//     n_union          AS n_union,
+//     n_intersect      AS n_intersect,
+//     n_y1_minus_y2    AS n_y1_minus_y2,
+//     n_y2_minus_y1    AS n_y2_minus_y1,
+//     n_xor            AS n_xor,
+//     --
+//     either_year      AS either_year,
+//     stayed           AS stayed,
+//     y1_departed      AS y1_departed,
+//     y2_arrived       AS y2_arrived,
+//     non_stayed       AS non_stayed,
+//     --
+//     is_equal_via_xor AS is_equal
+//     ;
+// };
+// ------
 
-
-.Set Operation Membership
-------
-	 A	 B	A∪B	A∩B	a-b	b-a	a^b	 ∅
-A B	 T	 T	 T	 T	 F	 F	 F	 F
-A -	 T	 F	 T	 F	 T	 F	 T	 F
-- B	 F	 T	 T	 F	 F	 T	 T	 F
-- -	 F	 F	 F	 F	 F	 F	 F	 F
-------
-
-
-**Exercises**
-
-* Implement a set equality UDF and submit it as an open-source contribution to
-  the DataFu project. Suggestions:
-
-  - Modify the datafu.pig.sets.SetIntersect UDF to return boolean false
-  - It should return immediately on finding an element that does not lie
-    within the intersection.
-  - Set the contract to require that each input bag is distinct (contains no
-    duplicate elements). This will let you quickly reject as not equal any
-    bags of different size.
-
-* Modify the set operations UDFs to meet the accumulator interface (see
-  chapter on Advanced Pig for details)
-
-* Using the waxy.org web logs dataset, identify how the top 10 pages by
-  visits change over time.
-
-* Identify possibly abusive visitors in the waxy.org web logs:
-  - Calculate the amount of data transferred to each IP address in each
-    six-hour period
-  - Select heavy downloaders using either the z-score or percentile ranking
-    of their data volume, as described in the "identifying outliers" section.
-  - Use the procedure in the "set operations within groups" section to find
-    IP addresses that exceed your heavy-downloader threshold for four
-    consecutive six-hour blocks.
-  This sequence of actions is particularly useful for analysis of security or
-  sensor logs, where you are looking for things that are over threshold for
-  extended durations but not enough to trigger alarms.
+// **Exercises**
+//
+// * Implement a set equality UDF and submit it as an open-source contribution to
+//   the DataFu project. Suggestions:
+//
+//   - Modify the datafu.pig.sets.SetIntersect UDF to return boolean false
+//   - It should return immediately on finding an element that does not lie
+//     within the intersection.
+//   - Set the contract to require that each input bag is distinct (contains no
+//     duplicate elements). This will let you quickly reject as not equal any
+//     bags of different size.
+//
+// * Modify the set operations UDFs to meet the accumulator interface (see
+//   chapter on Advanced Pig for details)
+//
+// * Using the waxy.org web logs dataset, identify how the top 10 pages by
+//   visits change over time.
+//
+// * Identify possibly abusive visitors in the waxy.org web logs:
+//   - Calculate the amount of data transferred to each IP address in each
+//     six-hour period
+//   - Select heavy downloaders using either the z-score or percentile ranking
+//     of their data volume, as described in the "identifying outliers" section.
+//   - Use the procedure in the "set operations within groups" section to find
+//     IP addresses that exceed your heavy-downloader threshold for four
+//     consecutive six-hour blocks.
+//   This sequence of actions is particularly useful for analysis of security or
+//   sensor logs, where you are looking for things that are over threshold for
+//   extended durations but not enough to trigger alarms.

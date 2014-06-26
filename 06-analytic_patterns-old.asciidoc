@@ -136,14 +136,14 @@ SELECT bat.player_id, bat.nameCommon,
   HAVING begYear > 1900
   ORDER BY n_parks DESC, player_id ASC
   ;
-  
+
   Join bat_yr on (team_id, year_id), pty by (team_id, year_id);
   FOREACH @ GENERATE bat_years::player_id, park_id;
   Group by player_id
   Distinct parks
-  
+
   Cogroup baty by (team_id, year_id), pty by (team_id, year_id);
-   distinct park_id, 
+   distinct park_id,
 ------
 
 So now we disclose the most important thing that SQL experts need to break

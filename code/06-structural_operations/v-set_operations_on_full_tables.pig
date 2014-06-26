@@ -5,16 +5,6 @@ major_cities = load_us_city_pops();
 
 -- === Set Operations on Full Tables
 
--- To demonstrate full-table set operations, we can relate the locations of
--- baseball stadiums with the set of major US cities footnote:[We'll take "major
--- city" to mean one of the top 60 incorporated places in the United States or
--- Puerto Rico; see the "Overview of Datasets" (REF) for source information].
-
--- We've actually met most of the set operations at this point, but it's worth
--- calling them out specifically. Set operations on groups are particularly
--- straightforward thanks to the Datafu package, which offers Intersect,
--- Difference (...)
-
 -- Limit our attention to prominent US stadiums:
 main_parks   = FILTER parks       BY n_games >=  50 AND country_id == 'US';
 

@@ -5,7 +5,7 @@ A pipelineable operations is one that can handle each record in isolation, like 
 
 When a script has only pipelineable operations, they give rise to one mapper-only job which executes the composed pipeline stages. When pipelinable operations are combined with the structural operations you'll meet in the next chapter, they are composed with the stages of the mapper or reducer (depending on whether they come before or after the structural operation).
 
-All of these are listed first and together for two reasons. One, they are largely fundamental; it's hard to get much done without `FILTER` or `FOREACH`. Two, the way you reason about the performance impact of these operations is largely the same. Since these operations are trivially paralellizable, they scale efficiently and the computation cost rarely impedes throughput. And when pipelined, their performance cost can be summarized as "kids eat free with purchase of adult meal". For datasets of any material size, it's very rare that the cost of preliminary or follow-on processing rivals the cost of the reduce phase. Finally, since these operations handle records in isolation, their memory impact is modest. So learn to think of these together. 
+All of these are listed first and together for two reasons. One, they are largely fundamental; it's hard to get much done without `FILTER` or `FOREACH`. Two, the way you reason about the performance impact of these operations is largely the same. Since these operations are trivially paralellizable, they scale efficiently and the computation cost rarely impedes throughput. And when pipelined, their performance cost can be summarized as "kids eat free with purchase of adult meal". For datasets of any material size, it's very rare that the cost of preliminary or follow-on processing rivals the cost of the reduce phase. Finally, since these operations handle records in isolation, their memory impact is modest. So learn to think of these together.
 
 === Eliminating Data
 
@@ -398,7 +398,7 @@ date_converted = FOREACH people {
   end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
   birth_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1)));
   death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
-  
+
   GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt, name_first, name_last;
 };
 ------
@@ -429,14 +429,14 @@ ToDate(
 ------
 
 NOTE: Apart from subtracting one epoch milliseconds from another to get a duration in milliseconds, you must _never do any date/time manipulation except through a best-in-class date library_. You can't calculate the difference of one year by adding one to the year field (which brought down Microsoft's http://azure.microsoft.com/blog/2012/03/09/summary-of-windows-azure-service-disruption-on-feb-29th-2012/[cloud storage product] on the leap day of February 29th, 2012), and you can't assume that the time difference from one minute to the next is 60 seconds (which http://blog.cloudera.com/blog/2012/07/watching-the-clock-clouderas-response-to-leap-second-troubles/[brought down HBase servers worldwide] when the leap second of `2012-06-30T23:59:60Z` -- note the `:60` -- occurred). This is no joke -- companies go out of business because of mistakes like these.
- 
+
 ===== Assembling a Bag
 
 .Assembling Complex Types
 ------
 graphable = FOREACH people {
-  birth_month = Coalesce(birth_month, 1); birth_day = Coalesce(birth_day, 1); 
-  death_month = Coalesce(death_month, 1); death_day = Coalesce(death_day, 1); 
+  birth_month = Coalesce(birth_month, 1); birth_day = Coalesce(birth_day, 1);
+  death_month = Coalesce(death_month, 1); death_day = Coalesce(death_day, 1);
   beg_dt   = ToDate(beg_date);
   end_dt   = ToDate('yyyy-MM-dd', end_date);
   birth_dt = ToDate(SPRINTF('%s-%s-%s', birth_year, birth_month, birth_day));
@@ -465,7 +465,7 @@ graphable = FOREACH people {
 ------
 
 
-The `occasions` intermediate alias is a bag of event tuples holding a chararray and three ints. Bags are disordered (unless you have transiently applied an explicit sorted), and so we've prefixed each event with a slug naming the occasion. 
+The `occasions` intermediate alias is a bag of event tuples holding a chararray and three ints. Bags are disordered (unless you have transiently applied an explicit sorted), and so we've prefixed each event with a slug naming the occasion.
 
 You can do this inline (non-nested `FOREACH`) but we wouldn't. If you find yourself with the error `Error during parsing. Encountered " "as" "AS "" at line X`, just pay for the ext
 

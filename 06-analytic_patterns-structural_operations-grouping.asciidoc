@@ -663,7 +663,7 @@ G_hist = FOREACH (GROUP G_vals BY val) GENERATE
   group AS val, COUNT_STAR(G_vals) AS ct;
 ------
 
-Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's 3,562 games played becomes the only occupant of bin `3550`.
+Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's total of 3,562 games played becomes the only occupant of bin `3550`.
 
 ------
 -- Binning makes it sensible
@@ -671,6 +671,10 @@ G_vals = FOREACH bat_seasons GENERATE 50*FLOOR(G/50) AS val;
 G_hist = FOREACH (GROUP G_vals BY val) GENERATE
   group AS val, COUNT_STAR(G_vals) AS ct;
 ------
+
+// One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth.
+//
+// In mathematical syntax, we would say we're breaking the number of hits into 50-unit categorical ranges: [0,50] , (50,100] , (100,150] , and so on.
 
 ===== Histogram of Career Games Played
 

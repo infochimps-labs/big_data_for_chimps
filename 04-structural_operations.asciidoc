@@ -2,39 +2,39 @@
 == Introduction to Pig
 
 // === Olga, the Remarkable Calculating Pig
-// 
+//
 // JT and Nanette were enjoying the rising success of C&E Corp. The translation and SantaCorp projects were in full production, and they'd just closed two more deals that closely resembled the SantaCorp gig.
-// 
+//
 // Still, it was quite a thrill when the manager for Olga the Remarkable Calculating Pig reached out to _them_, saying Olga had a proposition to discuss. Imagine! The star that played nightly to sell-out crowds at Carnegie Hall, whose exploits of numeracy filled the journals and whose exploits of romance filled the tabloids, working with JT and Nanette! "Why don't you kids come see the show -- we'll leave tickets for you at the gate -- and you can meet with Olga after she gets off."
-// 
+//
 // That night they watched, spellbound, as Olga performed monstrous feats of calculation and recall. In one act, she tallied the end-of-year accounting reports for three major retailers while riding a unicycle; in another, she listed the box-office numbers for actors whose names were drawn from a hat. Needless to say, the crowd roared for more, JT and Nanette along with them. For the grand finale, a dozen audience members wrote down their favorite baseball players -- most well-known, but of course some wise guy wrote down Alamazoo Jennings, Snooks Dowd or Vinegar Bend Mizell to be intentionally obscure footnote:[Yes, these are names of real major league baseball players.]. Olga not only recited the complete career stats for every one, but the population of their hometown; every teammate they held in common; and the construction date of every stadium they played in.
-// 
+//
 // "I tell you, that's some pig", Nanette said to JT as they waited outside the dressing rooms. "Terrific," JT agreed. A voice behind them said "Radiant and Humble, too, they tell me." They turned to find Olga, now dressed in street clothes. "Why don't you join me for a drink? We can talk then."
-// 
+//
 // === Nanette and Olga Have an Idea
-// 
+//
 // Once settled in at a bar down the street, JT broke the ice. "Olga, your show was amazing. When you rattled off Duluth, Minnesota's daily low and high temperatures from 1973 to 1987, chills ran down my spine. But I can't quite figure out what kind of help C&E Corp can provide for you?" Nanette chimed in, "Actually, I think I have an idea -- but I'd like to hear your thoughts first, Olga."
-// 
+//
 // As Olga explained, "I first heard about you from my publisher -- my friend Charlotte and I wrote a book about web crawlers, and thanks to your work we're selling as many copies overseas as we are domestically. But it wasn't until I visited the translation floor that I really appreciated the scale of content you guys were moving. And that's what I'm looking for -- high scale.
-// 
+//
 // "You might know that besides my stage act I consult on the side for companies who need a calculating animal savant. I love that just as much as being on stage, but the fact is that what I can do for my clients just seems so _limited_. I've got insurance companies who want to better judge tornado risk so they can help people protect their homes; but to do this right means using the full historical weather data. I have to explain to them that I'm just one pig -- I'd melt down if I tried to work with that much information.
-// 
+//
 // "Goldbug automakers engages me to make inventory reports based on daily factory output and dealership sales, and I can literally do this in my sleep. But they're collecting thousands of times that much data each second. For instance, they gather status reports from every automated step in their factory. If I could help Goldbug compare the manufacturing data of the cars as they're built to the maintenance records of those cars after sale, we'd be able to find patterns in the factory that match warranty claims down the road. Predicting these manufacturing defects early would enable my client to improve quality, profit and customer satisfaction.
-// 
+//
 // "I wish I could say I invited you for this drink because I knew the solution, but all I have is a problem I'd like to fix. I know your typewriter army helps companies process massive amounts of documents, so you're used to working with the amount of information I'm talking about. Is the situation hopeless, or can you help me find a way to apply my skills at a thousand times the scale I work at now?"
-// 
+//
 // Nanette smiled. "It's not hopeless at all, and to tell you the truth your proposal sounds like the other end of a problem I've been struggling with.
-// 
+//
 // "We've now had several successful client deliveries, and recently JT's made some breakthroughs in what our document handling system can do -- it involves having the chimpanzees at one set of typewriters send letters to another set of chimpanzees at a different set of typewriters. One thing we're learning is that even though the actions that the chimpanzees take are different for every client, there are certain themes in how the chimpanzees structure their communication that recur across clients.
-// 
+//
 // "Now JT here" (at this, JT rolled his eyes for effect, as he knew what was coming) "spent all his time growing up at a typewriter, and so he thinks about information flow as a set of documents. Designing a new scheme for chimpanzees to send inter-office memos is like pie for him. But where JT thinks about working with words on a page, I think about managing books and libraries. And the other thing we're learning is that our clients think like me. They want to be able to tell us the big picture, not fiddly little rules about what should happen to each document. Tell me how you describe the players-and-stadiums trick you did in the grand finale.
-// 
+//
 // "Well, I picture in my head the teams every player was on for each year they played, and at the same time a listing of each team's stadium by year. Then I just think 'match the players\' seasons to the teams\' seasons using the team and year', and the result pops into my head.
-// 
+//
 // Nanette nodded and looked over at JT. "I see what you're getting at now," he replied. "In my head I'm thinking about the process of matching individual players and stadiums -- when I explain it you're going to think it sounds more complicated but I don't know, to me it seems simpler. I imagine that I could ask each player to write down on a yellow post-it note the team-years they played on, and ask each stadium manager to write down on blue post-it notes the team-years it served. Then I put those notes in piles -- whenever there's a pile with yellow post-it notes, I can read off the blue post-it notes it matched.
-// 
+//
 // Nanette leaned in. "So here's the thing. Elephants and Pigs have amazing memories, but not Chimpanzees -- JT can barely keep track of what day of the week it is. JT's scheme never requires him to remember anything more than the size of the largest pile -- in fact, he can get by with just remembering what's on the yellow post-it notes. But
-// 
+//
 // "Well," Nanette said with a grin, "Pack a suitcase with a very warm jacket. We're going to take a trip up north -- way north."
 
 // TODO fix up story
@@ -43,14 +43,14 @@
 // she knows the patterns -- the vaudeville routines. (Make JT blush with one)
 // question is how to translate the small-venue act to massive scale.
 // 22 panels that always work http://momentofcerebus.blogspot.com/2012/07/wally-woods-22-panels-that-always-work.html
-// find people with the same birthday, complete tax reforms of all attendees, 
+// find people with the same birthday, complete tax reforms of all attendees,
 // (farrowed - litter of 10 piglets.) no, keep Pig as the thing coordinating a map/reduce flow.
-// 
+//
 
-// ch 5 baseball: score keeping? 
+// ch 5 baseball: score keeping?
 // ch 6 pig performance, show group
 // ch 7 joining
-// ch 8 
+// ch 8
 
 
 === Pig Helps Hadoop work with Tables, not Records
@@ -73,13 +73,13 @@ STORE INTO OUTPUT FILE
 In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping. In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
 
 // Here’s what you might write in Wukong to answer the same question:
-// 
+//
 // ----
 // DEFINE MODEL FOR INPUT RECORDS
 // MAPPER EXTRACTS MONTHS, EMITS MONTH AS KEY WITH NO VALUE
 // COUNTING REDUCER INCREMENTS ON EACH ENTRY IN GROUP AND EMITS TOTAL IN FINALIZED METHOD
 // ----
-// 
+//
 // Did you notice, by the way, that in both cases, the output was sorted? that is no coincidence -- as you saw in Chapter (REF), Hadoop sorted the results in order to group them.
 
 To run the Pig job, go into the ‘EXAMPLES/UFO’ directory and run
@@ -89,7 +89,7 @@ pig monthly_visit_counts.pig /data_UFO_sightings.tsv /dataresults monthly_visit_
 ------
 
 // To run the Wukong job, go into the (REF) directory and run
-// 
+//
 // ----
 // wu-run monthly_visit_counts.rb --reducers_count=1 /data_UFO_sightings.tsv /dataresults monthly_visit_counts-wu.tsv
 // ----
@@ -115,7 +115,7 @@ STORE INTO FILE
 // (TODO: If you do an order and then group, is Pig smart enough to not add an extra REDUCE stage?)
 
 // Run the script just as you did above:
-// 
+//
 // ----
 // (TODO: command to run the script)
 // ----
@@ -146,7 +146,7 @@ A control operation either influences or describes the data flow itself. A pipel
 
 **Pipelinable Operations**
 
-With no structural operations, these operations create a mapper-only job with the composed pipeline. When they come before or after a structural operation, they are composed into the mapper or reducer. 
+With no structural operations, these operations create a mapper-only job with the composed pipeline. When they come before or after a structural operation, they are composed into the mapper or reducer.
 
 // TODO explain better
 
@@ -157,16 +157,16 @@ With no structural operations, these operations create a mapper-only job with th
 
 **Structural Operations**
 
-These jobs require a Map and Reduce phase. 
+These jobs require a Map and Reduce phase.
 
-* Grouping operations (GROUP, COGROUP, CUBE, ROLLUP) place records into context with each other. They make no modifications to the input records'  contents, but do rearrange their schema. You will often find them followed by a FOREACH that is able to take advantage of the group context. The GROUP and COGROUP yield one output record per distinct GROUP value. 
+* Grouping operations (GROUP, COGROUP, CUBE, ROLLUP) place records into context with each other. They make no modifications to the input records'  contents, but do rearrange their schema. You will often find them followed by a FOREACH that is able to take advantage of the group context. The GROUP and COGROUP yield one output record per distinct GROUP value.
 
 * Joining operations (JOIN, CROSS) match records between tables. JOIN is simply an optimized COGROUP/FLATTEN/FOREACH sequence, but it is importantly enough different in use that we'll  so its output size follows the same logic as FLATTEN. (CROSS too, except for the "important" part: we'll have very little to say about it and discourage its use).
 
 * Sorting operations (ORDER BY, RANK) perform a total sort on their input; every record in file 00000 is in sorted order and comes before all records in 00001 and so forth for the number of output files. These require two jobs:  first, a light Mapper-Only pass to understand the distribution of sort keys, next a Map/Reduce job to perform the sort.
 
-* Uniquing and (DISTINCT, specific COGROUP forms) select/reject/collapse duplicates, or find records associated with unique or duplicated records. 
-these are typically accomplished with specific combinations of the above, but involve 
+* Uniquing and (DISTINCT, specific COGROUP forms) select/reject/collapse duplicates, or find records associated with unique or duplicated records.
+these are typically accomplished with specific combinations of the above, but involve
 
 // ... Composed to advanced patterns: Set Operations, Graph operations, ...
 
@@ -185,8 +185,8 @@ Pig scripts need data to process, and so your pig scripts will begin with a LOAD
 
 ------
 articles = LOAD './data/wp/articles.tsv' AS (
-  page_id: long, namespace: int, wikipedia_id: chararray, 
-  revision_id: long, timestamp: long, 
+  page_id: long, namespace: int, wikipedia_id: chararray,
+  revision_id: long, timestamp: long,
   title: chararray, redirect: chararray,
   text: chararray);
 hadoop_articles = FILTER articles BY text MATCHES '.*Hadoop.*';
@@ -199,14 +199,14 @@ As you can see, the `LOAD` statement not only tells pig where to find the data, 
 
 The `chararray` type loads text as UTF-8 encoded strings (the only kind of string you should ever traffic in). String literals are contained in single quotes -- `'hello, world'`. Regular expressions are supplied as string literals, as in the example above: `'.*[Hh]adoop.*'`. The `bytearray` type does no interpretation of its contents whatsoever, but be careful -- the most common interchange formats (`tsv`, `xml` and `json`) cannot faithfully round-trip data that is truly freeform.
 
-Lastly, there are two special-purpose simple types. Time values are described with `datetime`, and should be serialised in the the ISO-8601 format: `1970-01-01T00:00:00.000+00:00`. Boolean values are described with `boolean`, and should bear the values `true` or `false`. 
+Lastly, there are two special-purpose simple types. Time values are described with `datetime`, and should be serialised in the the ISO-8601 format: `1970-01-01T00:00:00.000+00:00`. Boolean values are described with `boolean`, and should bear the values `true` or `false`.
 
 // ===== Choosing a data type
 
-Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, and you will notice rough edges around their use. 
+Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, and you will notice rough edges around their use.
 
-// We most often represent boolean fields C-style: as an `int` holding 0 or 1. 
-// Dates 
+// We most often represent boolean fields C-style: as an `int` holding 0 or 1.
+// Dates
 // TODO between here and the part of the FOREACH section where we assemble a complex type, give our policy on dates and booleans. As we do, make sure that we really feel that way about bools
 
 ==== Complex Type 1: Tuples are fixed-length sequences of typed fields
@@ -373,7 +373,7 @@ Pig wouldn't be complete without a way to _act_ on the various fields.  It offer
 
 * Add all the DataFu operations: http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html and coalesce http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html and maybe others
   - Hasher
-  
+
 
 === Moving right along …
 

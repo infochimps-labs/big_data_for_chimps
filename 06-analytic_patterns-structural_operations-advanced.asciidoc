@@ -1,3 +1,4 @@
+== Analytic Patterns: Advanced Operations
 
 ==== Structural Group Operations (ie non aggregating)
 

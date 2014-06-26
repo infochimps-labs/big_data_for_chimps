@@ -1,7 +1,6 @@
 == Insight comes from Data in Context
 
-TODO: put in an interlude that is JT & Nanette meeting. (Told as a flashforward.)
-TODO: Get O'Reilly to do a promo version of just the interludes -- "Big Data for Babies" -- baby chimp on cover?
+// TODO: put in an interlude that is JT & Nanette meeting. (Told as a flashforward.)
 
 Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
 
@@ -127,10 +126,6 @@ Peter Norvig (Google's Director of Research) calls this the "Unreasonable Effect
 
 This proposition is sure to cause barroom brawls at scientific conferences for years to come, because it advocates another path to truth that _does not follow_ the Scientific Method. Roughly speaking, the scientific method has you (a) use a simplified model of the universe to make falsifiable predictions; (b) test those predictions in controlled circumstances; (c) use established truths to bound any discrepancies footnote:[plus (d) a secret dose of our sense of the model's elegance]. Under this paradigm, data is non-comprehensive: scientific practice demands you carefully control experimental conditions, and the whole point of the model is to strip out all but the reductionistically necessary parameter. A large part of the analytic machinery acts to account for discrepancies from sampling (too little comprehensiveness) or discrepancies from "extraneous" effects (too much comprehensiveness). If those discrepancies are modest, the model is judged to be valid. This paradigm is regarded as the only acceptably rigorous way to admit a simplified representation of the world into the canon of truth.
 
-
-
-
-
 === Simple Exploration
 
 (TODO transplant intro to UFO sighting data here)
@@ -173,18 +168,11 @@ The example data included with the book includes a data set from the  http://www
 
 Now it's sad to say, but many of the sighting reports are likely to be bogus. To eliminate sightings that lack a detailed description, we can filter out records whose description Field is shorter than 80 characters:
 
-
 ----
-
 TODO code
-
 ----
-
-
 
 A key activity in a Big Data exploration is summarizing big datasets into a comprehensible smaller ones. Each sighting has a field giving the shape of the flying object: cigar, disk, etc. This script will tell us how many sightings there are for each craft type:
-
-
 
 ----
 LOAD sightings
@@ -196,17 +184,13 @@ STORE cf_counts INTO 'out/geo/ufo_sightings/craft_type_counts';
 We can make a little travel guide for the sightings by amending each sighting with the Wikipedia article about its place. The JOIN operator matches records from different tables based on a common key:
 
 ----
-
 TODO pseudocode
-
 ----
 
 This yields the following output:
 
 ----
-
 TODO output
-
 ----
 
 This travel guide is a bit lame, but of course we can come up with all sorts of ways to improve it. For instance, a proper guide would hold not just the one article about the general location, but a set of prominent nearby places of interest. These notions crop up in many different problems, so later in the book we'll show you how to do a nearby-ness query (in the Geodata chapter (REF)), and how to attach a notion of "prominence" (in the event log chapter (REF)), and much more.

@@ -122,9 +122,9 @@ date_converted = FOREACH people {
   death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
   beg_dt   = ToDate(CONCAT(beg_date, 'T00:00:00.000Z'));
   end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
-  
+
   GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt,
-    -- birth_year, birth_month, birth_day, 
+    -- birth_year, birth_month, birth_day,
     -- (birth_month IS NULL ? 'HIMOM' : ''),
     name_first, name_last;
 };
