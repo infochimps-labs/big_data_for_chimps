@@ -2,7 +2,7 @@
 
 It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But one year several years ago, the world had grown just a bit too much. The elves just could not keep up with the scale of requests -- Christmas was in danger! Luckily, their friends at the Elephant & Chimpanzee Corporation were available to help. Packing their typewriters and good winter coats, JT, Nanette and the crew headed to the Santaplex, the headquarters for toy manufacture at the North Pole. Here's what they found.
 
-==== Trouble in Toyland
+=== Trouble in Toyland
 
 As you know, each year children from every corner of the earth write to Santa to request toys, and Santa -- knowing who's been naughty and who's been nice -- strives to meet the wishes of every good little boy and girl who writes him. He employs a regular army of toymaker elves, each of whom specializes in certain kinds of toy: some elves make Action Figures and Dolls, others make Xylophones and Yo-Yos.
 
@@ -20,7 +20,7 @@ image::images/chimps_and_elves/bchm_0201.png[Elf Workstations, pre-Hadoop]
 .Little boys and girls' mail is less so.
 image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 
-==== Chimpanzees Process Letters into Labelled Toy Requests
+=== Chimpanzees Process Letters into Labelled Toy Requests
 
 In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate.
 
@@ -63,7 +63,7 @@ image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
 The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms, while the third one yields a toyform directing Santa to put coal in his stocking.
 
-==== Pygmy Elephants Carry Each Toyform to the Appropriate Workbench
+=== Pygmy Elephants Carry Each Toyform to the Appropriate Workbench
 
 Here's the new wrinkle on top of the system used in the translation project. Next to every desk now stood a line of pygmy elephants, each dressed in a capes that listed the types of toy it would deliver. Each desk had a pygmy elephant for Archery Kits and Dolls, another one for Xylophones and Yo-Yos, and so forth -- matching the different specialties of toymaker elves.
 
@@ -102,7 +102,7 @@ Sixty thousand sightings is much higher than a reindeer can count (only four hoo
 
 The data model for a UFO sighting has fields for: date of sighting and of report; human-entered location; duration; shape of craft; and eye-witness description.
 
-----
+------
         class SimpleUfoSighting
         include Wu::Model
           field :sighted_at,   Time
@@ -115,7 +115,7 @@ The data model for a UFO sighting has fields for: date of sighting and of report
           field :location_str, String
           field :description,  String
         end
-----
+------
 
 ==== Group the UFO Sightings by Time Bucket
 
@@ -160,6 +160,7 @@ You can test the mapper on the commandline:
         triangle  1999-02-27T06:00:00Z  1999-02-27T06:00:00Z    San Diego, CA                   triangle        10 minutes      cha...
         triangle  1997-09-15T05:00:00Z  1999-02-17T06:00:00Z    Wedgefield, SC                  triangle        15 min          Tra...
         ...
+------
 
 The output is simply the partitioning label (UFO shape), followed by the attributes of the signing, separated by tabs. The framework uses the first field to group/sort by default; the rest is cargo.
 
@@ -184,7 +185,7 @@ Similarly, the reducer receives a series of records, grouped by label, with a gu
 
 Test the full mapper-sort-reducer stack from the commandline:
 
-----
+------
         $ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json        |
         ./examples/geo/ufo_sightings/count_ufo_shapes.rb --map  | sort |
         ./examples/geo/ufo_sightings/count_ufo_shapes.rb --reduce | wu-lign
@@ -198,7 +199,7 @@ Test the full mapper-sort-reducer stack from the commandline:
         1947-10-15T06:00:00Z    1999-02-25T06:00:00Z    Palmira,                circle          1 hour                  After a concert given in the small town of Palmira, Colombia,  a grou
         1999-01-10T06:00:00Z    1999-01-11T06:00:00Z    Tyson's Corner, VA      circle          1 to 2 sec              Bright green circularly shaped light moved downward and easterly thro
         ...
-----
+------
 
 
 When people work with data, their end goal is to uncover some answer or pattern.  They most often employ Hadoop to turn Big Data into small data, then use traditional analytics techniques to turn small data into insight.  One such technique is to _plot_ the information.  If a picture is worth a thousand words, then even a basic data plot is worth reams of statistical analysis. (TODO-qem: I think that line is original, but it sounds familiar.  Must check around to make sure I didn't just pinch someone's quote.) That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result.  Here, we've used the free, open-source tool R footnote:[http://r-project.org/] to see how UFO sightings are distributed around the country. footnote:[That said, people sometimes want to run R _inside_ Hadoop, to analyze large-scale datasets. If you're interested in using R and Hadoop together, please check out Q's other book, _Parallel R_ (O'Reilly) http://shop.oreilly.com/product/0636920021421.do]
@@ -329,11 +330,11 @@ Your authors have additionally run the free-text locations -- "Merrimac, WI" or 
 
 When you are writing a Map/Reduce job, the first critical question is how to group the records in context for the Reducer to synthesize.  In this case, we want to match every UFO sighting against the corresponding Geonames record with the same city, state and country, so the Mapper labels each record with those three fields. This ensures records with the same location name all are received by a single Reducer in a single group, just as we saw with toys sent to the same workbench or visits "sent" to the same time bucket. The Reducer will also need to know which records are sightings and which records are places, so we have extended the label with an "A" for places and a "B" for sightings.  (You will see in a moment why we chose those letters.)  While we are at it, we will also eliminate Geonames records that are not populated places.
 
-----
-(CODE code for UFO sighting geolocator mapper)
-----
+// ----
+// (CODE code for UFO sighting geolocator mapper)
+// ----
 
-----
+------
         class UfoSighting
           include Wu::Model
           field :sighted_at,   Time
@@ -355,7 +356,7 @@ When you are writing a Map/Reduce job, the first critical question is how to gro
               #
           field :description,  String
         end
-----
+------
 
 ==== Extend The UFO Sighting Records In Each Location Co-Group With Place Data
 
