@@ -91,16 +91,17 @@ systemic abuse of performance-enhancing drugs.
 ==== Sorting Case-insensitive Strings
 
 There's no intrinsic way to sort case-insensitive; instead, just force a
-lower-case field to sort with:
+lower-case field to sort on. We don't have an interesting table with mixed-case records in the baseball dataset, but most UNIX-based computers come with a dictionary in the `/usr/share` directory tree. Here's how to sort that ignoring case:
 
+.Case-insensitive Sort
 ------
 dict        = LOAD '/usr/share/dict/words' AS (word:chararray);
-sortable    = FOREACH dict GENERATE LOWER(word) AS key, *;
-dict_nocase = FOREACH (ORDER sortable BY key DESC, word) GENERATE word;
-zzz_nocase  = LIMIT dict_nocase 200;
+sortable    = FOREACH dict GENERATE LOWER(word) AS l_word, *;
+dict_nocase = FOREACH (ORDER sortable BY l_word, word) GENERATE word; 
 dict_case   = ORDER dict BY word DESC;
-zzz_case    = LIMIT dict_case   200;
 ------
+
+Note that we sorted on `l_word` _and_ `word`: this stabilizes the sort, ensuring that even though `Polish` and `polish` tie in case-insensitivity those ties will always be resolved the same way.
 
 ==== Dealing with Nulls When Sorting
 
@@ -138,6 +139,17 @@ post1985_vs_earlier = FOREACH (ORDER post1985_vs_earlier BY is_1985 DESC, n_olde
 ------
 
 // TODO: ??Change this to use the parks table earlier, floating the modern ones to the top?
+
+===== Pattern in Use
+
+* _Standard Snippet_	 -- `ORDER tbl BY mykey;`
+* _Hello, SQL Users_
+  - Usually this is part of a `SELECT` statement; in Pig it stands alone
+  - You can't put an expression in the `BY` clause
+* _Important to Know_	 -- Pound-for-pound, unless followed by a `LIMIT` statement this is one of the most expensive operations you can perform, requiring two to three jobs and a full reduce
+* _Output Count_	 -- Unchanged
+* _Records_		 -- Unchanged
+* _Data Flow_		 -- Map-only on a sample of the data; Map and Reduce to perform the sort. In some cases, if Pig isn't confident that it will sample correctly, an extra Map-only to perform the pipelinable operations before the sample
 
 === Sorting Records within a Group
 
@@ -204,7 +216,13 @@ team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
 
 The lines 'Global sort: false // Secondary sort: true' in the explain output indicate that pig is indeed relying on the free secondary sort, rather than quicksorting the bag itself in the reducer.
 
+===== Pattern in Use
 
+* _Where You'll Use It_  -- Extracting top records from a group (see next). Preceding many UDFs that depend on ordering. To make your output readable. To stabilize results.
+* _Hello, SQL Users_     -- This is not directly analogous to the `ORDER BY` part of a `SELECT` statement, as it is done to the inner bag. For users of Oracle and other databases, this is similar to a sort within a windowed query. 
+* _Important to Know_	 -- If it can be applied to the records coming from the mapper, it's free. Verify by looking for `Secondary sort: true` in the output of `EXPLAIN`
+* _Output Count_	 -- Unchanged
+* _Records_		 -- Unchanged
 
 ==== Select Rows with the Top-K Values for a Field
 
@@ -232,30 +250,29 @@ There are two useful optimizations to make when the number of records you will k
 
 NOTE: We've cheated on the theme of this chapter (pipeline-only operations) -- sharp eyes will note that `ORDER … LIMIT` will in fact trigger a reduce operation.  We still feel that top-_K_ belongs with the other data elimination pattern, though, so we've included it here.
 
-==== Top K Within a Group
+// ==== Top K Within a Group
+// 
+// There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements.
+// 
+// TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
 
-There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements.
+// ==== Numbering Records by Sorted Rank
+// 
+// * ORDER by multiple fields: sort on OPS to three places then use games then playerid
+// * note value of stabilizing list
+// * (how do `null`s sort?)
+// * ASC / DESC: fewest strikeouts per plate appearance
 
-TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
-
-
-==== Numbering Records by Sorted Rank
-
-* ORDER by multiple fields: sort on OPS to three places then use games then playerid
-* note value of stabilizing list
-* (how do `null`s sort?)
-* ASC / DESC: fewest strikeouts per plate appearance
-
-==== Rank records in a group using Stitch/Over
-
-
-### ???
-
-* Over / Stitch
-  - Calculating Successive-Record Differences
-  - Generating a Running Total (over and stitch)
-  - Finding Cumulative Sums and Running Averages
-  - age vs y-o-y performance change
+// ==== Rank records in a group using Stitch/Over
+// 
+// 
+// ### ???
+// 
+// * Over / Stitch
+//   - Calculating Successive-Record Differences
+//   - Generating a Running Total (over and stitch)
+//   - Finding Cumulative Sums and Running Averages
+//   - age vs y-o-y performance change
 
 
 ==== Finding Records Associated with Maximum Values
@@ -302,54 +319,75 @@ Describe pigs optimization of order..limit
 * Hard in SQL but easy in Pig: Finding Rows Containing Per-Group Minimum or Maximum Value, Displaying One Set of Values While Sorting by Another: - can only ORDER BY an explicit field. In SQL you can omit the sort expression from the table (use expression to sort by)
 * Sorting a Result Set (when can you count on reducer order?)
 
-
-==== Select Rows using a Limit and Offset
-
-A common practice is to express percentiles of your data, that is, to order it and see which records are in the top _K_ percent.  That's another way of saying that those records are better than the remaining 100-_K_ percent, or that they are in the (100-_K_)th percentile.
-
-The first step to calculating percentiles is to determine the number of records in your dataset.  Multiplying that number by 0.01 (that is, 1/100) will show how many records are in one percent of the data.  Multiplying the total by 0.05 (5/100) will show the number of records in five percent of the data, and so on.
-
-For example, thanks to a quick inspection and some `wc -l` action, our baseball dataset holds 41,040 records footnote:[Remember what we said earlier, about "know your data"?] footnote:[In the next chapter, we provide some details on how to inject global values into your Pig scripts, so you needn't hardcode such a value.  For now, please bear with us.].   Five percent of 41,040 is 2,052.  To fetch the top five percent of records -- that is, those records in the 95th percentile -- we would sort the records and extract the top 2,052.
-
-----
-TODO: Pig code
-----
-
-----
-SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 2052
-----
-
-Instead of fetching all of the records in a given percentile, we sometimes just want to know which is the lowest-ranked record of that percentile.  This tells us which record is the boundary between the ranges above and below the percentile marking.  Calculating this requires an additional step, that both Pig and SQL call `OFFSET`.  To find the 95th percentile values for our topline stats -- assuming a post-1900 game, and players with more than 60 plate appearances -- then, we would run:
-
-----
-TODO: Pig code
-----
-
-----
-SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
-----
-
-If you repeat those steps for the 75th and 50th percentiles, Pig should return the following:
-
-
-----
--- %ile	  Row	H	 BB	HBP	h2B	h3B	HR	 G	 PA	OBP	SLG	OPS
--- 95th	 2052	175	75	7	34	9	25	155	669	0.394	0.519	0.895
--- 75th	10260	124	41	3	21	4	9	132	520	0.347	0.422	0.765
--- 50th	20521	66	22	1	11	1	3	93	294	0.313	0.359	0.676
-----
-
-WARNING: Be really careful doing this.  As opposed to the `ORDER BY .. LIMIT` pattern, Pig must do a total sort on the full table to calculate percentiles this way.
+// ==== Select Rows using a Limit and Offset
+// 
+// A common practice is to express percentiles of your data, that is, to order it and see which records are in the top _K_ percent.  That's another way of saying that those records are better than the remaining 100-_K_ percent, or that they are in the (100-_K_)th percentile.
+// 
+// The first step to calculating percentiles is to determine the number of records in your dataset.  Multiplying that number by 0.01 (that is, 1/100) will show how many records are in one percent of the data.  Multiplying the total by 0.05 (5/100) will show the number of records in five percent of the data, and so on.
+// 
+// For example, thanks to a quick inspection and some `wc -l` action, our baseball dataset holds 41,040 records footnote:[Remember what we said earlier, about "know your data"?] footnote:[In the next chapter, we provide some details on how to inject global values into your Pig scripts, so you needn't hardcode such a value.  For now, please bear with us.].   Five percent of 41,040 is 2,052.  To fetch the top five percent of records -- that is, those records in the 95th percentile -- we would sort the records and extract the top 2,052.
+// 
+// ----
+// TODO: Pig code
+// ----
+// 
+// ----
+// SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 2052
+// ----
+// 
+// Instead of fetching all of the records in a given percentile, we sometimes just want to know which is the lowest-ranked record of that percentile.  This tells us which record is the boundary between the ranges above and below the percentile marking.  Calculating this requires an additional step, that both Pig and SQL call `OFFSET`.  To find the 95th percentile values for our topline stats -- assuming a post-1900 game, and players with more than 60 plate appearances -- then, we would run:
+// 
+// ----
+// TODO: Pig code
+// ----
+// 
+// ----
+// SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 1 OFFSET 2052
+// ----
+// 
+// If you repeat those steps for the 75th and 50th percentiles, Pig should return the following:
+// 
+// 
+// ----
+// -- %ile	  Row	H	 BB	HBP	h2B	h3B	HR	 G	 PA	OBP	SLG	OPS
+// -- 95th	 2052	175	75	7	34	9	25	155	669	0.394	0.519	0.895
+// -- 75th	10260	124	41	3	21	4	9	132	520	0.347	0.422	0.765
+// -- 50th	20521	66	22	1	11	1	3	93	294	0.313	0.359	0.676
+// ----
+// 
+// WARNING: Be really careful doing this.  As opposed to the `ORDER BY .. LIMIT` pattern, Pig must do a total sort on the full table to calculate percentiles this way.
 
 
 
 ====  Shuffle a set of records
 
-See notes on random numbers.
+// See notes on random numbers.
+// 
+// You might also enjoy the random number table, holding 350 million 64-bit numbers directly from random.org (7 GB of 20-digit decimal numbers)
+// * 160-bit numbers in hexadecimal form
+// * 32 64-bit numbers (2048-bits per row)
+// 
+// cogroup events by team_id
+// ... there's a way to do this in one less reduce in M/R -- can you in Pig?
 
-You might also enjoy the random number table, holding 350 million 64-bit numbers directly from random.org (7 GB of 20-digit decimal numbers)
-* 160-bit numbers in hexadecimal form
-* 32 64-bit numbers (2048-bits per row)
+To shuffle a set of records, we're going to apply the 'Assign a unique ID' pattern to generate an arbitrary key (one that is decoupled from the records' content), and then use that to order the records.
 
-cogroup events by team_id
-... there's a way to do this in one less reduce in M/R -- can you in Pig?
+------
+DEFINE Hasher datafu.pig.hash.Hasher('sip24-32', 'rand');
+
+vals = LOAD '$rawd/geo/census/us_city_pops.tsv' USING PigStorage('\t', '-tagSplit')
+  AS (split_info:chararray, city:chararray, state:chararray, pop:int);
+
+vals_rk = RANK vals;
+vals_ided = FOREACH vals_rk {
+  line_info = CONCAT((chararray)split_info, '#', (chararray)rank_vals);
+  GENERATE Hasher((chararray)line_info) AS rand_id, *; -- $2..;
+  };
+
+vals_shuffled = FOREACH (ORDER vals_ided BY rand_id) GENERATE $1..;
+DESCRIBE vals_shuffled;
+
+STORE_TABLE('vals_shuffled', vals_shuffled);
+-----
+
+This follows the general plot of 'Assign a Unique ID': enable a hash function UDF; load the files so that each input split has a stable handle; and number each line within the split. The important difference here is that the hash function we generated accepts a seed that we can mix in to each record. If you supply a constant to the constructor (see the documentation) then the records will be put into an effectively random order, but the same random order each time. By supplying the string `'rand'` as the argument, the UDF will use a different seed on each run. What's nice about this approach is that although the ordering is different from run to run, it does not exhibit the anti-pattern of changing from task attempt to task attempt. The seed is generated once and then used everywhere. Rather than creating a new random number for each row, you use the hash to define an effectively random ordering, and the seed to choose which random ordering to apply.

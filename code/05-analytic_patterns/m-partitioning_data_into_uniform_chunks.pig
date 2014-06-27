@@ -9,9 +9,18 @@ bat_seasons = load_bat_seasons();
 
 -- note this should come after the MultiStorage script.
 
+
+-- ==== Strategy 1: ORDER BY with parallelism
+-- 
 -- An ORDER BY statement with parallelism forced to (output size / desired chunk size) will give you _roughly_ uniform chunks,
 
-SET DEFAULT_PARALLEL 3;
+
+bats_chunked_1 = ORDER bat_seasons BY (player_id, year_id) PARALLEL 7
+STORE_TABLE(bats_chunked, 'bats_chunked');
+
+-- ==== Strategy 2: Rank
+-- 
+-- Each chunk except the last will be exactly chunk_size.
 
 %DEFAULT chunk_size 10000
 ;
@@ -24,6 +33,12 @@ bat_seasons_chunked = FOREACH (bat_seasons_ranked) GENERATE
 -- Writes the chunk key into the file, like it or not.
 STORE bat_seasons_chunked INTO '$out_dir/bat_seasons_chunked'
   USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
+
+
+-- ==== Strategy 3: Mod Chunks
+
+-- Send rows to reducer line_no % n_chunks.
+-- Assuming input files are meaty, will be exactly n_chunks files of size ~= (tot_recs/n_size) +/- sqrt(n_mappers)
 
 %DEFAULT n_chunks 8
 ;
