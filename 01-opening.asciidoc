@@ -10,13 +10,13 @@ Within each of those examples are two competing forces that move them out of the
 
 === Big Data: Tools to Solve the Crisis of Comprehensive Data
 
-Let's take an extremely basic analytic operation: counting. To count the votes for a legislative bill, or Parent-Teacher association head, or what type of pizza to order, we gather the relevant parties into the same room at a fixed time and take a census of opintions. The logistics here are straightforward.
+Let's take an extremely basic analytic operation: counting. To count the votes for a bill in the state legislature, or for what type of pizza to order, we gather the relevant parties into the same room at a fixed time and take a census of opintions. The logistics here are straightforward.
 
 It is impossible, however, to count votes for the President of the United States this way. No conference hall is big enough to hold 300 million people; if there were, no roads are wide enough to get people to that conference hall; and even still the processing rate would not greatly exceed the rate at which voters come of age or die.
 
 Once the volume of data required for synthesis exceeds some key limit of available computation -- limited memory, limited network bandwith, limited time to prepare a relevant answer, or such -- you're forced to fundamentally rework how you synthesize insight from data.
 
-We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far and numerous enough that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed to prepare the final result. This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it calls in another local method (summing a table of numbers) and orchestrates the two so that the volume of people and data never exceeds what can be efficiently processed.
+We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far, and sized so that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed and sent to the state Elections Division. The folks in the Elections Division office add the results from each polling place to prepare the final result. This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it applies another local method (summing a table of numbers). The orchestration of a gathering stage, an efficient data transfer stage, and a final tabulation stage arrives at a correct result, and the volume of people and data never exceeds what can be efficiently processed.
 
 // ...
 
@@ -30,7 +30,6 @@ So our first definition of Big Data is a response to a crisis: "A collection of 
 
 One solution to the big data crisis is high-performance supercomputing (HPC): push back the limits of computation with brute force. We could conduct our election by gathering supporters of one candidate on a set of cornfields in Iowa, supporters of the other on cornfields in Iowa, and using satellite imaging to tally the result. HPC solutions are exceptionally expensive, require the kind of technology seen only when military and industrial get complex, and though the traditional "all data is local" methods continue to work, they lose their essential straightforward flavor. A supercomputer is not one giant connected room, it's a series of largish rooms connected by very wide multidimensional hallways; HPC programmers have to constantly think about the motion of data among caches, processors, and backing store.
 
-
 TODO: not sure whether we should say "map-reduce" or "Map/Reduce" or "MapReduce."  I thought the latter was the preferred form, but maybe I (qem) am wrong?
 
 A competing solution tp HPC, then, is Apache Hadoop. (TODO: link to hadoop.apache.org) Hadoop's approach is effectively the opposite of HPC. Instead of full control over all aspects of computation and the illusion of data locality, Hadoop revokes almost all control over the motion of data.  Furthermore, unlike the HPC solutions of yore, Hadoop runs on commodity hardware and addresses a wide range of problem domains (finance, medicine, marketing; images, logfiles, mathmatical computation).
@@ -39,9 +38,12 @@ This power comes at a cost, though: Hadoop speaks in a limited vocabulary known 
 
 To get a taste of MapReduce, imagine a publisher that banned all literary forms except the haiku:
 
-    data flutters by
-        elephants make sturdy piles
-      context yields insight
+[verse, The Map/Reduce Haiku]
+____________________________________________________________________
+data flutters by
+    elephants make sturdy piles
+  context yields insight
+____________________________________________________________________
 
 Our Map/Reduce haiku illustrates Hadoop's template:
 
@@ -176,7 +178,6 @@ TODO pseudocode
 This yields the following output:
 
 Of course this would make a much better travel guide if it held not just the one article about the general location but a set of prominent nearby places of interest. We'll show you how to do a nearby-ness query in the Geodata chapter (REF), and how to attach a notion of "prominence" in the event log chapter (REF).
-
 
 
 === Grouping and Sorting: Analyzing UFO Sightings with Pig

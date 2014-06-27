@@ -192,3 +192,18 @@ DEFINE load_one_line() RETURNS loaded {
 DEFINE load_us_city_pops() RETURNS loaded {
   $loaded = LOAD '$data_dir/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop_2011:int);
 };
+
+DEFINE load_sightings() RETURNS loaded {
+  $loaded = LOAD '/Users/flip/ics/core/wukong/data/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+    sighted_at: chararray,   reported_at: chararray,    location_str: chararray, shape: chararray,
+    duration_str: chararray, description: chararray,    lng: float,              lat: float,
+    city: chararray,         county: chararray,         state: chararray,        country: chararray );
+};
+
+DEFINE load_sightings_dt() RETURNS loaded {
+  $loaded = LOAD '/Users/flip/ics/core/wukong/data/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+    sighted_at: datetime,    reported_at: datetime,   location_str: chararray, shape: chararray,
+    duration_str: chararray, description: chararray,  lng: float,              lat: float,
+    city: chararray,         county: chararray,       state: chararray,        country: chararray,
+    duration: chararray);
+};

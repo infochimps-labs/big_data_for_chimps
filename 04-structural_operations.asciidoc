@@ -59,16 +59,20 @@ Pig is an open-source, high-level language that enables you to create efficient 
 
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
-------
-PARALLEL 1; (USE 1 REDUCER) (DISABLE COMBINERS)
-LOAD UFO table
-EXTRACT MONTH FROM EACH LINE
-GROUP ON MONTHS
-COUNT WITHIN GROUPS
-STORE INTO OUTPUT FILE
-------
+// PARALLEL 1;
+// SET pig.exec.nocombiner true
 
-// TODO fix up script
+------
+sightings = LOAD '/path/to/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+    sighted_at: chararray,   reported_at: chararray,    location_str: chararray, shape: chararray,
+    duration_str: chararray, description: chararray,    lng: float,              lat: float,
+    city: chararray,         county: chararray,         state: chararray,        country: chararray );
+
+year_month_ct      = FOREACH sightings GENERATE SUBSTRING(sighted_at, 0, 7) AS yrmo;
+sightings_hist     = FOREACH (GROUP year_month_ct BY yrmo) GENERATE
+  group, COUNT_STAR(year_month_ct);
+STORE sightings_hist INTO '/data/out/ufo/sightings_hist';
+------
 
 In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping. In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
 
@@ -82,10 +86,10 @@ In a Wukong script or traditional Hadoop job, the focus is on the record and you
 //
 // Did you notice, by the way, that in both cases, the output was sorted? that is no coincidence -- as you saw in Chapter (REF), Hadoop sorted the results in order to group them.
 
-To run the Pig job, go into the ‘EXAMPLES/UFO’ directory and run
+To run the Pig job, go into the example code repository and run
 
 ------
-pig monthly_visit_counts.pig /data_UFO_sightings.tsv /dataresults monthly_visit_counts-pig.tsv
+pig 04-intro_to_pig/a-ufo_visits_by_month.pig
 ------
 
 // To run the Wukong job, go into the (REF) directory and run
@@ -103,8 +107,20 @@ If you consult the Job Tracker Console, you should see a single Map/Reduce for e
 Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
 
 ------
+SET DEFAULT_PARALLEL 3
+  ;
+
+pageviews = LOAD '/data/rawd/wikipedia/pagecounts/pagecounts-20081002-230001.log'  AS (
+   filename:chararray, ns:chararray, wikipedia_id:chararray, views:long, bytes:long
+    ) USING PigStorage('\t', 'tagFile');
+
+year_month_ct      = FOREACH pageviews  GENERATE SUBSTRING(sighted_at, 0, 7) AS yrmo;
+sightings_hist     = FOREACH (GROUP year_month_ct BY yrmo) GENERATE
+  group, COUNT_STAR(year_month_ct);
+STORE sightings_hist INTO '/data/out/ufo/sightings_hist';
+
+
 LOAD SOURCE FILE
-PARALLEL 3
 TURN RECORD INTO HOUR PART OF TIMESTAMP AND COUNT
 GROUP BY HOUR
 SUM THE COUNTS BY HOUR
