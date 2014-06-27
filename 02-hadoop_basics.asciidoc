@@ -1,7 +1,3 @@
-== Insight comes from Data in Context
-
-(placeholder to keep chapter numbering)
-
 [[hadoop_basics]]
 == Hadoop Basics
 

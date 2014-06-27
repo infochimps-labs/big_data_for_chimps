@@ -1,5 +1,7 @@
 = Big Data for Chimps
 
+include::01-opening.asciidoc[]
+
 include::02-part_one.asciidoc[]
 
 include::02-hadoop_basics.asciidoc[]
