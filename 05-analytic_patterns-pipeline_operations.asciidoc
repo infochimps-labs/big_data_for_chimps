@@ -680,3 +680,204 @@ The above are all "counting stats", and generally the more games the more hits a
 
 Just as a professional mechanic has an assortment of specialized and powerful tools, modern baseball analysis uses statistics significantly more nuanced than these. But when it comes time to hang a picture, they use the same hammer as the rest of us. You might think that using the on-base, slugging, and OPS figures to estimate overall performance is a simplification we made for you. In fact, these are quite actionable metrics that analysts will reach for when they want to hang a sketch that anyone can interpret.
 ****
+
+=== Operations that Break One Table Into Many
+
+==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
+
+The careers table gives the number of times each player was elected to the All-Star game (indicating extraordinary performance during a season) and whether they were elected to the Hall of Fame (indicating a truly exceptional career).
+
+===== Demonstration in Pig
+
+Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
+
+----
+SPLIT bat_career
+  INTO hof     IF hofYear > 0, -- the '> 0' eliminates both NULLs and 0s
+  INTO allstar IF G_allstar > 0,
+  INTO neither OTHERWISE
+  ;
+STORE hof     INTO '/data/out/baseball/hof_careers';
+STORE allstar INTO '/data/out/baseball/allstar_careers';
+STORE neither INTO '/data/out/baseball/neither_careers';
+----
+
+The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files.
+
+The most natural use of the SPLIT operator is when you really do require divergent processing flows. In the next chapter, you'll use a JOIN LEFT OUTER to geolocate (derive longitude and latitude from place name) records. That method is susceptible to missing matches, and so in practice a next step might be to apply a fancier but more costly geolocation tool. This is a strategy that arises often in advanced machine learning applications: run a first pass with a cheap algorithm that can estimate its error rate; isolate the low-confidence results for harder processing; then reunite the whole dataset.
+
+The syntax of the SPLIT command does not have an equals sign to the left of it; the new table aliases are created in its body.
+
+------
+SPLIT players_geoloced_some INTO
+  players_non_geoloced_us IF ((IsNull(lng) OR IsNull(lat)) AND (country_id == "US")),
+  players_non_geoloced_fo IF ((IsNull(lng) OR IsNull(lat)),
+  players_geoloced_a OTHERWISE;
+
+-- ... Pretend we're applying a more costly / higher quality geolocation tool, rather than just sending all unmatched records to Disneyland...
+players_geoloced_b = FOREACH players_non_geoloced_us GENERATE
+  player_id..country_id,
+  FLATTEN((Disney,land)) as (lng, lat);
+-- ... And again, pretend we are not just sending all non-us to the Eiffel Tower.
+players_geoloced_c = FOREACH players_non_geoloced_us GENERATE
+  player_id..country_id,
+  FLATTEN((Eiffel,tower)) as (lng, lat);
+
+Players_geoloced = UNION alloftheabove;
+------
+
+==== Splitting into files by key by using a Pig Storefunc UDF
+
+One reason you might find yourself splitting a table is to create multiple files on disk according to some key.
+
+If instead you're looking to partition directly into files named for a key, use the multistorage storefunc from the Piggybank UDF collection. As opposed to SPLIT, each record goes into exactly one file. Here is how to partition player seasons by primary team:
+
+There might be many reasons to do this splitting, but one of the best is to accomplish the equivalent of what traditional database admins call "vertical partitioning". You are still free to access the table as a whole, but in cases where one field is over and over again used to subset the data, the filtering can be done without ever even accessing the excluded data. Modern databases have this feature built-in and will apply it on your behalf based on the query, but our application of it here is purely ad-hoc. You will need to specify the subset of files yourself at load time to take advantage of the filtering.
+
+----
+bat_season = LOAD 'bat_season' AS (...);
+STORE bat_season INTO '/data/out/baseball/seasons_by_team' USING MultiStorage('/data/out/baseball/seasons_by_team', '10'); -- team_id, field 10
+STORE ... multistorage;
+----
+
+------
+STORE events INTO '$out_dir/evs_away'
+  USING MultiStorage('$out_dir/evs_away','5'); -- field 5: away_team_id
+STORE events INTO '$out_dir/evs_home'
+  USING MultiStorage('$out_dir/evs_home','6'); -- field 6: home_team_id
+------
+
+This script will run a map-only job with 9 map tasks (assuming 1GB+ of data and a 128MB block size). With MultiStorage, all Boston Red Sox (team id `BOS`) home games that come from say the fifth map task will go into `$out_dir/evs_home/BOS/part-m-0004` (contrast that to the normal case of  `$out_dir/evs_home/part-m-00004`). Each map task would write its records into the sub directory named for the team with the `part-m-` file named for its taskid index.
+
+Since most teams appear within each input split, each subdirectory will have a full set of part-m-00000 through part-m-00008 files. In our runs, we ended up with XXX output files -- not catastrophic, but (a) against best practices, (b) annoying to administer, (c) the cause of either nonlocal map tasks (if splits are combined) or proliferation of downstream map tasks (if splits are not combined). The methods of (REF) "Cleaning up Many Small Files" would work, but you'll need to run a cleanup job per team. Better by far is to precede the `STORE USING MultiStorage` step with a `GROUP BY team_id`. We'll learn all about grouping next chapter, but its use should be clear enough: all of each team's events will be sent to a common reducer; as long as the Pig `pig.output.lazy` option is set, the other reducers will not output files.
+
+------
+events_by_away = FOREACH (GROUP events BY away_team_id) GENERATE FLATTEN(events);
+events_by_home = FOREACH (GROUP events BY home_team_id) GENERATE FLATTEN(events);
+STORE events_by_away INTO '$out_dir/evs_away-g'
+  USING MultiStorage('$out_dir/evs_away-g','5'); -- field 5: away_team_id
+STORE events_by_home INTO '$out_dir/evs_home-g'
+  USING MultiStorage('$out_dir/evs_home-g','6'); -- field 6: home_team_id
+------
+
+The output has a directory for each key, and within directory that the same `part-NNNNN` files of any map-reduce job.
+
+This means the count of output files is the number of keys times the number of output slots, which can lead to severe many small files problem. As mentioned in Chapter 3 (REF), many small files is Not Good. If you precede the STORE operation by a `GROUP BY` on the key, the reducer guarantee provides that each subdirectory will only have one output file.
+
+==== Splitting a Table into Uniform Chunks
+
+We won't go into much detail, but one final set of patterns is to split a table into uniform chunks. If you don't need the chunks to be exactly sized, you can apply a final `ORDER BY` operation on a uniformly-distributed key -- see the section on "Shuffling the Records in a Table" in the next chapter (REF).
+
+To split into chunks with an exact number of lines, first use `RANK` to number each line, then prepare a chunk key using the line number modulo the chunk size, and store into chunks using MultiStorage. Since the rank operation's reducers number their records sequentially, only a few reducers are involved with each chunk, and so you won't hit the small files problem. Splitting a table into blocks of fixed _size_ is naturally provided by the HDFS block size parameter, but we're not aware of a good way to do so explicitly.
+
+An ORDER BY statement with parallelism forced to (output size / desired chunk size) will give you _roughly_ uniform chunks,
+
+------
+SET DEFAULT_PARALLEL 3;
+%DEFAULT chunk_size 10000;
+------
+
+------
+-- Supply enough keys to rank to ensure a stable sorting
+bat_seasons_ranked  = RANK bat_seasons BY (player_id, year_id)
+bat_seasons_chunked = FOREACH (bat_seasons_ranked) GENERATE
+  SPRINTF("%03d", FLOOR(rank/$chunk_size)) AS chunk_key, player_id..;
+
+-- Writes the chunk key into the file, like it or not.
+STORE bat_seasons_chunked INTO '$out_dir/bat_seasons_chunked'
+  USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
+------
+
+Note that in current versions of Pig, the RANK operator forces parallelism one. If that's unacceptable, we'll quickly sketch a final alternative but send you to the sample code for details. You can instead use RANK on the map side modulo the _number_ of chunks, group on that and store with MultiStorage. This will, however,  have non-uniformity in actual chunk sizes of about the number of map-tasks -- the final lines of each map task are more likely to short-change the higher-numbered chunks. On the upside, the final chunk isn't shorter than the rest (as it is with the prior method or the unix split command).
+
+------
+%DEFAULT n_chunks 8;
+
+bats_ranked_m = FOREACH (RANK bat_seasons) GENERATE
+  MOD(rank, $n_chunks) AS chunk_key, player_id..;
+bats_chunked_m = FOREACH (GROUP bats_ranked_m BY chunk_key)
+  GENERATE FLATTEN(bats_ranked_m);
+STORE bats_chunked_m INTO '$out_dir/bats_chunked_m'
+  USING MultiStorage('$out_dir/bat_seasons_chunked','0'); -- field 0: chunk_key
+------
+
+With no sort key fields, it's done on the map side (avoiding the single-reducer drawback of RANK)
+
+=== Operations that Treat the Union of Several Tables as One
+
+The counterpart to splitting a table into pieces is to treat many pieces as a single table. This really only makes sense when all those pieces have the same schema, so that's the only case we'll handle here.
+
+// ==== Load Multiple Files as One Table
+// 
+// The easiest way to unify several tables is to simply load them as one. Hadoop will expand a comma-separated list of paths into multiple paths, and perform simple 'glob-style' filename expansion. This snippet will load all the teams whose team_id starts with a "B" or ends with an "N":
+// 
+// ===== Demonstration in Pig
+// 
+// ----
+// b_and_n_teams = LOAD '/data/out/baseball/seasons_by_team/B*,/data/out/baseball/seasons_by_team/*N' AS (...);
+// ----
+// 
+// ===== Demonstration in map/reduce
+// 
+// ----
+// (show commandline for multiple files)
+// ----
+
+==== Treat Several Pig Relation Tables as a Single Table (Stacking Rowsets)
+
+In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and id of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
+
+.Union Treats Several Tables as a Single Table
+------
+bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
+pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
+bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
+pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
+names_in_both = UNION bat_names, pit_names;
+player_names = DISTINCT names_in_both;
+------
+
+Note that this is not a Join (which requires a reduce, and changes the schema
+of the records) -- this is more like stacking one table atop another, making
+no changes to the records (schema or otherwise) and does not require a
+reduce.
+
+A common use of the UNION statement comes in 'symmetrizing' a relationship. For example, each line in the games table describes in a sense two game outcomes: one for the home team and one for the away team. We might reasonably want to prepare another table that listed game _outcomes_: game_id, team, opponent, team's home/away position, team's score, opponent's score. The game between BAL playing at BOS on XXX (final score BOS Y, BAL Z) would get two lines: `GAMEIDXXX BOS BAL 1 Y Z` and `GAMEID BAL BOS 0 Z Y`.
+
+// TODO: This is the same snippet used at the top. Good or bad?
+
+------
+games_a = FOREACH games GENERATE
+  year_id, home_team_id AS team,
+  home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
+
+games_b = FOREACH games GENERATE
+  away_team_id AS team,     year_id,
+  away_runs_ct AS runs_for, home_runs_ct AS runs_against, 0 AS is_home:int;
+
+team_scores = UNION games_a, games_b;
+
+DESCRIBE team_scores;
+--   team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
+------
+
+The `UNION` operation does not remove duplicate rows as a set-wise union would. It simply tacks one table onto the end of the other, and so the last line eliminates those duplicates -- more on `DISTINCT` in the next chapter (REF). The `UNION` operation also does not provide any guarantees on ordering of rows. Some SQL users may fall into the trap of doing a UNION-then-GROUP to combine multiple tables. This is terrible in several ways, and you should instead use the COGROUP operation -- see the Won-Loss Record example in the next chapter (REF).
+
+NOTE: The UNION operator is easy to over-use. For one example, in the next chapter we'll extend the first part of this code to prepare win-loss statistics by team. A plausible first guess would be to follow the UNION statement above with a GROUP statement, but a much better approach would use a COGROUP instead (both operators are explained in the next chapter). The UNION statement is mostly harmless but fairly rare in use; give it a second look any time you find yourself writing it in to a script.
+
+==== Clean Up Many Small Files by Merging into Fewer Files
+
+The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files.
+
+One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs.
+
+Sorting is a fairly expensive operation, though; luckily, Pig can do this reasonably well with a mapper-only job by setting the `pig.splitCombination` configuration to true and setting `pig.maxCombinedSplitSize` to the size of the input divided by the number of files you'd like to produce.
+
+----
+set pig.splitCombination true;
+set pig.maxCombinedSplitSize 2100100100;
+----
+
+The `maxCombinedSplitSize` should be much larger than the HDFS block size so that blocks are fully used. Also note the old sailor's trick in the last line -- since there's no essential difference between 2 billion bytes, 2 gigabytes, or a number nearby, the value `2100100100` is much easier to read accurately than `2000000000` or `2147483648`.
+
+The operations in this chapter (except where noted) do not require a reduce on their own, which makes them very efficient. The really interesting applications, however, come when we put data into context, which is the subject of the next chapter.

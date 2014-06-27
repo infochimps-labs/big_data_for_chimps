@@ -1,4 +1,247 @@
-== Analytic Patterns: Advanced Operations
+== Analytic Patterns: Advanced Pipelineable Operations
+
+=== Operations that Expand the number of Rows or Columns
+
+If you count all the letters in a large-enough body of text, you'll generally find that the letter "e" (the most frequent) appears about 12% of the time, while z and q (the least frequent) appear less than 1% of the time. But names of people have a noticeably different distribution of characters, as we can demonstrate using the baseball data. The `people` table has two fields representing city names, a first name field and a last name field. We'll find the frequency distribution for each.
+
+==== Parsing a Delimited String into a Collection of Values
+
+TSV (tab-separated-values) is the Volkswagen Beetle of go-anywhere file formats: it's robust, simple, friendly and works everywhere. However, it has significant drawbacks, most notably that it can only store flat records: a member field with, say, an array type must be explicitly handled after loading. One common workaround for serializing an array type is to convert the array into a string, where each value is separated from the next using a delimiter -- a character that doesn't appear in any of the values. We'll demonstrate creating such a field in the next chapter (REF), and in fact we're going to sneak into the future and steal that section's output files.
+
+------
+team_parkslists = LOAD team_parklists AS (...)
+xxx = FOREACH ... {
+  parks = STRSPLITBAG(...);
+  GENERATE ..., FLATTEN(parks), ...;
+};
+------
+
+In other cases the value may not be a bag holding an arbitrarily-sized collection of values, but a tuple holding several composite fields. Among other examples, it's common to find addresses serialized this way. The people table has fields for (city,state,country) of both birth and death. We will demonstrate by first creating single birth_loc and death_loc fields, then untangling them.
+
+------
+people_shrunk = FOREACH people GENERATE
+  player_id..birth_day,
+  CONCAT(birth_city,'|', birth_state, '|', birth_country) AS birth_loc,
+  death_year, death_month, death_day,
+  CONCAT(death_city,'|', death_state, '|', death_country) AS death_loc,
+  name_first.. ;
+
+people_2 = FOREACH people_shrunk GENERATE
+  player_id..birth_day,
+  FLATTEN(STRSPLIT(birth_loc)) AS (birth_city, birth_state, birth_country),
+  death_year, death_month, death_day,
+  FLATTEN(STRSPLIT(death_loc)) AS (death_city, death_state, death_country),
+  name_first.. ;
+------
+
+In this case we apply STRSPLIT, which makes a tuple (rather than STRSPLITBAG, which makes a bag). When we next apply FLATTEN to our tuple, it turns its fields into new columns (rather than if we had a bag, which would generate new rows). You can run the sample code to verify the output and input are identical.
+
+TODO-reviewer: (combine this with the later chapter? There's a lot going on there, so I think no, but want opinion)
+
+==== Flattening a Bag Generates Many Records
+
+attr_strings = FOREACH people {
+  fields_bag = {('fn', nameFirst), ('ln', nameLast), ('ct', birthCity), ('ct', deathCity)};
+  GENERATE FLATTEN(fields_bag) AS (type:chararray, str:chararray);
+  };
+-- ('fn',Hank)
+-- ('ln',Aaron)
+-- ...
+
+attr_chars = FOREACH (FILTER attr_strings BY str != '') {
+  chars_bag = STRSPLITBAG(LOWER(str), '(?!^)');
+  GENERATE type, FLATTEN(chars_bag) AS token;
+  };
+DESCRIBE attr_chars;
+
+chars_ct   = FOREACH (GROUP attr_chars BY (type, token))
+  GENERATE group.type, group.token, COUNT_STAR(attr_chars) AS ct
+  ;
+
+==== Flattening a Tuple Generates Many Columns
+
+chars_freq = FOREACH (GROUP chars_ct BY type) {
+  tot_ct = SUM(chars_ct.ct);
+  GENERATE group AS type, tot_ct AS tot_ct, FLATTEN(chars_ct.(ct, token));
+  };
+chars_freq = FOREACH chars_freq GENERATE type, token, ct, (int)ROUND(1e6f*ct/tot_ct) AS freq:int;
+DESCRIBE chars_freq;
+
+rmf                    $out_dir/chars_freq;
+STORE chars_freq INTO '$out_dir/chars_freq';
+
+
+
+==== Flatten on a Bag Generates Many Records from a Field with Many Elements
+
+This snippet first produces a bag pairing each of the `chararray` values we want with the distribution it belongs to, then flattens it.
+
+----
+typed_strings = FOREACH people {
+  fields_bag = {('fn', nameFirst), ('ln', nameLast), ('ct', birthCity), ('ct', deathCity)};
+  GENERATE FLATTEN(fields_bag) AS (type:chararray, str:chararray);
+  };
+----
+
+Each single record having a bag turns into four records having a field called 'type' and a field called 'str':
+
+----
+fn    Hank
+ln    Aaron
+ct   San Diego
+ct   Inverness
+----
+
+==== Flatten on a Tuple Folds it into its Parent
+
+Our next step is to split those string fields into characters. Pig provides a `STRSPLIT` function that _seems_ to do what we want (spoiler alert: for this purpose it doesn't, but we want to prove a point).
+
+----
+typed_chars = FOREACH typed_strings {
+  chars_bag = STRSPLIT(str, '(?!^)');  -- works, but not as we want
+  GENERATE type, FLATTEN(chars_bag) AS token;
+  };
+----
+
+The output we want would have one record per character in the `str` field, but that isn't what happens:
+
+----
+fn   H   a   n   k
+ln   A   a   r    o   n
+...
+----
+
+`STRSPLIT` returns a _tuple_, not a _bag_, and the `FLATTEN` operation applied to a tuple does not produce many records from the tuple field, it lifts the elements of the tuple into its container. This `FLATTEN(STRSPLIT(...))` combination is great for, say, breaking up a comma-delimited string into field, but we want to flatten the characters into multiple records. The pigsy package has the UDF we need:
+
+----
+register    '/path/to/pigsy/target/pigsy-2.1.0-SNAPSHOT.jar';
+DEFINE STRSPLITBAG         pigsy.text.STRSPLITBAG();
+-- ...
+typed_chars = FOREACH typed_strings {
+  chars_bag = STRSPLITBAG(LOWER(str), '(?!^)');
+  GENERATE type, FLATTEN(chars_bag) AS token;
+  };
+----
+
+===== Results
+
+What remains is to group on the characters for each type to find their overall counts, and then to prepare the final results. We'll jump into all that in the next chapter, but (REF) shows the final results. The letters "k", "j", "b" and "y" are very over-represented in first names. The letter "z" is very over-represented in last names, possibly because of the number of Hispanic and Latin American players.
+
+----
+char	% dictionary  	% prose		% first names	% excess
+a	  8.49		  8.16		 8.31		 1.01
+b	  2.07		  1.49		 3.61		 2.00
+c	  4.53		  2.78		 3.67		  .80
+d	  3.38		  4.25		 4.42		 1.48
+e	 11.16		 12.70		11.03		 1.05
+f	  1.81		  2.22		 1.43		 1.27
+g	  2.47		  2.01		 2.03		  .96
+h	  3.00		  6.09		 3.40		 1.23
+i	  7.54		  6.96		 6.85		  .78
+j	   .19		  0.15		 3.70		 3.14
+k	  1.10		  0.77		 3.07		 4.37
+l	  5.48		  4.02		 6.29		 1.07
+m	  3.01		  2.40		 3.73		 1.21
+n	  6.65		  6.74		 6.46		  .92
+o	  7.16		  7.50		 6.81		  .89
+p	  3.16		  1.92		 1.08		  .31
+q	   .19		  0.09		  . 3		  .19
+r	  7.58		  5.98		 8.33		 1.15
+s	  5.73		  6.32		 3.06		  .49
+t	  6.95		  9.05		 4.00		  .58
+u	  3.63		  2.75		 1.91		  .49
+v	  1.00		  0.97		 1.15		 1.25
+w	  1.28		  2.36		  .82		 1.29
+x	   .29		  0.15		  .22		  .73
+y	  1.77		  1.97		 3.93		 1.68
+z	   .27		  0.07		  .19		  .53
+----
+
+(TODO insert actual results, and decide which distribution (prose or dictionary) you'll normalize against)
+
+==== Other Similar Patterns
+
+The chapter on text data (REF) shows how to tokenize free text into a "word bag", using both Pig's simplistic `TOKENIZE` function and a UDF that applies a sophisticated computational linguistics library. In the Event Stream chapter (REF), we'll demonstrate dividing time range into discrete intervals. Lastly, the Statistics chapter (REF) describes a script to take summary statistics of all columns simultaneously, which involves transposing a record into attribute-value pairs.
+
+We have much more to say about FLATTEN, but it's best done the next chapter so that we can illustrate our points well.
+
+==== Generating Data
+
+Generating data in a distributed system requires distributing an assignment of what to generate onto each node, which can be somewhat annoying.
+
+==== Generating Data by Distributing Assignments As Input
+
+The best way to generate data in Hadoop is to prepare map inputs that represent assignments of what data to generate. There are two good examples of this pattern elsewhere in the book, so we won't try to contrive one here. One is the "poor-man's data loader" given in Chapter 3 (REF). The mapper input is a list of filenames or database queries; each mapper expands that trivial input into many rows of output. Another is the "self-inflicted DDOS" tool for stress-testing your website (REF). In that case, the mapper input is your historical weblogs, and the mapper output is formed from the web server response.
+
+Another example of this pattern is the poor-man's data loader given in Chapter 3 (REF) -- prepare a mapper input that is a list of filenames or database queries, and have each mapper expand its trivial input into many rows of output.
+
+==== Generating a Sequence Using an Integer Table
+
+The surprisingly useful integers table -- 1, 2, 3, ... each on subsequent rows -- provides one way to get around this. We don't really have a good baseball-based example, but we can demonstrate generating the 11 million combinations of five letters using a map-reduce job (or the similar UDF):
+
+.Generating Data
+----
+C2 = 26**2; C3 = 26**3; C4 = 26**4; C5 = 26**5
+ORD_A = 'a'.ord
+mapper do |line|
+  idx = line.to_i
+  offsets = [ line / C5, (line / C4) % 26, (line / C3) % 26, (line / C2) % 26, line % 26 ]
+  chars = offsets.map{|offset| (ORD_A + offset).chr }
+  yield chars.join
+end
+----
+
+------
+# seed the RNG with the index
+www.ruby-doc.org/gems/docs/w/wukong-4.0.0/Wukong/Faker/Helpers.html
+Faker::Config.locale = 'en-us'
+Faker::Name.name #=> "Tyshawn Johns Sr."
+Faker::PhoneNumber.phone_number #=> "397.693.1309"
+Faker::Address.street_address #=> "282 Kevin Brook"
+Faker::Address.secondary_address #=> "Apt. 672"
+Faker::Address.city #=> "Imogeneborough"
+Faker::Address.zip_code #=> "58517"
+Faker::Address.state_abbr #=> "AP"
+Faker::Address.country #=> "French Guiana"
+Faker::Business.credit_card_number #=> "1228-1221-1221-1431"
+Faker::Business.credit_card_expiry_date #=> <Date: 2015-11-11 ((2457338j,0s,0n),+0s,2299161j)>
+mapper do |line|
+  idx = line.to_i
+  offsets = [ line / C5, (line / C4) % 26, (line / C3) % 26, (line / C2) % 26, line % 26 ]
+  chars = offsets.map{|offset| (ORD_A + offset).chr }
+  yield chars.join
+end
+------
+
+
+  - Generating data using the assignment list as input
+	- in particular, using the list of URLs or filenames or whatever -- TODO-Flip: not sure what you mean here?
+	- just demonstrate with map-reduce only, no pig (unless we decide to use this to show an inline Ruby UDF?)
+
+
+==== Generating Pairs
+
+is there a way to do the SQL version more elegantly?
+
+------
+SELECT
+    IF(home_team_id <= away_team_id, home_team_id, away_team_id) AS team_a,
+    IF(home_team_id <= away_team_id, away_team_id, home_team_id) AS team_b,
+    COUNT(*)
+  FROM events ev
+GROUP BY home_team_id, away_team_id
+ORDER BY home_team_id, away_team_id
+;
+------
+
+(do we want to show the group by or call forward to it)
+
+You'll see a more elaborate version of this
+
+
+
+== Analytic Patterns: Advanced Structural Operations
+
 
 ==== Structural Group Operations (ie non aggregating)
 
@@ -507,3 +750,5 @@ pairs_r = FOREACH (GROUP raw BY client_ip) {
   GENERATE client_queries;
 };
 ------
+
+
