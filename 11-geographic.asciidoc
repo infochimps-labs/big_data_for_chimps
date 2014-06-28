@@ -1,3 +1,128 @@
+== Geographic Analysis
+
+// TODO: Spatial Analysis?
+
+Having conquered time (or, at least, learned basics of timeseries analysis), let's move on to
+space. Problems with an essential geoographic footnote:[You'll also see 'Spatial', 'Geospatial',
+'Geodata', 'GIS' (Geographic Information Systems), and many other mashups with the prefix 'Geo-'. We
+chose 'Geographic' because it seems the friendliest term, and will reserve 'GIS' to mean "the highly
+sophisticated traditional geographic analysis toolset"] aspect appear naturally in all sorts of
+contexts: "Where should I put this cell tower / oil well / coffee shop?". They're also incredibly
+useful because geography is such a good proxy for many key features you can't easily measure.  You
+wouldn't think the 32 bits of an IP address described the weather.  But as you saw in the last
+chapter an IP address can (imperfectly but actionably) be related to a geolocation, and a
+geolocation can (imperfectly but actionably) be related to a weather report.  Without violating a
+person's privacy, you can know when to switch from promoting suncreen to Sydneysiders and galoshes
+to Glaswegians to quite profitably doing the reverse.
+
+The methods we'll demonstrate here extend naturally to anything with a spatial aspect -- it doesn't
+have to be the surface of the Earth. And it's surprisingly easy to extend them to three and higher
+dimensions (see the exercise at the end of the chapter). That's good news for anyone analyzing ocean
+currents, parts of the brain, sensor feeds from a secure facility, or customer flow through a
+mall. But every reader looking to master machine learning techniques will find that the material in
+this chapter laid a solid foundation for understanding the highly-dimensional spaces they work in.
+
+Most importantly of all, this chapter will solidify your intuition about how to move and combine
+data strategically.  You'll be learning new types of joins that require a more sophistitcated notion
+of 'context' (data locality).  But the deep natural intuition about space and physical locality you
+already possess makes this challenge much easier.  Most readers should concentrate foremost on the
+tactics of applying our analytic patterns. (In fact, if you want to trust us that the sections where
+we dive into the underlying map/reduce work as advertised, we've made them easy to skip the first
+time through.)  But come back at some point and step through the spatial and multi-scale spatial
+joins we introduce in this chapter.  If you understand the underlying mechanics -- how the design of
+the keys ensures records that must be related in context show up at the right place in the right
+order -- then you have mastered the deep concept of map/reduce.
+
+
+
+NOTE: Geographic Analysis is a well developed field.  The number of hard problems with valuable solutions
+in intelligence, petroleum, natural resources and other such industries gave rise to highly
+sophisticated products capable of processing massive quantities of data well before these kids with
+their Hadoops and their JSONs came along.  As you might expect, however these products possess a
+correspondingly steep price tag and learning curve and often integrate poorly outside their
+domain. Most importantly, they are bound by the limits of traditional database technology in many
+aspects. So even users of these powerful GIS tools can benefit by augmenting them with Big Data
+analytics. But our focus will be on the reader who needs to get stuff done with geographic data, and
+the less they have to learn a new field the better.  We're going to use GeoJSON, a newly-developed
+standard for geographic data (friendly to general purpose analytic tools and to rendering data in
+the browser), rather than Arcview shapefiles or other geospatial formats (seamless integration with
+industry products). We've simplified concepts and minimized jargon to keep the focus on readable,
+powerful scripts that give actionable insight.
+
+
+
+=== Mechanics of Geographic Data
+
+==== Longitude and Latitude, Points and Features
+
+* floating point vs decimal -- The level of precision we're working with here doesn't justify giving up the benefits of a direct representation.
+
+==== GeoJSON
+
+==== Creating a Spatial Density Map
+
+Map points to quad cells, plot number density of airports as a heat map
+
+Then geonames places -- show lakes and streams (or something nature-y) vs something urban-y
+
+(just call out that rollup, summing trick, or group-decorate-flatten would work: do no pursue)
+
+Do that again, but for a variable: airport flight volume -- researching
+epidemiology
+
+// FAA flight data http://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger/media/cy07_primary_np_comm.pdf
+
+=== Spatial Nearness Join (Within-X-Distance)
+
+* quad cells have different sizes; lookup table
+
+All sightings near airport
+
+(dispatch to 9 nearest you)
+
+=== Spatial Nearest-Feature Join
+
+==== Voronoi Cells
+
+How do we extend region of a 
+How would you help find the nearest 7-11?
+  -- one way would be to look for stores within X distance,
+  but a customer in the western US might be excited to learn there's one within an hour's drive,
+  while that same radius centered on Manhattan would require sorting through thousande
+
+
+==== Breaking Regions into Quad Cells
+
+* recursively decompose a region on quadcells
+
+(what do numbers look like doing this for the US, daily)
+
+==== Joining Stadiums onto Quad Cells
+
+join games on parks_info to get location, quadkey
+
+foreach stadiums to get months in action and quadkey
+join stadiums by (quadkey, month), weather voronois by (quadkey, month)
+find actual nearest weather station for that stadium
+
+now park_info has month, quadkey, weather station, date, parkid
+join park_info on games -- get game_wstns (game_id, scorecard weather, scorecard_wind, park_id, wstn_id)
+join game_wstns on wobs to get game_weather
+
+=== Multi-Scale Spatial Data
+
+If we want to combine weather 
+
+==== Breaking regions into Multi-Cell Quads
+
+
+
+
+
+
+
+
+
 
 ===  Turning Points of Measurements Into Regions of Influence
 

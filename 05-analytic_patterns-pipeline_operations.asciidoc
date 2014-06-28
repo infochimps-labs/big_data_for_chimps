@@ -867,6 +867,8 @@ NOTE: The UNION operator is easy to over-use. For one example, in the next chapt
 
 ==== Clean Up Many Small Files by Merging into Fewer Files
 
+//IMPROVEME: make this use the results of the multistorage script
+
 The Many Small Files problem is so pernicious because Hadoop natively assigns each mapper to only one file, and so a normal mapper-only job can only _increase_ the number of files. We know of two ways to reorganize the records of a table into fewer files.
 
 One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF) tells you why you might want to increase the HDFS block size for truly huge dataset, and why you might not want to do so]. Since this gives the side benefit of allowing certain optimized join operations, we like to do this for "gold" datasets that will be used by many future jobs.

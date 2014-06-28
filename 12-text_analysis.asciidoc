@@ -1,76 +1,44 @@
+[[text_data]]
+== Text Data
 
-[[first_exploration]]
-== First Exploration
+=== Geographical Flavor
 
-////Write an introductory paragraph that specifically plants a first seed about the conceptual way of viewing big data.  Then, write a paragraph that puts this chapter in context for the reader, introduces it ("...in this chapter we'll show you how to start with a question and arrive at an answer without coding a big, hairy, monolithic program...")  Orient your reader to big data and the goals for lassoing it.  Doing this will hook your reader and prep their mind for the chapter's main thrust, its juicy bits.  Finally, say a word or two about big data before getting into Hadoop, for context (like "...big data is to Hadoop what x is to y...") Do these things before you jump so quickly into Hadoop. Amy////
+1. article -> wordbag  
+2. join on page data to get geolocation
+3. use pagelinks to get larger pool of implied geolocations
+4. turn geolocations into quadtile keys
+5. aggregate topics by quadtile
+6. take summary statistics aggregated over term and quadkey
+7. combine those statistics to identify terms that occur more frequently than the base rate would predict
+8. explore and validate the results                              
+9. filter to find strongly-flavored words, and other reductions of the data for visualization
 
-Hadoop is a remarkably powerful tool for processing data, giving us at long last mastery over massive-scale distributed computing. More than likely, that's how you came to be reading this paragraph.
-
-What you might not yet know is that Hadoop's power comes from _embracing_, not conquering, the constraints of distributed computing. This exposes a core simplicity that makes programming it exceptionally fun.
-
-Hadoop's bargain is this. You must give up fine-grained control over how data is read and sent over the network. Instead, you write a series of short, constrained transformations, a sort of programming Haiku:
-
-    Data flutters by
-    Elephants make sturdy piles
-    Insight shuffles forth
-
-For any such program, Hadoop's diligent elephants intelligently schedule the tasks across single or dozens or thousands of machines. They attend to logging, retry and error handling; distribute your data to the workers that process it; handle memory allocation, partitioning and network routing; and attend to myriad other details that otherwise stand between you and insight. Putting these constraints on how you ask your _question_ releases constraints that traditional database technology placed on your _data_. Unlocking access to data that is huge, unruly, organic, highly-dimensional and deeply connected unlocks answers to a new deeper set of questions about the large-scale behavior of humanity and our universe. <remark>too much?? pk4</remark>
-
-=== Data and Locality
-
-//// I'm concerned that even the keenest of readers will find it a challenge to parse the "regional flavor" idea from the concept of "locality." (Maybe I'm confirming your own concern about this?)  I do realize you may choose another term for "locality" at some point, yet I think locality, while not quick to digest, is actually best.)  For this section, do you possibly have another example handy, one that isn't geographical, to use here?  If not, I suggest making a clearer distinction between region and place versus locality.  Making a clearer distinction will enable your reader to more quickly grasp and retain the important "locality" concept, apart from your regional flavor example. Amy//// 
+=== Geographic Flavor ===
 
 There's no better example of data that is huge, unruly, organic, highly-dimensional and deeply connected than Wikipedia. Six million articles having XXX million associated properties and connected by XXX million links are viewed by XXX million people each year (TODO: add numbers). The full data -- articles, properties, links and aggregated pageview statistics -- is free for anyone to access it. (See the <<overview_of_datasets>> for how.)
 
-The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like Texas Memorial Stadium (where the Texas Longhorns football team plays), Snow's BBQ (proclaimed "The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, the largest academic supercomputer to date).
+The Wikipedia community have attach the latitude and longitude to more than a million articles: not just populated places like Austin, TX, but landmarks like the University of Texas' Memorial Stadium, Snow's BBQ ("The Best Texas BBQ in the World") and the TACC (Texas Advanced Computer Center, home of the world's largest academic supercomputer). This lets us put not just each article, but the cloud of data around it, in geographical context.
 
-Since the birth of Artificial Intelligence we've wished we could quantify organic concepts like the "regional flavor" of a place -- wished we could help a computer understand that Austinites are passionate about Barbeque, Football and Technology -- and now we can, by say combining and analyzing the text of every article each city's page either links to or is geographically near.
+What happens if we apply this context to not just the article, but those articles' words? Barbeque is popular all through Texas and the Southeastern US -- is the term "Barbeque" overrepresented in articles from that region? We can brainstorm a few more terms with strong place affinity, like "beach" (the coasts) or "wine" (France, Napa Valley), and ones without, like "hat" or "couch". Hadoop, combined with the Wikipedia dataset, will let us _rigorously_ identify words with this kind of geographic flavor, along with the locales they have affinity for.
 
-"That's fine for the robots," says the skeptic, "but I can just phone my cousin Bubba and ask him what people in Austin like. And though I have no friend in Timbuktu, I could learn what's unique about it from the Timbuktu article and all those it links to, using my mouse or my favorite relational database." True, true. This question has what we'll call "easy locality"footnote:[Please discard any geographic context of the word "local": for the rest of the book it will always mean "held in the same computer location"]: the pieces of context we need (the linked-to articles) are a simple mouse click or database JOIN away. But if we turn the question sideways that stops being true. ////You can help the reader grasp the concept more reaily; I recommend revising to: "This question has what we call "easy locality," essentially, "held in the same computer location" (nothing to do with geography). Amy//// 
+At a high level, what we'll do is this:
 
-Instead of the places, let's look at the words. Barbeque is popular all through Texas and the Southeastern US, and as you'll soon be able to prove, the term "Barbeque" is overrepresented in articles from that region. You and cousin Bubba would be able to brainstorm a few more terms with strong place affinity, like "beach" (the coasts) or "wine" (France, Napa Valley), and you would guess that terms like "hat" or "couch" will not. But there's certainly no simple way you could do so comprehensively or quantifiably. That's because this question has no easy locality: we'll have to dismantle and reassemble in stages the entire dataset to answer it. This understanding of 'locality' is the most important concept in the book, so let's dive in and start to grok it. We'll just look at the step-by-step transformations of the data for now, and leave the actual code for <<geographic_words,a later chapter>>.
+* Divide the world into grid cells, and group all the words in wikipedia onto their article's grid cell
+* Determine the overall frequency of each word in the wikipedia corpus
+* Identify prominent (unusually frequent) words on each grid cell
+* Identify words that are prominent on a large number of grid cells -- these have strong geographic "flavor"
 
-=== Where is Barbecue?
 
-So here's our first exploration:
+=== Match Wikipedia Article Text with Article Geolocation
 
-    For every word in the English language,
-    which of them have a strong geographic flavor,
-    and what are the places they attach to?
-
-This may not be a practical question (though I hope you agree it's a fascinating one), but it is a template for a wealth of practical questions. It's a _geospatial analysis_ showing how patterns of term usage, such as ////list a couple quick examples of usage////, vary over space; the same approach can instead uncover signs of an epidemic from disease reports, or common browsing behavior among visitors to a website. It's a _linguistic analysis_ attaching estimated location to each term; the same approach term can instead quantify document authorship for legal discovery, letting you prove the CEO did authorize his nogoodnik stepson to destroy that orphanage. It's a _statistical analysis_ requiring us to summarize and remove noise from a massive pile of term counts; we'll use those methods ////unclear on which methods you're referring to?  Amy////in almost every exploration we do. It isn't itself a _time-series analysis_, but you'd use this data to form a baseline to detect trending topics on a social network or the anomalous presence of drug-trade related terms on a communication channel.
-
-//// Consider defining the italicized terms, above, such as geospatial analysis, linguistic analysis, etc., inline (for example, "It's a linguistic analysis, the study of language, attaching estimated location to each term...") Amy////
-
-//// Provide brief examples of how these methods might be useful, examples to support the above; offer questions that could be posed for each.  For example, for every symptom how it correlates to the epidemic and what zip codes the symptoms are attached to. Amy////
-
-[[baldridge_bbq_wine]]
-.Not the actual output, but gives you the picture; TODO insert actual results
-image::images/baldridge-bbq_wine_beach_mountain-480.jpg[Location affinity for Beach, Mountain, BBQ and Wine]
-
-=== Summarize every page on Wikipedia
-
-First, we will summarize each article by preparing its "word bag" -- a simple count of the words on its wikipedia page. From the raw <<wp_lexington_article,article>> text:
+Let's start by assembling the data we need. The wikipedia dataset has three different tables for each article: the metadata for each page (page id, title, size, last update time, and so); the full text of each article (a very large field); and the article geolocations. Below are snippets from the articles table and of the geolocations table:
 
 [[wp_lexington_article]]
-._Wikipedia article on "Lexington, Texas"_
-______
-Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
-______
-
-we get the <<wp_lexington_wordbag,following wordbag>>:
-
-[[wp_lexington_wordbag]]
-._Wordbag for "Lexington, Texas"_
+._Wikipedia article record for "Lexington, Texas"_
 ------
-Lexington,_Texas {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
+Lexington,_Texas  Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
 ------
 
-You can do this to each article separately, in any order, and with no reference to any other article. That's important! Among other things, it lets us parallelize the process across as many machines as we care to afford. We'll call this type of step a "transform": it's independent, non-order-dependent, and isolated.
-
-==== Bin by Location
-
-The article geolocations are kept in a different data file:
 
 [[wp_coords]]
 ._Article coordinates_
@@ -78,35 +46,146 @@ The article geolocations are kept in a different data file:
 Lexington,_Texas -97.01 30.41 023130130
 ------
 
-We don't actually need the precise latitude and longitude, because rather than treating article as a point, we want to aggregate by area. Instead, we'll lay a set of grid lines down covering the entire world and assign each article to the grid cell it sits on. That funny-looking number in the fourth column is a 'quadkey' footnote:[you will learn all about quadkeys in the <<quadkey,"Geographic Data">> chapter], a very cleverly-chosen label for the grid cell containing this article's location. 
+Since we want to place the words in each article in geographic context, our first step is to reunite each article with its geolocation.
 
-To annotate each wordbag with its grid cell location, we can do a 'join' of the two files on the wikipedia ID (the first column). Picture for a moment a tennis meetup, where you'd like to randomly assign the attendees to mixed-doubles (one man and one woman) teams. You can do this by giving each person a team number when they arrive (one pool of numbers for the men, an identical but separate pool of numbers for the women). Have everyone stand in numerical order on the court -- men on one side, women on the other -- and walk forward to meet in the middle; people with the same team number will naturally arrive at the same place and form a single team. That is effectively how Hadoop joins the two files: it puts them both in order by page ID, making records with the same page ID arrive at the same locality, and then outputs the combined record:
+----
+article_text = LOAD ('...');
+article_geolocations = LOAD('...');
+articles = JOIN article_geolocations BY page_id, article_text BY page_id;
+articles = FOREACH articles GENERATE article_text::page_id, QUADKEY(lng, lat) as quadcell, text;
+----
+
+The quadkey field you see is a label for the grid cell containing an article's location; you'll learn all about them in the <<quadkey,"Geographic Data">> chapter, but for the moment just trust us that it's a clever way to divide up the world map for big data computation. Here's the result:
 
 [[wp_lexington_wordbag_and_coords]]
 ._Wordbag with coordinates_
 ------
-Lexington,_Texas -97.01 30.41 023130130 {("texas",4)("lexington",2),("best",2),("bbq",2),("barbecue",1), ...}
+Lexington,_Texas 023130130 Lexington is a town in Lee County, Texas ...
 ------
 
-[[quadkey_central_texas]]
-.Grid Tiles for Central Texas
-image::images/Quadtree-google_maps_screenshot.png[Grid tiles for Central Texas]
+=== Decompose Wikipedia Articles
 
-==== Gridcell statistics
+Next, we will summarize each article by preparing its "word bag" -- a simple count of the terms on its wikipedia page. We've written a Pig UDF (User-Defined Function) to do so:
 
-We have wordbag records labeled by quadkey for each article, but we want combined wordbags for each grid cell. So we'll <<wp_grouped_wordbags,group the wordbags by quadkey>>:
+----
+REGISTER path/to/udf ...;
+wordbags = FOREACH articles {
+    wds = WORDBAG(text)
+      AS tuple(tot_usages:long, num_terms:long, num_onces:long,
+         wordbag:bag{tuple(article_term_usages,term)});
+    GENERATE page_id, quadcell, wds.tot_usages, wds.num_terms, wds.num_onces, wds.wordbag;
+};
+term_article_freqs = FOREACH wordbags GENERATE
+    page_id, quadcell, tot_usages, num_terms, FLATTEN(wordbag);
+STORE term_article_freqs INTO '/data/work/geo_flavor/term_article_freqs;
+----
 
-[[wp_grouped_wordbags]]
+Here's the <<wp_lexington_wordbag,output>>:
+
+[[wp_lexington_wordbag]]
+._Wordbag for "Lexington, Texas"_
 ------
-023130130 {(Lexington,_Texas,(("many", X),...,("texas",X),...,("town",X)...("longhorns",X),...("bbq",X),...)),(Texas_Memorial_Stadium,((...)),...),...}
+Lexington,_Texas 023130130 TODO:tot_usages TODO:terms TODO:NUMONCES {(4,"texas")(2,"lexington"),(2,"best"),(2,"bbq"),(1,"barbecue"), ...}
 ------
 
-them turn the individual word bags into a <<wp_combined_wordbags,combined word bag>>:
+And the output after the flatten:
 
-[[wp_combined_wordbags]]
+[[wp_lexington_wordbag]]
+._"term_cell_freqs" result_
 ------
-023130130 {(("many", X),...,("texas",X),...,("town",X)...("longhorns",X),...("bbq",X),...}
+Lexington,_Texas 023130130 tot_usages num_terms 4   "texas"
+Lexington,_Texas 023130130 tot_usages num_terms 2   "lexington"
+Lexington,_Texas 023130130 tot_usages num_terms 2   "best"
+Lexington,_Texas 023130130 tot_usages num_terms 2   "bbq"
+Lexington,_Texas 023130130 tot_usages num_terms 1   "barbecue"
 ------
+
+
+=== Term Statistics by Grid Cell
+
+----
+taf_g = GROUP term_article_freqs BY quadcell, term;
+cell_freqs = FOREACH taf_g GENERATE
+      group.quadcell AS quadcell,
+      group.term AS term,
+      SUM(term_article_freqs.article_term_usages) AS cell_term_usages;
+cf_g = GROUP cell_freqs BY quadcell;
+term_cell_freqs = FOREACH cf_g GENERATE
+    group AS quadcell,
+    SUM(cell_term_usages) AS cell_usages
+    FLATTEN(cell_term_usages, term);
+----
+
+._"cell_freqs" result_
+----
+023130130 7 "bbq"
+023130130 20 "texas"
+----
+
+._"cf_g" result_
+----
+023130130 {(7,"bbq"),(20,"texas"),...}
+----
+
+._"term_cell_freqs" result_
+----
+023130130 95 7 "bbq"
+023130130 95 20 "texas"
+----
+
+=== Term Statistics
+
+We will be defining the prominence of a term on a grid cell by comparing its local frequency to the overall frequency of the term. The occurrence frequency of the term "the" is XX parts per million (ppm), while that of "barbeque"'s is XX ppm. However, on the quadcell surrounding Lexington, Texas, "the" occurs at XX ppm and "barbeque" at XX ppm -- a significantly elevated rate.
+
+Let's now prepare those global statistics.
+
+----
+all_terms = GROUP term_article_freqs BY term;
+term_info_1 = FOREACH all_terms GENERATE
+    group AS term,
+    COUNT_STAR(term_article_freqs) AS num_articles,
+    SUM(article_term_usages) AS term_usages;
+global_term_info_g = GROUP term_info BY ALL;
+global_term_info = FOREACH global_term_info_g GENERATE
+    COUNT_STAR(term_info) AS num_terms,
+    SUM(term_usages) AS global_usages;
+STORE global_term_info INTO '/data/work/geo_flavor/global_term_info';
+----
+
+(The actual code is somewhat different from what you see here -- we'll explain below)
+
+... (TODO describe term_info)
+
+
+=== Pattern: Re-injecting global totals
+
+We also extract two global statistics: the number of distinct terms, and the number of distinct usages. This brings up one of the more annoying things about Hadoop programming. The global_term_info result is two lousy values, needed to turn the global _counts_ for each term into the global _frequency_ for each term. But a pig script just orchestrates the top-level motion of data: there's no intrinsic way to bring the result of a step into the declaration of following steps. The proper recourse is to split the script into two parts, and run it within a workflow tool like Rake, Drake or Oozie. The workflow layer can fish those values out of the HDFS and inject them as runtime parameters into the next stage of the script.
+
+We prefer to cheat. We instead ran a version of the script that found the global count of terms and usages, then copy/pasted their values as static parameters at the top of the script. This also lets us calculate the ppm frequency of each term and the other term statistics in a single pass. To ensure our time-traveling shenanigans remain valid, we add an `ASSERT` statement which compares the memoized values to the actual totals.
+
+----
+DEFINE memoized_num_terms XXX;
+DEFINE memoized_global_usages XXX;
+all_terms = GROUP term_cell_freqs BY term;
+term_info_1 = FOREACH all_terms GENERATE
+    group AS term,
+    COUNT_STAR(term_cell_freqs) AS num_articles,
+    SUM(article_term_usages) AS term_usages,
+    1000000 * SUM(article_term_usages)/memoized_global_usages AS term_ppm:double
+    ;
+-- Validate the global term statistics
+global_term_info_g = GROUP term_info BY ALL;
+global_term_info = FOREACH global_term_info_g GENERATE
+   COUNT_STAR(term_info) AS num_terms,
+   SUM(term_usages) AS global_usages;
+STORE global_term_info INTO '/data/work/geo_flavor/global_term_info';
+ASSERT(global_term_info.num_terms = memoized_num_terms);
+ASSERT(global_term_info.global_usages = memoized_global_usages);
+----
+
+(TODO: just realized the way we've done this finds global term stats on only geolocated articles. To find them on all articles will complicate the script: we have to do a left join and then filter, or we'd have to do wordbags first then join on geolocations.)
+
+
 
 ==== A pause, to think
 
@@ -171,19 +250,6 @@ The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to 
 // Insight comes from data in context: places in the context of associated topics, or topics in the // context of associated locations. When your data is far too large to fit on a single machine,
 // 
 // In the second case, putting every word in context of all associated locations requires that 
-
-
-=== Geographical Flavor
-
-1. article -> wordbag  
-2. join on page data to get geolocation
-3. use pagelinks to get larger pool of implied geolocations
-4. turn geolocations into quadtile keys
-5. aggregate topics by quadtile
-6. take summary statistics aggregated over term and quadkey
-7. combine those statistics to identify terms that occur more frequently than the base rate would predict
-8. explore and validate the results                              
-9. filter to find strongly-flavored words, and other reductions of the data for visualization
 
 
 ==== Exemplars and Touchstones

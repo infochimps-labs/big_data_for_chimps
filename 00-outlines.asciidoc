@@ -1,6 +1,5 @@
 
 
-
 5. **Pipelineable** Additions/Improvements
   - Controlling Case Sensitivity in String Comparisons (`ff = FILTER fr BY EqualsIgnoreCase(franch_id, 'bOs'); DUMP ff;`)
   - Select Records Using a List of Values
@@ -19,12 +18,16 @@
   - Converting an Internally-Delimited Field into Multiple Columns Using STRSPLIT
   - Converting an Internally-Delimited Field into Multiple Rows Using STRSPLITBAG
   - Exploding a String into its Characters
-
+  - demonstrate case and ternary statements (combine/move demonstration in filter section?)
   
 6. **Grouping** Additions/Improvements
+  - JSON-encoded string
+  - completely summarizing
+  
 
 7. **Joining** Additions/Improvements  
   - Replicated join
+  - stuff in "important notes about joins"
 
 8. **Ordering and Uniquing**
   - Demonstrate Sort in map/reduce
@@ -43,7 +46,7 @@
   - group/decorate/flatten
   - group/flatten/re-flatten
   - cube & rollup
-  
+  - run expectancy (prediction) 
 
 10. **Event log**
   - Parsing logs and using regular expressions
@@ -59,12 +62,14 @@
   - Correlations
 
 11. **Geo Analysis**
-  - quad keys for point density heat map /  Statistics on grid cells
-  - spatial join of airports and sightings
+  - quad keys for point density heat map
+    - and categorized
+  - Statistics on grid cells
+  - spatial join of airports and sightings (within-X join)
   - Geospatial data model, GeoJSON
   - voronoi cells on weather stations
   - breaking voronoi regions into quad cell regions
-  - joining (stadiums? Wikipedia pages? Geonames?) onto regions
+  - joining stadiums onto quads
   - breaking voronoi regions into multi-scale quads
   - map weather observations to cells, average
   - spatial join of points and multi-scale quads
@@ -147,6 +152,8 @@
 
 32. **Best Practices**
 
+
+
 30. **Overview of Datasets and Scripts**
   - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
   - Airline Flights
@@ -182,209 +189,43 @@
 
 
 
+* Generate pairs of teams, use ternary to choose lexicographic firstmost
 
 
-=== Somewhere
-
-* Strings That Include Quotes or Special Characters
-
-=== FOREACH to transform records individually
-
-* modify the contents of records individually with FOREACH
-  - ba, slg, from rate stats
-* Binning records (See Statistics Chapter for more)
-* coalesce
-* ternary
-* String Relative Ordering
-  - Generate pairs of teams, use ternary to choose lexicographic firstmost
-
-
-=== Blowing up data
-
-* String/Collection decomposition Decomposing or Combining Strings
-  - generating chars: str.split("(?!^)")
-* Ungrouping operations (FOREACH..FLATTEN) expand records
-  - call ahead to Section on Tidy data by FLATTENing an inline record
 * See time series chapter: Discrete interval sampling (convert value-over-range to date-value)
 * See text chapter: Wordbag, Flatten
 * See statistics chapter: generating data
 * See statistics chapter: Transpose data
 
-=== eliminating records or fields
-
-* Filter:
-  - players after 1900
-  - Testing String Equality: players for Red Sox
-  - Substring or Regular Expressions: players named Q.* OR .*lip.* OR Die.*
-  - Select at-bats with three straight caught-looking strikes (the most ignominious of outcomes)
-  - isNull, isEmpty, vs Boolean test
-  - Caution on Floating Point comparisons
-* Select Fixed Number of Arbitrary Records (LIMIT)
-  - note: Limit doesn't stop reading so only supply a few filenames
-  - no "OFFSET" like there is in SQL.
-* Note: To select the top K items from a table or from groups of records is covered below
-* Select only the fields you need ("projection") using a FOREACH
-  - project just the core stats -- Specifying Which Columns to Display and Giving Names to Output Columns
-* Sample: see statistics chapter
-* Ssee below: JOINs are often used to filter items in one table using fields from another table
-
-=== Splitting into pieces
-
-* Split using filter: Bill James' black ink metric?
-    * Write into named files: game logs by team. Warn about files count.
-    * Combine small files: (find the worst offender and repair it)
-    * case statement?
-* splitting into uniform chunks
-  - records: use RANK then group on rank mod record size
-  - byte size: use HDFS block size?
-  - fraction: approximate -- use sort and N reducers
-* Files named for key using Piggybank multistorage
-* Files Named for explicit filter: Pitchers vs Non-pitchers; hofPlayers, All-stars, all qualified
-  - note that it does not short-circuit and their is no "else" clause
-  - call ahead to the transpose part of the summarizinator in statistics chapter
-* Combine tables with UNION
-
-For sort note a udf to unique (distinct) won't work because keys can be split
-
-
-== Structural Operations
-
-=== Aggregation for summary statistics
-
-* Group and agg:
-    * career stats
-    * HR Stats by year
-* Summarizing with MIN(), MAX(), SUM(), AVG(), STDDEV, COUNT(), count star, count distinct, byte size, character size, line / word count
-* Count vs COUNTSTAR
-   - number of missing values using countstar-count
-* Fancy `FOREACH` lets you  operate on bags
-  - batting average, slg and OPS for career
-* GROUP BY ALL
-  - explain algebraic aggregators make this ok (but disaster if not algebraic)
-  - season-by-season trends
+* Caution on Floating Point comparisons
+* For sort note a udf to unique (distinct) won't work because keys can be split
+* season-by-season trends using Over
 * Note: HAVING not needed, just use a filter after the group by.
-* Re-injecting global totals
-* Histogram
-  - histogram of home runs per season (doesn't need bin)
-  - histogram of career games
-  - categorical bins for non-categorical data
 * Cube and rollup
   - stats by team, division and league
-
-=== Putting tables in context with JOIN and friends
-
-* Join is a Group and Flatten
-* Direct Join: Extend Records with Uniquely Matching Records from Another Table
-  - hang full names off records from master file
-* Many-to-many join: teams to stadiums; players to teams
-  - parks: team seasons and count; distinct teams and count
-* Sparse join for matching: geo names for stadiums
-* Sparse join for filtering: all-star table (hall of fame table?)
-* Self-join
-* Distinct: players with a unique first name (once again we urge you: crawl through your data. Big data is a collection of stories; the power of its unusual effectiveness mode comes from the comprehensiveness of those stories. even if you aren't into baseball this celebration of the diversity of our human race and the exuberance of identity should fill you with wonder.)
 * bag left outer join from DataFu
 * Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
 * Sparse joins for filtering
     * HashMap (replicated) join
     * bloom filter join
-* (add note) Joins on null values are dropped even when both are null. Filter nulls.
-* Range query
-    * using cross
-    * using prefix and UDFs
-* Semi-join
 * Bitmap index
 * Self-join for successive row differences
-* Combining Rows in One Table with Rows in Another
-* Finding Rows in One Table That Match Rows in Another
-* Finding Rows with No Match in Another Table
-* Section 12-10 Using a Join to Fill in Holes in a List
-* Enumerating a Many-to-Many Relationship
-* Comparing a Table to Itself
-* Eliminating Duplicates from a Query Result:
-    * and from a Self-Join Result Section
-    * Eliminating Duplicates from a Table
-* Getting the duplicated values -- group by, then emit bags with more than one size
-
-=== Set Operations
-
-* Union (make sure to note it doesn't dedupe and doesn't order)
-* Intersect
-* Distinct
-* Difference (in a but not in b)
-* Equality (use symmetric difference)
-* Symmetric difference: in A or B but not in A intersect B -- do this with aggregation: count 0 or 1 and only keep 1
-* http://datafu.incubator.apache.org/docs/datafu/guide/set-operations.html
-* http://www.cs.tufts.edu/comp/150CPA/notes/Advanced_Pig.pdf
-
-* Using DISTINCT to Eliminate Duplicates
-* Eliminating rows that have a duplicated value (ie you're not comparing the whole thing)
-* Finding Values Associated with Minimum and Maximum Values
-* Selecting Only Groups with Certain Characteristics
-* Determining Whether Values are Unique
-
-=== Structural Group Operations (ie non aggregating)
-
 * Group flatten regroup
     * OPS+ -- group on season, normalize, reflatten
     * player's highest OPS+: season, normalize, flatten, group on player, top
 * Group Elements From Multiple Tables On A Common Attribute (COGROUP)
 * GROUP/COGROUP To Restructure Tables
-* Self join of table on its next row (eg timeseries at regular sample)
-* Working with NULL Values: Negating a Condition on a Column That Contains NULL Values Section; Writing Comparisons Involving NULL in Programs; Mapping NULL Values to Other Values
 * Cogroup and aggregate (vs SQL Cookbook 3.10)
-* Using DISTINCT to Eliminate Duplicates
-* Finding Values Associated with Minimum and Maximum Values
-* Selecting Only Groups with Certain Characteristics
-* Determining Whether Values are Unique
-* Finding Rows Containing Per-Group Minimum or Maximum Values
-* Computing Team Standings
-* Producing Master-Detail Lists and Summaries
+
 * Find Overlapping Rows
 * Find Gaps in Time-Series..
 * Find Missing Rows in Series / Count all Values
-* Normalize Denormalized
-* Denormalize Normalized
-* Transpose Numeric Data
-* Calculating Differences Between Successive Rows
-* Finding Cumulative Sums and Running Averages
-* Section 13.3. Per-Group Descriptive Statistics Section
-* Counting Missing Values
 
-=== Sorting and Ordering
+* Sort ASC / DESC
 
-* Operations on the order of records: Sorting, Shuffling, Ranking and Numbering
-  - ORDER: multiple fields
-  - (how do NULLs sort?)
-  - RANK: Dense, not dense
-  - ASC / DESC
-  - in SQL you can omit the sort expression from the table; fields must be there in Pig
-* Note
-* Top K:
-    * whole table: most hr in a season
-    * most hr season-by-season
-
-* Top K Records within a table using ORDER..LIMIT
-    * Top K Within a Group using GROUP...FOREACH GENERATE TOP
-  - middle K (LIMIT..OFFSET)
 * Number records with a serial or unique index
-* Running total http://en.wikipedia.org/wiki/Prefix_sum
-* prefix sum value; by combining list ranking, prefix sums, and Euler tours, many important problems on trees may be solved by efficient parallel algorithms.[3]
-* Shuffle a set of records
-    * See notes on random numbers.
-    * Don't use the pig ORDER operation for this (two passes) (can you count on the built-in sort?)
-* Sorting a Result Set
-* Selecting Records from the Beginning or End of a Result Set
-* Pulling a Section from the Middle of a Result Set
-* Calculating LIMIT Values from Expressions
-* What to Do When LIMIT Requires the "Wrong" Sort Order
-* Sorting with Order by; Sorting and NULL Values; Controlling Case Sensitivity of String Sorts
-* Sorting Subsets of a Table;
-* Displaying One Set of Values While Sorting by Another
-* Controlling Summary Display Order
-* Finding Smallest or Largest Summary Values
-* Randomizing a Set of Rows
-* Assigning Ranks
-* Counting and Identifying Duplicates
+* Running total 
+* http://en.wikipedia.org/wiki/Prefix_sum
 
 === Graph Operatioms
 
@@ -404,63 +245,36 @@ For sort note a udf to unique (distinct) won't work because keys can be split
 
 === Time Series Operations
 
-* Interval coalesce: given a set of intervals, what is the smallest set of intervals that covers all of them?
-    * for each team, what is the smallest number of stints (continuous player for team) needed so that every player was a teammate of one of them for that team? http://www.dba-oracle.com/t_sql_patterns_interval_coalesce.htm
+* Interval coalesce: given a set of intervals, what is the smallest set of intervals that covers all of them? for each team, what is the smallest number of stints (continuous player for team) needed so that every player was a teammate of one of them for that team? http://www.dba-oracle.com/t_sql_patterns_interval_coalesce.htm
 * Turn player-seasons into stints (like the sessionize operation I think)
-* Sessionize
-  - sessionize web logs
-  - Continuous game streak
+* Sessionize web logs; Continuous game streak    
 
 === Statistics
 
 * Data Generation
 * Make Reproducible Random Data - Varying Distribution
 * Calculating Linear Regressions or Correlation Coefficients
-
-* Calculate the summary statistics
-  - Transpose (datafu) and flatten
-  - group on attribute
-  - calculate statistics
-  - unionize
+* Calculate the summary statistics: Transpose (datafu) and flatten; group on attribute; calculate statistics; unionize the stats
 * Sniff through the data: extrema, mountweazels, exemplars
-* Make a histogram
-  - by scale and mod
-  - by log scale and mod
-  - by lookup table
-  - by Z-score
-  - equal-width
+* Make a histogram: bin; log bins; by lookup table; by Z-score; equal-width
 * Plot it: time series, trellis plot
 
-* Summarizing with COUNT(), count star, count distinct, MIN(), MAX(), SUM(), AVG(), byte size, character size, line / word count
-* Number of Distinct elements (Cardinality)
-  - count distinct
-  - hyperloglog
+* Strings 
+    * length: COUNT(), count star, count distinct, MIN(), MAX(), SUM(), AVG(), 
+    * **byte size, character size, line / word count**
+    * Number of Distinct elements (Cardinality)
 * Sum, sumsq, Entropy, Standard Deviation, variance, moments (eg GINI)
-  - Correlation /covariance: what rate stats go with game time temp?
+* Correlation /covariance: what rate stats go with game time temp?
 * Streaming moments (see Alon, Matias, and Szegedy)
-* Histogram
-  - quantiles
-  - Median (approx, exact)
 * Heavy hitters -- Count-Min sketch
 * Running averages
-* note: see below for Graph summaries
-
-
 
 === Advanced Patterns
 
-* True if NONE Match: Find all rows in TABLE1 where there are no rows in TABLE2 that have a T2C value equal to the current T1A value in the TABLE1 table:
-* True if ten match: Find all rows in TABLE1 where there are exactly ten rows in TABLE2 that have a T2B value equal to the current T1A value in the TABLE1 table
-* Entity-Attribute-Value: bad idea in SQL
 * Vertical and horizontal partitioning
-* Serial ids -- natural ids
-* Composite keys, foreign keys
+* Serial ids -- natural ids -- composite keys, foreign keys
 * Small record with large blob (eg video file and metadata)
 * Using float data type when you should use fixed point
-* Group by has functionally dependent value (ie we know all elements of bag have same value for group)
-
-* Pivot
-* Histogram
 * Skyline query (elements not dominated)
     * eliminate all players with no claim to be the best ever: their full set of core stats are less than some other player's full set of core stats. Related to convex hull http://www.cs.umd.edu/class/spring2005/cmsc828s/slides/skyline.pdf
     * like the hipmunk "agony" ranking
@@ -468,113 +282,6 @@ For sort note a udf to unique (distinct) won't work because keys can be split
 * Relational division
     * for each job listing (table of name, qualification pairs), find applicants who have all job qualifications (table is listing if, qualification pairs)
     * an applicant who is not qualified has one (listing, qual) pair missing
-    * or use counting?
-* Outer union
-* Complex constraint
-* Nested intervals
-* Transitive closure
-* Hierarchical total
-* Small result set from a few tables with specific criteria applied to those tables
-* Small result set based on criteria applied to tables other than the data source tables
-* Small result set based on the intersection of several broad criteria
-* Small result set from one table, determined by broad selection criteria applied to two or more additional tables
-* Large result set
-* Result set obtained by self-joining on one table
-* Result set obtained on the basis of aggregate function(s)
-* Result set obtained by simple searching or by range searching on dates
-* Result set predicated on the absence of other data
-
-
-* Chapter 1 - Counting in SQL
-    * List of patterns
-    * Introduction to SQL Counting
-    * Counting Ordered Rows
-    * Conditional Summation with CASE Operator
-    * Indicator and Step Functions
-    * A Case for the CASE Operator
-    * Summarizing by more than one Relation
-    * Interval Coalesce
-* Chapter 2 - Integer Generators in SQL
-    * Integers Relation
-    * Recursive With
-    * Big Table
-    * Table Function
-    * Cube
-    * Hierarchical Query
-    * String Decomposition
-    * Enumerating Pairs
-    * Enumerating Sets of Integers
-    * Discrete Interval Sampling
-* Chapter 3 - Exotic Operators in SQL
-    * Introduction to SQL exotic operators
-    * List Aggregate
-    * Product
-    * Factorial
-    * Interpolation
-    * Pivot
-    * Symmetric Difference
-    * Histograms in SQL
-    * Equal-Width Histogram
-    * Equal-Height Histogram
-    * Logarithmic Buckets
-    * Skyline Query
-    * Relational Division
-    * Outer Union
-* Chapter 4 - SQL Constraints
-    * Function Based Constraints
-    * Symmetric Functions
-    * Materialized View Constraints
-    * Disjoint Sets
-    * Disjoint Intervals
-    * Temporal Foreign Key Constraint
-    * Cardinality Constraint
-* Chapter 5 - Trees in SQL
-    * Materialized Path
-    * Nested Sets
-    * Interval Halving
-    * From Binary to N-ary Trees
-    * Matrix Encoding
-    * Parent and Children Query
-    * Nested Intervals
-    * Descendants Query
-    * Ancestor Criteria
-    * Ancestors Query
-    * Converting Matrix to Path
-    * Inserting Nodes
-    * Relocating Tree Branches
-    * Ordering
-    * Exotic Labeling Schemas
-    * Dietz Encoding
-    * Pre-order – Depth Encoding
-    * Reversed Nesting
-    * Ordered Partitions
-* Chapter 6 - Graphs in SQL
-    * Schema Design
-    * Tree Constraint
-    * Transitive Closure
-    * Recursive SQL
-    * Connect By
-    * Incremental Evaluation
-    * Hierarchical Weighted Total
-    * Generating Baskets
-    * Comparing Hierarchies
-
-
-
-Credits
-
-* Art of SQL
-* SQL patterns
-* Baseball hacks
-* MySQL patterns
-* SQL Design Patterns http://www.rampant-books.com/book_0601_sql_coding_styles.htm http://www.nocoug.org/download/2006-11/sql_patterns.ppt
-* DB2 cookbook
-* Patterns for improving runtime: http://www.idi.ntnu.no/~noervaag/papers/VLDBJ2013_MapReduceSurvey.pdf
-
-Instead of counting with the count( ) function, we can, at the
-same time as we compute the total count, add 1 if amount_diff is not 0, and 0 otherwise.
-
-==== combining into fewer files
 
 === SQL-to-Pig-to-Hive
 
@@ -591,44 +298,34 @@ same time as we compute the total count, add 1 if amount_diff is not 0, and 0 ot
 * SELECT country_name, indicator_name, `2011` AS trade_2011 FROM wdi WHERE (indicator_name = 'Trade (% of GDP)' OR indicator_name = 'Broad money (% of GDP)') AND `2011` IS NOT NULL CLUSTER BY indicator_name;
 
 SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVING condition ORDER BY column  [ASC | DESC] LIMIT offset,count;
-Standard scores are also called z-values, z-scores, normal scores, and standardized variables; the use of "Z" is because the normal distribution is also known as the "Z distribution". They are most frequently used to compare a sample to a standard normal deviate (standard normal distribution, with μ = 0 and σ = 1), though they can be defined without assumptions of normality.
+|
 
   - adv.pig     udfs    (When do UDFs, compare JRuby UDF to Java UDF to Stream, and cite difference in $AWS cluster time and $ programmer salary to wait the extra time.
-  - stats               Counting Distinct Values in a Column Approximately
   - adv.pig             Storing and Loading to/from a Database
   - adv.pig     sparse  ‘merge-sparse’. This is useful for cases when both joined tables are pre-sorted and indexed, and the right-hand table has few ( < 1% of its total) matching keys. http://pig.apache.org/docs/r0.12.0/perf.html#merge-sparse-joins
-  - stats       genrte  Generating Consecutive Numeric Values
-  - store               Saving a Query Result in a Table
-  - todo                Using Sequence Generators as Counters
-  - stats               Calculating a Median (stats chapter)
   - stats       advagg  Computing Averages Without High and Low Values (Trimmed Mean by rejecting max and min values)
-  - stats       agg2    Counting Missing Values (COUNT - COUNT_STAR)
-  - stats       genrte  Creating a Sequence Column and Generating Sequence Values
-  - stats       genrte  Extending the Range of a Sequence Column
   - stats       genrte  Generating Frequency Distributions
   - stats       genrte  Generating Random Numbers
   - stats       genrte  Generating Repeating Sequences
   - stats       maybe   Calculating Linear Regressions or Correlation Coefficients
   - stats       advagg  Transposing Columns into Records
-  - stats       assego  Calculating the Standard Deviation (with summarizer)
-
   - stats       ntiles  Find Outliers Using the 1.5-Inter-Quartile-Range Rule
-  - stats?              Transposing a Result Set
   - eventlog            Fill in Missing Dates (apply fill gaps pattern)
   - stats       sample  Sample a Fixed Number of Records with Reservoir Sampling
-  - select      sample  Selecting Random Items from a Set of Records (and much more in stats) (`DEFINE rand RANDOM('12345'); ... FOREACH foo GENERATE rand();`, but that is same random number for each mapper!! Can you do this for SAMPLE?)
   - eventlog            Identifying Overlapping Date Ranges
   - eventlog            Parsing an IP Address or Hostname (and while we're at it, reverse dot the hostname)
   - eventlog            Sorting Dotted-Quad IP Values in Numeric Order
   - eventlog            Sorting Hostnames in Domain Order
   - munging             Choose a String Data Type (-> munging-- get it the hell into utf-8)
-
-  - intro       pigslow (Really hammer the point that Pig is in practice faster -- reading small files / local mode for tiny jobs, combining splits, writing combiners; ...
   - intro       usage   (mention that 'SET' on its own dumps the config)
   - eventlog             Expanding Ranges into Fixed Intervals
-  - 
-  - 
   - histogram   macros  (making a snippet a macro. Maybe in histogram? or summary stats?)
+
+
+
+
+
+
 
 
 
@@ -650,419 +347,6 @@ Introduce the chapter to the reader
 
 
 The stakeholders' opinions are the data; the subject under vote is the context; the room and time define the arena of computation; and the decision is synthesized according to the relevant organizational bylaws.
-
-Large portions of the playbook remain applicable but need extra machinery to succeed;
-
-
-Once you start thinking in terms of context
-One could also hold the presidential election by directing supporters of one candidate to stand in a certain wide-open portion of Kansas, and supporters of the other candidate to stand in a similar portion of Iowa -- allowing a satellite photo and image
-
-
-=== Chapter Doneness: B
-
-* _Introduction_: exists, lots of extra stuff, not readable
-* _description of map phase_: good
-* _demonstration hadoop job_
-* _Chimpanzee and Elephant translate Shakespeare_
-* _description of mapper phase_
-* _how to run a Hadoop job_
-* _Seeing your job's progress and output_
-* _Sidebar: What's fast at high scale_
-* _Overview of the HDFS_
-
-
-This chapter and the next couple will see some reshuffling to give the following narrative flow:
-
-1. (first chapter)
-2. (this one) Here's how to use hadoop
-3. Here's your first map/reduce jobs, and how data moves around behind the scenes
-4. Pig lets you work with whole datasets, not record-by-record
-5. The core analytic patterns of Hadoop, as Pig scripts and as Wukong map/reduce scripts
-
-=== Pardon this digression-laden introduction
-
-You can think of Hadoop's processing model in a few ways
-
-The first part of this book will introduce the Hadoop toolset.
-
-- The centerpiece of the Big Data toolset is Hadoop, an open-source batch processing toolkit
-
-* This book will present several (paradigms for/ways to think about) Big Data analytics
-* Hadoop serves well as a distributed runner.
-* One (approach/paradigm) is record-oriented
-
-Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
-
-What everybody wants is _insight_ -- the patterns, connections, (summarizations) that lead to deeper understanding and better decisions
-
-1. Process records independently into a new form
-2. Assemble records into context
-3. Synthesize context groups into new forms
-4. Write the results to a datastore or external system
-
-* Operations that apply locally to each partition and cause no network transfer
-* Repartitioning operations that repartition a stream but otherwise don't change the contents (involves network transfer)
-* Aggregation operations that do network transfer as part of the operation
-* Operations on grouped streams
-* Merges and joins
-
-data flutters by              (process and label records)
-elephants make sturdy piles   (contextify? assemble? by label)
-context yields insight        (process context groups)
-
-We'll start with an application that only requires processing records independently -- each record requires no context.
-You'll learn the mechanics of running Hadoop jobs: how to load and retrieve data, launch your job and see its progress, and so forth.
-But Hadoop is useful for far more than such
- so-called "embarrassingly parallel" problems.
-The second program exhibits the full map-reduce paradigm.
-The program is simple, but it's _scalable_. Slight modification of the program to
-Count 56,000 UFO sightings by month
-  Build the analogous timeseries for the X billion Wikipedia pages.
-
-We've just seen how
- Now let's understand a high-level picture of
-  What Hadoop is doing, and why this makes it scalable.
-(Merge sort, secondary sort)
-
-So far we've seen two paradigms: distributed work
-Record-oriented
-
-* Letters to toyforms
-* Toyforms to parts forms, parts and toyforms to desks
-* Toys by type and subtype
-* Toys by crate and then address
-
-
-1. Introduction
-2. Hadoop Basics
-    * Elephant and Chimpanzee Start a Business
-    * Translating Pig Latin with Hadoop
-    * Running a Hadoop Job
-        * Transfer Data to the Cluster
-        * Running and Monitoring your Job
-        * Viewing Output
-    * How the HDFS Manages Data
-3. Map/Reduce Analytics
-    * When are UFOs Most Likely to be Seen?
-        * Mappers Label Sightings by Hour
-        * Hadoop Groups Each Hour's Sightings
-        * Reducer Counts the Sightings
-    * Elephant and Chimpanzee Save Christmas part 1
-        * Elves in Crisis
-        * Making Toys: Children's letters Become Labelled Toy Forms
-        * Making Toys: Toy Forms Dispatched to Workbench
-    * Map/reduce
-        * Mapper labels records
-        * Hadoop groups records by label
-        * Reducer processes each group
-        * Default Partitioner Distributes Keys Uniformly
-        * Experimenting With Partitions
-    * Elephant and Chimpanzee Save Christmas part 2
-        * A New Scaling Bottleneck
-        * Reindeer Games
-        * The New Parts System
-    * Secondary Sort
-        * Extend UFO Sighting Records with Geographic Info
-        * Putting Sightings and Places into Context by Location Name
-        * Secondary Sort to Match Records
-    * Repeatable Patterns We've Seen: Aggregation, Filter, Co-group
-4. Pig Gives Hadoop Full-Dataset Operations
-    * Using Pig to Count UFO Sightings
-    * Olga the Remarkable Calculating Pig
-    * Running Pig Jobs and Monitoring Progress
-    * LOAD Sources Your Data and Defines its Schema
-    * Pig Operations act on Tables
-    * Pig Functions Act on Records
-    * STORE Specifies Output Location and Triggers Execution
-    * Directives that aid development: DESCRIBE, ASSERT, LIMIT..DUMP, ILLUSTRATE, EXPLAIN
-        * DESCRIBE shows the schema of a table
-        * ASSERT checks that your data is as you think it is
-        * LIMIT..DUMP shows data on the console
-        * ILLUSTRATE magically simulates your script’s actions, except when it fails to work
-        * EXPLAIN shows Pig’s execution graph
-5. Fundamental Patterns of Map/Reduce Analytics
-    * Overview of Operations
-    * FOREACH processes records individually
-    * FILTER
-    * LIMIT
-    * JOIN matches records in two tables
-    * Use a Replicated JOIN When One Table is Small
-    * GROUP with Aggregating Functions for Summarizing
-    * GROUP or COGROUP to Reassemble Records
-    * After a GROUP, a FOREACH has special abilities
-    * FLATTEN Ungroups records
-6. Big Data Ecosystem
-    * Batch Processing
-        * Sidebar: Which Hadoop Version?
-    * Streaming Data Processing
-    * Stream Analytics
-    * Online Analytic Processing (OLAP)
-    * Core Platform: Data Stores
-        * Traditional Relational Databases
-        * Billion-Record Datastores
-        * Scalable Application-Oriented Datastores
-        * Scalable Free-Text Search Engines
-        * Other Datastores
-* Programming Languages, Tools and Frameworks
-
-Frameworks
-
-7. Cat Herding
-8. .
-9. ...
-10. ...
-11. ...
-12. Hadoop Internals
-    * What's Fast at Scale
-
-
-
-==== Our Questions for You ====
-
-* The rule of thumb I'm using on introductory material is "If it's well-covered on the internet, leave it out". It's annoying when tech books give a topic the bus-tour-of-London ("On your window to the left is the outside of the British Museum!") treatment, but you should never find yourself completely stranded. Please let me know if that's the case.
-* Analogies: We'll be accompanied on part of our journey by Chimpanzee and Elephant, whose adventures are surprisingly relevant to understanding the internals of Hadoop. I don't want to waste your time laboriously remapping those adventures back to the problem at hand, but I definitely don't want to get too cute with the analogy. Again, please let me know if I err on either side.
-
-
-==== What's Covered in This Book? ====
-
-1. *First Exploration*:
-
-Objective: Show you a thing you couldn’t do without hadoop, you couldn’t do it any other way. Your mind should be blown and when you’re slogging through the data munging chapter you should think back to this and remember why you started this mess in the first place.
-
-A walkthrough of problem you'd use Hadoop to solve, showing the workflow and thought process. Hadoop asks you to write code poems that compose what we'll call _transforms_ (process records independently) and _pivots_ (restructure data).
-
-2. *Hadoop Processes Billions of Records*
-
-Chimpanzee and Elephant are hired to translate the works of Shakespeare to every language; you'll take over the task of translating text to Pig Latin. This is an "embarrassingly parallel" problem, so we can learn the mechanics of launching a job and a coarse understanding of the HDFS without having to think too hard.
-
-* Chimpanzee and Elephant start a business
-* Pig Latin translation
-* Test job on commandline
-* Load data onto HDFS
-* Run job on cluster
-* See progress on jobtracker, results on HDFS
-* Message Passing -- visit frequency
-* SQL-like Set Operations -- visit frequency II
-* Graph operations
-
-3. *Hadoop Derives Insight from Data in Context* -- You've already seen the first trick: processing records individually. The second trick is to form sorted context groups. There isn't a third trick. With these tiny two mustard seeds -- process and contextify -- we can reconstruct the full set of data analytic operations that turn mountains of data into gems of insight. C&E help SantaCorp optimize the Christmas toymaking process, demonstrating the essential problem of data locality (the central challenge of Big Data). We'll follow along with a job requiring map and reduce, and learn a bit more about Wukong (a Ruby-language framework for Hadoop).
-
-* Chimpanzee and elephant sve Christmas pt 1
-* map/reduce: count ufo sightings
-* The Hadoop Haiku
-* Hadoop vs Traditional databases
-* Chimpanzee and elephant sve Christmas pt 2
-* reducer guarantee
-* reducers in action
-* secondary sort
-
-4. *Hadoop Enables SQL-like Set Operations*
-
-By this point in the book  you should: a) Have your mind blown; b) See some compelling enough data and a compelling enough question, and a wukong job that answers that job by using only a mapper; c) see some compelling enough data and a compelling enough question, which requires a map and reduce job, written in both pig and wukong; d) believe the mapreduce story, i.e. you know, in general, the high-level conceptual mechanics of a mapreduce job. You'll have seen whimsical & concrete explanations of mapreduce,  what’s happening as a job is born and run, and HDFS
-
-* Count UFO visits by month
-  - visit jobtracker to see what Pig is doing
-* Counting Wikipedia pageviews by hour (or whatever)
-  - should be same as UFO exploration, but: will actually require Hadoop also do a total sort at the end
-
-4. *Fundamental Data Operations in Hadoop*
-
-Here’s the stuff you’d like to be able to do with data, in wukong and in pig
-
-* Foreach/filter operations (messing around inside a record)
-* reading data (brief practical directions on the level of “this is what you type in”)
-* limit
-* filter
-* sample
-* using a hash digest function to take a signature
-* top k and reservoir sampling
-* refer to subuniverse which is probably elsewhere
-* group
-* join
-* ??cogroup?? (does this go with group? Does it go anywhere?)
-* sort, etc.. : cross cube
-* total sort
-* partitioner
-* basic UDFs
-* ?using ruby or python within a pig dataflow?
-
-5. *Analytic Patterns*
-
-Connect the structural operations you've seen pig do with what is happeining underneath, and flesh out your understanding of them.
-
-6. *The Hadoop Toolset and Other Practical Matters*
-
-* toolset overview
-* It’s a necessarily polyglot sport
-* Pig is a language that excels at describing
-* we think you are doing it wrong if you are not using :
-* a declarative orchestration language, a high-level scripting language for the dirty stuff (e.g. parsing, contacting external apis, etc..)
-*  udfs (without saying udfs) are for accessing a java-native library, e.g. geospacial libraries, when you really care about performance, to gift pig with a new ability, custom loaders, etc…
-* there are a lot of tools, they all have merits: Hive, Pig, Cascading, Scalding, Wukong, MrJob, R, Julia (with your eyes open), Crunch. There aren’t others that we would recommend for production use, although we see enough momentum from impala and spark that you can adopt them with confidence that they will mature.
-* launching and debugging jobs
-* overview of Wukong
-* overview of Pig
-
-7. *Filesystem Mojo and `cat` herding*
-
-* dumping, listing, moving and manipulating files on the HDFS and local filesystems
-* total sort
-* transformations from the commandline (grep, cut, wc, etc)
-* pivots from the commandline (head, sort, etc)
-* commandline workflow tips
-* advanced hadoop filesystem (chmod, setrep, fsck)
-
-* pig schema
-* wukong model
-* loading TSV
-* loading generic JSON
-* storing JSON
-* loading schematized JSON
-* loading parquet or Trevni
-* (Reference the section on working with compressed files; call back to the points about splitability and performance/size tradeoffs)
-* TSV, JSON, not XML; Protobufs, Thrift, Avro; Trevni, Parquet; Sequence Files; HAR
-* compression: gz, bz2, snappy, LZO
-* subsetting your data
-
-8. *Intro to Storm+Trident*
-
-* Meet Nim Seadragon
-* What and Why Storm and Trident
-* First Storm Job
-
-9. *Statistics*:
-
-* (this is first deep experience with Storm+Trident)
-* Summarizing: Averages, Percentiles, and Normalization
-* running / windowed stream summaries
-  - make a "SummarizingTap" trident operation that collects {Sum Count Min Max Avg Stddev SomeExampleValuesReservoirSampled} (fill in the details of what exactly this means)
-  - also, maybe: Median+Deciles, Histogram
-  - understand the flow of data going on in preparing such an aggregate, by either making sure the mechanics of working with Trident don't overwhelm that or by retracing the story of records in an aggregation
-  - you need a group operation -> means everything in group goes to exactly one executor, exactly one machine, aggregator hits everything in a group
-* combiner-aggregators (in particular), do some aggregation beforehand, and send an intermediate aggregation to the executor that hosts the group operation
-  - by default, always use persistent aggregate until we find out why you wouldn’t
-  - (BUBBLE) highlight the corresponding map/reduce dataflow and illuminate the connection
-* (BUBBLE) Median / calculation of quantiles at large enough scale that doing so is hard
-* (in next chapter we can do histogram)
-* Use a sketching algorithm to get an approximate but distributed answer to a holistic aggregation problem eg most frequent elements
-* Rolling timeseries averages
-* Sampling responsibly: it's harder and more important than you think
-  - consistent sampling using hashing
-  - don’t use an RNG
-  - appreciate that external data sources may have changed
-  - reservoir sampling
-  - connectivity sampling (BUBBLE)
-  - subuniverse sampling (LOC?)
-* Statistical aggregates and the danger of large numbers
-  - numerical stability
-  - overflow/underflow
-  - working with distributions at scale
-  - your intuition is often incomplete
-  - with trillions of things, 1 in billion chance things happen thousands of times
-* weather temperature histogram in streaming fashion
-* approximate distinct counts (using HyperLogLog)
-* approximate percentiles (based on quantile digest)
-
-10. *Time Series and Event Log Processing*:
-
-* Parsing logs and using regular expressions with Hadoop
-  - logline model
-  - regexp to match lines, highlighting this as a parser pattern
-  - reinforce the source blob -> source model -> domain model practice
-* Histograms and time series of pageviews using Hadoop
-* sessionizing
-  - flow chart throughout site?
-  - "n-views": pages viewed in sequence
-  - ?? Audience metrics:
-  - make sure that this serves the later chapter with the live recommender engine (lambda architecture)
-* Geolocate visitors based on IP with Hadoop
-  - use World Cup data?
-  - demonstrate using lookup table,
-  - explain it as a range query
-  - use a mapper-only (replicated) join -- explain why using that (small with big) but don't explain what it's doing (will be covered later)
-* (Ab)Using Hadoop to stress-test your web server
-
-Exercise: what predicts the team a country will root for next? In particular: if say Mexico knocks out Greece, do Greeks root for, or against, Mexico in general?
-
-11. *Geographic Data*:
-
-* Spatial join (find all UFO sightings near Airports) of points with points
-  - map points to grid cell in the mapper; truncate at a certain zoom level (explain how to choose zoom level). must send points to reducers for own grid key and also neighbors (9 total squares).
-  - Perhaps, be clever about not having to use all 9 quad grid neighbors by partitioning on a grid size more fine-grained than your original one and then use that to send points only the pertinent grid cell reducers
-  - Perhaps generate the four points that are x away from you and use their quad cells.
-* In the reducer, do point-by-point comparisons
-  - *Maybe* a secondary sort???
-* Geospacial data model, i.e. the terms and fields that you use in, e.g. GeoJSON
-  - We choose X, we want the focus to be on data science not on GIS
-  - Still have to explain ‘feature’, ‘region’, ‘latitude’, ‘longitude’, etc…
-* Decomposing a map into quad-cell mapping at constant zoom level
-  - mapper input: `<name of region, GeoJSON region boundary>`; Goal 1: have a mapping from region -> quad cells it covers; Goal 2: have a mapping from quad key to partial GeoJSON objects on it. mapper output: [thing, quadkey] ; [quadkey, list of region ids, hash of region ids to GeoJSON region boundaries]
-* Spatial join of points with regions, e.g. what congressional district are you in?
-  - in mapper for points emit truncated quad key, the rest of the quad key, just stream the regions through (with result from prior exploration); a reducer has quadcell, all points that lie within that quadcell, and all regions (truncated) that lie on that quadcell. Do a brute force search for the regions that the points lie on
-* Nearness query
-  - suppose the set of items you want to find nearness to is not huge; produce the voronoi diagrams
-* Decomposing a map into quad-cell mapping at multiple zoom levels;in particular, use voronoi regions to make show multi-scale decomposition
-* Re-do spatial join with Voronoi cells in multi-scale fashion (fill in details later)
-  - Framing the problem (NYC vs Pacific Ocean)
-  - Discuss how, given a global set of features, to decompose into a multi-scale grid representation
-  - Other mechanics of working with geo data
-
-12. *Conceptual Model for Data Analysis*
-
-* There's just one framework
-
-13. *Data Munging (Semi-Structured Data)*: The dirty art of data munging. It's a sad fact, but too often the bulk of time spent on a data exploration is just getting the data ready. We'll show you street-fighting tactics that lessen the time and pain. Along the way, we'll prepare the datasets to be used throughout the book:
-
-* Datasets
-  - Wikipedia Articles: Every English-language article (12 million) from Wikipedia.
-  - Wikipedia Pageviews: Hour-by-hour counts of pageviews for every Wikipedia article since 2007.
-  - US Commercial Airline Flights: every commercial airline flight since 1987
-  - Hourly Weather Data: a century of weather reports, with hourly global coverage since the 1950s.
-  - "Star Wars Kid" weblogs: large collection of apache webserver logs from a popular internet site (Andy Baio's waxy.org).
-* Wiki pageviews - String encoding and other bullshit
-* Airport data -Reconciling to *mostly* agreeing datasets
-* Something that has errors (SW Kid) - dealing with bad records
-* Weather Data - Parsing a flat pack file
-  - bear witness, explain that you DID have to temporarily become an ameteur meteorologist, and had to write code to work with that many fields.
-  - when your schema is so complicated, it needs to be automated, too.
-  - join hell, when your keys change over time
-* Data formats
-  - airing of grievances on XML
-  - airing of grievances on CSV
-  - don’t quote, escape
-  - the only 3 formats you should use, and when to use them
-* Just do a data munging project from beginning to end that wasn’t too horrible
-  - Talk about the specific strategies and tactics
-  - source blob to source domain object, source domain object to business object. e.g. you want your initial extraction into a model mirrors closely the source domain data format. Mainly because you do not want mix your extraction logic and business logic (extraction logic will pollute business objects code). Also, will end up building the wrong model for the business object, i.e. it will look like the source domain.
-* Airport data - chief challenge is reconciling data sets, dealing with conflicting errors
-
-13. *Machine Learning without Grad School*: We'll equip you with a picture of how they work, but won't go into the math of how or why. We will show you how to choose a method, and how to cheat to win. We'll combine the record of every commercial flight since 1987 with the hour-by-hour weather data to predict flight delays using
-
-* Naive Bayes
-* Logistic Regression
-* Random Forest (using Mahout)
-
-14. *Full Application: Regional Flavor*
-
-15. *Hadoop Native Java API*
-
-* don't
-
-19. *Advanced Pig*
-
-* Specialized joins that can dramatically speed up (or make feasible) your data transformations
-* why algebraic UDFs are awesome and how to be algebraic
-* Custom Loaders
-* Performance efficiency and tunables
-* using a filter after a cogroup will get pushed up by Pig, sez Jacob
-
-20. *Data Modeling for HBase-style Database*
-
-21. *Hadoop Internals*
-
-* What happens when a job is launched
-* A shallow dive into the HDFS
-
 =====  HDFS
 
 Lifecycle of a File:
@@ -1123,42 +407,14 @@ Lifecycle of a File:
   - Regular Expressions
   - Sizes of the Universe
   - Hadoop Tuning & Configuration Variables
-
-
-Chopping block
-
+    
 1. Interlude I: *Organizing Data*:
   - How to design your data models
   - How to serialize their contents (orig, scratch, prod)
   - How to organize your scripts and your data
 
-2. *Graph Processing*:
-  - Graph Representations
-  - Community Extraction: Use the page-to-page links in Wikipedia to identify similar documents
-  - Pagerank (centrality): Reconstruct pageview paths from web logs, and use them to identify important pages
-
-3. *Text Processing*: We'll show how to combine powerful existing libraries with hadoop to do effective text handling and Natural Language Processing:
-  - Indexing documents
-  - Tokenizing documents using Lucene
-  - Pointwise Mutual Information
-  - K-means Clustering
-
 4. Interlude II: *Best Practices and Pedantic Points of style*
   - Pedantic Points of Style
   - Best Practices
   - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
-  - Why Hadoop
-  - robots are cheap, people are important
 
-
-17. Interlude II: *Best Practices and Pedantic Points of style*
-  - Pedantic Points of Style
-  - Best Practices
-  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
-  - Why Hadoop
-  - robots are cheap, people are important
-
-14. Interlude I: *Organizing Data*:
-  - How to design your data models
-  - How to serialize their contents (orig, scratch, prod)
-  - How to organize your scripts and your data
