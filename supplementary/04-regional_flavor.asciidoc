@@ -1,3 +1,0 @@
-[[regional_flavor]]
-== Regional Flavor
-

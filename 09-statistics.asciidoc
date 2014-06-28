@@ -168,6 +168,40 @@ Our next pattern is to transpose fields from each row into records having a colu
 * Expand the random.org by taking each r.o number as seed
 
 
+
+* http://blog.codinghorror.com/shuffling/
+* http://opencoursesfree.org/archived_courses/cs.berkeley.edu/~mhoemmen/cs194/Tutorials/prng.pdf
+    * "numbers with statistical properties of randomness. Note that I didn’t write “random numbers,” but rather, “numbers with statistical properties of randomness.”"
+* Make sure you have enough bits
+* Even 52 cards has 52! =~ 255 bits of permutation... can't possibly get every permutation for a table of even modest size
+* Make sure you look out for ties and shuffle them as well
+* Do you have to be think-y about the partitioner?
+* Download about (8 years *365 days * 1 mebibyte) of randoms from random.org. This is however only 90 million 256-bit (32-byte) numbers, or 350 million 64-bit (8-byte) numbers.
+* Don't just (rand mod 25) for a 1-in-25 random sample -- you'll be biased because it's not an exact number of bits. Instead reject if > 25 and try again.
+* Watch out for non-reentrant rand() -- mutex or something (do we need to worry about this in hadoop?)
+* http://blog.cloudera.com/blog/2013/02/how-to-resample-from-a-large-data-set-in-parallel-with-r-on-hadoop/
+    * Sampling-with-replacement is the most popular method for sampling from the initial data set to produce a collection of samples for model fitting. This method is equivalent to sampling from a multinomial distribution where the probability of selecting any individual input data point is uniform over the entire data set. Unfortunately, it is not possible to sample from a multinomial distribution across a cluster without using some kind of communication between the nodes (i.e., sampling from a multinomial is not embarrassingly parallel). But do not despair: we can approximate a multinomial distribution by sampling from an identical Poisson distribution on each input data point independently, lending itself to an embarrassingly parallel implementation.
+
+Here's a clip from the PokerStars website (they did their homework):
+
+* A deck of 52 cards can be shuffled in 52! ways. 52! is about 2^225 (to be precise, 80,658,175,170,943,878,571,660,636,856,404,000,000,000,000,000 ways). We use 249 random bits from both entropy sources (user input and thermal noise) to achieve an even and unpredictable statistical distribution.
+* Furthermore, we apply conservative rules to enforce the required degree of randomness; for instance, if user input does not generate required amount of entropy, we do not start the next hand until we obtain the required amount of entropy from Intel RNG.
+* We use the SHA-1 cryptographic hash algorithm to mix the entropy gathered from both sources to provide an extra level of security
+* We also maintain a SHA-1-based pseudo-random generator to provide even more security and protection from user data attacks
+* To convert random bit stream to random numbers within a required range without bias, we use a simple and reliable algorithm. For example, if we need a random number in the range 0-25:
+      o we take 5 random bits and convert them to a random number 0-31
+      o if this number is greater than 25 we just discard all 5 bits and repeat the process
+* This method is not affected by biases related to modulus operation for generation of random numbers that are not 2n, n = 1,2,..
+* To perform an actual shuffle, we use another simple and reliable algorithm:
+      o first we draw a random card from the original deck (1 of 52) and place it in a new deck - now original deck contains 51 cards and the new deck contains 1 card
+      o then we draw another random card from the original deck (1 of 51) and place it on top of the new deck - now original deck contains 50 cards and the new deck contains 2 cards
+      o we repeat the process until all cards have moved from the original deck to the new deck
+* This algorithm does not suffer from "Bad Distribution Of Shuffles" described in [2]
+
+[2] "How We Learned to Cheat at Online Poker: A Study in Software Security" - http://itmanagement.earthweb.com/entdev/article.php/616221
+[3] "The Intel Random Number Generator" - http://www.cryptography.com/resources/whitepapers/IntelRNG.pdf"
+
+
 ==== Sample Records Consistently
 
 
@@ -316,3 +350,21 @@ TODO: content to come
 
 TODO: content to come
 
+* For each entry, calculate N hashes
+* increment each bucket
+* count cannot be more than value of smallest bucket
+
+Even if bucket for `zephyr` collides with the bucket for `also` on one of the hashes, it's exceedingly unlikely to collide with it on all the 
+
+Related to Bloom Filter
+
+
+=== Exercises
+
+Distributions:
+
+* First letter of Wikipedia article titles
+
+* Count of inbound links for wikipedia articles
+
+* Total sum of pageviews counts for each page

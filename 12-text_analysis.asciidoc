@@ -1,3 +1,4 @@
+
 [[first_exploration]]
 == First Exploration
 
@@ -170,3 +171,152 @@ The challenge, then, isn't to learn to "program" Hadoop -- it's to learn how to 
 // Insight comes from data in context: places in the context of associated topics, or topics in the // context of associated locations. When your data is far too large to fit on a single machine,
 // 
 // In the second case, putting every word in context of all associated locations requires that 
+
+
+=== Geographical Flavor
+
+1. article -> wordbag  
+2. join on page data to get geolocation
+3. use pagelinks to get larger pool of implied geolocations
+4. turn geolocations into quadtile keys
+5. aggregate topics by quadtile
+6. take summary statistics aggregated over term and quadkey
+7. combine those statistics to identify terms that occur more frequently than the base rate would predict
+8. explore and validate the results                              
+9. filter to find strongly-flavored words, and other reductions of the data for visualization
+
+
+==== Exemplars and Touchstones
+
+There are three touchstones to hit in every data exploration:
+
+* Confirm the things you know:
+* Confirm or refute the things you suspect.
+* Uncover at least one thing you never suspected.
+
+Things we know: First, common words should show no geographic flavor. 
+Geographic features -- "beach", "mountain", etc -- should be intensely localised.
+* compared to other color words, there will be a larger regional variation for the terms "white" and "black" (as they describe ra
+You don't have to stop exploring when you find a new mystery, but no data exploration is complete until you uncover at least one.
+
+We will jointly discover two things
+taking as a whole the terms that have a strong geographic flavor, we should largely see cultural terms (foods, sports, etc)
+Next, we'll choose some _exemplars_: familiar records to trace through "Barbeque" should cover ;
+
+* https://github.com/Ganglion/varaha/blob/master/src/main/java/varaha/text/TokenizeText.java
+
+
+
+
+------
+stream do |article|
+  words = Wukong::TextUtils.tokenize(article.text, remove_stopwords: true)
+  words.group_by(&:to_s).map{|word, occurs|
+    yield [article.id, word, occurs.count]
+  end
+end
+------
+
+Reading it as prose the script says "for each article: break it into a list of words; group all occurrences of each word and count them; then output the article id, word and count."
+
+
+
+.Snippet from the Wikipedia article on "Barbecue"
+[quote, wikipedia, http://en.wikipedia.org/wiki/Barbeque]
+____
+Each Southern locale has its own particular variety of barbecue, particularly concerning the sauce. North Carolina sauces vary by region; eastern North Carolina uses a vinegar-based sauce, the center of the state enjoys Lexington-style barbecue which uses a combination of ketchup and vinegar as their base, and western North Carolina uses a heavier ketchup base. Lexington boasts of being "The Barbecue Capital of the World" and it has more than one BBQ restaurant per 1,000 residents. In much of the world outside of the American South, barbecue has a close association with Texas. Many barbecue restaurants outside the United States claim to serve "Texas barbecue", regardless of the style they actually serve. Texas barbecue is often assumed to be primarily beef. This assumption, along with the inclusive term "Texas barbecue", is an oversimplification. Texas has four main styles, all with different flavors, different cooking methods, different ingredients, and different cultural origins. In the June 2008 issue of Texas Monthly Magazine Snow's BBQ in Lexington was rated as the best BBQ in the state of Texas. This ranking was reinforced when New Yorker Magazine also claimed that Snow's BBQ was "The Best Texas BBQ in the World".
+
+
+=== Pointwise Mutual Information
+
+[[pmi]]
+
+Pointwise Mutual Information sounds like an Insurance holding company, but is in fact a simple way // to expose signal from background.
+
+Let's pick up the example from <<first_exploration>>
+
+* rate the word 'barbecue' is used
+* rate that words are used on grid cell 023130130
+* rate the word 'barbecue' is used on grid cell 023130130
+
+	pmi(x; y) := log[ p(x, y) / (p(x)*p(y))
+
+	<math>
+	\operatorname{pmi}(x;y) \equiv \log\frac{p(x,y)}{p(x)p(y)} = \log\frac{p(x|y)}{p(x)} = // \log\frac{p(y|x)}{p(y)}.
+	</math>
+
+==== Smoothing the counts ====
+
+The count of each word is an imperfect estimate of the probability of seeing that word in the context of the given topic. Consider for instance the words that would have shown up if the article were 50% longer, or the cases where an author chose one synonym out of many equivalents. This is particularly significant considering words with zero count.
+
+We want to treat "missing" terms as having occurred some number of times, and adjust the probabilities of all the observed terms.
+
+.Minimally Invasive
+[NOTE]
+===============================
+It's essential to use "minimally invasive" methods to address confounding factors.
+
+What we're trying to do is expose a pattern that we believe is robust: that it will shine through any occlusions in the data. Occasionally, as here, we need to directly remove some confounding factor. The naive practitioner thinks, "I will use a powerful algorithm! That's good, because powerful is better than not powerful!" No -- simple and clear is better than powerful.
+
+Suppose you were instead telling a story set in space - somehow or another, you must address the complication of faster-than-light travel. Star Wars does this early and well: its choices ("Ships can jump to faraway points in space, but not from too close to a planet and only after calculations taking several seconds; it happens instantaneously, causing nearby stars to appear as nifty blue tracks") are made clear in a few deft lines of dialog.
+
+A ham-handed sci-fi author instead brings in complicated machinery requiring a complicated explanation resulting in complicated dialogue. There are two obvious problems: first, the added detail makes the story less clear. It's literally not rocket science: concentrate on heros and the triumph over darkness, not on rocket engines. Second, writing that dialog is wasted work. If it's enough to just have the Wookiee hit the computer with a large wrench, do that.
+
+But it's essential to appreciate that this also _introduces extra confounding factors_. Rather than a nifty special effect and a few lines shouted by a space cowboy at his hairy sidekick, your junkheap space freighter now needs an astrophysicist, a whiteboard and a reason to have the one use the other. The story isn't just muddier, it's flawed.
+
+We're trying to tell a story ("words have regional flavor"), but the plot requires a few essential clarifications ("low-frequency terms are imperfectly estimated").  If these patterns are robust, complicated machinery is detrimental. It confuses the audience, and is more work for you; it can also bring more pattern to the data than is actually there, perverting your results.
+
+The only time you should bring in something complicated or novel is when it's a _central_ element of your story. In that case, it's worth spending multiple scenes in which Jedi masters show and tell the mechanics and limitations of The Force.
+===============================
+
+There are two reasonable strategies: be lazy; or consult a sensible mathematician.
+
+To be lazy, add a 'pseudocount' to each term: pretend you saw it an extra small number of times For the common pseudocount choice of 0.5, you would treat absent terms as having been seen 0.5 times, terms observed once as having been seen 1.5 times, and so forth.  Calclulate probabilities using the adjusted count divided by the sum of all adjusted counts (so that they sum to 1). It's not well-justified mathematically, but is easy to code.
+
+Consult a mathematician: for something that is mathematically justifiable, yet still simple enough to be minimally invasive, she will recommend "Good-Turing" smoothing.
+
+In this approach, we expand the dataset to include both the pool of counter for terms we saw, and an "absent" pool of fractional counts, to be shared by all the terms we _didn't_ see. Good-Turing says to count the terms that occurred once, and guess that an equal quantity of things _would_ have occurred once, but didn't. This is handwavy, but minimally invasive; we oughtn't say too much about the things we definitionally can't say much about. 
+
+We then make the following adjustments:
+
+* Set the total _count_ of words in the absent pool equal to the number of terms that occur once. There are of course tons of terms in this pool; we'll give each some small fractional share of an appearance.
+* Specifically, treat each absent term as occupying the same share of the absent pool as it does in the whole corpus (minus this doc). So, if "banana" does not appear in the document, but occurs at (TODO: value) ppm across all docs, we'll treat it as occupying the same fraction of the absent pool (with slight correction for the absence of this doc).
+* Finally, estimate the probability for each present term as its count divided by the total count in the present and absent pools.
+
+// 	def ct_doc(doc)
+//     	  ct_wds_for_doc(doc).sum{|wd, ct| ct }
+// 	end
+// 
+// 	def fr_doc_wd(doc, wd)
+// 	  ct_doc_wd(doc, wd)  / ct_doc(doc)
+// 	end
+// 
+// 	# estimate the total frequency of all absent words
+// 	# as the total frequency of words appearing exactly once
+// 	p_allabsent_for_doc(doc)
+// 	  ct_once = ct_wds_for_doc(doc).select{|wd, ct| ct == 1 }
+// 	  ct_once / ct_doc(doc)
+// 	end
+// 
+// 	# global frequency of term among terms _not_ in document
+// 	def fr_wd_notdoc(wd, doc)
+//   	  # contribution of this doc to the all-doc totals
+// 	  sumfreq_doc = fr_wds_doc(doc).sum{|wd, _| fr_wd_all(wd) }
+// 	  # global frequency with correction
+// 	  fr_wd(wd) / (1 - sumfreq_doc)
+// 	end
+// 
+// 	def p_wd_for_doc(doc, wd)
+// 	  pabs = p_allabsent_for_doc(doc)
+// 	  if absent
+// 	    # frequency share of the absent pool, times the corrected global frequency of the term
+// 	    result =    pabs  * fr_wd_notdoc(wd, doc)
+// 	  else
+// 	    # frequency share of the present pool, times the observed frequency of the term
+// 	    result = (1-pabs) * fr_wd_doc(doc, wd)
+// 	  end
+// 	end
+// 
+
+
+

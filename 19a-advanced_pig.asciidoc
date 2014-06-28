@@ -190,6 +190,29 @@ As we’ve discussed a few times, reading data in straight streams like this let
 //
 //       TODO: instructions
 
+
+.From the Pig Documentation: When Pig Pushes Filters
+______
+Table 8-1. When Pig pushes filters
+Preceding operator      Filter will be pushed before?   Comments
+cogroup Sometimes       The filter will be pushed if it applies to only one input of the cogroup and does not contain a UDF.
+cross   Sometimes       The filter will be pushed if it applies to only one input of the cross.
+distinct        Yes      
+filter  No      Will seek to merge them with and to avoid passing data through a second operator. This is done only after all filter pushing is complete.
+foreach Sometimes       The filter will be pushed if it references only fields that exist before and after the foreach, and foreach does not transform those fields.
+group   Sometimes       The filter will be pushed if it does not contain a UDF.
+join    Sometimes       The filter will be pushed if it applies to only one input of the join, and if the join is not outer for that input.
+load    No       
+mapreduce       No      mapreduce is opaque to Pig, so it cannot know whether pushing will be safe.
+sort    Yes      
+split   No       
+store   No       
+stream  No      stream is opaque to Pig, so it cannot know whether pushing will be safe.
+union   Yes      
+Also, consider adding filters that are implicit in your script. For example, all of the records with null values in the key will be thrown out by an inner join. If you know that more than a few hundred of your records have null key values, put a filter input by key is not null before the join. This will enhance the performance of your join.
+______
+
+
 ==== Exercises ====
 
 1. Quoting Pig docs:
@@ -224,3 +247,4 @@ For each use weather data on weather stations.
 // === Refs ===
 //
 // * http://pig.apache.org/docs/r0.10.0/perf.html#replicated-joins:[map-side join]
+
