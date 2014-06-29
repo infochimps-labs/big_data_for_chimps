@@ -90,17 +90,10 @@ function ready(error, us, ballparks) {
     .append("title").text(function(pt){ return pt.park_id + ": " + pt.park_name; })
   ;
 
-  // ballpark.append("circle")
-  //     .attr("transform", function(pt) { return "translate(" + pt.x + "," + pt.y + ")"; })
-  //     // .attr("r",         function(pt) { return 3 + Math.log(pt.n_games); })
-  //     .attr("r", 5)
-  //     ;
-
   ballpark.append("circle")
-      .attr("class", "dot")
       .attr("transform", function(pt) { return "translate(" + pt.x + "," + pt.y + ")"; })
       // .attr("r",         function(pt) { return 3 + Math.log(pt.n_games); })
-      .attr("r", 2)
+      .attr("r", 5)
       ;
 
   //

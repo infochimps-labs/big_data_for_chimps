@@ -59,6 +59,18 @@ powerful scripts that give actionable insight.
 
 ==== GeoJSON
 
+
+* OpenDataLab POJOs for Jackson
+  - https://github.com/opendatalab-de/geojson-jackson
+
+* GeoTools http://www.geotools.org/
+  - 
+
+* ESRI library:
+  - https://github.com/Esri/geometry-api-java -- The Esri Geometry API for Java enables developers to write custom applications for analysis of spatial data. This API is used in the Esri GIS Tools for Hadoop and other 3rd-party data processing solutions.
+  - https://github.com/Esri/spatial-framework-for-hadoop
+* 
+
 ==== Creating a Spatial Density Map
 
 Map points to quad cells, plot number density of airports as a heat map
@@ -91,6 +103,8 @@ How would you help find the nearest 7-11?
   while that same radius centered on Manhattan would require sorting through thousande
 
 
+
+  
 ==== Breaking Regions into Quad Cells
 
 * recursively decompose a region on quadcells

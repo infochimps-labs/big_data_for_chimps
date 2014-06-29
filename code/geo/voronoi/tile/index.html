@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Automatic Projection Tiles</title>
+<style>
+@import url(../maps.css);
+path {
+  stroke: #000;
+  fill: none;
+}
+.outline {
+  stroke-width: 2px;
+}
+.tile.highlight {
+  fill: #f00;
+  fill-opacity: .3;
+}
+text {
+  font-family: sans-serif;
+}
+</style>
+<p class="breadcrumbs"><a href="http://www.jasondavies.com/">Jason Davies</a> → <a href="../">Maps</a>
+
+<h1>Automatic Projection Tiles</h1>
+
+<div id="map"></div>
+<p class="caption">Mercator tiles for the <a href="http://en.wikipedia.org/wiki/Albers_projection">Albers equal-area conic projection</a> over the middle viewport rectangle.  Panning and zooming are supported.
+
+<div class="wrapper">
+  <h2>What are Tiles?</h2>
+  <p>Most modern Web maps use raster or <a href="http://www.somebits.com/weblog/tech/vector-tile-river-map.html">vector tiles</a> to allow zooming to very large scales while only loading a fraction of the whole map.
+  The projection of choice for these tiles is the <a href="http://en.wikipedia.org/wiki/Mercator_projection">Mercator projection</a>, and they are typically arranged in the form of a recursively subdivided <a href="http://en.wikipedia.org/wiki/Quadtree">quadtree</a>.
+  <p>It would be a shame to limit ourselves to a single map projection, when there are <a href="https://github.com/mbostock/d3/wiki/Geo-Projections">so many</a> to choose from!
+  But how do we figure out which tiles to retrieve?
+  <h2>How it Works</h2>
+  <p>My initial attempts involved inverting the viewport polygon to figure out which tiles overlap with it.  It worked, but slowed down with larger zoom levels.
+  <p><a href="http://bost.ocks.org/mike">Mike Bostock</a> then pointed out that the tiles can be traversed recursively (in logarithmic time, since it’s a tree), using a custom <a href="https://github.com/mbostock/d3/wiki/Geo-Streams">geometry stream</a> to detect if a tile is visible or not.
+  <p>Starting with a single large tile covering most of the globe, this recursively rejects large swathes of the quadtree, and is very fast even at a zoom level of 18!
+</div>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="../d3.geo.projection.min.js"></script>
+<script src="../d3.quadtiles.js"></script>
+<script>
+
+var width = 960,
+    height = 600,
+    p = 100;
+
+//TODO bug:
+//var projection = d3.geo.homolosine()
+//    .scale(9600)
+//    .translate([-5507, 8501])
+var projection = d3.geo.albers()
+    .rotate([0, 0])
+    .center([0, 38.7])
+    .scale(1280)
+    .translate([width / 2, height / 2])
+    .precision(.1)
+    .clipExtent([[p, p], [width - p, height - p]]);
+
+var path = d3.geo.path().projection(projection);
+
+var svg = d3.select("#map").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("pointer-events", "all")
+    .call(d3.behavior.zoom()
+      .translate(projection.translate())
+      .scale(projection.scale())
+      .scaleExtent([50, 1e7])
+      .on("zoom", function() {
+        projection.scale(d3.event.scale).translate(d3.event.translate);
+        redraw();
+      }));
+
+svg.append("path")
+    .datum({type: "Sphere"})
+    .attr("class", "outline")
+    .attr("d", path);
+
+redraw();
+
+function redraw() {
+  var z = (Math.log(projection.scale()) / Math.LN2 | 0) - 5,
+      tiles = d3.quadTiles(projection, z),
+      c = projection.clipExtent();
+      tiles_ = d3.quadTiles(projection.clipExtent([[1, 1], [width - 1, height - 1]]), z);
+  var tile = svg.selectAll(".tile")
+      .data(tiles_, key);
+  tile.enter().append("path")
+      .attr("class", "tile");
+  tile.exit().remove();
+  tile.attr("class", "tile").attr("d", path);
+  svg.selectAll(".tile").data(tiles, key).classed("highlight", true).exit().classed("highlight", false);
+  var text = svg.selectAll("text").data(tiles, key);
+  text.enter().append("text")
+      .attr("text-anchor", "middle")
+      .text(key);
+  text.exit().remove();
+  text.attr("transform", function(d) { return "translate(" + projection(d.centroid) + ")"; });
+  projection.clipExtent(c);
+}
+
+function key(d) { return d.key.join(", "); }
+
+</script>
