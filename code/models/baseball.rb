@@ -88,14 +88,14 @@ module Sports
       field :run2_id,       :string,     length: 5..8,                       doc: "30: Player ID code for the runner on second base, if any."
       field :run3_id,       :string,     length: 5..8,                       doc: "31: Player ID code for the runner on third base, if any."
 
-      index :event,     [:game_id,      :event_seq, :year_id],        primary: true
-      index :inning,    [:year_id,      :game_id, :inn,  :inn_home]
-      index :batter,    [:bat_id,       :year_id]
-      index :pitcher,   [:pit_id,       :year_id]
-      index :away_team, [:away_team_id, :year_id]
-      index :home_team, [:home_team_id, :year_id]
-      index :bat_team,  [:bat_team_id,  :year_id]
-      index :fld_team,  [:fld_team_id,  :year_id]
+      # index :event,     [:game_id,      :event_seq, :year_id],        primary: true
+      # index :inning,    [:year_id,      :game_id, :inn,  :inn_home]
+      # index :batter,    [:bat_id,       :year_id]
+      # index :pitcher,   [:pit_id,       :year_id]
+      # index :away_team, [:away_team_id, :year_id]
+      # index :home_team, [:home_team_id, :year_id]
+      # index :bat_team,  [:bat_team_id,  :year_id]
+      # index :fld_team,  [:fld_team_id,  :year_id]
 
       def self.sql_create(opts={})
         super({charset: 'ascii', partition_by: 'KEY(`year_id`)'}.merge(opts))
