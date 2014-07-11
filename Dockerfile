@@ -48,9 +48,9 @@ RUN apt-get install ant
 # TODO Finish pig and datafu installs
 
 ### "pig"
-WORKDIR /tmp
+WORKDIR /usr/local/
 RUN git clone https://github.com/apache/pig.git
-WORKDIR /tmp/pig
+WORKDIR /usr/local/pig/
 RUN git fetch
 RUN git checkout branch-0.13
 RUN ant mvn-install 
@@ -58,8 +58,11 @@ RUN ant piggybank
 
 ### "datafu"
 WORKDIR /tmp
-RUN git clone git://git.apache.org/incubator-datafu.git
-WORKDIR /tmp/incubator-datafu
+ENV DATAFU_VERSION 1.2.0
+RUN wget --no-verbose https://github.com/apache/incubator-datafu/archive/v$DATAFU_VERSION.tar.gz
+RUN tar -xzvf v$DATAFU_VERSION.tar.gz
+RUN mv incubator-datafu-$DATAFU_VERSION datafu
+WORKDIR /tmp/datafu
 RUN ant jar
 
 ### "python-dexy"
@@ -68,10 +71,16 @@ RUN apt-get install python-pip
 RUN pip install dexy
 
 ### "create-user"
-RUN useradd -m -p $(perl -e'print crypt("foobarbaz", "aa")') repro
+RUN useradd -m repro
+RUN echo "repro:foobarbaz" | chpasswd
 RUN adduser repro sudo
 
 ### "activate-user"
 ENV HOME /home/repro
 USER repro
 WORKDIR /home/repro
+
+RUN echo "export PATH=$PATH/usr/local/pig/bin/" >> .bashrc
+
+RUN cp /tmp/datafu/dist/datafu-$DATAFU_VERSION-SNAPSHOT.jar /home/repro
+
