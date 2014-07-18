@@ -51,6 +51,273 @@ powerful scripts that give actionable insight.
 
 
 
+* Mapping from earth to grid
+* Extending the base of analytic patterns to two and more dimensions
+
+long/lat implies elevation -- For the great majority of questions of interest, elevation is irrelevant, and so we discard it
+We just need to rough-cut the data and then turn it over to dedicated spatial methods
+
+
+Our approach will be consistently to
+apply the toolkit of Analytic Patterns that we assembled in Chapters 4-9 (REF)
+to put all relevant data into context,
+and then turn to specialized geospatial libraries to
+synthesize results
+
+The large-scale part of this demands no great sophistication
+We can pretend that circles are rectangular, that shapes do not ever have holes, that the earth is not only a perfect sphere but in fact is a planar grid. All manner of convenient distortions
+so outrageous they literally tear the space-time continuum
+are allowable as long as they obey the fundamental strategic rule:
+
+* put all data that might form relevant context together
+
+(TODO: better phrasing)
+
+=== Points, Paths and Regions
+
+
+
+
+==== Geometry Primitives: Points, Polygons and so forth
+
+Back in Chapter 4 (REF), we introduced the simple scalar types (numbers, strings, etc.) and three complex types (`tuple`, `bag`, and `map`). Since every spatial analysis exploration involves
+
+One thing
+Spatial analysis libraries
+rely on the http://www.opengeospatial.org/[OGC (Open Geospatial Consortium)]
+
+Geometry
+
+Point, LineString, Polygon; and corresponding multi-part geometries MultiPoint, MultiLineString, MultiPolygon.
+
+Behind these smiling friendly inviting abstraction
+lies
+a host of diabolical complexities
+
+In regular usage, even double-precision floating-point math can introduce
+discrepancies large enough to incalidate results
+or present visual artifacts
+-- pushing the boundary of a shape off the shape itself, causing tears or overlaps where there were none, turning small polygons into degenerate points, introduce numerical instability
+
+But for the big data section of it, where we are chiefly concerned with relating data in context,
+there are really only these
+
+* a point in space
+* a spatial extent -- paths, regions, etc
+// * non-spatial data
+
+In fact, we can go even farther:
+
+* points
+* rectangles
+
+Remember, all we're trying to do is land all (possibly) related data onto the same reducer before we bring in the big guns.
+
+
+
+==== Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
+
+
+
+* You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
+* Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
+*
+*
+
+
+
+
+===== Pattern Recap: Spatial Aggregation of Points
+
+
+*
+* _Generic Example_ -- mmm
+* _When You'll Use It_ -- as mentioned above:
+    * data reduction, especially for a heatmap visualization;
+    * extracting a continuous measurement from a pointwise sample;
+    * providing a common basis for comparison of multiple datasets;
+    * smoothing out spatial variation;
+    * for all the other reasons you aggregate groups of related values in context
+* _Exercises_ --
+
+
+
+
+
+
+==== Smoothing Regional Data onto a Consistent Grid (Spatial Aggregation of Regions)
+
+
+
+
+
+
+
+
+
+
+
+
+
+==== Matching Nearby Points (Pointwise Spatial Join)
+
+
+* Common sense tells you that a weather observation is generally valid for places within a few kilometers, but certainly not useful for places Hundreds of kilometers away. It would be useful to have a more precise guideline for the distance where a weather measurement should not be considered reliable.
+    * first find all pairs of weather stations within 50 km of each other. Emit each pair of IDs with the lower-numbered ID in the first slot (making it easy to ensure uniqueness).
+    * for each such pair, take a year of weather observations and determine the difference in temperature measurements taken at the same hour
+        * HashMap (replicated) join of station-station pairs on the observations table. You could also do a total sort of the pairs table and use a merge-join if you're memory constrained.
+        * join the resulting table back onto the observations table.
+        * (In this case, most weather stations are a part of at least one pair, and so most of the rows in the observations table are retained. If that weren't the case,
+            *
+
+    * As the radius expands, you'll quickly find that the amount of data begins to explode, so restrict that upper radius band initially.
+    * (is this also a problem: "You might have also noticed another problem. Even apart from a distance effect, with more neighbors there are more opportunities for observations to disagree.")
+    *
+    * (you should know that the answer has some bias -- places with a large concentration of weather stations are typically heavily populated, and heavily populated places don't tend to have extreme weather. We're just looking for a good rule-of-thumb though)
+
+
+What makes a good exemplar?
+* Head-of-the-tail --
+    * extreme specimens will pop on their own. You want to see what's happening to the
+* Ones that are unusual without being weird. The solstice is
+* Essential troublemakers: leap years, the centennial leap-year-exceptions, and the quad-centennial leap-year-exception-exceptions.
+* Well represented
+    * it's no fun if your exemplars disappear mid-journey -- most commonly because they failed to find a match during a join.
+* Chosen by out-of-band criteria -- deciding to look for "this date three years ago" and then finding a record is better than choosing the first record you see -- that particular record may have been the first one you saw because it is unrepresentative in some way.
+    * just as a magician will pull back their shirtsleeves to show they have no rabbit concealed within, this keeps you from fooling yourself. http://en.wikipedia.org/wiki/Nothing_up_my_sleeve_number
+    * (in fact, Cryptographers have a concept of a "nothing-up-my-sleeve" number: when a large arbitrary collection of numbers is needed, choosing the first twenty-five digits of Pi is believably arbitrary, whereas choosing the 387'th through 412'th digits raises the specter of a purposeful "backdoor").
+
+
+
+We will start, as we always do, by applying patterns that turn Big Data into Much a Less Data. In particular,
+A great tool for visualizing a large spatial data set
+
+
+
+==== Smoothing Pointwise Data Locally (Spatial Aggregations)
+
+
+
+There are a great many occasions where it's useful to translate
+
+* You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
+
+* Data that manifests at a single point
+  represents a process with
+  For example, the number of airline passengers in and out of the major airport
+  are travelling to and from local destinations
+
+* Smoothing pointwise data
+  into a
+  easier to compare or manage
+
+* continuous approximation
+  represents just the variation due to spatial
+  variables
+
+
+The straightforward approach we'll take is to divide the world up into a grid of tiles and map the position of each point onto the unique grid tile it occupies. We can then group on each tile
+
+// TODO-qem: do we use just plain x / y coordinates?
+
+footnote:[Instead of the ]
+
+
+Area of a spherical segment is 2*pi*R*h --
+so for lat from equator to 60
+
+
+===== Pattern in Use
+
+
+* _Further Reading_:
+  - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average.
+
+
+==== Exporting data for Presentation by a Tileserver
+
+==== Finding the Centroid of an Extent
+
+
+
+==== Finding the Bounding Box of an Extent
+
+
+==== Finding the Bounding Box of Points Within a Radius
+
+
+
+
+
+* _choose exemplars_:
+  - Midway, because it's large; Austin, because it's one of our exemplar cities; and (TODO something tiny) because it's very small.
+  - the sightings X, y, which each have a fun description and are near multiple airports; and Z, which is not near an airport.
+  - weather observations:
+      - a date with a new moon and a full moon; 8/8/08, because auspicious; an equinox and a solstice
+  -
+
+
+==== Combining Regions with Set Operations
+
+(intersection, union, diff, xor)
+
+
+==== Testing the Relationship of two Regions
+
+DE-9IM
+
+equals
+disjoint
+touches
+contains
+covers
+
+intersects,
+within
+covered_by
+
+crosses
+overlaps
+
+From Wikipedia:
+
+	Equals:   a = b    that is    (a ∩ b = a) ∧ (a ∩ b = b)
+	Within:   a ∩ b = a
+	Intersects:   a ∩ b ≠ ∅
+	Touches:   (a ∩ b ≠ ∅) ∧ (aο ∩ bο = ∅)
+
+	point/point	Equals, Disjoint	Other valid predicates collapses into Equals.
+	point/line	adds Intersects	Intersects is a flexibilization of Equals, "some equal point at the line".
+	line/line	adds Touches, Crosses, ...	Touches is a constraint of Intersects, about "only boundaries"; Crosses about "only one point".
+
+{0,1,2,T,F,*} -- dimensions 0, 1, 2; T / F; dont-care
+
+
+
+=== Key Strategic Pattern: Tile / Cull / Process
+
+
+* _Tile_    -- tile the grid
+* _Cull_    -- eliminate
+* _Process_ --
+
+=== Matching Points in a Table with Nearby Points in Another (Spatial Join)
+
+
+* scatter points to nine tiles
+
+
+=== Matching Points with the Regions
+
+
+
+
+
+
+
+
+
+
 === Mechanics of Geographic Data
 
 ==== Longitude and Latitude, Points and Features
@@ -64,12 +331,12 @@ powerful scripts that give actionable insight.
   - https://github.com/opendatalab-de/geojson-jackson
 
 * GeoTools http://www.geotools.org/
-  - 
+  -
 
 * ESRI library:
   - https://github.com/Esri/geometry-api-java -- The Esri Geometry API for Java enables developers to write custom applications for analysis of spatial data. This API is used in the Esri GIS Tools for Hadoop and other 3rd-party data processing solutions.
   - https://github.com/Esri/spatial-framework-for-hadoop
-* 
+*
 
 ==== Creating a Spatial Density Map
 
@@ -104,7 +371,7 @@ How would you help find the nearest 7-11?
 
 
 
-  
+
 ==== Breaking Regions into Quad Cells
 
 * recursively decompose a region on quadcells
