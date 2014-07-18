@@ -1,5 +1,87 @@
 == Insight comes from Data in Context
 
+We could start by telling you how awesome and important Big Data is -- that we can now comprehensively measure
+Aspects ,
+That this lets us extract insight to essential but formerly unquantifiable qualities such as "audience engagement", "unexpected event", "..."
+But since you're already reading this paragraph,
+We'll instead
+(Later on there are sections on "how to Explain Big Data to your Boss" and "What is Big Data (besides \'A Really Good Marketing Device')?"
+
+Instead let's talk about robots and humans.
+
+In year x, Kasparov v deep blue.
+Then year y, deep blue wins
+So computers have bested humans. Hang it up and go home.
+The marketing hype is
+ Big data lets us
+Unprecedented power. And it's easy to make the mistake
+Of becoming thrall to it -- While we agree that "In God We Trust, All Others Bring Data", It is insufficient to draw on only what can be quantified with sufficient fidelity
+
+The power of the big data tools comes from taking away ability to
+
+.Garry Kasparov, "The Chess Master and the Computer", 2010
+________
+[In 1996] I narrowly defeated the supercomputer Deep Blue in a match. Then, in 1997, IBM redoubled its efforts—and doubled Deep Blue’s processing power—and I lost the rematch in an event that made headlines around the world. The result was met with astonishment and grief by those who took it as a symbol of mankind’s submission before the almighty computer. (“The Brain’s Last Stand” read the Newsweek headline.) Others shrugged their shoulders, surprised that humans could still compete at all against the enormous calculating power that, by 1997, sat on just about every desk in the first world. ... no one understood all the ramifications of having a super-grandmaster on your laptop, especially what this would mean for professional chess.
+
+There have been many unintended consequences, both positive and negative, of the rapid proliferation of powerful chess software. Kids love computers and take to them naturally, so it’s no surprise that the same is true of the combination of chess and computers. With the introduction of super-powerful software it became possible for a youngster to have a top- level opponent at home instead of needing a professional trainer from an early age. Countries with little by way of chess tradition and few available coaches can now produce prodigies. I am in fact coaching one of them this year, nineteen-year-old Magnus Carlsen, from Norway, where relatively little chess is played.
+
+The heavy use of computer analysis has pushed the game itself in new directions. The machine doesn’t care about style or patterns or hundreds of years of established theory. It counts up the values of the chess pieces, analyzes a few billion moves, and counts them up again. (A computer translates each piece and each positional factor into a value in order to reduce the game to numbers it can crunch.) It is entirely free of prejudice and doctrine and this has contributed to the development of players who are almost as free of dogma as the machines with which they train. Increasingly, a move isn’t good or bad because it looks that way or because it hasn’t been done that way before. It’s simply good if it works and bad if it doesn’t. Although we still require a strong measure of intuition and logic to play well, humans today are starting to play more like computers.
+
+The availability of millions of games at one’s fingertips in a database is also making the game’s best players younger and younger. Absorbing the thousands of essential patterns and opening moves used to take many years, a process indicative of Malcolm Gladwell’s “10,000 hours to become an expert” theory as expounded in his recent book Outliers. (Gladwell’s earlier book, Blink, rehashed, if more creatively, much of the cognitive psychology material that is re-rehashed in Chess Metaphors.) Today’s teens, and increasingly pre-teens, can accelerate this process by plugging into a digitized archive of chess information and making full use of the superiority of the young mind to retain it all. In the pre-computer era, teenage grandmasters were rarities and almost always destined to play for the world championship. Bobby Fischer’s 1958 record of attaining the grandmaster title at fifteen was broken only in 1991. It has been broken twenty times since then, with the current record holder, Ukrainian Sergey Karjakin, having claimed the highest title at the nearly absurd age of twelve in 2002. Now twenty, Karjakin is among the world’s best, but like most of his modern wunderkind peers he’s no Fischer, who stood out head and shoulders above his peers—and soon enough above the rest of the chess world as well.
+
+In what Rasskin-Gutman explains as Moravec’s Paradox, in chess, as in so many things, what computers are good at is where humans are weak, and vice versa. This gave me an idea for an experiment. What if instead of human versus machine we played as partners?
+
+Having a computer partner also meant never having to worry about making a tactical blunder. The computer could project the consequences of each move we considered, pointing out possible outcomes and countermoves we might otherwise have missed. With that taken care of for us, we could concentrate on strategic planning instead of spending so much time on calculations. Human creativity was even more paramount under these conditions. A month earlier I had defeated the Bulgarian in a match of “regular” rapid chess 4–0. Our advanced chess match ended in a 3–3 draw. My advantage in calculating tactics had been nullified by the machine.
+
+
+
+In 2005, the online chess-playing site Playchess.com hosted what it called a “freestyle” chess tournament in which anyone could compete in teams with other players or computers. ... Several groups of strong grandmasters working with several computers at the same time entered the competition. At first, the results seemed predictable. The teams of human plus machine dominated even the strongest computers. The [top chess machines] were no match for a strong human player using a relatively weak laptop. Human strategic guidance combined with the tactical acuity of a computer was overwhelming.
+
+The surprise came at the conclusion of the event. The winner was revealed to be not a grandmaster with a state-of-the-art PC but a pair of amateur American chess players using three computers at the same time. Their skill at manipulating and “coaching” their computers to look very deeply into positions effectively counteracted the superior chess understanding of their grandmaster opponents and the greater computational power of other participants. Weak human + machine + better process was superior to a strong computer alone and, more remarkably, superior to a strong human + machine + inferior process. http://www.nybooks.com/articles/archives/2010/feb/11/the-chess-master-and-the-computer/
+________
+
+The goal of this book is that you become just such an expert coach. You don't need to be a grandmaster in statistics, have
+What you do need is intuition about how to
+You don't need to be an expert programmer. We favor short, elegant readable scripts
+You don't need to have reached the third dan of dragon-lightning form in database
+
+What you need is intuition about how data moves around
+If you can predict the execution, you can know when to invest in improving it and when something funny is going on
+Strategic execution
+More importantly know how to turn the measurements you have into the data you need
+How to augment
+
+
+This book will show you how to coach
+ the computer, how to apply superior process.
+
+We have a principle "Robots are cheap, Humans are important,
+(Math about getting soda from the fridge, about running a computer in the cloud)
+
+We start by demonstrating the internal mechanics of Hadoop
+Exactly and only deep enough that you can understand how data moves around
+In a Big Data system, motion of data (not CPU) is nearly always the dominant cost of compute.
+Memory capacity is nearly always the fundamental constraint of computation.
+
+One nice thing about big data is that the performance estimation is brutally stark -- ...
+(The not-as-nice is that it when it is bad it is impossible)
+
+Once you have a physical intuition of what's happening, we move to tactics.
+We consulted the leading SQL cookbooks to find what patterns of use
+(And tricks of the trade) decades of practice have defined.
+Screw "NoSQL". Throwing out the old lore is always a bad plan.
+
+// four levels: explain, optimize, predict, control (operations research blog)
+
+
+
+Tracking every path your delivery tricks take
+Fleet improve fuel usage, safety for driver and the rest of us, operating efficiency and costs.
+
+
+
+
+
 // IMPROVEME: put in an interlude that is JT & Nanette meeting. (Told as a flashforward.)
 
 Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
@@ -36,7 +118,7 @@ This does _not_ follow the accepted path to truth, namely the Scientific Method.
 
 This new path to truth is what Peter Norvig (Google's Director of Research) calls "http://static.googleusercontent.com/media/research.google.com/en/us/pubs/archive/35179.pdf[The unreasonable effectiveness of data]". You don't have to start with a model and you don't necessarily end up with a model. There's no simplification of the universe down to a smaller explanation you can carry forward. Sure, we can apply domain knowledge and say that the correspondence of Lynrd Skynrd with Taxidermy means the robots have captured the notion of "Southern-ness". But for applying the result in practice, there's no reason to do so. The algorithms have replaced a uselessly complicated thing (the trillions of associations possible from interest to product category) with an _actionably_ complicated thing (a scoring of what categories to probabilistically present based on interest). You haven't confirmed a falsifiable hypothesis. But you can win at the track.
 
-The proposition that the Unreasonaly-Effective Method is a worthwhile rival to the Scientific Method is sure to cause barroom brawls at scientific conferences for years to come. This book will not go deeply into advanced algorithms, but we will repeatedly see examples of Unreasonable Effectiveness, as the data comes forth with patterns of its own. 
+The proposition that the Unreasonaly-Effective Method is a worthwhile rival to the Scientific Method is sure to cause barroom brawls at scientific conferences for years to come. This book will not go deeply into advanced algorithms, but we will repeatedly see examples of Unreasonable Effectiveness, as the data comes forth with patterns of its own.
 
 === The Answer to the Crisis
 

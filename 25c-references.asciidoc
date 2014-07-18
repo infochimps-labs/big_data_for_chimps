@@ -52,8 +52,20 @@ the http://github.com/schacon/git-scribe[git-scribe toolchain] was very useful c
 MySQL Cookbook
 SQL Cookbook
 
-==== Geographical Flavor ====
-        
+
+
+==== Geographic Analysis
+
+
+-- http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
+-- http://bost.ocks.org/mike/example/
+
+-- http://infolab.usc.edu/csci585/Spring2008/den_ar/p182-samet.pdf
+
+-- http://www.geo.upm.es/postgrado/CarlosLopez/materiales/cursos/NCGIA_core/u37.html
+
+==== Text Analysis ====
+
 * http://thedatachef.blogspot.com/2011/04/tf-idf-with-apache-pig.html
 * http://hortonworks.com/blog/pig-as-duct-tape-part-three-tf-idf-topics-with-cassandra-python-streaming-and-flask/
 * http://hortonworks.com/blog/pig-macro-for-tf-idf-makes-topic-summarization-2-lines-of-pig/

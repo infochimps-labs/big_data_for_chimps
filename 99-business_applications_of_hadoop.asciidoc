@@ -1,0 +1,35 @@
+
+
+* Supporting
+    * hr
+    * finance
+    * it
+    * legal
+* Rev gen
+    * sales
+    * mating
+    * eng
+    * distribution
+    * customer service
+
+Going outside traditional bi in rev gen fields -- now going outside to things at the periphery -- how 
+
+* Banking
+    * customer related
+    * risk related
+        * eg we need to ensure that we have enough set aside by regulations (and also VAR)
+    * customer intelligence (can we cross sell, do they like the service)
+
+* Customer intel
+* Risk mgmt
+* Smart operations
+    * capacity utilization
+    * sustainability DHL has to report greenhouse
+    * defect detection
+* Product Innovation
+    * take the data, make a new business model for them
+
+
+
+* Positive notification ("this has happened") -- vs negative notification ("has this happened?")
+    * email is a black hole of suck that 

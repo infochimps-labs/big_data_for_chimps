@@ -214,7 +214,36 @@ team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
 };
 ------
 
-The lines 'Global sort: false // Secondary sort: true' in the explain output indicate that pig is indeed relying on the free secondary sort, rather than quicksorting the bag itself in the reducer.
+The lines 'Global sort: false // Secondary sort: true' in the explain output indicate that pig is indeed relying on the free secondary sort, rather than quicksorting the bag itself in the reducer. Lastly: in current versions of Pig this does _not_ extend gracefully to `COGROUP` -- you only get one free application of `ORDER BY`. Here's the dump of an `EXPLAIN` statement for a `COGROUP` with a sort on each bag:
+
+------
+cogroup_tnstaafl = FOREACH (COGROUP in_a by client_ip, in_b BY client_ip) {
+  ordered_by_hadoop = ORDER in_a BY ts;
+  ordered_painfully = ORDER in_b BY qk;
+  GENERATE ordered_by_hadoop, ordered_painfully;
+};
+EXPLAIN cogroup_tnstaafl;
+------
+
+------
+Reduce Plan
+cogroup_tnstaafl: Store(fakefile:org.apache.pig.builtin.PigStorage) - scope-17
+|
+|---cogroup_tnstaafl: New For Each(false,false)[bag] - scope-16
+    |   RelationToExpressionProject[bag][*] - scope-8
+    |   |---Project[bag][1] - scope-9
+    |   |
+    |   RelationToExpressionProject[bag][*] - scope-12
+    |   |---ordered_painfully: POSort[bag]() - scope-15
+    |       |   Project[bytearray][1] - scope-14
+    |       |---Project[bag][2] - scope-13
+    |...
+Global sort: false
+Secondary sort: true
+----------------
+
+The key things to see are that the `ordered_painfully` bag has a `POSort` operator -- it is being sorted in-memory and with CPU cost -- while the combination of `Secondary sort: true` and lack of `POSort` in front of the first field means that `ordered_by_hadoop` is being sorted for free.
+
 
 ===== Pattern in Use
 

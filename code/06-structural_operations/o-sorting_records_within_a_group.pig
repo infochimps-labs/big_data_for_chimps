@@ -35,3 +35,18 @@ team_playerslist_by_PA_2 = FOREACH team_playerslist_by_PA {
 -- Notice the lines 'Global sort: false // Secondary sort: true' in the explain output
 EXPLAIN team_playerslist_by_PA_2;
 STORE_TABLE(team_playerslist_by_PA_2, 'team_playerslist_by_PA_2');
+
+
+-- The lines 'Global sort: false // Secondary sort: true' in the explain output
+-- indicate that pig is indeed relying on the free secondary sort, rather than
+-- quicksorting the bag itself in the reducer. Lastly: in current versions of
+-- Pig this does _not_ extend gracefully to `COGROUP` -- you only get one free
+-- application of `ORDER BY`. Here's the dump of an `EXPLAIN` statement for a
+-- `COGROUP` with a sort on each bag:
+--
+-- cogroup_tnstaafl = FOREACH (COGROUP in_a by client_ip, in_b BY client_ip) {
+--   ordered_by_hadoop = ORDER in_a BY ts;
+--   ordered_painfully = ORDER in_b BY qk;
+--   GENERATE ordered_by_hadoop, ordered_painfully;
+-- };
+-- EXPLAIN cogroup_tnstaafl;

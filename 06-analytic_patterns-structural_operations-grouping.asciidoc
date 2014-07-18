@@ -1360,6 +1360,7 @@ never_sox = FOREACH player_soxness_g GENERATE group AS player_id;
 * _Records_		 -- List of keys
 * _Data Flow_		 -- Map, Combiner & Reducer. Combiners should be extremely effective.
 
+
 === Refs
 
 * http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0057753[Born at the Wrong Time: Selection Bias in the NHL Draft] by  Robert O. Deaner, Aaron Lowen, Stephen Cobley. February 27, 2013DOI: 10.1371/journal.pone.0057753

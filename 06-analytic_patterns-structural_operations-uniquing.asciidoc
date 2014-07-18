@@ -445,6 +445,8 @@ are multiple sets.
 ------
 
 
+TODO also show and op that labels by (a, b, both)
+
 //   n_pl1         = SIZE(pl1);
 //   n_pl2         = SIZE(pl2);
 //   n_union       = SIZE(either_year);

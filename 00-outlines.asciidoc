@@ -1,4 +1,88 @@
 
+10. **Event log**
+  - geo IP via range query
+  - sessionizing, user paths
+  - abusing a webserver for testing
+  - One more topic from the chopping block, below
+
+11. **Geo Analysis**
+  - quad keys for point density heat map
+    - and categorized
+  - Statistics on grid cells
+  - spatial join of airports and sightings (within-X join)
+  - Geospatial data model, GeoJSON
+  - voronoi cells on weather stations
+  - breaking voronoi regions into quad cell regions
+  - joining stadiums onto quads
+  - breaking voronoi regions into multi-scale quads
+  - map weather observations to cells, average
+
+12. **Text Analysis**
+  - grep'ing etc for simple matches
+  - tokenize
+  - stopword removal
+  - assign quadtile
+  - group decorate flatten to get rates
+  - good turing to knock back
+  - pointwise mutual information to see words
+
+
+10. **Event log** (Chopping Block topics)
+  - Parsing logs and using regular expressions
+  - lead and lag; windowing and rolling statistics
+  - Histograms and time series of pageviews
+  - Anomaly detection on Wikipedia Pageviews
+  - correlation of joint timeseries
+  - Holt-Winters
+  - Correlations
+  
+11. **Geo Analysis** (Chopping Block)
+  - spatial join of points and multi-scale quads
+  - spatial join of quads on quads ("range" query)
+
+12. **Text Analysis** (Chopping Block topics)
+  - Minhashing to combat a massive feature space
+  - How to cheat with Bloom filters
+
+
+14. **Statistics**
+  - subsetting / sampling your data: consistent sampling, distributions, replacement
+  - Summarizing: Averages, Percentiles, and Normalization
+  - Sketching Algorithm
+  - Rolling timeseries averages
+  - Statistical aggregates and the danger of large numbers
+  - Averages, Percentiles, and Normalization
+    - sum, average, standard deviation, etc (airline_flights)
+  - Percentiles / Median: exact percentiles / median; approximate percentiles / median
+  - construct a histogram (tie back to server logs); "Average value frequency"; interquartile
+  - Sampling responsibly: it's harder and more important than you think
+  - Statistical aggregates and the danger of large numbers
+  - normalize data by mapping to percentile, by mapping to Z-score
+
+20. **Advanced Pig**:
+  - merge, replicated joins; point to skew
+  - macros
+  - tuning
+  - why algebraic UDFs are awesome and how to be algebraic
+
+13. **Data Munging (Semi-Structured Data)**
+  - Wikipedia for character encoding
+  - airports for reconciliation
+  - weather: parsing flat pack file
+
+21. *Hadoop Internals*
+  - What happens when a job is launched
+  - A shallow dive into the HDFS
+
+22. *Hadoop Tuning*
+  - Tuning for the Wise and Lazy
+  - Tuning for the Brave and Foolish
+  - The USE Method
+23. **Data Modeling for HBase-style Database**
+
+
+=== Chopping Block
+
 
 5. **Pipelineable** Additions/Improvements
   - Controlling Case Sensitivity in String Comparisons (`ff = FILTER fr BY EqualsIgnoreCase(franch_id, 'bOs'); DUMP ff;`)
@@ -47,80 +131,6 @@
   - group/flatten/re-flatten
   - cube & rollup
   - run expectancy (prediction) 
-
-10. **Event log**
-  - Parsing logs and using regular expressions
-  - lead and lag
-  - geo IP via range query
-  - sessionizing, user paths
-  - abusing a webserver for testing
-  - Histograms and time series of pageviews
-  - Anomaly detection on Wikipedia Pageviews
-  - windowing and rolling statistics
-  - correlation of joint timeseries
-  - Holt-Winters
-  - Correlations
-
-11. **Geo Analysis**
-  - quad keys for point density heat map
-    - and categorized
-  - Statistics on grid cells
-  - spatial join of airports and sightings (within-X join)
-  - Geospatial data model, GeoJSON
-  - voronoi cells on weather stations
-  - breaking voronoi regions into quad cell regions
-  - joining stadiums onto quads
-  - breaking voronoi regions into multi-scale quads
-  - map weather observations to cells, average
-  - spatial join of points and multi-scale quads
-  - spatial join of quads on quads ("range" query)
-
-12. **Text Analysis**
-  - grep'ing etc for simple matches
-  - tokenize
-  - stopword removal
-  - assign quadtile
-  - group decorate flatten to get rates
-  - good turing to knock back
-  - pointwise mutual information to see words
-  - Minhashing to combat a massive feature space
-  - How to cheat with Bloom filters
-  -   
-
-13. **Data Munging (Semi-Structured Data)**
-  - Wikipedia for character encoding
-  - airports for reconciliation
-  - weather: parsing flat pack file
-
-14. **Statistics**
-  - subsetting / sampling your data: consistent sampling, distributions, replacement
-  - Summarizing: Averages, Percentiles, and Normalization
-  - Sketching Algorithm
-  - Rolling timeseries averages
-  - Statistical aggregates and the danger of large numbers
-  - Averages, Percentiles, and Normalization
-    - sum, average, standard deviation, etc (airline_flights)
-  - Percentiles / Median: exact percentiles / median; approximate percentiles / median
-  - construct a histogram (tie back to server logs); "Average value frequency"; interquartile
-  - Sampling responsibly: it's harder and more important than you think
-  - Statistical aggregates and the danger of large numbers
-  - normalize data by mapping to percentile, by mapping to Z-score
-
-20. **Advanced Pig**:
-  - merge, replicated joins; point to skew
-  - macros
-  - tuning
-  - why algebraic UDFs are awesome and how to be algebraic
-
-21. *Hadoop Internals*
-  - What happens when a job is launched
-  - A shallow dive into the HDFS
-
-22. *Hadoop Tuning*
-  - Tuning for the Wise and Lazy
-  - Tuning for the Brave and Foolish
-  - The USE Method
-23. **Data Modeling for HBase-style Database**
   
 27. **Intro to Storm+Trident**
 28. **Machine Learning without Grad School**:
