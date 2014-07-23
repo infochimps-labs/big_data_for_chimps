@@ -91,6 +91,9 @@ It's easy to forget that people's names can contain spaces, dots, dashes, apostr
 funnychars = FILTER people BY (nameFirst MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 ------
 
+TODO: state very explicitly that these are just Java regexes, and point to docco on that
+TODO: maybe rephrase the below as "How to convert from a sane Regexp to a Pig/Java Regexp"
+
 There are many players with non-word,non-space characters, but none whose names are represented as starting with a lowercase character. However, in early drafts of the book this query caught a record with the value "nameFirst" -- the header rows from a source datafile had contaminated the table. Sanity checks like these are a good idea always, even moreso in Big Data. When you have billions of records, a one-in-a-million exception will appear thousands of times.
 
 .Important Notes about String Matching
