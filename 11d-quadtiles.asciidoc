@@ -1,59 +1,3 @@
-**TODO**:
-
-Will be reorganizing below in this order:
-
-* do a "nearness" query example, 
-* reveal that it is such a thing known as the spatial join, and broaden your mind as to how you think about locality.
-* cover the geographic data model, GeoJSON etc.
-* Spatial concept of Quadtiles -- none of the mechanics of the projection yet
-* Something with Points and regions, using quadtiles
-* Actual mechanics of Quadtile Projection -- from lng/lat to quadkey
-* mutiscale quadkey assignment
-* (k-means will move to ML chapter)
-* complex nearness -- voronoi cells and weather data
-
-also TODO: untangle the following two paragraphs, and figure out whether to put them at beginning or end (probably as sidebar, at beginning)
-
-=== Spatial Data ===
-
-
-It not only unwinds two dimensions to one, but any system
-it to spatial analysis in more dimensions -- see <<brain_example>>, which also extends the coordinate handling to three dimensions
-
-=== Geographic Data Model ===
-
-Geographic data shows up in the form of
-
-* Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
-* Paths -- an array of points `[[longitude,latitude],[longitude,latitude],...]`
-* Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
-* "Feature" -- a generic term for "Point or Path or Region".
-* "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
-*
-
-.Features of Features
-[NOTE]
-===============================
-The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for its machine learning sense only just say "object" in place of "geographic feature" (and ).
-===============================
-
-Geospatial Information Science ("GIS") is a deep subject, ////Say how, like, ", which focuses on the study of..."  Amy////treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
-
-=== Geospatial JOIN using quadtiles ===
-
-Doing a "what's nearby" query on a large dataset is difficult unless you can ensure the right locality. Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
-
-=== Geospatial JOIN using quadtiles ===
-
-Doing a "what's nearby" query on a large dataset is difficult.
-No matter how you divide up the data, some features that are nearby in geographic distance will become far away in data locality. 
-
-We also need to teach our elephant a new trick
-for providing data locality
-
-Sort your places west to east, and 
-
-Large-scale geodata processing in hadoop starts with the quadtile grid system, a simple but powerful idea.
 
 ==== The Quadtile Grid System ====
 
@@ -78,8 +22,6 @@ This is a 1-d index into a 2-d space! What's more, nearby points in space are ty
 Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
 
 ==== Patterns in UFO Sightings ====
-
-////Introduce/buffer a bit first -- like, "The following approach can also be used to analyze x, y, or z..."  Root in real-world applications, first.  Amy////
 
 Let's put Hadoop into practice for something really important: understanding where a likely alien invasion will take place. The National UFO Reporting Center has compiled a dataset of 60,000+ documented UFO sightings, with metadata. We can combine that with the 7 million labelled points of interest in the Geonames dataset: airports and zoos, capes to craters, schools, churches and more.
 
@@ -207,86 +149,6 @@ results:
 
     ... TODO move results over from cluster ...
 
-=== Data Model ===
-
-We'll represent geographic features in two different ways, depending on focus:
-
-* If the geography is the focus -- it's a set of features with data riding sidecar -- use GeoJSON data structures.
-* If the object is the focus -- among many interesting fields, some happen to have a position or other geographic context -- use a natural Wukong model.
-* If you're drawing on traditional GIS tools, if possible use GeoJSON; if not use the legacy format it forces, and a lot of cursewords as you go.
-
-==== GeoJSON ====
-
-GeoJSON is a new but well-thought-out geodata format; here's a brief overview. The http://www.geojson.org/geojson-spec.html[GeoJSON] spec is about as readable as I've seen, so refer to it for anything deeper.
-
-The fundamental GeoJSON data structures are:
-
-----
-    module GeoJson
-      class Base ; include Wukong::Model ; end
-
-      class FeatureCollection < Base
-        field :type,  String
-        field :features, Array, of: Feature
-	field :bbox,     BboxCoords
-      end
-      class Feature < Base
-        field :type,  String,
-	field :geometry, Geometry
-	field :properties
-	field :bbox,     BboxCoords
-      end
-      class Geometry < Base
-        field :type,  String,
-	field :coordinates, Array, doc: "for a 2-d point, the array is a single `(x,y)` pair. For a polygon, an array of such pairs."
-      end
-
-      # lowest value then highest value (left low, right high;
-      class BboxCoords < Array
-	def left  ; self[0] ; end
-	def btm   ; self[1] ; end
-	def right ; self[2] ; end
-        def top   ; self[3] ; end
-      end
-    end
-----
-
-GeoJSON specifies these orderings for features:
-
-* Point: `[longitude, latitude]`
-* Polygon: `[ [[lng1,lat1],[lng2,lat2],...,[lngN,latN],[lng1,lat1]] ]` -- you must repeat the first point. The first array is the outer ring; other paths in the array are interior rings or holes (eg South Africa/Lesotho). For regions with multiple parts (US/Alaska/Hawaii) use a MultiPolygon.
-* Bbox: `[left, btm, right, top]`, ie `[xmin, ymin, xmax, ymax]`
-
-An example hash, taken from the spec:
-
-----
-
-  {
-    "type": "FeatureCollection",
-    "features": [
-      { "type":       "Feature",
-        "properties": {"prop0": "value0"},
-        "geometry":   {"type": "Point", "coordinates": [102.0, 0.5]}
-      },
-      { "type":       "Feature",
-        "properties": {
-          "prop0":    "value0",
-          "prop1":    {"this": "that"}
-        },
-	"bbox":       [
-        "geometry": {
-          "type":     "Polygon",
-          "coordinates": [
-            [ [-10.0, 0.0], [5.0, -1.0], [101.0, 1.0],
-              [100.0, 1.0], [-10.0, 0.0] ]
-            ]
-	}
-      }
-    ]
-  }
-----
-
-
 [[quadkey]]
 === Quadtile Practicalities ===
 
@@ -299,7 +161,6 @@ image::images/quadkeys-numbering-select_down.png[Tile index for central Texas]
 You can also think of it as a tree:
 
 image::images/quadkeys-3d-stack.png[Z-path of quad tiles]
-
 
 The quadkey is a string of 2-bit tile selectors for a quadtile
 

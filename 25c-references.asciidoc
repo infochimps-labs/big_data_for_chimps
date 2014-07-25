@@ -54,15 +54,29 @@ SQL Cookbook
 
 
 
-==== Geographic Analysis
-
+=== Geographic Analysis
 
 -- http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
 -- http://bost.ocks.org/mike/example/
-
 -- http://infolab.usc.edu/csci585/Spring2008/den_ar/p182-samet.pdf
-
 -- http://www.geo.upm.es/postgrado/CarlosLopez/materiales/cursos/NCGIA_core/u37.html
+
+* http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
+* http://msdn.microsoft.com/en-us/library/bb259689.aspx
+* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+* http://wiki.openstreetmap.org/wiki/QuadTiles
+* https://github.com/simplegeo/polymaps
+* http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
+
+* http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
+* http://bl.ocks.org/4122298[US County borders in GeoJSON]
+
+* http://sharpgis.net/post/2007/05/05/Spatial-references2c-coordinate-systems2c-projections2c-datums2c-ellipsoids-e28093-confusing.aspx[Spatial references, coordinate systems, projections, datums, ellipsoids] by Morten Nielsen
+
+* https://github.com/jsongeo[Public repository of geometry boundaries into text]
+
+* http://bost.ocks.org/mike/map/[Making a map in D3] ; see also http://stackoverflow.com/questions/14565963/topojson-for-congressional-districts[Guidance on making your own geographic bounaries].
+
 
 ==== Text Analysis ====
 

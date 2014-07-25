@@ -1,54 +1,81 @@
-== Geographic Analysis
+[[geographic]]
+== Spatial and Geographic Analysis
+// TODO: should title be "Spatial Analysis", "Geographic Analysis", "Geospatial Analysis"?
 
-// TODO: Spatial Analysis?
-
-Having conquered time (or, at least, learned basics of timeseries analysis), let's move on to
-space. Problems with an essential geoographic footnote:[You'll also see 'Spatial', 'Geospatial',
-'Geodata', 'GIS' (Geographic Information Systems), and many other mashups with the prefix 'Geo-'. We
-chose 'Geographic' because it seems the friendliest term, and will reserve 'GIS' to mean "the highly
-sophisticated traditional geographic analysis toolset"] aspect appear naturally in all sorts of
-contexts: "Where should I put this cell tower / oil well / coffee shop?". They're also incredibly
-useful because geography is such a good proxy for many key features you can't easily measure.  You
-wouldn't think the 32 bits of an IP address described the weather.  But as you saw in the last
-chapter an IP address can (imperfectly but actionably) be related to a geolocation, and a
-geolocation can (imperfectly but actionably) be related to a weather report.  Without violating a
-person's privacy, you can know when to switch from promoting suncreen to Sydneysiders and galoshes
-to Glaswegians to quite profitably doing the reverse.
-
-The methods we'll demonstrate here extend naturally to anything with a spatial aspect -- it doesn't
-have to be the surface of the Earth. And it's surprisingly easy to extend them to three and higher
-dimensions (see the exercise at the end of the chapter). That's good news for anyone analyzing ocean
-currents, parts of the brain, sensor feeds from a secure facility, or customer flow through a
-mall. But every reader looking to master machine learning techniques will find that the material in
-this chapter laid a solid foundation for understanding the highly-dimensional spaces they work in.
-
-Most importantly of all, this chapter will solidify your intuition about how to move and combine
-data strategically.  You'll be learning new types of joins that require a more sophistitcated notion
-of 'context' (data locality).  But the deep natural intuition about space and physical locality you
-already possess makes this challenge much easier.  Most readers should concentrate foremost on the
-tactics of applying our analytic patterns. (In fact, if you want to trust us that the sections where
-we dive into the underlying map/reduce work as advertised, we've made them easy to skip the first
-time through.)  But come back at some point and step through the spatial and multi-scale spatial
-joins we introduce in this chapter.  If you understand the underlying mechanics -- how the design of
-the keys ensures records that must be related in context show up at the right place in the right
-order -- then you have mastered the deep concept of map/reduce.
+ (for our purposes represented as bounding rectangles, arbitrary polygons and occasionally circles).
 
 
+* Mechanics:
+  - for point, path, polygon, polygon with hole in it:
+      - Area, IsClosed, Dimensionality, Number of Coordinates, Number of Points
+      - Centroid, Envelope
+      - convex hull, simplify, densify, buffer, generalize, offset, transform
+      - (polygon should have a hole; a convex hull different than itself and a circle; enough but not too much complexity)
+      - exploding shape into points
+  - for two polygons, and part is in the hole of a polygon
+      - intersect, XOR, a-b, b-a, union)
+      -
 
-NOTE: Geographic Analysis is a well developed field.  The number of hard problems with valuable solutions
-in intelligence, petroleum, natural resources and other such industries gave rise to highly
-sophisticated products capable of processing massive quantities of data well before these kids with
-their Hadoops and their JSONs came along.  As you might expect, however these products possess a
-correspondingly steep price tag and learning curve and often integrate poorly outside their
-domain. Most importantly, they are bound by the limits of traditional database technology in many
-aspects. So even users of these powerful GIS tools can benefit by augmenting them with Big Data
-analytics. But our focus will be on the reader who needs to get stuff done with geographic data, and
-the less they have to learn a new field the better.  We're going to use GeoJSON, a newly-developed
-standard for geographic data (friendly to general purpose analytic tools and to rendering data in
-the browser), rather than Arcview shapefiles or other geospatial formats (seamless integration with
-industry products). We've simplified concepts and minimized jargon to keep the focus on readable,
-powerful scripts that give actionable insight.
+* Tiles (Sp Agg Pts)
+* Decompose Tiles (Sp Agg Regions)
+* Z-order Tiles (
+* Naive Join Points (9 tiles)
+* Point to bbox; sp join
+* Spatial Merge Join
+* Voronoi
+* Weather for Stadium
 
+* **Spatial Aggregation**
+  - Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
+  - Creating a Spatial Density Map
+
+* **Spatial Data**
+  - Points, Paths and Regions
+  - Geometry Primitives: Points, Polygons and so forth
+  - Longitude and Latitude, Points and Features
+  - Always: longitude then latitude (x then y); always: minx, miny, maxx, maxy.
+  - GeoJSON, WKT, etc
+
+* **Working with Regions**
+  - Smoothing Regional Data onto a Consistent Grid (Spatial Aggregation of Regions)
+    - another way to do this later under voronoi
+  - **Geographic Projections**
+    - Equirectangular, Web-Mercator, Lambert, CoolHat, HEALPix
+    - important that it have a well-conditioned inverse
+    - CRS, datum, spatial reference
+    - concerns are not the same as for other uses
+
+* **Join points**
+    * points to tiles, cross points on tile, calculate distances
+    * point to geographic radius shape, use contains
+    * point to bounding box, index into quadtree, calculate distance
+
+* Mechanics of Spatial Analysis
+  -
+    - ...
+  - Spatial Relationship Tests
+
+* **Grid Tiles and Quad Cells**
+  - Exporting data for Presentation by a Tileserver
+  - Key Strategic Pattern: Tile / Cull / Process
+
+* Spatial Nearness Join (Within-X-Distance)
+  - Matching Nearby Points (Pointwise Spatial Join)
+  - Region Within a Geographic Distance of a Geometry
+    - Shape; Bounding Box; cautions on spherical geometry
+
+* Matching Points with the Regions
+
+
+* Nearest-Feature Spatial Join
+  - Voronoi Polygons turn Points into Regions
+  - Turning Points of Measurements into Regions of Influence
+  - Decompose Voronoi Polygons onto Grid Tiles
+  - Map Observations to Grid Tiles
+  - Joining Stadiums onto Grid Tiles
+  - Finding Nearby Objects
+  - Smoothing the Distribution
+  - Results
 
 
 * Mapping from earth to grid
@@ -73,12 +100,119 @@ are allowable as long as they obey the fundamental strategic rule:
 
 (TODO: better phrasing)
 
-=== Points, Paths and Regions
+==== Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
+
+
+We will start, as we always do, by applying patterns that turn Big Data into Much a Less Data. In particular,
+A great tool for visualizing a large spatial data set
+
+
+* You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
+* Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
+*
+*
+* data reduction, especially for a heatmap visualization;
+* extracting a continuous measurement from a pointwise sample;
+* providing a common basis for comparison of multiple datasets;
+* smoothing out spatial variation;
+* for all the other reasons you aggregate groups of related values in context
+* You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
+* Data that manifests at a single point
+  represents a process with
+  For example, the number of airline passengers in and out of the major airport
+  are travelling to and from local destinations
+* Smoothing pointwise data
+  into a
+  easier to compare or manage
+* continuous approximation
+  represents just the variation due to spatial
+  variables
+
+The straightforward approach we'll take is to divide the world up into a grid of tiles and map the position of each point onto the unique grid tile it occupies. We can then group on each tile
+
+Area of a spherical segment is 2*pi*R*h --
+so for lat from equator to 60
+
+------
+%default binsz 2.0
+-- place into half-degree bins -- ~ 120x50 cells for US
+gridded = FOREACH sightings GENERATE
+    FLOOR(lng * $binsz) / $binsz AS bin_x,
+    FLOOR(lat * $binsz) / $binsz AS bin_y;
+-- number density
+grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
+  GENERATE
+    group.bin_x, group.bin_y,
+    COUNT_STAR(gridded) AS ct;
+------
+
+* US:	-125 24 to -66, 50	(-124.7625, 24.5210, -66.9326, 49.3845) -- about 60 x 26
+
+==== Creating a Spatial Density Map
+
+Map points to quad cells, plot number density of airports as a heat map
+
+Then geonames places -- show lakes and streams (or something nature-y) vs something urban-y
+
+(just call out that rollup, summing trick, or group-decorate-flatten would work: do no pursue)
+
+Do that again, but for a variable: airport flight volume -- researching
+epidemiology
+
+// FAA flight data http://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger/media/cy07_primary_np_comm.pdf
+
+We can plot the number of air flights handled by every airport
+
+------
+%default binsz 2.0
+-- place into half-degree bins -- ~ 120x50 cells for US
+gridded = FOREACH sightings GENERATE
+    FLOOR(lng * $binsz) / $binsz AS bin_x,
+    FLOOR(lat * $binsz) / $binsz AS bin_y,
+    n_flights;
+-- number density
+grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
+  GENERATE
+    group.bin_x, group.bin_y,
+    COUNT_STAR(gridded) AS ct,
+    SUM(n_flights) AS tot_flights;
+------
+
+An epidemiologist or transportation analyst interested in knowing the large-scale flux of people could throughout the global transportation network
+
+
+Our reindeer friends are deflated to learn that the two maps do not resemble each other.
+
+===== Pattern Recap: Spatial Aggregation of Points
+
+* _Generic Example_ -- group on tile cell, then apply the appropriate aggregation function
+* _When You'll Use It_ -- as mentioned above: summarizing data; converting point samples into a continuous value; smoothing out spatial variation; reassigning spatial data to grid-aligned regions
+* _Exercises_ --
+* _Important to Know_ --
+  - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average -- turning data over a region into data at synthesized points
+
+
+==== Smoothing Regional Data onto a Consistent Grid (Spatial Aggregation of Regions)
+
+
+...
+
+===== Pattern in Use
+
+* _Where You'll a Use It_:
 
 
 
+=== Geographic Data Model ===
 
 ==== Geometry Primitives: Points, Polygons and so forth
+
+Geographic data shows up in the form of
+
+* Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
+* Paths -- an array of points `[[longitude,latitude],[longitude,latitude],...]`
+* Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
+* "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
 
 Back in Chapter 4 (REF), we introduced the simple scalar types (numbers, strings, etc.) and three complex types (`tuple`, `bag`, and `map`). Since every spatial analysis exploration involves
 
@@ -114,61 +248,25 @@ In fact, we can go even farther:
 Remember, all we're trying to do is land all (possibly) related data onto the same reducer before we bring in the big guns.
 
 
+=== Spatial Nearness Join (Within-X-Distance)
 
-==== Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
+* quad cells have different sizes; lookup table
 
+All sightings near airport
 
-
-* You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
-* Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
-*
-*
-
-
-
-
-===== Pattern Recap: Spatial Aggregation of Points
-
-
-*
-* _Generic Example_ -- mmm
-* _When You'll Use It_ -- as mentioned above:
-    * data reduction, especially for a heatmap visualization;
-    * extracting a continuous measurement from a pointwise sample;
-    * providing a common basis for comparison of multiple datasets;
-    * smoothing out spatial variation;
-    * for all the other reasons you aggregate groups of related values in context
-* _Exercises_ --
-
-
-
-
-
-
-==== Smoothing Regional Data onto a Consistent Grid (Spatial Aggregation of Regions)
-
-
-
-
-
-
-
-
-
-
-
-
+(dispatch to 9 nearest you)
 
 ==== Matching Nearby Points (Pointwise Spatial Join)
 
-
 * Common sense tells you that a weather observation is generally valid for places within a few kilometers, but certainly not useful for places Hundreds of kilometers away. It would be useful to have a more precise guideline for the distance where a weather measurement should not be considered reliable.
-    * first find all pairs of weather stations within 50 km of each other. Emit each pair of IDs with the lower-numbered ID in the first slot (making it easy to ensure uniqueness).
+    * first find all pairs of weather stations within 50 km of each other. Emit each pair of IDs along with their distance: put the lower-numbered ID in the first slot (making it easy to ensure uniqueness).
     * for each such pair, take a year of weather observations and determine the difference in temperature measurements taken at the same hour
         * HashMap (replicated) join of station-station pairs on the observations table. You could also do a total sort of the pairs table and use a merge-join if you're memory constrained.
         * join the resulting table back onto the observations table.
         * (In this case, most weather stations are a part of at least one pair, and so most of the rows in the observations table are retained. If that weren't the case,
-            *
+            * if most elements on the left are also not elements on the right, do a second semi-join to filter for observations that are on the right of some pair. That is, one join to get the observation-pairs and a second HashMap (fragment-replicate) join on ids that are the right member of some pair. (Most people on an auction site are buyers or sellers, though a very few are both.) (?if the pairs were from airports to not-airports)
+            * if as in this case, most weather stations are reasonably likely to be on either side, do a semi-join of observations against all distinct ids that are on either side of a pair. This means a single HashMap join against he huge table and then
+            * Cogroup observations with id_a-sorted-pairs by id_a, id_b-sorted-pairs on id_b. (Preparing the tables in sorted form lets you use merge. Flatten (left_id, right_id, temp, distance) to get the left-observations. Filter for rows with at least one right id and project `(id_b, temp)` to get the semi-join. Don't flatten for this second table -- you want to join this table with one row per observation to the table with one row per observation-pair.
 
     * As the radius expands, you'll quickly find that the amount of data begins to explode, so restrict that upper radius band initially.
     * (is this also a problem: "You might have also noticed another problem. Even apart from a distance effect, with more neighbors there are more opportunities for observations to disagree.")
@@ -176,65 +274,59 @@ Remember, all we're trying to do is land all (possibly) related data onto the sa
     * (you should know that the answer has some bias -- places with a large concentration of weather stations are typically heavily populated, and heavily populated places don't tend to have extreme weather. We're just looking for a good rule-of-thumb though)
 
 
-What makes a good exemplar?
-* Head-of-the-tail --
-    * extreme specimens will pop on their own. You want to see what's happening to the
-* Ones that are unusual without being weird. The solstice is
-* Essential troublemakers: leap years, the centennial leap-year-exceptions, and the quad-centennial leap-year-exception-exceptions.
-* Well represented
-    * it's no fun if your exemplars disappear mid-journey -- most commonly because they failed to find a match during a join.
-* Chosen by out-of-band criteria -- deciding to look for "this date three years ago" and then finding a record is better than choosing the first record you see -- that particular record may have been the first one you saw because it is unrepresentative in some way.
-    * just as a magician will pull back their shirtsleeves to show they have no rabbit concealed within, this keeps you from fooling yourself. http://en.wikipedia.org/wiki/Nothing_up_my_sleeve_number
-    * (in fact, Cryptographers have a concept of a "nothing-up-my-sleeve" number: when a large arbitrary collection of numbers is needed, choosing the first twenty-five digits of Pi is believably arbitrary, whereas choosing the 387'th through 412'th digits raises the specter of a purposeful "backdoor").
+=== Projections and Tiling Schemes
 
 
-
-We will start, as we always do, by applying patterns that turn Big Data into Much a Less Data. In particular,
-A great tool for visualizing a large spatial data set
-
-
-
-==== Smoothing Pointwise Data Locally (Spatial Aggregations)
-
-
-
-There are a great many occasions where it's useful to translate
-
-* You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
-
-* Data that manifests at a single point
-  represents a process with
-  For example, the number of airline passengers in and out of the major airport
-  are travelling to and from local destinations
-
-* Smoothing pointwise data
-  into a
-  easier to compare or manage
-
-* continuous approximation
-  represents just the variation due to spatial
-  variables
-
-
-The straightforward approach we'll take is to divide the world up into a grid of tiles and map the position of each point onto the unique grid tile it occupies. We can then group on each tile
-
-// TODO-qem: do we use just plain x / y coordinates?
-
-footnote:[Instead of the ]
-
-
-Area of a spherical segment is 2*pi*R*h --
-so for lat from equator to 60
-
-
-===== Pattern in Use
-
-
-* _Further Reading_:
-  - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average.
-
+* Equal-area:
+  - features uniformly distributed on the globe will be uniformly distributed among grid cells.
+* Platte-Careé (Equirectangular)
+  - Extremely simple to compute
+  - Plot directly into screen coordinates with
+  -
 
 ==== Exporting data for Presentation by a Tileserver
+
+The most commonly
+
+Features following a constant bearing in any direction -- Manhattan's Broadway, or the borderlines of Algeria or Nevada -- remain straight lines on the map. This is important for navigational purposes
+
+The locality properties of quadtiles indexing
+
+
+
+Typically you will store the shape clipped to the given quad-tile.
+ metadata about that region -- population, metric tons of bananas exported annually, an image of its flag, lyrics to its national anthem -- is stored under the same key but in independent columns footnote:[typically the regions are heavyweight, heavily requested and read-only, so they deserve their own table or at least their own column family.
+
+
+
+You don't have to break
+What we do is
+When tile 0231_1 is requested
+
+    0230_103 us (California
+    0230_11X us
+    0230_2XX pacific
+    0230_30*
+    0320_31*
+    0320_32X
+    0320_33*
+    0231_0XX  US
+    0231_1xx  US
+    0231_2**  Mexico, SW US, pacific
+    0231_3**  Mexico, SW US, Gulf of Mexico
+    0231_322     Monterey
+    0231_323     Tampico
+    0231_33      Caribbean east of Mexico
+    0232_3333 4  between Hawaii and Baka calif
+
+Querying on the ZL-5 tile 0231_0 (using key 0231_033), any of its four children (using keys 0231_003, 0231_013, 0231_023, or 0231_033) or any of the sixteen ZL-7 descendants 0231_000 through 0231_033 will retrieve a single tile. Querying on its parent 0231 will return tiles for 0231_0 and 0231_1, and a collection of zoom level 6 and 7 tiles covering the southwest US, Mexico and the Gulf of Mexico.
+
+TODO: screenshot.
+
+Our data is stored with no duplication, but
+
+
+Its easy to decompose or clip a super-tile to a requested (finer) zoom level. The longitude just divides normally along the tile: a hypothetical tile from 16 to 32 would have spatial coordinates 16, 18, 20, .... The latitude cut points do not subdivide directly, but only need to be calculated for one edge: if tile 0230_00 has bottom edge XX latitude, so does tile 0230_01, 0230_10, 0231_11, and others in its horizontal grid row.
 
 ==== Finding the Centroid of an Extent
 
@@ -246,21 +338,9 @@ so for lat from equator to 60
 ==== Finding the Bounding Box of Points Within a Radius
 
 
-
-
-
-* _choose exemplars_:
-  - Midway, because it's large; Austin, because it's one of our exemplar cities; and (TODO something tiny) because it's very small.
-  - the sightings X, y, which each have a fun description and are near multiple airports; and Z, which is not near an airport.
-  - weather observations:
-      - a date with a new moon and a full moon; 8/8/08, because auspicious; an equinox and a solstice
-  -
-
-
 ==== Combining Regions with Set Operations
 
 (intersection, union, diff, xor)
-
 
 ==== Testing the Relationship of two Regions
 
@@ -312,12 +392,6 @@ From Wikipedia:
 
 
 
-
-
-
-
-
-
 === Mechanics of Geographic Data
 
 ==== Longitude and Latitude, Points and Features
@@ -338,28 +412,16 @@ From Wikipedia:
   - https://github.com/Esri/spatial-framework-for-hadoop
 *
 
-==== Creating a Spatial Density Map
-
-Map points to quad cells, plot number density of airports as a heat map
-
-Then geonames places -- show lakes and streams (or something nature-y) vs something urban-y
-
-(just call out that rollup, summing trick, or group-decorate-flatten would work: do no pursue)
-
-Do that again, but for a variable: airport flight volume -- researching
-epidemiology
-
-// FAA flight data http://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger/media/cy07_primary_np_comm.pdf
-
-=== Spatial Nearness Join (Within-X-Distance)
-
-* quad cells have different sizes; lookup table
-
-All sightings near airport
-
-(dispatch to 9 nearest you)
-
 === Spatial Nearest-Feature Join
+
+
+You might not expect it, but it can be more complex to match shapes with their _nearest_ point than to match shapes with _all nearby_ points.
+
+
+In New York City, you'd be disappointed to learn that the nearest Starbucks was more than a few blocks away; in rural Montana, you'd be pleased to learn that one opened up less than an hour's drive away. http://www.ifweassume.com/2012/10/the-united-states-of-starbucks.html
+Naively working at the coarse grain of Montana will pour every coffee joint in the big apple onto the same reducer, naively working on the fine grain of New York City will split Montana into a wasteful number of empty fragments that contain no coffee shops at all.
+There's a wonderful tool we can borrow from our mathematician friends called a
+
 
 ==== Voronoi Cells
 
@@ -377,6 +439,71 @@ How would you help find the nearest 7-11?
 * recursively decompose a region on quadcells
 
 (what do numbers look like doing this for the US, daily)
+
+
+==== Map Polygons to Grid Tiles
+
+
+
+              +----------------------------+
+              |                            |
+              |              C             |
+              |      ~~+---------\         |
+              |     /  |          \       /
+              |    /   |           \     /|
+              |   /    |            \   / |
+               \ /     |     B       \ /  |
+                |      |              |   |
+                |  A   +--------------'   |
+                |      |                  |
+                |      |     D            /
+                |      |               __/
+                 \____/ \             |
+                         \____________,
+
+
+            +-+-----------+-------------+--+------
+            | |           |             |  |
+            | |           |         C   |  |
+      000x  | |   C  ~~+--+------\      |  |      0100
+            | |     / A|B |  B    \     | /
+            |_|____/___|__|________\____|/|_______
+            | | C /    |  |         \ C / |
+            |  \ /     |B |  B       \ /| |
+      001x  |   |      |  |           | |D|       0110
+            |   |  A   +--+-----------' | |
+            |   |      |D |  D          | |
+            +---+------+--+-------------+-/-------
+            |   |  A   |D |            _|/
+            |    \____/ \ |    D      | |
+      100x  |            \|___________, |         1100
+            |             |             |
+            |             |             |
+            +-------------+-------------+---------
+                ^ 1000        ^ 1001
+
+* Tile 0000: `[A, B, C   ]`
+* Tile 0001: `[   B, C   ]`
+* Tile 0010: `[A, B, C, D]`
+* Tile 0011: `[   B, C, D]`
+
+* Tile 0100: `[      C,  ]`
+* Tile 0110: `[      C, D]`
+
+* Tile 1000: `[A,       D]`
+* Tile 1001: `[         D]`
+* Tile 1100: `[         D]`
+
+For each grid, also calculate the area each polygon covers within that grid.
+
+Pivot:
+
+* A:          `[ 0000       0010                   1000          ]`
+* B:          `[ 0000 0001 0010 0011                             ]`
+* C:          `[ 0000 0001 0010 0011 0100 0110                   ]`
+* D:          `[             0010 0011       0110 1000 1001 1100 ]`
+
+
 
 ==== Joining Stadiums onto Quad Cells
 
@@ -396,6 +523,7 @@ A bounding box around the
 * Continental US: `-125.0011, 24.9493, -66.9326, 49.5904`; centroid: `-95.9669, 37.1669`.
 * Alaska: `179.1506, 51.2097, -129.9795, 71.4410
 
+
 === Multi-Scale Spatial Data
 
 If we want to combine weather
@@ -403,12 +531,97 @@ If we want to combine weather
 ==== Breaking regions into Multi-Cell Quads
 
 
+==== Adaptive Grid Size
+
+The world is a big place, but we don't use all of it the same. Most of the world is water. Lots of it is Siberia. Half the tiles at zoom level 2 have only a few thousand inhabitantsfootnote:[000 001 100 101 202 203 302 and 303].
+
+Suppose you wanted to store a "what country am I in" dataset -- a geo-joinable decomposition of the region boundaries of every country. You'll immediately note that Monaco fits easily within on one zoom-level 12 quadtile; Russia spans two zoom-level 1 quadtiles. Without multiscaling, to cover the globe at 1-km scale and 64-kB records would take 70 terabytes -- and 1-km is not all that satisfactory. Huge parts of the world would be taken up by grid cells holding no border that simply said "Yep, still in Russia".
+
+There's a simple modification of the grid system that lets us very naturally describe multiscale data.
+
+The figures (REF: multiscale images) show the quadtiles covering Japan at ZL=7. For reasons you'll see in a bit, we will split everything up to at least that zoom level; we'll show the further decomposition down to ZL=9.
+
+image::images/fu05-quadkeys-multiscale-ZL7.png[Japan at Zoom Level 7]
+
+Already six of the 16 tiles shown don't have any land coverage, so you can record their values:
+
+    1330000xx  { Pacific Ocean }
+    1330011xx  { Pacific Ocean }
+    1330013xx  { Pacific Ocean }
+    1330031xx  { Pacific Ocean }
+    1330033xx  { Pacific Ocean }
+    1330032xx  { Pacific Ocean }
+
+Pad out each of the keys with `x`'s to meet our lower limit of ZL=9.
+
+The quadkey `1330011xx` means "I carry the information for grids `133001100`, `133001101`, `133001110`, `133001111`, ".
+
+image::images/fu05-quadkeys-multiscale-ZL8.png[Japan at Zoom Level 8]
+
+image::images/fu05-quadkeys-multiscale-ZL9.png[Japan at Zoom Level 9]
+
+You should uniformly decompose everything to some upper zoom level so that if you join on something uniformly distributed across the globe you don't have cripplingly large skew in data size sent to each partition.  A zoom level of 7 implies 16,000 tiles -- a small quantity given the exponential growth of tile sizes
+
+With the upper range as your partition key, and the whole quadkey is the sort key, you can now do joins. In the reducer,
+
+* read keys on each side until one key is equal to or a prefix of the other.
+* emit combined record using the more specific of the two keys
+* read the next record from the more-specific column,  until there's no overlap
+
+Take each grid cell; if it needs subfeatures, divide it else emit directly.
+
+You must emit high-level grid cells with the lsb filled with XX or something that sorts after a normal cell; this means that to find the value for a point,
+
+* Find the corresponding tile ID,
+* Index into the table to find the first tile whose ID is larger than the given one.
+
+     00.00.00
+     00.00.01
+     00.00.10
+     00.00.11
+     00.01.--
+     00.10.--
+     00.11.00
+     00.11.01
+     00.11.10
+     00.11.11
+     01.--.--
+     10.00.--
+     10.01.--
+     10.10.01
+     10.10.10
+     10.10.11
+     10.10.00
+     10.11.--
+
+
+==== Tree structure of Quadtile indexing
+
+You can look at quadtiles is as a tree structure. Each branch splits the plane exactly in half by area, and only leaf nodes hold data.
+
+The first quadtile scheme required we develop every branch of the tree to the same depth. The multiscale quadtile scheme effectively says "hey, let's only expand each branch to its required depth". Our rule to break up a quadtile if any section of it needs development preserves the "only leaf nodes hold data". Breaking tiles always exactly in two makes it easy to assign features to their quadtile and facilitates joins betweeen datasets that have never met. There are other ways to make these tradeoffs, though -- read about K-D trees in the "keep exploring" section at end of chapter.
 
 
 
 
 
+* _choose exemplars_:
+  - Midway, because it's large; Austin, because it's one of our exemplar cities; and (TODO something tiny) because it's very small.
+  - the sightings X, y, which each have a fun description and are near multiple airports; and Z, which is not near an airport.
+  - weather observations:
+      - a date with a new moon and a full moon; 8/8/08, because auspicious; an equinox and a solstice
+  -
 
+What makes a good exemplar?
+* Head-of-the-tail --
+    * extreme specimens will pop on their own. You want to see what's happening to the
+* Ones that are unusual without being weird. The solstice is
+* Essential troublemakers: leap years, the centennial leap-year-exceptions, and the quad-centennial leap-year-exception-exceptions.
+* Well represented
+    * it's no fun if your exemplars disappear mid-journey -- most commonly because they failed to find a match during a join.
+* Chosen by out-of-band criteria -- deciding to look for "this date three years ago" and then finding a record is better than choosing the first record you see -- that particular record may have been the first one you saw because it is unrepresentative in some way.
+    * just as a magician will pull back their shirtsleeves to show they have no rabbit concealed within, this keeps you from fooling yourself. http://en.wikipedia.org/wiki/Nothing_up_my_sleeve_number
+    * (in fact, Cryptographers have a concept of a "nothing-up-my-sleeve" number: when a large arbitrary collection of numbers is needed, choosing the first twenty-five digits of Pi is believably arbitrary, whereas choosing the 387'th through 412'th digits raises the specter of a purposeful "backdoor").
 
 
 ===  Turning Points of Measurements Into Regions of Influence
@@ -469,6 +682,40 @@ To cover the entire globe at zoom level 13 requires 67 million records, each cov
 
 If the preceding considerations leave you with a range of acceptable zoom levels, choose one in the middle.  If they do not, you will need to use the multiscale decomposition approach (TODO:  REF) described later in this chapter.
 ----
+
+=== Weather Near You
+
+The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
+
+So weather data is gathered at a _point_, but imputes information about a _region_. You can't just slap each point down on coarse-grained tiles -- the closest weather station might lie just over on the next quad, and you're writing a check for very difficult calculations at run time.
+
+We also have a severe version of the multiscale problem.  The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean. It also varies wildly over time: in the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone.
+
+
+==== Find the Voronoi Polygon for each Weather Station
+////I think readers will need for you to draw out what's key here.  Say why this matters.  Connect the dots for readers.  This is important for them to grasp.  Amy////
+
+These factors rule out any naïve approach to locality, but there's an elegant solution known as a Voronoi diagram footnote:[see http://en.wikipedia.org/wiki/Voronoi_diagram[Wikipedia entry] or (with a Java-enabled browser) this http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet]].
+
+The Voronoi diagram covers the plane with polygons, one per point -- I'll call that the "centerish" of the polygon. Within each polygon, you are closer to its centerish than any other. By extension, locations on the boundary of each Voronoi polygon are equidistant from the centerish on either side; polygon corners are equidistant from centerishes of all touching polygons footnote:[John Snow, the father of epidemiology, mapped cholera cases from an 1854 outbreak against the voronoi regions defined by each neighborhood's closest water pump. The resulting infographic made plain to contemporary physicians and officials that bad drinking water, not "miasma" (bad air), transmitted cholera. http://johnsnow.matrix.msu.edu/book_images12.php].
+
+If you'd like to skip the details, just admire the diagram (REF) and agree that it's the "right" picture. As you would in practice, we're going to use vetted code from someone with a PhD and not write it ourselves.
+
+The details: Connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally. If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other.
+
+<remark>TODO: above paragraph not very clear, may not be necessary.</remark>
+
+==== Break polygons on quadtiles
+
+Now let's put Mr. Voronoi to work. Use the weather station locations to define a set of Voronoi polygons, treating each weather station's observations as applying uniformly to the whole of that polygon.
+
+Break the Voronoi polygons up by quadtile as we did above -- quadtiles will either contain a piece of boundary (and so are at the lower-bound zoom level), or are entirely contained within a boundary. You should choose a lower-bound zoom level that avoids skew but doesn't balloon the dataset's size.
+
+Also produce the reverse mapping, from weather station to the quadtile IDs its polygon covers.
+
+==== Map Observations to Grid Cells
+
+Now join observations to grid cells and reduce each grid cell.
 
 ==== Voronoi Polygons turn Points into Regions
 
@@ -543,3 +790,8 @@ With just the relevant records extracted, we can compare the score sheet data wi
 It would be an easy mistake to, at this point, simply evict the Retrosheet measurements and replace with the NCDC measurements; we would not argue for doing so.  First, the weather does vary, so there is some danger in privileging the measurement at a weather station some distance away (even if more precise) over a direct measurement at a correct place and time.  In fact, we have far better historical coverage of the baseball data than the weather data.  The weather data we just prepared gives a best-effort estimate of the weather at every quad tile, leaving it in your hands to decide whether to accept a reading from a weather station dozens or hundreds of miles away.  Rather, the philosophically sound action would be to flag values for which the two datasets disagree as likely outliers.
 
 The successful endpoint of most Big Data explorations is a transition to traditional statistical packages and elbow grease -- it shows you've found domain patterns worth exploring. If this were a book about baseball or forensic econometrics, we'd carry forward comparing those outliers with local trends, digging up original entries, and so forth.  Instead, we'll just label them with a scarlet "O" for outlier, drop the mic and walk off stage.
+
+
+=== Conclusions
+
+Most importantly of all, this chapter will solidify your intuition about how to move and combine data strategically.  You'll be learning new types of joins that require a more sophistitcated notion of 'context' (data locality).  But the deep natural intuition about space and physical locality you already possess makes this challenge much easier.  Most readers should concentrate foremost on the tactics of applying our analytic patterns. (In fact, if you want to trust us that the sections where we dive into the underlying map/reduce work as advertised, we've made them easy to skip the first time through.)  But come back at some point and step through the spatial and multi-scale spatial joins we introduce in this chapter.  If you understand the underlying mechanics -- how the design of the keys ensures records that must be related in context show up at the right place in the right order -- then you have mastered the deep concept of map/reduce.

@@ -10,7 +10,6 @@ K-D trees are another approach. The rough idea: rather than blindly splitting in
 ==== It's not just for Geo =====
 
 === Exercises ===
-////Include a bit where you explain what the exercises will do for readers, the why behind the effort.  Amy////
 
 [[brain_example]]
 **Exercise 1**: Extend quadtile mapping to three dimensions
@@ -61,23 +60,3 @@ Example: merge all cells whose contents lie within 10% of each other
      9   8  12  14     .   . 12  14
     19  20  12  14     . 20. 12  14
     20  21   8   3     .   .  8   3
-
-    
-
-=== Refs ===
-
-* http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
-* http://msdn.microsoft.com/en-us/library/bb259689.aspx
-* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
-* http://wiki.openstreetmap.org/wiki/QuadTiles
-* https://github.com/simplegeo/polymaps
-* http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
-
-* http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
-* http://bl.ocks.org/4122298[US County borders in GeoJSON]
-
-* http://sharpgis.net/post/2007/05/05/Spatial-references2c-coordinate-systems2c-projections2c-datums2c-ellipsoids-e28093-confusing.aspx[Spatial references, coordinate systems, projections, datums, ellipsoids] by Morten Nielsen
-
-* https://github.com/jsongeo[Public repository of geometry boundaries into text]
-
-* http://bost.ocks.org/mike/map/[Making a map in D3] ; see also http://stackoverflow.com/questions/14565963/topojson-for-congressional-districts[Guidance on making your own geographic bounaries].

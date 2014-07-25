@@ -6,7 +6,6 @@ airports = load_airports();
 gn_pls = load_geonames_places();
 
 
-
 -- Map airport coordinates to quad tiles
 
 

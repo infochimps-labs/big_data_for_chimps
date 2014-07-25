@@ -1,0 +1,185 @@
+=== Data Formats ===
+
+Let's take a moment to look at the different file formats used for geographic data. Each has particular tradeoffs that may lead you to make different choices than we have. 
+
+==== GeoJSON
+
+GeoJSON is a new but well-thought-out geodata format, able to represent arbitrary-dimensional geometries in a way that translates nicely to other leading geospatial formats.  Its principal advantage is that it is in all respects a JSON file, compatible by any system capable of reading and writing JSON (which is by now most systems). A GeoJSON-aware system will load the `coordinates` field as a shape, but to anything else it's still recognizable as a regular old array. Ironically, the place you're most likely to have a compatibility fail is with traditional GIS systems; due to its young age many GIS systems will lack GeoJSON drivers. However, it's quite easy to convert to and from GeoJSON (see "Converting Among Geospatial Data Formats" below (REF)). The other drawbacks of GeoJSON are those common to any JSON format: it's not particularly space-efficient, and you must parse the whole object before using any part of it. As we'll mention several times, data compression makes the space-efficiency matter less than you think, and compared to disk throughput and the cost of geospatial operations parsing JSON is faster than you think. 
+
+If you won't always want to use the geometry data, however, you may also choose to use a TSV format with embedded JSON as we did with WKT/TSV above. Serialize the feature's raw geometry object into a field as GeoJSON, and its properties into individual fields as usual. Since no legal JSON document can contain a raw tab or newline, it is perfectly safe to serialize the geometry into a TSV field. The `FromGeoJson` UDF (note capitalization) in Pig will convert a GeoJSON geometry into a geometry object.
+
+In all, GeoJSON makes an excellent interchange format among different data analysis systems and is a sound choice for development and exploratory analytics.
+
+A GeoJSON `geometry` defines only the shape's type, and coordinates.  A GeoJSON `feature` simply contains both a `geometry` object and a `properties` object holding string-key / arbitrary-value pairs according to any scheme you design. Additionally, any GeoJSON object can optionally specify a string identifier (`id`), its bounding box (`bbox`) and the Coordinate Reference System (`crs`) that should be used to interpret its coordinates. Wrap an array of features in a `FeatureCollection` object and you're ready to map! Here is an example GeoJSON feature collection:
+
+----
+  {
+    "type": "FeatureCollection",
+    "features": [
+      { "type":       "Feature",
+        "properties": {"prop0": "value0"},
+        "geometry":   {"type": "Point", "coordinates": [102.0, 0.5]}
+      },
+      { "type":       "Feature",
+        "properties": {"prop0": "value0"},
+        "geometry":   {"type": "LineString", "coordinates": [[10.0, 2.0],[102.0, 0.5]]}
+      },      
+      { "type":       "Feature",
+        "properties": {
+          "prop0":    "value0",
+          "prop1":    {"this": "that"}
+        },
+	"bbox":       [0.0,0.0,8.0,20.0]
+        "geometry": {
+          "type":     "Polygon",
+          "coordinates": [
+	    [ [0.0,0.0],[0.0,20.0],[8.0,20.0],[8.0,0.0],[0.0,0.0] ],
+	    [ [3.0,9.0],[3.0,11.0],[5.0,11.0],[5.0,9.0],[3.0,9.0] ]
+            ]
+	}
+      }
+    ]
+  }
+----
+
+We pretty-printed that example along multiple lines, but in practice you will want to treat each GeoJSON feature as an independent JSON object, each on its own line. You can restore such a file to the status of GeoJSON feature collection by replacing all newlines that precede a record with a comma, then stapling `{"type": "FeatureCollection","features":[` and `]}` to the file's front and back.
+
+GeoJSON geometries encode the full set of primitives we like to use:
+
+* For `Point` geometries, just supply an array in x,y order: `[longitude, latitude]`
+* For `LineString` paths, supply an array of points in order. A `LineString` having the same initial and final coordinates will be interpreted as a closed path.
+* `Polygon` objects are specified using an array of rings, each of which is an array of points. You must repeat the first point in each ring to make it a closed path. The Polygon in the example above describes a rectangle from (0,0) to (8,20), with a 2x2 hole in its center. The first array is the outer ring; other paths in the array are interior rings or holes. For example, South Africa's outer border would be the first ring in the array, followed by the coordinates of the inner ring delimiting Lesotho (an independent country lying completely within South Africa). Regions with multiple parts such as Hawaii or Denmark require a MultiPolygon instead.
+* The `MultiPoint`/`MultiLineString`/`MultiPolygon` types expect an array of the coordinates as appropriate for the singular type.  It's fine to supply a `Multi` type with only one element, but you must have it enclosed in an array: `{"type": "Point", "coordinates": [102.0, 0.5]}` and `{"type": "MultiPoint", "coordinates": [[102.0, 0.5]]}` should behave equivalently.
+* For ease of processing, you can attach a Bounding Box (`bbox`) annotation to any GeoJSON object. Supply the coordinates in `[left, bottom, right, top]` order -- that is, `[xmin, ymin, xmax, ymax]`. A `bbox` is _not_ an independent geometry: it is an annotation on another geometry.
+
+The http://www.geojson.org/geojson-spec.html[GeoJSON] standard is as readable a specification as you'll see, so refer to it for anything deeper than we cover here.
+
+// The Wukong data model is as follows:
+// 
+// ----
+//     module GeoJson
+//       class Base ; include Wukong::Model ; end
+// 
+//       class FeatureCollection < Base
+//         field :type,  String
+//         field :features, Array, of: Feature
+// 	field :bbox,     BboxCoords
+//       end
+//       class Feature < Base
+//         field :type,  String,
+// 	field :geometry, Geometry
+// 	field :properties
+// 	field :bbox,     BboxCoords
+//       end
+//       class Geometry < Base
+//         field :type,  String,
+// 	field :coordinates, Array, doc: "for a 2-d point, the array is a single `(x,y)` pair. For a polygon, an array of such pairs."
+//       end
+// 
+//       # lowest value then highest value (left low, right high;
+//       class BboxCoords < Array
+// 	def left  ; self[0] ; end
+// 	def btm   ; self[1] ; end
+// 	def right ; self[2] ; end
+//         def top   ; self[3] ; end
+//       end
+//     end
+// ----
+
+
+==== Well-Known Text + Tab-Separated Values
+
+At this point in the book you've long since either quit reading in disgust, or you've gotten used to the idea that until performance concerns demonstrate otherwise,  in most cases the best data format is the silly-seeming TSV (tab-separated values) scheme. To restate its tradeoffs, a TSV file is easily inspectable, travels anywhere, and can be manipulated from the commandline as plain-text. It's restartable (the damage from a corrupt record lasts only until the next newline), doesn't require special quoting or escaping, and is trivial to parse. Representing numbers in decimal gives mediocre space-efficiency, but keep in mind that a well-configured hadoop cluster (REF) compresses most data as it hits the disk, and so the overhead is nowhere near as large as it might appear. By now you're quite comfortable working around the lack of complex types and need for an explicit schema.
+
+Given that, we'll continue to tax your credulity and advise that until performance concerns demonstrate otherwise, the primitive but oh-so-simple Well-Known Text format is the right choice for geospatial data.
+
+WKT encodes our familiar primitives -- Point, LineString, Polygon and MultiPoint, MultiLineString, MultiPolygon. (There are additional geometries for specifying circles, triancle surfaces, meshes and parameterized curves, but we won't get into those.) A WKT object is given by simply stating the geometry type followed by its comma-separated coordinates within parentheses. Whitespace is ignored and any other content is disallowed. Here's an example (the newlines and spacing around the braces is purely ornamental):
+
+------
+POINT (102.0 0.5)
+LINESTRING (10.0 2.0, 102.0 0.5)
+POLYGON (
+    (0.0 0.0, 0.0 20.0, 8.0 20.0, 8.0 0.0, 0.0 0.0),
+    (3.0 9.0, 3.0 11.0, 5.0 11.0, 5.0 9.0, 3.0 9.0) )
+MULTIPOLYGON ( (
+    (0.0 0.0, 0.0 20.0, 8.0 20.0, 8.0 0.0, 0.0 0.0),
+    (3.0 9.0, 3.0 11.0, 5.0 11.0, 5.0 9.0, 3.0 9.0) ) )
+MULTIPOLYGON (
+    ((0.0 0.0, 0.0 20.0, 8.0 20.0, 8.0 0.0, 0.0 0.0)),
+    ((3.0 9.0, 3.0 11.0, 5.0 11.0, 5.0 9.0, 3.0 9.0)) )
+------
+
+Coordinate pairs are given in longitude/latitude (x/y) order -- hopefully you've begun to internalize that convention -- with spaces in between. Each string of points -- a linestring path or a ring in a polygon -- is comma-delimited and wrapped in its own set of parenthesis
+
+All the objections to TSV weigh in against WKT as well -- it is unsophisticated, not terribly space efficient, and seems clunky at first use. But all the advantages carry over too -- it's commandline friendly, travels anywhere, can be manipulated even in the absence of a parser. For development use, we generally like to work with TSV files holding shapes as embedded WKT fields.
+
+==== Well-Known Binary (WKB)
+
+WKT is easily translated into _Well-Known Binary (WKB)_ format, a straightforward https://en.wikipedia.org/wiki/Well-known_text[binary encoding of Well-Known Text (WKT)]. You'll give up the direct access and commandline friendliness, but WKB is nearly as widely understood as WKT and has exactly the same capabilities. Since WKB is more space-efficient and somewhat faster to decode, you may wish to move to it for production work or high-scale applications. 
+
+
+==== Other Important Formats
+
+The preceding sections describe all the file formats we've found worthwhile for use within Hadoop, but Wikipedia lists several dozen other https://en.wikipedia.org/wiki/Category:GIS_file_formats[geospatial file formats]. It's worth calling out a few others you'll encounter.
+
+The https://en.wikipedia.org/wiki/Shapefile[_Shapefile_] (aka _Esri Shapefile_ or _Arcview Shapefile_) format is a complex and powerful geospatial vector data format, ubiquitous in the traditional GIS world. Like GeoJSON, it can represent both shapes and metadata, shares the same (Multi)Point/(Multi)Line/(Multi)Polygon primitives, and can handle two- or three-dimensional data footnote:[but not higher, as opposed to the arbitrary dimensions available to GeoJSON]. Unlike GeoJSON, it's not a useful interchange format -- although every GIS system will have Shapefile facilities, few applications outside of that realm will.
+Don't go near the specification -- it's incredibly complex, only mostly-specified, and there are excellent open-source libraries for working with shapefiles that will give far better results than anything you should attempt. A shapefile is actually a collection of multiple files: a `.shp`, a `.shx` and a `.dbf` file and potentially others as well. Each collection is intended to represent a single layer of data and so can only contain a single geometry type: you cannot combine airports (point), flight paths (lines) and air traffic control zones (polygons) in the same file. Those limitations -- multiple files and homogenous layers -- make it a poor choice for representing data on your cluster.
+
+_TopoJSON_ is a https://github.com/mbostock/topojson/wiki[companion format to GeoJSON], specifically optimized for data visualization in the browser. (The "Map Viewer for Chimps" tool that we've distributed uses it for reference data). While the other data formats described here represent regions independently -- closed squarish polygons for Colorado, Utah, Arizona, etc.. -- TopoJSON instead maintains the mesh of edges that define those polygons, along with metadata to recover the original regions. Those duplicate paths cause excess storage size and redundant data processing; in the worst case, numerical error can cause borders that should be coincident to stray, leading to visual artifacts and incorrect results. TopoJSON's pre-constructed mesh avoids those problems and makes many tasks possible or simpler, such as cartograms (independent rescaling of each shape based on an attribute) or geometry simplification (eliminating fine-grained detail for rendering). At present, its principal adoption is limited to the `d3` Javascript library. Everything we see indicates that d3 is emerging as the best toolkit for lightweight data visualization primitives, and we expect increasing adoption of its byproducts. Having just described how the mesh representation is great for rendering purposes, it's exactly wrong for our use. We want to be able to peel shapes apart and send them to the correct context group. We want to store a shape and its associated data in the same record on disk (as GeoJSON and TSV+WKT do), both to accomodate file splitting and to enable processing as plain data. The github.com/mbostock/topojson TopoJSON project has tools for converting TopoJSON to and from GeoJSON, ESRI Shapefiles, and a few other formats.
+
+_Keyhole Markup Language_ is the https://en.wikipedia.org/wiki/Keyhole_Markup_Language[XML-based format used by Google Earth]. Keyhole, a company acquired by Google, built both the core of Google's online geographic offering and an internet community of enthusiasts who curate geolocation and 3-D models of earth features. The signal-to-noise ratio is often low (and Google occasionally gaslights file locations), but with patience you can find some fairly remarkable data sets under open licenses through Google Earth or the surviving Keyhole community. KML files are distributed with either a `.kml` extension (plaintext XML) or with a `.kmz` extension (a ZIP 2.0-compressed bundle containing that `.kml` file).  You should not build your data flows around KML. It's first of all a bad choice for high-scale data analysis in all the ways that any XML-based format is a bad choice -- see our "Airing of Grievances" in chapter (REF). KML is even less compact than GeoJSON and lacks the ability to specify a coordinate reference system. Though some traditional GIS applications will import KML, they're just as likely to accept GeoJSON; outside of the GIS world, generic JSON is far superior to generic XML. Seek out and import, yes, but otherwise avoid working with KML.
+
+_Open Street Maps_ (OSM) is one of the crown jewels of the open data movement: a http://www.openstreetmap.org/[massive database of places, roads and spatial data], community-generated and available under an open license. Together with http://geocommons.com/[GeoCommons] and http://www.naturalearthdata.com/[Natural Earth], anyone with an internet connection can freely access geospatial data sets that used to cost millions of dollars if available at all. OSM distributes their data in http://wiki.openstreetmap.org/wiki/OSM_file_formats[a variety of formats] documented on their wiki, none of them useful for data analysis at any scale. See the instructions given by http://mike.teczno.com/notes/elephants-osm-hadoop.html[Michal Migurski] or https://github.com/thedatachef/osm-hadoop[Jacob Perkins] for how to convert the data directly in Hadoop.
+
+// TODO: talk about GeoCommons, Natural Earth, Keyhole, OSM in the "about our datasets" part.
+
+==== Converting Among Geospatial Data Formats
+
+As always, our advice is to pick one data format to work with and tolerate no others. Convert all foreign data formats immediately upon receipt, and produce exports (where necessary) in a separate and final step. As we advised above with WKB (REF), you _may_ judiciously choose two formats: one for efficiency and one for interchange with other applications. But do yourself a favor and prove that the interchange format actually costs you enough money to deal with the hassle. 
+
+The open-source (MIT License) http://www.gdal.org/index.html[GDAL Library] is a superb tool for converting among all the data formats you'll encounter in practice. It handles not only the vector formats we've focused on in this chapter but also raster data, such as satellite imagery from the National Geodetic Survey, .PNG files from Google Maps and other tileservers, and so on. Following closely Mike Bostock's bost.ocks.org/mike/map/[Let's make a Map!] presentation, here's a brief demonstration of using GDAL to translate an ESRI shapefile to both GeoJSON (for use in Hadoop) and TopoJSON (for efficient rendering in D3).
+
+Install GDAL using your system's package manager (for Mac OSX users running homebrew it's `brew install gdal`) or download binaries from the http://trac.osgeo.org/gdal/wiki/DownloadingGdalBinaries[GDAL website]. If running `ogr2ogr --help` from the commandline dumps a bewildering soup of options to the screen you've probably installed it correctly.
+
+-------
+# Go to where your data will live
+datadir=~/data
+mkdir -p $datadir/{ripd,rawd,out}
+mkdir -p $datadir/rawd/natural_earth/shp
+#
+file=ne_10m_admin_1_states_provinces
+
+# yeah, the link has the http part repeated...
+wget -nc http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/$file.zip -O $datadir/ripd/$file.zip
+# extract the zip file
+(cd $datadir/rawd/natural_earth/shp ; unzip $datadir/ripd/$file.zip)
+# 
+ogr2ogr -f GeoJSON \
+  $datadir/rawd/natural_earth/great_britain_subunits.json \
+  $datadir/rawd/natural_earth/shp/$file.shp
+------
+
+It's not immediately apparent how to export a TSV file containing WKT (Well-Known Text); you need to use the CSV driver with options as shown:
+
+------
+ogr2ogr -f CSV \
+  -lco GEOMETRY=AS_WKT -lco SEPARATOR=TAB -lco CREATE_CSVT=YES \
+  /tmp/great_britain_subunits \
+  $datadir/rawd/natural_earth/shp/$file.shp
+mv /tmp/great_britain_subunits/$file.csv \
+  $datadir/rawd/natural_earth/great_britain_subunits.wkt.tsv
+------
+
+Although the output file will be in a subdirectory with a `.csv` extension, it is nonetheless a tab-separated file. The above code block exports it to a temporary location and then renames it.
+
+Incidentally, `ogr2ogr` also offers a simple set of predicates for extracting only selected layers. The following command chooses only the states within Ireland and Great Britain:
+
+------
+ogr2ogr -f CSV \
+  -lco GEOMETRY=AS_WKT -lco SEPARATOR=TAB -lco CREATE_CSVT=YES \
+  -where "ADM0_A3 IN ('GBR', 'IRL')" \
+  $datadir/rawd/natural_earth/great_britain_subunits.wkt.tsv \
+  $datadir/rawd/natural_earth/shp/$file.shp
+------
+
+Whenever you meet a new data set listing data for the United Kingdom, check whether "admin-1" covers state-level units (Northumberland, Liverpool, etc) and not the intermediate subdivisions of Great Britain, Wales, Scotland, etc. (The same caution applies to Greece, Canada and a few other countries.) We're safe here, because the Natural Earth dataset maintains separate fields for that information.

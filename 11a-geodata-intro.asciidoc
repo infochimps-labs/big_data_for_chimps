@@ -1,41 +1,75 @@
-[[geographic]]
-== Geographic Data Processing
+Having conquered time (or, at least, learned basics of timeseries analysis), let's move on to space.
+Spatial analysis works with _data attached to points, paths and regions_, where the _fundamentally interesting relationships are among nearby objects_. This is some of our favorite material in the book for two reasons: because it's really useful, and because it will extend your understanding of map-reduce in a significant way.
 
-=== Geographic Data Model ===
+Problems with a directly geographic aspect appear naturally in all sorts of human endeavors: "Where should I put this cell tower / oil well / coffee shop?". Analysis across billions of GPS paths on millions of routes not only allows a driving directions app to direct you to the correct lane when changing roads, it will power the self-driving cars of the (near?) future. http://www.slideshare.net/Hadoop_Summit/grailer-hochmuth-june27515pmroom212v3[Farmers are improving crop yields and reducing environmental impact] by combining data from suppliers, other growers, satellite feeds, and government agencies to fine-tune what strains they plant and what pests and diseases they act to prevent. Wind farm companies use petabytes of weather data to predict http://www.ibmbigdatahub.com/blog/lords-data-storm-vestas-and-ibm-win-big-data-award[optimize turbine locations and predict their yield].
+It is an increasingly essential piece of any high-stakes effort in marketing, agriculture, security, politics, and any other field where location is a key variable.
 
-Geographic data shows up in the form of
+Geospatial analysis is also incredibly useful because geography is such a good proxy for many key features you can't easily measure.  You wouldn't think the 32 bits of an IP address described the weather.  But as you saw in the last chapter an IP address can (imperfectly but actionably) be related to a geolocation, and a geolocation can (imperfectly but actionably) be related to a weather report.  Without violating a person's privacy, you can know when to switch from promoting suncreen to Sydneysiders and galoshes to Glaswegians to quite profitably doing the reverse. With the right auxilliary dataset you can treat geographic coordinates as an imperfect but often actionable stand-in for census demographics, average daily temperature, political preference, crime rate -- you get the idea.
 
-* Points -- a pair of coordinates. When given as an ordered pair (a "Position"), always use `[longitude,latitude]` in that order, matching the familiar `X,Y` order for mathematical points. When it's a point with other metadata, it's a Place footnote:[in other works you'll see the term Point of Interest ("POI") for a place.], and the coordinates are named fields.
-* Paths -- an array of points `[[longitude,latitude],[longitude,latitude],...]`
-* Region -- an array of paths, understood to connect and bound a region of space. `[ [[longitude,latitude],[longitude,latitude],...], [[longitude,latitude],[longitude,latitude],...]]`. Your array will be of length one unless there are holes or multiple segments
-* "Bounding Box" (or `bbox`) -- a rectangular bounding region, `[-5.0, 30.0, 5.0, 40.0]`
+To keep things concrete and relevant to the typical reader we're going to focus on geospatial analysis, where the data is specifically located on the surface of our Earth. But the methods we'll demonstrate here extend naturally to anything with a spatial aspect, like factory floor optimization, customer flow through a mall. What's more, it's surprisingly easy to extend these methods to three and higher dimensions (see the exercise at the end of the chapter (REF)), good news for anyone looking to analyze ocean currents, electronic chip layout or brain activity. And even beyond explicitly spatial problems, every reader looking to master machine learning techniques will find that this chapter provides an important reference point for thinking in the highly-dimensional spaces those algorithms work in.
 
-Features of Features
-[NOTE]
-===============================
-The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for only its machine learning sense.
-===============================
+// Taking a step back, the fundamental idea this chapter introduces is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
 
-Voronoi
+We'll start by demonstrating spatial aggregations: counting the number of UFO sightings per area, or smoothing pointwise elevation estimates onto a grid.
+It's one of the frontline tools of spatial analysis, a great way to summarize a large data set, and one of the first things you'll do to Know Thy Data. It's also a direct application of things you've already learned, giving us a chance to introduce some terminology and necessary details. Next is a gallery tour of the basic spatial operations: how to find a shape's area or bounding box, its intersection with another shape, and so forth. We won't spend much of your time here, as these are easy enough to apply once you know their names.
+
+Spatially aggregating points onto a grid is straightforward because each point only provides relevant context to the single grid cell it occupies.
+
+Gather together each object with every relevant
+Nearby shape
+Without ever accumulating a lopsided share of objects into the same group.
+
+Spatial aggregations on regions -- e.g. smoothing county-by-county data onto a uniform grid -- demands a bit more subtlety than aggregations of points. In places where multiple regions appear you must weight their contributions correctly, and in places where only one region is present you'd like to avoid extra work. We handle that using a quad-tree tiling (aka "quadtiles"), a superbly elegant tool for partitioning spatially-nearby objects onto common reducers with minimal waste.
+
+The real fun comes as the notion of "nearby" becomes less and less predictable in advance.
+
+Spatial join of shapes
+
+When you're matching shapes with objects less than a certain distance away,
+You can set an upper bound in advance on what "nearby" means: the specified distance.
+But when you want to map against the nearest object -- which might be a three-minute walk or might be a three-day sail -- things get more complicated. There's a wonderful trick for doing these kinds of "nearest object" queries without overwhelming your cluster. We'll use it to combine our record of every baseball game played against the historical weather data, and learn an important truth about truth and error along the way.
+
+Let's start off in the best way possible: with a tool for turning lots of data into manageable insight.
 
 
-Spatial data is fundamentally important ///Go, go...!  Talk about what this is, put it in context.  And then, weave in some conceptual talk about "locality," when you're done.  Amy////
+// Features of Features
+// [NOTE]
+// ===============================
+// The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for only its machine learning sense.
+// ===============================
 
 
-* 
 
-* So far we've 
+// * Geometry is hard to do _right_
+// * Pretending the bumpy kinda-ellipsoid is a simple rectangle.
+// * You're working with two (or more) continuous dimensions
+// * Russia is big and Luxembourg is small; New York City has a lot of stuff, Siberia not so much; in Alabama you're never far from a church, but over most of the Pacific it can be quite a swim.
+//
+// This problem has been mostly solved for us,
+// There are superb open-source and commercial
+// Of course, they depend on having all relevant data together on the same machine, which is where it starts to get interesting.
+//
+// What we do is partition our world very cleverly, so that nearby shapes can be
+// A few of our Elephant friends had to attend multiple promenades
+// But we'll use something just like their conga line to
+//
+// When it's not just spatial data but *Geo*spatial data, you must deal wit
+//
+// Points exist on a bumpy, messy super-ellipsoid, but (a) our behavior is largely constrained to the surface, and (b) not generally concerned by elevation.
+// Because of this, we can project geographic shapes
+// to a more manageable reference frame.
+// Geographic data is usually given as
+// The simplest thing is to treat them as regular x, y coordinates on a grid
+// As long as your data stays away from the north and south poles (which is much commoner than you'd think), you can get away with this.
+// However, there are a couple important
+// This subject causes geographers all sorts of grief but
+// Our choice does not
+// In principle affect the data itself, only how it's divided up on machines.
+
+NOTE: Geographic Analysis is a well developed field.  The number of hard problems with valuable solutions in intelligence, petroleum, natural resources and other such industries gave rise to highly sophisticated products capable of processing massive quantities of data well before these kids with their Hadoops and their JSONs came along.  As you might expect, however these products possess a correspondingly steep price tag and learning curve and often integrate poorly outside their domain. Most importantly, they are bound by the limits of traditional database technology in many aspects. So even users of these powerful GIS tools can benefit by augmenting them with Big Data analytics. But our focus will be on the reader who needs to get stuff done with geographic data, and the less they have to learn a new field the better.  We're going to use GeoJSON, a newly-developed standard for geographic data (friendly to general purpose analytic tools and to rendering data in
+the browser), rather than Arcview shapefiles or other geospatial formats (seamless integration with industry products). We've simplified concepts and minimized jargon to keep the focus on readable, powerful scripts that give actionable insight.
 
 
-Spatial data ////", which identifies the geographic location of features and boundaries on Earth," - here I'm suggesting you define this kind of terms (in-line) when it comes up.  Amy//// is very easy to acquire: from smartphones and other GPS devices, from government and public sources, and from a rich ecosystem of commercial suppliers.
-It's easy to bring our physical and cultural intuition to bear on geospatial problems ////"For example... Amy//// 
+// Geospatial Information Science ("GIS") is a deep subject, ////Say how, like, ", which focuses on the study of..."  Amy////treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
 
-There are several big ideas introduced here.
-
-First of course are the actual mechanics of working with spatial data, and projecting the Earth onto a coordinate plane.
-
-The statistics and timeseries chapters dealt with their dimensions either singly or interacting weakly,
-
-It's ////What is...?  Clarify.  Amy/// a good jumping-off point for machine learning. Take a tour through some of the sites that curate the best in data visualization, ////Consider defining in-line, like with spacial data above.  Amy//// and you'll see a strong over-representation of geographic explorations. With most datasets, you need to figure out the salient features, eliminate confounding factors, and of course do all the work of transforming them to be joinable footnote:[we dive deeper in the chapter on <<machine_learning>> basics later on]. ////May want to suggest a list of 5 URLs to readers here.  Amy////Geo Data comes out of the
-
-Taking a step back, the fundamental idea this chapter introduces is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
+// footnote:[You'll also see 'Spatial', 'Geospatial', 'Geodata', 'GIS' (Geographic Information Systems), and many other mashups with the prefix 'Geo-'. We chose 'Geographic' because it seems the friendliest term, and will reserve 'GIS' to mean "the highly sophisticated traditional geographic analysis toolset"]

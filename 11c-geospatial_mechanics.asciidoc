@@ -1,0 +1,47 @@
+
+
+
+==== Shape Transforming Operations 
+
+|===========================================================================
+| GeoEnvelope  | 0 | 0 | 15 | 5 |
+| GeoCentroid  | 0 | 0 | 15 | 5 |
+| GeoConvexHull  | 0 | 0 | 15 | 5 |
+| GeoBoundary  | EMPTY | MULTIPOINT | 15 | 5 | A point's boundary is empty; a line's boundary is its composite points; a polygon's boundary is its rings; and a multi-geometry's boundary is the combined boundaries of its parts.
+| GeoBuffer(geom, distance)  | 0 | 0 | 15 | 5 |
+| GeoEndpoint(geom), GeoStartPoint(geom), GeoNthPoint(geom)  | 0 | 0 | 15 | 5 |
+| GeoSimplify(geom, tolerance)  | 0 | 0 | 15 | 5 |
+| GeoDensify(geom, tolerance)  | 0 | 0 | 15 | 5 |
+|   | 0 | 0 | 15 | 5 |
+|===========================================================================
+
+
+==== Shape Combining Operations 
+
+|===========================================================================
+|   | 0 | 0 | 15 | 5 |
+|   | 0 | 0 | 15 | 5 |
+|   | 0 | 0 | 15 | 5 |
+|   | 0 | 0 | 15 | 5 |
+|   | 0 | 0 | 15 | 5 |
+|===========================================================================
+
+==== Shape Properties
+
+
+|===========================================================================
+| Area  | 0 | 0 | 15 | 5 |
+| GeoNumCoordinates |
+| MinX,  MaxX, MinY, MaxY | 0 | 0 | 15 | 5 |
+| IsSimple  | 0 | 0 | 15 | 5 |
+| IsClosed | 0 | 0 | 15 | 5 |
+| IsEmpty | 0 | 0 | 15 | 5 |
+|===========================================================================
+
+
+==== Other Spatial Operations
+
+|===========================================================================
+| GeoMultiToBag  | splits a multi-geometry into a bag of simple geometries: one MultiPoint geometriy becomes a bag of Points 
+| GeoBagToMulti  | combines a bag o objects into a single multi-whatever: a bag of points and MultiPoints becomes a single MultiPoint object
+|===========================================================================
