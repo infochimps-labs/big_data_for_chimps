@@ -1,19 +1,20 @@
 === Mechanics of Spatial Data
 
-We kicked off the chapter with an interesting example that didn't require too many new concepts, but it's time to backtrack a bit and properly cover the mechanics of working with spatial data. 
+We kicked off the chapter with two examples that didn't require too many new concepts, but it's time to backtrack a bit and properly cover the mechanics of working with spatial data. 
 
 The data types and operations are extremely well standardized by the http://www.opengeospatial.org/standards/sfa[Open Geospatial Consortium]. Nearly all of the operations below have identical behavior within Oracle, PostGIS, SQL Server, and all industrial-strength geospatial systems. In fact, the geospatial toolkits for Pig (Pigeon) and Hive (Esri-SFFH) are particularly sympatico as they both use Esri's wonderful https://github.com/Esri/geometry-api-java[Esri Geometry API] under the hood.
 
 ==== Spatial Data Types
 
-* `Point` --
-* `LineString` --
-* `Polygon`  -- 
-* `MultiPoint` --
-* `MultiLineString` -- Although a `Polygon` also has multiple chains of coordinates, a `Polygon` is not a `MultiLineString`. Most importantly, a `Polygon` represent a 2-D shape, and the coordinates delimit the continuous dense set of points in its interior; a `MultiLineString` represents a 1-D shape, and the coordinates delimit the endpoints of its line segments. What's more, the line strings defining a polygon must be 'rings': closed paths that do not cross or touch; the elements of a `LineString` or `MultiLineString` are allowed to be either open or closed and may cross or touch.
-* `MultiPolygon` -- you guessed it, a collection of polygons. They're allowed to overlap, lie within each other, or anything else they want to do.
+* `Point` -- a single location in space, given by its horizontal, then vertical coordinates. That's an easy convention to swallow when you think in terms `x`, `y` -- but also means you should always list coordinates in the order longitude first then latitude. Get in the habit of always using that ordering.
+* `LineString` -- a single continuous path, described as an ordered sequence of points. To describe a closed path, repeat the line's start point as its end point. A path is 'simple' if it does not cross or touch itself; a path is a 'ring' if it is both simple and closed.
+* `Polygon`  -- a connected surface in space, described by at least one closed simple path defining its exterior, and zero one or many non-crossing rings defining any interior holes. The exterior ring is always listed first, and no ring is permitted to cross or touch itself or any other ring.
+* `MultiPoint` -- a collection of points regarded as a single shape. 
+* `MultiLineString` -- a collection of lines regarded as a single shape. Although a `Polygon` also has multiple chains of coordinates, a `Polygon` is not a `MultiLineString`. Most importantly, a `Polygon` represent a 2-D shape with an interior; a `MultiLineString` represents a collection of 1-D shapes. What's more, the line strings defining a polygon must be non-intersecting rings, while the elements of a `LineString` or `MultiLineString` are permitted to be either open or closed, and may cross or touch.
+* `MultiPolygon` -- you guessed it, a collection of polygons regarded as a single shape. These polygons are allowed to overlap, lie within each other, or anything else they want to do. 
+* `Envelope` -- an axis-aligned rectangle depicting the minimum and maximum extent of a shape in each coordinate. Since its sides are aligned with the axes, we only have to give the coordinates of two of its corners. From the perspective of the geometry libraries this does not live in the same type hierarchy as the geometry objects above, but it's easy enough to generate the polygon corresponding to an envelope or the envelope of any shape. Any time you're specifying a bounding box, follow the convention of numerically-lowest-coordinates then numerically-highest-coordinates, i.e. `( (min_x, min_y), (max_x, max_y) )`. Like the longitude-then-latitude convention, it's violated just often enough to drive you crazy.
 
-Those are the essential data types used by the underlying geospatial methods. However, when adapting geospatial methods to Pig there are really only two families of shapes to consider:
+Those are the essential data types used by geospatial libraries everywhere. However, when adapting geospatial methods to Pig there are really only two families of shapes to consider:
 
 * Points, which lack spatial extent
 * Regions (i.e. all geometries that are not of type `Point`), which span more than one location in space
@@ -78,7 +79,7 @@ Somewhat related are operations that bring shapes in and out of Pig's control.
 // * Curve, Surface, MultiCurve, MultiSurface, GeomCollection, Geometry
 // * M, Z / MaxZ / MaxM / MinM / MinZ
 
-==== Simple Properties of Shapes
+==== Properties of Shapes
 
 * `GeoArea(geom)`
 * `MinX(geom)`, `MinY(geom)`, `MaxX(geom)`, `MaxY(geom)` -- the numerically greatest and least extent of a shape in the specified dimension.
@@ -100,7 +101,7 @@ There are also a set of meta-operations that report on the geometry objects repr
 * `GeometryType(geom)` -- string representing the geometry type: `'Point'`, `'LineString'`, ..., `'MultiPolygon'`.
 * `IsGeomEmpty(geom)` -- 1 if the geometry contains no actual points.
 * `IsLineClosed(line)` -- 1 if the given `LineString`'s end point meets its start point.
-* `IsSimple` -- 1 if the geometry has no anomalous geometric aspects, such intersecting or being tangent to itself. (TODO: tasteful joke goes here.)
+* `IsSimple` -- 1 if the geometry has no anomalous geometric aspects, such intersecting or being tangent to itself. A multipoint is 'simple' if none of its points coincide. 
 * `IsLineRing` -- 1 if the given `LineString` is a ring -- that is, closed and simple.
 
 * `NumGeometries(geom_collection)`

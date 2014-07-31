@@ -4,8 +4,7 @@ While spatially aggregating pointwise data required nothing terribly sophisticat
 
 Fair warning: though the first version of this script we demonstrate for you is correct as it stands, it will be exceptionally inefficient. But we want to demonstate the problem and then discuss its elegant solution.
 
-   X points    Y gridcells occupied    ~ 6000 grid cells (50 x 120)
-
+// X points    Y gridcells occupied    ~ 6000 grid cells (50 x 120)
 
 The key first step is to assemble a table giving the weight of each region's contribution to the tile.
 
@@ -49,12 +48,11 @@ Joining that to the 2.3 million rows of crop production data produces big data f
 
 // If what follows doesn't set your heart singing, you might have chosen the wrong profession.
 
-Our solution will follow the same logic as the solution JT learned from the friendly pianist.
+// Our solution will follow the same logic as the solution JT learned from the friendly pianist.
+
 Instead of breaking down
 
-image::images/images/11-f-quad_decompositions/spatial_manor-rooms_peeps_grid.png[Spatial Manor - Rooms (and underlying ZL-3 grid)]
-
-image::images/images/11-f-quad_decompositions/spatial_manor-quadkeys.png[Spatial Manor - Decomposed]
+image::images/11-f-quad_decompositions/11-quaddecomp-world-mercator.png[Variable Level of Detail prevents Inefficient Tiny Tiles]
 
 The QuadDecompose UDF accepts an outer and an inner zoom level.
 Every region will be broken down to at least the coarser zoom level; you'll use this grid size as the partition key (in map/reduce) or group key (in Pig).
@@ -62,39 +60,48 @@ No region will be broken into tiles smaller than the inner zoom level, which is 
 
 In the graphic (REF), you can see the result:
 the top two images, showing the tiles decomposed naively (on the left) and hierarchically (on the right), are identical. The lower row has the same data but with a light border around each tile in the heatmap. The large interior portions of Russia, China, the USA, Brazil and others are now represented by coarser zoom-level blocks. Even France and Argentina manage to line up their borders fortuitously for a zoom-level 6 (TODO check size) block. In all, we reduced the number of tiles from XXX down to XXX without impacting accuracy.
-
+// 
 TODO: move to join part below.
 
 Since every point on the map is covered by at most one region for the current data set, you'll find that every tile is either (a) wholly in the interior of a country, or (b) at the finest zoom level: there's no way for Russia to send data off to a huge zoom-level 5 tile while Latvia sends data to one of its zoom-level 7 children.
 The zoom-level chosen for each tile in the `FOREACH...QuadDecompose` pass was the correct granularity for the result.
+
 // TODO: reword
 
+=== Quadtree Decomposition and Numbering
+
+Let's look closer at the quadtree scheme.
+
+Our Reindeer friends, with their ample free time and bizarre sense of humor, sometimes vacation at a quaint vacation estate known as Spatial Manor. On the one hand, every once in a while somebody attacks a fellow guest with candlestick or rope or whatever's close at hand. On the other hand, though, most people _aren't_ killed and get to enjoy the rousing sport of solving a mystery!
+
+We can apply our spatial analysis tools to its simple geometry and help the investigators make a data-backed decision. Here is a map of the grounds.
+
+image::images/images/11-f-quad_decompositions/spatial_manor-rooms_peeps_grid.png[Spatial Manor - Rooms (and underlying ZL-3 grid)]
+
+image::images/images/11-f-quad_decompositions/spatial_manor-quadkeys.png[Spatial Manor - Decomposed]
 
 
-=== Projections and Tiling Schemes
 
-
-* Equal-area:
-  - features uniformly distributed on the globe will be uniformly distributed among grid cells.
-* Platte-Careé (Equirectangular)
-  - Extremely simple to compute
-  - Plot directly into screen coordinates with
-  -
+// === Projections and Tiling Schemes
+// 
+// 
+// * Equal-area:
+//   - features uniformly distributed on the globe will be uniformly distributed among grid cells.
+// * Platte-Careé (Equirectangular)
+//   - Extremely simple to compute
+//   - Plot directly into screen coordinates with
+//   -
 
 ==== Exporting data for Presentation by a Tileserver
 
-The most commonly
+// The most commonly
 
 Features following a constant bearing in any direction -- Manhattan's Broadway, or the borderlines of Algeria or Nevada -- remain straight lines on the map. This is important for navigational purposes
 
 The locality properties of quadtiles indexing
 
-
-
 Typically you will store the shape clipped to the given quad-tile.
  metadata about that region -- population, metric tons of bananas exported annually, an image of its flag, lyrics to its national anthem -- is stored under the same key but in independent columns footnote:[typically the regions are heavyweight, heavily requested and read-only, so they deserve their own table or at least their own column family.
-
-
 
 You don't have to break
 What we do is

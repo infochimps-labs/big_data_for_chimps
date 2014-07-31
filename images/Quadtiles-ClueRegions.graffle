@@ -18075,7 +18075,7 @@
 			<key>Print</key>
 			<string>YES</string>
 			<key>View</key>
-			<string>NO</string>
+			<string>YES</string>
 		</dict>
 		<dict>
 			<key>Lock</key>
@@ -18160,7 +18160,7 @@
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2014-07-30 06:39:19 +0000</string>
+	<string>2014-07-31 18:49:24 +0000</string>
 	<key>Modifier</key>
 	<string>Philip flip Kromer</string>
 	<key>NotesVisible</key>
@@ -18258,7 +18258,7 @@
 		<key>SidebarWidth</key>
 		<integer>120</integer>
 		<key>VisibleRegion</key>
-		<string>{{-363, 2}, {1331, 1049}}</string>
+		<string>{{-363, 1}, {1331, 1049}}</string>
 		<key>Zoom</key>
 		<real>1</real>
 		<key>ZoomValues</key>

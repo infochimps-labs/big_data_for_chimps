@@ -6,26 +6,26 @@ We will start, as we always do, by applying patterns that turn Big Data into Muc
 A great tool for visualizing a large spatial data set
 
 
-* You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
-* Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
-*
-*
-* data reduction, especially for a heatmap visualization;
-* extracting a continuous measurement from a pointwise sample;
-* providing a common basis for comparison of multiple datasets;
-* smoothing out spatial variation;
-* for all the other reasons you aggregate groups of related values in context
-* You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
-* Data that manifests at a single point
-  represents a process with
-  For example, the number of airline passengers in and out of the major airport
-  are travelling to and from local destinations
-* Smoothing pointwise data
-  into a
-  easier to compare or manage
-* continuous approximation
-  represents just the variation due to spatial
-  variables
+// * You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
+// * Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
+// *
+// *
+// * data reduction, especially for a heatmap visualization;
+// * extracting a continuous measurement from a pointwise sample;
+// * providing a common basis for comparison of multiple datasets;
+// * smoothing out spatial variation;
+// * for all the other reasons you aggregate groups of related values in context
+// * You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
+// * Data that manifests at a single point
+//   represents a process with
+//   For example, the number of airline passengers in and out of the major airport
+//   are travelling to and from local destinations
+// * Smoothing pointwise data
+//   into a
+//   easier to compare or manage
+// * continuous approximation
+//   represents just the variation due to spatial
+//   variables
 
 The straightforward approach we'll take is to divide the world up into a grid of tiles and map the position of each point onto the unique grid tile it occupies. We can then group on each tile
 
@@ -86,3 +86,14 @@ An epidemiologist or transportation analyst interested in knowing the large-scal
 * _Exercises_ --
 * _Important to Know_ --
   - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average -- turning data over a region into data at synthesized points
+
+
+=== Matching Points within a Given Distance (Pointwise Spatial Join)
+
+
+
+==== Distance isn't as it seems
+
+The picture below shows a circle, 350 km in radius, centered at 60 degrees latitude (up near Helsinki). What you should see that the lines of constant longitude "come together" faster than the curve of the circle does. This is most 
+
+image::images/11-circle_of_constant_distance.png[Min/Max Longitudes are not at the same latitude as the center]
