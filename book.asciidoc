@@ -24,3 +24,8 @@ include::06-analytic_patterns-structural_operations-uniquing.asciidoc[]
 
 include::07-part_three.asciidoc[]
 
+include::11-geographic.asciidoc[]
+
+include::11c-geospatial_mechanics.asciidoc[]
+include::11d-quadtiles.asciidoc[]
+include::11f-data_formats.asciidoc[]

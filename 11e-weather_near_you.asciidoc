@@ -1,0 +1,65 @@
+=== Spatial Join with Regions
+
+=== How the Merge/Sweep Join Works
+
+The `quadord` key's properties give us the following promises:
+
+
+* Its descendants always come after it in sort order
+* Once the order comes to a tile that is not one of its descendants, that tile will never again be relevant.
+
+Put another way: all relevant records for a tile come in an unbroken stretch from the first time its key is seen, up to (but not including) the first time a non-descendant key is seen.
+
+While it may seem like we need to keep around a lot of candidate tiles for matching,
+in fact the only tiles we need to retail
+
+A good way to think of this is to pretend we were doing a depth-first enumeration of each tile and its descendants. (Which we are -- we just skip all the keys that don't show up).
+At every point up down and across the tree, the only relevant rows are for the current tile and its ancestors, and we only need to keep a tile around while we investigate its descendants
+
+(TODO: make a similar diagram showing this point more specifically.)
+
+image::images/images/quadkeys-3d-stack.png[Recursive Nesting of Quad Tiles]
+
+
+
+==== Sweep Stack
+
+If you paid good attention back in CS312, hearing "depth first search" makes you think "I wonder if I'm about to use a Stack data structure". If so, give yourself a gold star. We're not going to actually do a depth-first iteration
+
+* Visit each stack and pop elements until you hit one that is either the same as or an ancestor of our key (or until the stack is empty)
+* Push the current element onto its stack
+* Iterate over all elements in the other stack, emitting a tuple for each match.
+
+Let's walk through it. As with the other walkthroughs in this chapter, we're going to only use four zoom levels and write keys in our "string handle" notation. The string-handle keys have exactly the same sorting properties as our `quadord` keys do, so the explanation carries over.
+// and write out keys in base-4 (`0`, `1`, `2`, `3`)
+
+
+An important difference from the conventional COGROUP comes in how we designed the sorting keys and data structures. In a conventional COGROUP, we order the data by the partition key, then the table slot (all records from the left-mentioned input precede those from the last-mentioned input), then any secondary sort keys. That means we don't need a data structure for the last-mentioned input and don't even hold its records in memory -- all possible matches for a record from the last input are already sitting hot in RAM ready to make beautiful output tuples. In the spatial COGROUP, we partition on the coarse zoom-level prefix, then sort on the full `quadord` key before the table slot index. Since the keys must be sorted to support the depth-first-like traversal, it's likely that matching rows from each slot will intermingle. So while the regular COGROUP doesn't have to allocate a data structure for the records in its last-mentioned input, a spatial join of two tables needs to maintain two stacks.
+
+
+    quad   slot place	     |  - - - - stack 0: tiles for first slot (rooms) - - - -   | - - stack 1: 2nd slot (people) - -
+    0      0    Manor        |  Manor 0                                                 |
+    0      0    West Wing    |  Manor 0     WestWing 0                                  |
+    00     0    Kitchen      |  Manor 0     WestWing 0     Kitchen 00                   |
+    01     0    Kitchen      |  Manor 0     WestWing 0     Kitchen 01                   |
+    0120   1    Mme La Blanc |  Manor 0     WestWing 0     Kitchen 01                   | Mme La Blanc 0120
+    0123   0    Pantry       |  Manor 0     WestWing 0     Kitchen 01     Pantry 0123   |
+    0132   0    Pantry       |  Manor 0     WestWing 0     Kitchen 01     Pantry 0132   |
+    0133   0    Pantry       |  Manor 0     WestWing 0     Kitchen 01     Pantry 0133   |
+    0133   1    Mr Saffron   |  Manor 0     WestWing 0     Kitchen 01     Pantry 0133   | Mr Saffron  0133
+    02     0    Dining       |  Manor 0     WestWing 0     Dining  02                   |
+    ...                      |                                                          |
+    ...                      |                                                          |
+    20     0    Manor        |  Manor 20    WestWing 20                                 |
+    20     0    West Wing    |  Manor 20    WestWing 20                                 |
+    2000   0    Dining       |  Manor 20    WestWing 20    Dining 2000                  |
+    2001   0    Dining       |  Manor 20    WestWing 20    Dining 2001                  |
+    2002   0    Dining       |  Manor 20    WestWing 20    Dining 2002                  |
+    2002   0    Lounge       |  Manor 20    WestWing 20    Dining 2002    Lounge 2002   |
+    2003   0    Dining       |  Manor 20    WestWing 20    Dining 2003                  |
+    2003   0    Lounge       |  Manor 20    WestWing 20    Dining 2003    Lounge 2003   |
+    2003   1    Dr Jade      |  Manor 20    WestWing 20    Dining 2003    Lounge 2003   | Dr Jade 2003
+    2003   1    Sr Rojo      |  Manor 20    WestWing 20    Dining 2003    Lounge 2003   | Sr Rojo 2003
+    2010   0    Dining       |  Manor 20    WestWing 20    Dining                       |
+
+

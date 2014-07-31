@@ -1,0 +1,88 @@
+
+==== Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
+
+
+We will start, as we always do, by applying patterns that turn Big Data into Much a Less Data. In particular,
+A great tool for visualizing a large spatial data set
+
+
+* You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
+* Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
+*
+*
+* data reduction, especially for a heatmap visualization;
+* extracting a continuous measurement from a pointwise sample;
+* providing a common basis for comparison of multiple datasets;
+* smoothing out spatial variation;
+* for all the other reasons you aggregate groups of related values in context
+* You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
+* Data that manifests at a single point
+  represents a process with
+  For example, the number of airline passengers in and out of the major airport
+  are travelling to and from local destinations
+* Smoothing pointwise data
+  into a
+  easier to compare or manage
+* continuous approximation
+  represents just the variation due to spatial
+  variables
+
+The straightforward approach we'll take is to divide the world up into a grid of tiles and map the position of each point onto the unique grid tile it occupies. We can then group on each tile
+
+Area of a spherical segment is 2*pi*R*h --
+so for lat from equator to 60
+
+------
+%default binsz 2.0
+-- place into half-degree bins -- ~ 120x50 cells for US
+gridded = FOREACH sightings GENERATE
+    FLOOR(lng * $binsz) / $binsz AS bin_x,
+    FLOOR(lat * $binsz) / $binsz AS bin_y;
+-- number density
+grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
+  GENERATE
+    group.bin_x, group.bin_y,
+    COUNT_STAR(gridded) AS ct;
+------
+
+* US:	-125 24 to -66, 50	(-124.7625, 24.5210, -66.9326, 49.3845) -- about 60 x 26
+
+==== Creating a Spatial Density Map
+
+Map points to quad cells, plot number density of airports as a heat map
+
+Then geonames places -- show lakes and streams (or something nature-y) vs something urban-y
+
+(just call out that rollup, summing trick, or group-decorate-flatten would work: do no pursue)
+
+Do that again, but for a variable: airport flight volume -- researching
+epidemiology
+
+// FAA flight data http://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger/media/cy07_primary_np_comm.pdf
+
+We can plot the number of air flights handled by every airport
+
+------
+%default binsz 2.0
+-- place into half-degree bins -- ~ 120x50 cells for US
+gridded = FOREACH sightings GENERATE
+    FLOOR(lng * $binsz) / $binsz AS bin_x,
+    FLOOR(lat * $binsz) / $binsz AS bin_y,
+    n_flights;
+-- number density
+grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
+  GENERATE
+    group.bin_x, group.bin_y,
+    COUNT_STAR(gridded) AS ct,
+    SUM(n_flights) AS tot_flights;
+------
+
+An epidemiologist or transportation analyst interested in knowing the large-scale flux of people could throughout the global transportation network
+
+===== Pattern Recap: Spatial Aggregation of Points
+
+* _Generic Example_ -- group on tile cell, then apply the appropriate aggregation function
+* _When You'll Use It_ -- as mentioned above: summarizing data; converting point samples into a continuous value; smoothing out spatial variation; reassigning spatial data to grid-aligned regions
+* _Exercises_ --
+* _Important to Know_ --
+  - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average -- turning data over a region into data at synthesized points

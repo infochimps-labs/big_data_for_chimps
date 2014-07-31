@@ -47,6 +47,8 @@ the http://github.com/schacon/git-scribe[git-scribe toolchain] was very useful c
 * James, Bill (2010-05-08). The New Bill James Historical Baseball Abstract (Kindle Locations 11684-11685). Free Press. Kindle Edition. 
 
 
+* map of the caribbean: https://en.wikipedia.org/wiki/Area_codes_in_the_Caribbean
+
 ==== Patterns ====
 
 MySQL Cookbook

@@ -1,47 +1,170 @@
+=== Mechanics of Spatial Data
 
+We kicked off the chapter with an interesting example that didn't require too many new concepts, but it's time to backtrack a bit and properly cover the mechanics of working with spatial data. 
 
+The data types and operations are extremely well standardized by the http://www.opengeospatial.org/standards/sfa[Open Geospatial Consortium]. Nearly all of the operations below have identical behavior within Oracle, PostGIS, SQL Server, and all industrial-strength geospatial systems. In fact, the geospatial toolkits for Pig (Pigeon) and Hive (Esri-SFFH) are particularly sympatico as they both use Esri's wonderful https://github.com/Esri/geometry-api-java[Esri Geometry API] under the hood.
 
-==== Shape Transforming Operations 
+==== Spatial Data Types
 
-|===========================================================================
-| GeoEnvelope  | 0 | 0 | 15 | 5 |
-| GeoCentroid  | 0 | 0 | 15 | 5 |
-| GeoConvexHull  | 0 | 0 | 15 | 5 |
-| GeoBoundary  | EMPTY | MULTIPOINT | 15 | 5 | A point's boundary is empty; a line's boundary is its composite points; a polygon's boundary is its rings; and a multi-geometry's boundary is the combined boundaries of its parts.
-| GeoBuffer(geom, distance)  | 0 | 0 | 15 | 5 |
-| GeoEndpoint(geom), GeoStartPoint(geom), GeoNthPoint(geom)  | 0 | 0 | 15 | 5 |
-| GeoSimplify(geom, tolerance)  | 0 | 0 | 15 | 5 |
-| GeoDensify(geom, tolerance)  | 0 | 0 | 15 | 5 |
-|   | 0 | 0 | 15 | 5 |
-|===========================================================================
+* `Point` --
+* `LineString` --
+* `Polygon`  -- 
+* `MultiPoint` --
+* `MultiLineString` -- Although a `Polygon` also has multiple chains of coordinates, a `Polygon` is not a `MultiLineString`. Most importantly, a `Polygon` represent a 2-D shape, and the coordinates delimit the continuous dense set of points in its interior; a `MultiLineString` represents a 1-D shape, and the coordinates delimit the endpoints of its line segments. What's more, the line strings defining a polygon must be 'rings': closed paths that do not cross or touch; the elements of a `LineString` or `MultiLineString` are allowed to be either open or closed and may cross or touch.
+* `MultiPolygon` -- you guessed it, a collection of polygons. They're allowed to overlap, lie within each other, or anything else they want to do.
 
+Those are the essential data types used by the underlying geospatial methods. However, when adapting geospatial methods to Pig there are really only two families of shapes to consider:
 
-==== Shape Combining Operations 
+* Points, which lack spatial extent
+* Regions (i.e. all geometries that are not of type `Point`), which span more than one location in space
 
-|===========================================================================
-|   | 0 | 0 | 15 | 5 |
-|   | 0 | 0 | 15 | 5 |
-|   | 0 | 0 | 15 | 5 |
-|   | 0 | 0 | 15 | 5 |
-|   | 0 | 0 | 15 | 5 |
-|===========================================================================
+The first example in this chapter, we were careful to clarify, only covered spatial aggregations of _points_. As soon as we've walked through the core mechanics, we'll demonstrate the same pattern but for spatial aggregations of _regions_, and you'll see the important difference that causes.
 
-==== Shape Properties
+NOTE: Some terminology notes: We'll use the term 'geometry' to mean any of our internal data structures: `Point`, `LineString`, `Polygon`, `MultiPoint`, `MultiLineString`, `MultiPolygon`. The term 'shape' refers to the geometric shape it describes: one or many points, lines or polygons. Don't read too much into the distinction; mostly, it gives us another word to use because otherwise our sentences are just "blah blah geo geometry geo blah geogeometry blahgeo the geoblah". We'll refer to `Point`, `LineString`, and `Polygon` collectively as singular-types, and `MultiPoint`, `MultiLineString`, `MultiPolygon` as multi-types. And to say "either a point or a multi-point", we'll write '(multi)point' (or similarly '(multi)line', '(multi)polygon', '(multi)geometry') -- "the dimension of a (multi)line is one, and the dimension of a (multi)polygon is two". (REVIEWER: which is better, '(multi)point', or 'point/multi-point'?) 
 
+=== Spatial Operations in Pig
 
-|===========================================================================
-| Area  | 0 | 0 | 15 | 5 |
-| GeoNumCoordinates |
-| MinX,  MaxX, MinY, MaxY | 0 | 0 | 15 | 5 |
-| IsSimple  | 0 | 0 | 15 | 5 |
-| IsClosed | 0 | 0 | 15 | 5 |
-| IsEmpty | 0 | 0 | 15 | 5 |
-|===========================================================================
+Fully explaining and exploring each of the core spatial operations would be a waste of your time and shelf space.
+For a deep understanding of how they work, you're better off consulting traditional GIS resources -- what we're after here is to show you how to use the map/reduce framework to coordinate those core operations. On the other hand, once you know that the operation for "take an object and make a new shape that covers all the points within 100 meters of it" is spelled `GeoBuffer(geom)`, you're 75% of the way there. And reading other resources, we found that the more explanation an author supplied, the larger the amount of topology in the explanation and the less we understood it.
 
+So we're including here what worked for us: a semi-formal description of the operation, pretty pictures demonstrating it, and the list of important specific cases spelled out. If it feels like some bullet points repeat the same description in a different way, that's our intention, as some people latch onto a mathematical statement and others to a physical description. We won't use more than a handful of the operations below in the rest of the book, so you're welcome to just skim this section now (skipping ahead to "Spatial Aggregations on Regions" (REF)) and refer back to it as a reference.
 
-==== Other Spatial Operations
+==== Shape Transforming Operations
 
-|===========================================================================
-| GeoMultiToBag  | splits a multi-geometry into a bag of simple geometries: one MultiPoint geometriy becomes a bag of Points 
-| GeoBagToMulti  | combines a bag o objects into a single multi-whatever: a bag of points and MultiPoints becomes a single MultiPoint object
-|===========================================================================
+We'll start with the operations that transform a shape on its own to produce a new geometry. Some operations return a related but dissimilar object: a shape's bounding box, the point at its "center", and so forth. Others feel more like modifications of their input: reducing the level of detail, finding the 
+
+* `GeomEnvelope` -- Bounding box for the given shape: an axis-aligned rectangle spanning the shape's minimum and maximum extent in each dimension. Working with rectangles is dramatically simpler and faster than working with arbitrary shape. This is our frontline tool for performing the rough-carpentry work of figuring what might be relevant.
+* `GeomCentroid(geom)` -- The point at the geometric center of a geometry. The centroid lies at the arithmetic mean of all the input coordinates, weighted by area for (multi)polygon, by line segment length for (multi)lines, or equally for (multi)points. The centroid of a point is itself; the centroid of a single line segment is its midpoint; and the centroid of an empty geometry is empty.  This is used in some geometric algorithms, and on occasions where you'd like to informally represent a region as a point at its center -- for example, visualizing data about a region as clickable "pushpins" on a map. Be careful, however: the centroid of a polygon is not guaranteed to lie within its interior.
+* `GeomPointOnSurface(poly)`, `PointOnSurface(multi_poly)` -- An arbitrary point guaranteed to lie on the surface of a given Polygon or MultiPolygon.
+* `StartPoint(line)`, `EndPoint(line)`, `PointN(line, idx)` -- the first, last or n'th point on the given line. `StartPoint` and `EndPoint` are sugar for `PointN(line, 0)` and `PointN(line, NumPoints(line))` respectively.
+* `ExteriorRing(poly)`, `InteriorRingN(poly, idx)` -- A LineString giving the polygon's outermost (ExteriorRing) or `n`-th innermost ring (InteriorRingN), counting inward.
+* `GeomBoundary(geom)` -- The shape separating the object's interior from its exterior. The boundary will always have one fewer dimensions than its input: a point's boundary is empty; a line's boundary is its start and end point; and a polygon's boundary is a `MultiLineString` of its rings. The boundary of any multi-type geometry is the combined boundaries of its parts.
+* `GeomConvexHull(geom)` -- The convex polygon (i.e. no PacMan-like indentations) https://en.wikipedia.org/wiki/Convex_hull[that minimally covers all points in its input]. Think of this as the shape a rubber band would make if you stretched it around all parts of the input geometry. The ConvexHull is always a single point, line or (usually) polygon -- it is never a multi-point/line/polygon.
+* `GeomSimplify(geom, tolerance)` -- intelligently reduces the number of points in the input by washing out deviations smaller than the given tolerance. For example, an intensely simplified circle will become a triangle. You may call `Simplify` with any geometry type, but it only affects (multi)lines and (multi)polygons -- it will not eliminate points from a `MultiPoint` input.
+* `GeomBuffer(geom, distance)` -- Shape covering the area within a given distance from the input. A `Polygon` for singular inputs, a `MultiPolygon` for multi-inputs. This is useful for doing a "within x distance" spatial join, as you saw above. However, you must be careful to use geodetic ("great circle") distances if your points are on a sphere. // IMPROVEME: explain a bit better
+
+// * `GeometryN` -- The `n`-th object from a geometry collection.
+// * `MinimumBoundingCircle`
+// * (Aggr_ConvexHull)
+// * GeoShiftLongitude
+// * Snap(geom, ref_geom)  -- Align the input geometry's coordinates to vertices of a reference geometry.
+// * SnapToGrid(geom, gridsizes, origin) -- Align the input geometry's coordinates to a regular grid.
+// * Affine
+//   - Scale
+//   - Rotate
+//   - Translate
+// * `Reproject(geom, new_crs_id)` . `Transform` is the traditional GIS name for `Reproject`.
+// * Line_Interpolate_Point and Line_Substring and  -- point that is the given fraction, or line segment that spans the given fractions, of the line.
+// * Line_Locate_Point -- finds the proportion along a line of its closes approach to the given input
+
+==== Constructing and Converting Geometry Objects
+
+Somewhat related are operations that bring shapes in and out of Pig's control.
+
+* `FromWKText(chararray)`, `FromGeoJson(chararray)` -- converts the serialized description of a shape into the corresponding geometry object. We'll cover these data formats a bit later in the chapter. Similarly, `ToWKText(geom)` and `ToGeoJson(geom)` serialize a geometry into a string
+* `GeoPoint(x_coord, y_coord)` -- constructs a `Point` from the given coordinates
+* `GeoEnvelope( (x_min, y_min), (x_max, y_max) )` -- constructs an `Envelope` object from the numerically lowest and numerically highest coordinates. Note that it takes two tuples as inputs, not naked coordinates.
+* `GeoMultiToBag(geom)` -- splits a (multi)geometry into a bag of simple geometries. A `MultiPoint` becomes a bag of `Points`; a `Point` becomes a bag with a single `Point`, and so forth.
+* `GeoBagToMulti(geom)` -- combines a bag of geometries into a single multi geometry. For instance, a bag with any mixture of `Point` and `MultiPoint` geometries becomes a single `MultiPoint` object, and similarly for (multi)lines and (multi)polygons. All the elements must have the same dimension -- no mixing (multi)points with (multi)lines, etc.
+
+// * (?name) GetPoints -- extract the collection of points from a geometry. Always returns a MultiPoint no matter what the input geometry.
+// * (?name) GetLines  -- extract the collection of lines or rings from a geometry. Returns `NULL` for a `Point`/`MultiPoint` input, and otherwise returns a MultiPoint no matter what the input geometry.
+// * Point / MultiPoint / LineString / MultiLineString / Polygon / MultiPolygon -- construct given geometry
+//   - ClosedLineString -- bag of points to linestring, appending the initial point if it isn't identical to the final point
+// * ForceMultiness
+// * AsBinary, AsText
+// * GeomCollFromWKB  /GeomFromWKB  /PointFromWKB  /MpointFromWKB  /LineFromWKB  /MLineFromWKB  /MpolyFromWKB /PolyFromWKB
+// * GeomCollFromShape/GeomFromShape/PointFromShape/MPointFromShape/LineFromShape/MLineFromShape/PolyFromShape
+// * Curve, Surface, MultiCurve, MultiSurface, GeomCollection, Geometry
+// * M, Z / MaxZ / MaxM / MinM / MinZ
+
+==== Simple Properties of Shapes
+
+* `GeoArea(geom)`
+* `MinX(geom)`, `MinY(geom)`, `MaxX(geom)`, `MaxY(geom)` -- the numerically greatest and least extent of a shape in the specified dimension.
+* `GeoX(point)`, `GeoY(point)` -- X or Y coordinates of a point
+* `GeoLength(geom)`
+* `GeoLength2dSpheroid(geom)` — Calculates the 2D length of a linestring/multilinestring on an ellipsoid. This is useful if the coordinates of the geometry are in longitude/latitude and a length is desired without reprojection.
+* `GeoPerimeter(geom)` -- length measurement of a geometry's boundary
+* `GeoDistanceSphere(geom)` — Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius of 6370986 meters. Faster than GeoDistanceSpheroid, but less accurate
+* `GeoDistance(geom)` -- the 2-dimensional cartesian minimum distance (based on spatial ref) between two geometries in projected units.
+* `GeoMinDistance(geom)`
+* `GeoMaxDistance(geom)` -- the 2-dimensional largest distance between two geometries in projected units
+// * IsNearby  -- if some part of the geometries lie within the given distance apart
+// * IsNearbyFully(geom_a, geom_b, distance) -- if all parts of each geometry lies within the given distance of each other.
+
+There are also a set of meta-operations that report on the geometry objects representing a shape:
+
+* `Dimension(geom)` -- This operation returns zero for Point and MultiPoint; 1 for LineString and MultiLineString; and 2 for Polygon and MultiPolygon, regardless of whether those shapes exist in a 2-D or 3-D space
+* `CoordDim(geom)` -- the number of axes in the coordinate system being used: 2 for X-Y geometries, 3 for X-Y-Z geometries, and so on. Points, lines and polygons within a common coordinate system will all have the same value for `CoordDim`
+* `GeometryType(geom)` -- string representing the geometry type: `'Point'`, `'LineString'`, ..., `'MultiPolygon'`.
+* `IsGeomEmpty(geom)` -- 1 if the geometry contains no actual points.
+* `IsLineClosed(line)` -- 1 if the given `LineString`'s end point meets its start point.
+* `IsSimple` -- 1 if the geometry has no anomalous geometric aspects, such intersecting or being tangent to itself. (TODO: tasteful joke goes here.)
+* `IsLineRing` -- 1 if the given `LineString` is a ring -- that is, closed and simple.
+
+* `NumGeometries(geom_collection)`
+* `NumInteriorRings(poly)`
+// * `NumPoints`
+// * SRID -- Spatial Reference that should be used to interpret the coordinates
+// * Is3d, IsMeasured
+
+// |===========================================================================
+// | GeoArea  | 0 | 0 | 15 | 5 |
+// | GeoNumCoordinates |
+// | GeoMinX,  GeoMaxX, GeoMinY, GeoMaxY | 0 | 0 | 15 | 5 |
+// | GeoIsSimple  | 0 | 0 | 15 | 5 |
+// | GeoIsClosed | 0 | 0 | 15 | 5 |
+// | GeoIsEmpty | 0 | 0 | 15 | 5 |
+// |===========================================================================
+
+==== Operations that Combine Shapes
+
+The power players of our toolkit are operations that combine shapes to produce new ones, most prominently set operations such as intersection or union. These behave similarly to the set operations on elements in a bag that we explored in chapter (REF), because the underlying mathematics are the same. But whereas the sets in those operations were the elements in two given bags, these operations apply to the _topological point sets_ that our geometry objects represent.
+
+* `GeoUnion(geom_a, geom_b)` -- geometry representing the merger of the two shapes. A region is within the result if and only if it is within either input.
+* `GeoIntersection(geom_a, geom_b)` -- geometry representing the intersection of the two shapes. A region is within the result if and only if it is within both inputs.
+* `GeoDifference(geom_a, geom_b)` -- geometry representing the portion of the first shape excluding the extent of the second shape. A region is within the result if and only if it is within the first input but not the second.
+* `GeoSymmDifference(geom_a, geom_b)` -- geometry representing the portion of the either shape that is not within the other shape. A region is within the result if and only if it is within one but not both inputs.
+
+// * `Split(geom, blade)` -- breaks the first geometry into parts wherever the blade intersects its interior. You may split a (multi)line with point or line blades (resulting in a `MultiLineString`), and you may split (multi)polygon with line blades (resulting in a `MultiPolygon`). Other combinations don't make sense. In principle, applying `GeoUnion(Split(geom, anything))` should be equivalent to the original. Consider `Snap`'ing the input to the blade, so that numerical error doesn't cause parts of the blade to miss parts of the input.
+// * `DelaunayTriangles`
+// | `ShortestLine`                     |  shortestline-pt_pt.png | shortestline-pt_rgn.png | shortestline-rgn_rgn.png
+// * ClosestPt
+// * Aggr_Intersection
+// * Aggr_Union
+
+// |===========================================================================
+// | `GeoUnion(geom_a, geom_b)`	     | union-pt_pt.png | union-pt_rgn.png | union-rgn_rgn.png
+// | `GeoIntersection(geom_a, geom_b)`     | intersection-pt_pt.png | intersection-pt_rgn.png | intersection-rgn_rgn.png
+// | `GeoDifference(geom_a, geom_b)`       | difference-pt_pt.png | difference-pt_rgn.png | difference-rgn_rgn.png
+// | `GeoSymmetricDiff(geom_a, geom_b)`    | xor-pt_pt.png | xor-pt_rgn.png | xor-rgn_rgn.png
+// |===========================================================================
+
+==== Testing the Relationship of Two Shapes
+
+The geospatial toolbox has a set of precisely specified spatial relationships. They each represent a set of constraints on how the boundary, interior, and exterior of one geometry relates to the boundary, interior, and exterior of the other geometry. Our caveat at the top of the chapter about the difficulty of describing these operations correctly without explaining them into incoherence is especially true here. For best results, grab the scripts from the sample code repository (REF) and try various cases.
+
+* `Equals(geom_a, geom_b)` -- 1 if the shapes are equal.
+* `OrderingEquals(geom_a, geom_b)` -- 1 if the shapes are equal _and_ their coordinates have the same ordering
+// * `Equalsrs(geom_a, geom_b)` -- 1 if the shapes have the same coordinate reference system
+* `Intersects(geom_a, geom_b)` -- 1 if the shapes intersect: at least one point from the boundary or interior of one shape lies on the boundary or interior of the other.
+* `Disjoint(geom_a, geom_b)` -- 1 if the shapes do _not_ intersect. This operation is sugar for `(GeoIntersects(sa, sb) == 0 ? 1 : 0)`.
+* `EnvIntersects(geom_a, geom_b)` -- 1 if the bounding envelope of the two shapes intersect.
+* `Contains(geom_a, geom_b)` -- 1 if `geom_a` completely contains `geom_b`: that is, the shapes' interiors intersect, and no part of `geom_b` lies in the exterior of `geom_a`. If two shapes are equal, then it is true that each contains the other. `Contains(A, B)` is exactly equivalent to `Within(B, A)`.
+// - `ContainsProperly(geom_a, geom_b)` -- 1 if : that is, the shapes' interiors intersect, and no part of `geom_b` intersects the exterior _or boundary_ of `geom_a`. The result of `Contains(A, A)` is always 1 and the result of `ContainsProperly(A,A) is always 0.
+* `Within(geom_a, geom_b)` -- 1 if `geom_a` is completely contained by `geom_b`: that is, the shapes' interiors intersect, and no part of `geom_a` lies in the exterior of `geom_b`. If two shapes are equal, then it is true that each is within the other.
+* `Covers(geom_a, geom_b)` -- 1 if no point in `geom_b` is outside `geom_a`. `CoveredBy(geom_a, geom_b)` is sugar for `Covers(geom_b, geom_a)`.
+* `Crosses(geom_a, geom_b)` -- 1 if the shapes cross: their geometries have some, but not all, interior points in common; and the dimension of the intersection is one less than the higher-dimension of the two shapes. That's a mouthful, so let's just look at the cases in turn:
+  - A MultiPoint crosses a (multi)line or (multi)polygon as long as at least one of its points lies in the other shape's interior, and at least one of its points lies in the other shape's exterior. Points along the border of the polygon(s) or the endpoints of the line(s) don't matter.
+  - A Line/MultiLine crosses a Polygon/MultiPolygon only when part of some line lies within the polygon(s)' interior and part of some line lies within the polygon(s)' exterior. Points along the border of a polygon or the endpoints of a line don't matter.
+  - A Line/MultiLine crosses another Line/MultiLine only when the intersection of their interiors consists of one or more points, but no line segments. The endpoints of the lines don't matter.
+  - A Point is never considered to cross any another shape, since you need part of one shape to lie outside the other.
+  - A Polygon/MultiPolygon is never considered to cross a Polygon/MultiPolygon, since if their interiors intersect anywhere it is necessarily in a Polygon (and thus not of lower dimension).
+* `Overlaps(geom_a, geom_b)` -- 1 if the shapes overlap: their intersection has the same dimension as, but is not equal to, either of the given objects.
+* `Touches(geom_a, geom_b)` -- 1 if the shapes touch: their interiors do not intersect but the boundary of one object intersects the interior or boundary of the other.
+// * Relate
+
+// TODO: mention DE-9IM
+
+WARNING: The Pig and Hive libraries are fairly new -- in fact, a large part of the Pig methods described here were contributed by your authors -- so don't be surprised to find functionality that hasn't been implemented yet. In particular, 3-D and higher geometries are poorly supported; CRS (coordinate reference system) awareness is weak and the catalogue of map projections is small; and many opportunities for optimization remain.

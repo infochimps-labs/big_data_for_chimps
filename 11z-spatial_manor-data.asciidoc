@@ -1,0 +1,155 @@
+
+    Mme La Blanc	 55  30  	0120
+    Mr Saffron   	 90  40 	0133
+    Ms Peach     	165  30 	1123
+    Rabbi Green  	120  60 	1211
+    The Vicar    	155 170 	1302
+    Dr Jade      	 20 115 	2003
+    Sr Rojo      	 23 122 	2003
+    Sgt Teal     	145 130 	3031
+    Dean Grey    	 85 180 	2330
+
+    Kitchen       00   01
+    Pantry        0123 0132 0133
+    Conservatory  10   110  112  1301 1303 1321
+    Dining Room   02   2000 2001 2010 2011 2002 2003 2012
+    Lounge        2011 2002 2003 2012 2013 202  203
+    Closet        030  032
+    Stairs        031  033
+    Pool Room     120  121  1300 1302 1220 1221 1230 1231 1320
+    Sewing Room   1232 1233 1322 1323 3010 3011 3100 3101
+    Foyer         210  211
+    Study         1222 1223 300  3012 3013 3102 3103 302  303  312
+    Loo           3033 3122 3123
+    Walk          212  2301 2310 2303 2312 233  322
+    Manor         0    10   110  112  12   130  132  20   210  211 30 310 312
+    West Wing     0    20   210  211
+    East Wing     10   110  112  12   130  132  30   310  312
+
+    Kitchen     	  0   0, 100   0, 100  50,  50   0,   0   0
+    Pantry      	 63  37, 100  37, 100  50,  63  37
+    Conservatory	100   0, 175   0, 175  85, 163  85, 163  50, 100 50, 100 0
+    Dining Room  	  0  50,  50  50,  50 105,   0 125,   0  50
+    Lounge       	  0 125,  50 105,  50 150,   0 150,   0 125
+    Closet      	 50  50,  75  50,  75 100,  50 100,  50  50
+    Stairs       	 75  50, 100  50, 100 100,  75 100,  75  50
+    Pool Room    	100 100, 162  50, 162  85, 100  85, 100 100
+    Sewing Room  	125  85, 175  85, 175 112, 125 112, 125  85
+    Foyer        	 50 100, 100 100, 100 125,  50 125,  50 100
+    Study        	100  85, 125  85, 125 112, 175 112, 175 150, 100 150, 100 85
+    Loo          	138 138, 175 138, 175 150, 138 150, 138 138
+    Walk        	 50 125,  65 150,  75 167,  82 185,  90 192, 95 192, 107 187, 112 190
+         		115 200, 122 200, 120 187, 115 182, 92 185,  70 145,  60 125,  50 125
+    Manor        	  0   0, 175  0, 175 150, 100 150, 100 125, 50 125, 50 150, 0 150, 0 0
+    West Wing   	  0   0, 100  0, 100 125, 50 125, 50 150, 0 150, 0 0
+    East Wing     	100   0, 175  0, 175 150, 100 150, 100   0
+
+
+
+    0      0    Manor           Manor
+    0      0    West Wing       Manor           WestWing        
+    00     0    Kitchen         Manor           WestWing        Kitchen
+    01     0    Kitchen         Manor           WestWing        Kitchen
+    0120   1    Mme La Blanc    Manor           WestWing        Kitchen                          Mme La Blanc
+    0123   0    Pantry          Manor           WestWing        Kitchen         Pantry
+    0132   0    Pantry          Manor           WestWing        Kitchen         Pantry
+    0133   0    Pantry          Manor           WestWing        Kitchen         Pantry
+    0133   1    Mr Saffron      Manor           WestWing        Kitchen         Pantry           Mr Saffron
+    02     0    Dining          Manor           WestWing        Dining  
+    030    0    Closet          Manor           WestWing        Closet
+    031    0    Stairs          Manor           WestWing        Stairs
+    032    0    Closet          Manor           WestWing        Closet
+    033    0    Stairs          Manor           WestWing        Stairs
+
+    10     0    Conservatory    Conservatory
+    10     0    East Wing       Conservatory    EastWing
+    10     0    Manor           Conservatory    EastWing        Manor
+    110    0    Conservatory    Conservatory
+    110    0    East Wing       Conservatory    EastWing
+    110    0    Manor           Conservatory    EastWing        Manor
+    112    0    Conservatory    Conservatory
+    112    0    East Wing       Conservatory    EastWing
+    112    0    Manor           Conservatory    EastWing        Manor
+    1123   1    Ms Peach        Conservatory    EastWing        Manor           Ms Peach
+    12     0    East Wing       EastWing
+    12     0    Manor           EastWing        Manor
+    120    0    Pool Room       EastWing        Manor           Pool Room
+    121    0    Pool Room       EastWing        Manor           Pool Room
+    1211   1    Rabbi Green     EastWing        Manor           Pool Room               Rabbi Green
+    1220   0    Pool Room       EastWing        Manor           Pool Room
+    1221   0    Pool Room       EastWing        Manor           Pool Room
+    1222   0    Study           EastWing        Manor           Study
+    1223   0    Study           EastWing        Manor           Study
+    1230   0    Pool Room       EastWing        Manor           Pool Room
+    1231   0    Pool Room       EastWing        Manor           Pool Room
+    1232   0    Sewing Room     EastWing        Manor           Sewing Room
+    1233   0    Sewing Room     EastWing        Manor           Sewing Room
+    130    0    East Wing       EastWing
+    130    0    Manor           EastWing        Manor
+    1300   0    Pool Room       EastWing        Manor           Pool Room
+    1301   0    Conservatory    EastWing        Manor           Conservatory
+    1302   0    Pool Room       EastWing        Manor           Pool Room
+    1302   1    The Vicar       EastWing        Manor           Pool Room               The Vicar
+    1303   0    Conservatory    Conservatory
+    132    0    East Wing       Conservatory    EastWing
+    132    0    Manor           Conservatory    EastWing        Manor
+    1320   0    Pool Room       EastWing        Manor           Pool Room
+    1321   0    Conservatory    EastWing        Manor           Conservatory
+    1322   0    Sewing Room     EastWing        Manor           Sewing Room
+    1323   0    Sewing Room     EastWing        Manor           Sewing Room
+
+    20     0    Manor           Manor           WestWing        
+    20     0    West Wing       Manor           WestWing        
+    2000   0    Dining          Manor           WestWing        Dining  
+    2001   0    Dining          Manor           WestWing        Dining  
+    2002   0    Dining          Manor           WestWing        Dining          
+    2002   0    Lounge          Manor           WestWing        Dining    Lounge
+    2003   0    Dining          Manor           WestWing        Dining  
+    2003   0    Lounge          Manor           WestWing        Dining    Lounge
+    2003   1    Dr Jade         Manor           WestWing        Dining    Lounge        Dr Jade
+    2003   1    Sr Rojo         Manor           WestWing        Dining    Lounge        Sr Rojo
+    2010   0    Dining          Manor           WestWing        Dining  
+    2011   0    Dining          Manor           WestWing        Dining    
+    2011   0    Lounge          Manor           WestWing        Dining    Lounge
+    2012   0    Dining          Manor           WestWing        Dining  
+    2012   0    Lounge          Manor           WestWing        Dining    Lounge
+    2013   0    Lounge          Manor           WestWing        Lounge
+    202    0    Lounge          Manor           WestWing        Lounge
+    203    0    Lounge          Manor           WestWing        Lounge
+    210    0    Foyer           Manor                           Foyer
+    210    0    Manor           Manor           WestWing        
+    210    0    West Wing       Manor           WestWing        
+    211    0    Foyer           Manor                           Foyer
+    211    0    Manor           Manor           WestWing        
+    211    0    West Wing       Manor  
+    212    0    Walk            Walk
+    2301   0    Walk            Walk
+    2303   0    Walk            Walk
+    2310   0    Walk            Walk
+    2312   0    Walk            Walk
+    233    0    Walk            Walk
+    2330   1    Dean Grey       Walk                                                    Dean Grey
+
+    30     0    East Wing       EastWing                
+    30     0    Manor           EastWing        Manor   
+    300    0    Study           EastWing        Manor           Study
+    3010   0    Sewing Room     EastWing        Manor           Sewing Room
+    3011   0    Sewing Room     EastWing        Manor           Sewing Room
+    3012   0    Study           EastWing        Manor           Study
+    3013   0    Study                                           Study
+    302    0    Study           EastWing        Manor           Study
+    303    0    Study           EastWing        Manor           Study
+    3031   1    Sgt Teal        EastWing        Manor           Study                           Sgt Teal
+    3033   0    Loo             EastWing        Manor           Loo
+    310    0    East Wing       EastWing
+    310    0    Manor           EastWing        Manor
+    3100   0    Sewing Room     EastWing        Manor           Sewing Room
+    3101   0    Sewing Room     EastWing        Manor           Sewing Room
+    3102   0    Study           EastWing        Manor           Study
+    3103   0    Study           EastWing        Manor           Study
+    312    0    East Wing
+    312    0    Manor           EastWing        Manor
+    312    0    Study           EastWing        Manor           Study
+    3122   0    Loo             EastWing        Manor           Loo
+    3123   0    Loo             EastWing        Manor           Loo
+    322    0    Walk            Walk
