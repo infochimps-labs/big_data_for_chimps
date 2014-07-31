@@ -4,7 +4,7 @@ While spatially aggregating pointwise data required nothing terribly sophisticat
 
 Fair warning: though the first version of this script we demonstrate for you is correct as it stands, it will be exceptionally inefficient. But we want to demonstate the problem and then discuss its elegant solution.
 
-// X points    Y gridcells occupied    ~ 6000 gid cells (50 x 120)
+// X points    Y gridcells occupied    ~ 6000 grid cells (50 x 120)
 
 The key first step is to assemble a table giving the weight of each region's contribution to the tile.
 
