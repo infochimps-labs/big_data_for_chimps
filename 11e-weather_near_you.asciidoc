@@ -18,7 +18,8 @@ At every point up down and across the tree, the only relevant rows are for the c
 
 (TODO: make a similar diagram showing this point more specifically.)
 
-image::images/images/quadkeys-3d-stack.png[Recursive Nesting of Quad Tiles]
+.Recursive Nesting of Quad Tiles
+image::images/images/quadkeys-3d-stack.png[height=200]
 
 ==== Sweep Stack
 
