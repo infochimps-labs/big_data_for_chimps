@@ -130,18 +130,13 @@ If we were on a regular flat Cartesian grid, finding the westmost extent would b
 .Two circles, both alike in radius, in Libreville and Reykjavik we lay our scene
 image::images/11-f-quad_decompositions/11-sphere_distance-all-ortho.png[Two circles, both alike in radius, in Libreville and Reykjavik we lay our scene]
 
-image::images/11-f-quad_decompositions/11-sphere_distance-0-bbox-ortho.png[Gridline is tangent at the actual westmost longitude]
+.Everything is greatly easier on the Equator because everything is a Great Circle
+image::images/11-f-quad_decompositions/11-sphere_distance-0-bbox-ortho.png[Everything is greatly easier on the Equator because everything is a Great Circle]
 
 
 image::images/11-f-quad_decompositions/11-sphere_distance-65-toosmall-ortho.png[The point of westmost longitude is _not_ parallel to the center]
 
 image::images/11-f-quad_decompositions/11-sphere_distance-65-bbox-ortho.png[Gridline is tangent at the actual westmost longitude]
-
-
-
-
-
-
 
 
 To see why, let's look at another 1400km-radius circle, centered on the same longitude but this time at 65 degrees north latitude -- extending roughtly from Reykjavik in Iceland to Arkhangelsk in Russia. 
