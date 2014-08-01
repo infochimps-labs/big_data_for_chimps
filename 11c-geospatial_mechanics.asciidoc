@@ -169,3 +169,13 @@ The geospatial toolbox has a set of precisely specified spatial relationships. T
 // TODO: mention DE-9IM
 
 WARNING: The Pig and Hive libraries are fairly new -- in fact, a large part of the Pig methods described here were contributed by your authors -- so don't be surprised to find functionality that hasn't been implemented yet. In particular, 3-D and higher geometries are poorly supported; CRS (coordinate reference system) awareness is weak and the catalogue of map projections is small; and many opportunities for optimization remain.
+
+
+//
+// ==== Projections
+//
+// 
+
+// TODO: somewhere talk about Lambert (equal-area) projection is the right way to do the spatial aggregation
+
+

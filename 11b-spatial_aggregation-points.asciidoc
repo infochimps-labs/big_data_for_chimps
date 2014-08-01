@@ -87,13 +87,102 @@ An epidemiologist or transportation analyst interested in knowing the large-scal
 * _Important to Know_ --
   - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average -- turning data over a region into data at synthesized points
 
-
 === Matching Points within a Given Distance (Pointwise Spatial Join)
 
+Now that you've learned the spatial equivalent of a `GROUP BY`, you'll probably be interested to
+learn the spatial equivalent of `COGROUP` and `JOIN`.
+In particular, let's demonstrate how to match all points in one table with every point in another table that are less than a given fixed distance apart.
+
+Our reindeer friends would like us to help determin what UFO pilots do while visiting Earth.
+Let's combine the NUFORC data set of 60,000+ documented UFO sightings with the 7 million points of interest from the Geonames dataset to
+determine whether UFOs are more frequently sighted nearby
+airports, parks, schools, or churches.
+
+It's up to us to define what "nearby" means.
+Let's start by casting a fairly wide 16km (10-mile) net. It's the distance of visibility on a pretty clear day, and seems like a reasonable upper bound on how far I'd travel to hide my UFO while sightseeing.
+// and though we don't know whether UFO pilots also use non-flying-object craft for ground transportation,
+
+What we're going to do is this:
+
+* For every UFO sighting, figure out all tiles that potentially contain points within 16 km of the sighting
+* For every point of interest, figure out the single tile it belongs to
+* Join the points of interest by tile with all UFO sightings potentially relevant to the tile
+* Select only the UFO sighting - point of interest matches that are actually within the 16km threshold.
+
+==== Distance on a Sphere
+
+To send each UFO sighting to all relevant grid cells, we need to find the bounding box of its circle of distance -- the highest and lowest excursionsin longitude and latitude. That purpose is answered by the `TilesForGeoCircle` UDF, which generates the list of relevant tiles given the point, distance and grid scheme.  So far, we've been casually pretending that our coordinates live on a uniform Cartesian grid, but that's not the case. Out longitude and latitude coordinates exist on a sphere, which can greatly complicate some operations and betray your intuition.  Finding the bounding box in longitude and latitude is a cardinal example of how spherical geometry can complicate matters, and so it's worth going into how the answer is calculated.
+
+Finding the latitude values is easy: the fraction of the earth's circumference that our given distance covers is the same as the fraction of 360 degrees that our range of latitudes cover.
+
+    earth_radius  = 6378.1370
+    earth_circum  = earth_radius * 2 * pi # pretty close to 40,000 km
+
+    # arc distance in degrees, along north-south arc
+    arc_dist_degs  = 360 * (distance in km / earth_circum)
+
+As an example, the drawing below shows a circle of 1400 km footnote:[the equivalent distance of
+Boston-Chicago or Paris-Warsaw] centered right on the equator near Libreville, Gabon.  Our 1400 km
+is about 3.5% of the earth's circumference, pretty near 12.5 degrees of arc: our bounding box will extend from -12.58 on the south to 12.58 on the north. You can count off grid cells in our diagram below to see that we've drawn it correctly so far.
+
+If we were on a regular flat Cartesian grid, finding the westmost extent would be obvious: hold the latitude constant and walk west for the given distance. (Or in this case, paddle.) Since we are at the equator, this works correctly, and in fact the extent of arc is the same east-west as it is north-south. At every place other than along the equator, however, this answer is wrong.
+
+.Two circles, both alike in radius, in Libreville and Reykjavik we lay our scene
+image::images/11-f-quad_decompositions/11-sphere_distance-all-ortho.png[Two circles, both alike in radius, in Libreville and Reykjavik we lay our scene]
+
+image::images/11-f-quad_decompositions/11-sphere_distance-0-bbox-ortho.png[Gridline is tangent at the actual westmost longitude]
 
 
-==== Distance isn't as it seems
+image::images/11-f-quad_decompositions/11-sphere_distance-65-toosmall-ortho.png[The point of westmost longitude is _not_ parallel to the center]
 
-The picture below shows a circle, 350 km in radius, centered at 60 degrees latitude (up near Helsinki). What you should see that the lines of constant longitude "come together" faster than the curve of the circle does. This is most 
+image::images/11-f-quad_decompositions/11-sphere_distance-65-bbox-ortho.png[Gridline is tangent at the actual westmost longitude]
+
+
+
+
+
+
+
+
+To see why, let's look at another 1400km-radius circle, centered on the same longitude but this time at 65 degrees north latitude -- extending roughtly from Reykjavik in Iceland to Arkhangelsk in Russia. 
+
+Applying the logic that worked at the equator, we've drawn a "horizontal" arc
+following the parallel of latitude from the center of our circle west towards Reykjavik.
+The great-circle distance of that arc is exactly 1400-km
+footnote:[There's another potential pitfall which we won't go into. If you actually flew strictly along the horizontal arc we drew from the center to its end, you would travel a bit over 1413 kilometers. The shortest route from the center to the endpoint has you deviate slightly north along a "great circle" path, and takes the expected 1400 km]
+and its endpoint is 30.042 degrees of longitude west of the center.
+
+But notice what happens when we apply those offsets (`[±30.042, ±12.58]`) to the circle's center (`[10 E, 65 N]`) to construct the bounding box from `[10 - 30.042, 65 - 12.58]` to `[10 + 30.042, 65 + 12.58]`. Parts of the circle jut outside of the box!
+// (REVIEWME: as above, or "box from `[-20.042, 52.42]` to `[40.042, 77.58]`"
+// This visibly prominent at northern latitudes, but applies to all points that don't lie on the equator.
+
+If you look carefully, you'll see that the lines of constant longitude "come together" faster than the curve of the circle does. 
+
+Travelling 1400 km (12.58 degrees of arc) north from the center along a meridian brought us to a point where the constant-latitude gridlines were perfectly tangent to the circle. That meant that travelling along the circle in either direction necessarily departed from that farthest gridline, making it the maximum gridline touched. In contrast, travelling 1400 km from the center along the 65th parallel did not bring us to a point where the constant-longitude gridlines were tangent to the circle. That location is given by the following equations:
+
+     # the arc distance
+     arc_dist_rad     = 2 * PI * distance_in_km / earth_circum
+     lat_rad          = lat * PI / 180
+     
+     tangent_lat      = arcsin( sin(lat_rad)      / cos(arc_dist_rad) ) * PI / 180
+     delta_lng        = arcsin( sin(arc_dist_rad) / cos(lat_rad) ) * PI / 180
+
+     bounding_box     = [ [lng-delta_lng, lat-arc_dist_degs], [lng+delta_lng, lat+arc_dist_degs] ]
+
+
+The `tangent_lat` statement provides the latitude where the constant-latitude gridlines are actually
+ tangent, making it the location of farthist longitude.
+ // It always lies towards the nearest pole by some amount.
+ The delta_lng statement finds proper the arc distance west and east for our bounding box,
+ which the last statement calculates explicitly.
+
+
+There are still other details to attend to -- the box could cross over the antimeridian from 180 to -180 degrees longitude, causing it to split into "two" bounding boxes; and it could extend north over the pole, causing it to extend through all 360 degrees(!) of longitude. We've written a UDF that finds the bounding box correctly and handles all those edge case, so that's what we'll use. But please learn the lesson from this particularly mild instance: spatial geometry operations can get astonishingly thorny. Going beyond what the libraries provide may cause you to learn more mathematics than you'd prefer. 
+
+
+// 1400 km radius: Boston-Chicago or Paris-Warsaw; 2800 km diameter: SF-St Louis
 
 image::images/11-circle_of_constant_distance.png[Min/Max Longitudes are not at the same latitude as the center]
+
+
+===

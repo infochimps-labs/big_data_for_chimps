@@ -61,12 +61,9 @@ Example values:
 
 Data is cheap and code is expensive, so for these 60,000 points we'll just serialize out the bounding box coordinates with each record rather than recalculate them in the reducer. We'll discard most of the UFO sightings fields, but during development let's keep the location and time fields in so we can spot-check results.
 
-Mapper output:
-
+// Mapper output:
 
 ==== Reducer: combine objects on each quadtile ====
-
-////Introduce this - (it's true, you'll need to reorient the reader pretty consistently). "Here, we are looking for..."  Amy////
 
 The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
 
