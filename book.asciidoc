@@ -26,6 +26,16 @@ include::07-part_three.asciidoc[]
 
 include::11-geographic.asciidoc[]
 
+include::11a-geodata-intro.asciidoc[]
+
+include::11b-spatial_aggregation-points.asciidoc[]
+
+include::11c-spatial_aggregations_on_regions.asciidoc[]
+
 include::11c-geospatial_mechanics.asciidoc[]
+
 include::11d-quadtiles.asciidoc[]
+
+include::11e-weather_near_you.asciidoc[]
+
 include::11f-data_formats.asciidoc[]
