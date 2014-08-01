@@ -20,8 +20,6 @@ At every point up down and across the tree, the only relevant rows are for the c
 
 image::images/images/quadkeys-3d-stack.png[Recursive Nesting of Quad Tiles]
 
-
-
 ==== Sweep Stack
 
 If you paid good attention back in CS312, hearing "depth first search" makes you think "I wonder if I'm about to use a Stack data structure". If so, give yourself a gold star. We're not going to actually do a depth-first iteration

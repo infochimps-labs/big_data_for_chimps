@@ -12,8 +12,8 @@ include::11c-spatial_aggregations_on_regions.asciidoc[]
 
 include::11c-geospatial_mechanics.asciidoc[]
 
-include::11d-quadtiles.asciidoc[]
-
 include::11e-weather_near_you.asciidoc[]
+
+include::11d-quadtiles.asciidoc[]
 
 include::11f-data_formats.asciidoc[]
