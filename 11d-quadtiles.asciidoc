@@ -1,9 +1,8 @@
-
 ==== The Quadtile Grid System ====
 
-We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it. footnote:[Two guides for which map projection to choose: http://www.radicalcartography.net/?projectionref http://xkcd.com/977/ . As you proceed to finer and finer zoom levels the projection distortion becomes less and less relevant, so the simplicity of Mercator or Equirectangular are appealing.]
+// We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it. footnote:[Two guides for which map projection to choose: http://www.radicalcartography.net/?projectionref http://xkcd.com/977/ . As you proceed to finer and finer zoom levels the projection distortion becomes less and less relevant, so the simplicity of Mercator or Equirectangular are appealing.]
 
-Now divide the world into four and make a Z pattern across them:
+The quadtile trick is to the world into four and make a Z pattern across them:
 
 Within each of those, make a <<z_path_of_quadtiles, Z again>>:
 
@@ -20,131 +19,6 @@ image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
 This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By applying Hadoop's fundamental locality operation -- sorting -- geographic locality falls out of numerical locality.
 
 Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
-
-==== Patterns in UFO Sightings ====
-
-Let's put Hadoop into practice for something really important: understanding where a likely alien invasion will take place. The National UFO Reporting Center has compiled a dataset of 60,000+ documented UFO sightings, with metadata. We can combine that with the 7 million labelled points of interest in the Geonames dataset: airports and zoos, capes to craters, schools, churches and more.
-
-Going in to this, I predict that UFO sightings will generally follow the population distribution (because you need people around to see them) but that sightings in cities will be under-represented per capita. I also suspect UFO sightings will be more likely near airports and military bases, and in the southwestern US. We will restrict attention only to the continental US; coverage of both datasets is spotty elsewhere, which will contaminate our results.
-
-Looking through some weather reports, visibilities of ten to fifteen kilometers (6-10 miles) are a reasonable midrange value; let's use that distance to mean "nearby". Given this necessarily-fuzzy boundary, let's simplify matters further by saying two objects are nearby if one point lies within the 20-km-per-side bounding box centered on the other:
-
-
-          +---------+---------+
-	  |		    B |
-	  |		      |
-	  |		      |
-	  |		      |
-	  +	    A	      +
-	  |		      |   C
-	  |		      |
-	  |		      |
-	  |		      |           B is nearby A; C is not. Sorry, C.
-	  +---------+---------+
-	            |- 10 km -|
-
-==== Mapper: dispatch objects to rendezvous at quadtiles ====
-
-What we will do is partition the world by quadtile, and ensure that each candidate pair of points arrives at the same quadtile.
-
-Our mappers will send the highly-numerous geonames points directly to their quadtile, where they will wait individually. But we can't send each UFO sighting only to the quadtile it sits on: it might be nearby a place on a neighboring tile.
-
-If the quadtiles are always larger than our nearbyness bounding box, then it's enough to just look at each of the four corners of our bounding box; all candidate points for nearbyness must live on the 1-4 quadtiles those corners touch. Consulting the geodata ready reference (TODO: ref) later in the book, zoom level 11 gives a grid size of 13-20km over the continental US, so it will serve.
-
-So for UFO points, we will use the `bbox_for_radius` helper to get the left-top and right-bottom points, convert each to quadtile id's, and emit the unique 1-4 tiles the bounding box covers.
-
-Example values:
-
-        longitude  latitude    left     top     right    bottom    nw_tile_id   se_tile_id
- 	...        ...
- 	...        ...
-
-Data is cheap and code is expensive, so for these 60,000 points we'll just serialize out the bounding box coordinates with each record rather than recalculate them in the reducer. We'll discard most of the UFO sightings fields, but during development let's keep the location and time fields in so we can spot-check results.
-
-// Mapper output:
-
-==== Reducer: combine objects on each quadtile ====
-
-The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
-
-	# from wukong/geo helpers
-
-        class BoundingBox
-          def contains?(obj)
-	    ( (obj.longitude >= left)  && (obj.latitude <= top) &&
-	      (obj.longitude <= right) && (obj.latitude >= btm)
-	  end
-	end
-
-	# nearby_ufos.rb
-
-	class NearbyReducer
-
-	  def process_group(group)
-	    # gather up all the sightings
-	    sightings = []
-	    group.gather(UfoSighting) do |sighting|
-              sightings << sighting
-            end
-	    # the remaining records are places
-	    group.each do |place|
-	      sighted = false
-	      sightings.each do |sighting|
-	        if sighting.contains?(place)
-		  sighted = true
-		  yield combined_record(place, sighting)
-		end
-              end
-	      yield unsighted_record(place) if not sighted
-	    end
-	  end
-
-	  def combined_record(place, sighting)
-	    (place.to_tuple + [1] + sighting.to_tuple)
-	  end
-	  def unsighted_record(place)
-	    place.to_tuple + [0]
-	  end
-	end
-
-For now I'm emitting the full place and sighting record, so we can see what's going on. In a moment we will change the `combined_record` method to output a more disciplined set of fields.
-
-Output data:
-
-        ...
-
-==== Comparing Distributions ====
-
-We now have a set of `[place, sighting]` pairs, and we want to understand how the distribution of coincidences compares to the background distribution of places.
-
-(TODO: don't like the way I'm currently handling places near multiple sightings)
-
-That is, we will compare the following quantities:
-
-    count of sightings
-    count of features
-    for each feature type, count of records
-    for each feature type, count of records near a sighting
-
-The dataset at this point is small enough to do this locally, in R or equivalent; but if you're playing along at work your dataset might not be. So let's use pig.
-
-    place_sightings = LOAD "..." AS (...);
-
-    features = GROUP place_sightings BY feature;
-
-    feature_stats = FOREACH features {
-      sighted = FILTER place_sightings BY sighted;
-      GENERATE features.feature_code,
-        COUNT(sighted)      AS sighted_count,
-	COUNT_STAR(sighted) AS total_count
-	;
-    };
-
-    STORE feature_stats INTO '...';
-
-results:
-
-    ... TODO move results over from cluster ...
 
 [[quadkey]]
 === Quadtile Practicalities ===
@@ -187,7 +61,6 @@ It's straightforward to calculate tile_x indices from the longitude (because all
 
 Finding the Y tile index requires a slightly more complicated formula:
 
-
 This makes each grid cell be an increasingly better locally-flat approximation to the earth's surface, palliating the geographers anger at our clumsy map projection.
 
 In code:
@@ -219,16 +92,8 @@ In code:
 
 [NOTE]
 =========================
-Take care to put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as `long` -- it's a keyword in pig and other languages. I like `lng`.
+Take care to put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as `long` -- it's a keyword in pig and other languages. We like `lng`.
 =========================
-
-==== Exploration
-
-* _Exemplars_
-  - Tokyo
-  - San Francisco
-  - The Posse East Bar in Austin, TX footnote:[briefly featured in the Clash's Rock the Casbah Video and where much of this book was written]
-
 
 ==== Interesting quadtile properties ====
 
@@ -262,38 +127,6 @@ Take care to put coordinates in the order "longitude, latitude", maintaining con
 
 A 64-bit quadkey -- corresponding to zoom level 32 -- has an accuracty of better than 1 cm over the entire globe. In some intensive database installs, rather than storing longitude and latitude separately as floating-point numbers, consider storing either the interleaved packed quadkey, or the individual 32-bit tile ids as your indexed value. The performance impact for Hadoop is probably not worth it, but for a database schema it may be.
 
-===== Quadkey to and from Longitude/Latitude =====
-
-    # converts from even/odd state of tile x and tile y to quadkey. NOTE: bit order means y, x
-    BIT_TO_QUADKEY = { [false, false] => "0", [false, true] => "1", [true, false] => "2", [true, true] => "3", }
-    # converts from quadkey char to bits. NOTE: bit order means y, x
-    QUADKEY_TO_BIT = { "0" => [0,0], "1" => [0,1], "2" => [1,0], "3" => [1,1]}
-
-    # Convert from tile x,y into a quadkey at a specified zoom level
-    def tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
-      quadkey_chars = []
-      tx = tile_x.to_i
-      ty = tile_y.to_i
-      zl.times do
-        quadkey_chars.push BIT_TO_QUADKEY[[ty.odd?, tx.odd?]] # bit order y,x
-        tx >>= 1 ; ty >>= 1
-      end
-      quadkey_chars.join.reverse
-    end
-
-    # Convert a quadkey into tile x,y coordinates and level
-    def quadkey_to_tile_xy_zl(quadkey)
-      raise ArgumentError, "Quadkey must contain only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
-      zl = quadkey.to_s.length
-      tx = 0 ; ty = 0
-      quadkey.chars.each do |char|
-        ybit, xbit = QUADKEY_TO_BIT[char] # bit order y, x
-        tx = (tx << 1) + xbit
-        ty = (ty << 1) + ybit
-      end
-      [tx, ty, zl]
-    end
-
 === Quadtile Ready Reference ===
 
 image::images/quadkey_ref-zoom_levels.png[Quadtile properties and data storage sizes by zoom level]
@@ -305,72 +138,3 @@ image::images/quadkey_ref-world_cities.png[Quadtile Properties for major world c
 The (ref table) gives the full coordinates at every zoom level for our exemplar set.
 
 image::images/quadkey_ref-full_props-by_zl.png[Coordinates at every zoom level for some exemplars]
-
-
-==== Working with paths ====
-
-The _smallest tile that fully encloses a set of points_ is given by the tile with the largest common quadtile prefix. For example, the University of Texas (quad `0231_3012_0331_1131`) and my office (quad `0231_3012_0331_1211`) are covered by the tile `0231_3012_0331_1`.
-
-image::images/fu05-geographic-path-hq-to-ut.png[Path from Chimp HQ to UT campus]
-
-When points cross major tile boundaries, the result is less pretty. Austin's airport (quad `0231301212221213`) shares only the zoom-level 8 tile `02313012`:
-
-image::images/fu05-geographic-path-hq-to-airport.png[Path from Chimp HQ to AUS Airport]
-
-==== Calculating Distances ====
-
-To find the distance between two points on the globe, we use the Haversine formula
-
-
-in code:
-
-    # Return the haversine distance in meters between two points
-    def haversine_distance(left, top, right, btm)
-      delta_lng = (right - left).abs.to_radians
-      delta_lat = (btm   - top ).abs.to_radians
-      top_rad = top.to_radians
-      btm_rad = btm.to_radians
-
-      aa = (Math.sin(delta_lat / 2.0))**2 + Math.cos(top_rad) * Math.cos(btm_rad) * (Math.sin(delta_lng / 2.0))**2
-      cc = 2.0 * Math.atan2(Math.sqrt(aa), Math.sqrt(1.0 - aa))
-      cc * EARTH_RADIUS
-    end
-
-    # Return the haversine midpoint in meters between two points
-    def haversine_midpoint(left, top, right, btm)
-      cos_btm   = Math.cos(btm.to_radians)
-      cos_top   = Math.cos(top.to_radians)
-      bearing_x = cos_btm * Math.cos((right - left).to_radians)
-      bearing_y = cos_btm * Math.sin((right - left).to_radians)
-      mid_lat   = Math.atan2(
-        (Math.sin(top.to_radians) + Math.sin(btm.to_radians)),
-        (Math.sqrt((cos_top + bearing_x)**2 + bearing_y**2)))
-      mid_lng   = left.to_radians + Math.atan2(bearing_y, (cos_top + bearing_x))
-      [mid_lng.to_degrees, mid_lat.to_degrees]
-    end
-
-    # From a given point, calculate the point directly north a specified distance
-    def point_north(longitude, latitude, distance)
-      north_lat = (latitude.to_radians + (distance.to_f / EARTH_RADIUS)).to_degrees
-      [longitude, north_lat]
-    end
-
-    # From a given point, calculate the change in degrees directly east a given distance
-    def point_east(longitude, latitude, distance)
-      radius = EARTH_RADIUS * Math.sin(((Math::PI / 2.0) - latitude.to_radians.abs))
-      east_lng = (longitude.to_radians + (distance.to_f / radius)).to_degrees
-      [east_lng, latitude]
-    end
-
-===== Grid Sizes and Sample Preparation =====
-
-Always include as a mountweazel some places you're familiar with. It's much easier for me to think in terms of the distance from my house to downtown, or to Dallas, or to New York than it is to think in terms of zoom level 14 or 7 or 4
-
-==== Distributing Boundaries and Regions to Grid Cells ====
-
-(TODO: Section under construction)
-
-This section will show how to
-
-* efficiently segment region polygons (county boundaries, watershed regions, etc) into grid cells
-* store data pertaining to such regions in a grid-cell form: for example, pivoting a population-by-county table into a population-of-each-overlapping-county record on each quadtile.

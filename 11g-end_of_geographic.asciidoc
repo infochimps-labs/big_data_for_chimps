@@ -299,6 +299,200 @@ How would you help find the nearest 7-11?
 (what do numbers look like doing this for the US, daily)
 
 
+
+==== Comparing Distributions ====
+
+We now have a set of `[place, sighting]` pairs, and we want to understand how the distribution of coincidences compares to the background distribution of places.
+
+(TODO: don't like the way I'm currently handling places near multiple sightings)
+
+That is, we will compare the following quantities:
+
+    count of sightings
+    count of features
+    for each feature type, count of records
+    for each feature type, count of records near a sighting
+
+The dataset at this point is small enough to do this locally, in R or equivalent; but if you're playing along at work your dataset might not be. So let's use pig.
+
+    place_sightings = LOAD "..." AS (...);
+
+    features = GROUP place_sightings BY feature;
+
+    feature_stats = FOREACH features {
+      sighted = FILTER place_sightings BY sighted;
+      GENERATE features.feature_code,
+        COUNT(sighted)      AS sighted_count,
+	COUNT_STAR(sighted) AS total_count
+	;
+    };
+
+    STORE feature_stats INTO '...';
+
+results:
+
+    ... TODO move results over from cluster ...
+
+
+==== Exploration
+
+* _Exemplars_
+  - Tokyo
+  - San Francisco
+  - The Posse East Bar in Austin, TX footnote:[briefly featured in the Clash's Rock the Casbah Video and where much of this book was written]
+
+
+===== Quadkey to and from Longitude/Latitude =====
+
+    # converts from even/odd state of tile x and tile y to quadkey. NOTE: bit order means y, x
+    BIT_TO_QUADKEY = { [false, false] => "0", [false, true] => "1", [true, false] => "2", [true, true] => "3", }
+    # converts from quadkey char to bits. NOTE: bit order means y, x
+    QUADKEY_TO_BIT = { "0" => [0,0], "1" => [0,1], "2" => [1,0], "3" => [1,1]}
+
+    # Convert from tile x,y into a quadkey at a specified zoom level
+    def tile_xy_zl_to_quadkey(tile_x, tile_y, zl)
+      quadkey_chars = []
+      tx = tile_x.to_i
+      ty = tile_y.to_i
+      zl.times do
+        quadkey_chars.push BIT_TO_QUADKEY[[ty.odd?, tx.odd?]] # bit order y,x
+        tx >>= 1 ; ty >>= 1
+      end
+      quadkey_chars.join.reverse
+    end
+
+    # Convert a quadkey into tile x,y coordinates and level
+    def quadkey_to_tile_xy_zl(quadkey)
+      raise ArgumentError, "Quadkey must contain only the characters 0, 1, 2 or 3: #{quadkey}!" unless quadkey =~ /\A[0-3]*\z/
+      zl = quadkey.to_s.length
+      tx = 0 ; ty = 0
+      quadkey.chars.each do |char|
+        ybit, xbit = QUADKEY_TO_BIT[char] # bit order y, x
+        tx = (tx << 1) + xbit
+        ty = (ty << 1) + ybit
+      end
+      [tx, ty, zl]
+    end
+
+==== Working with paths ====
+
+The _smallest tile that fully encloses a set of points_ is given by the tile with the largest common quadtile prefix. For example, the University of Texas (quad `0231_3012_0331_1131`) and my office (quad `0231_3012_0331_1211`) are covered by the tile `0231_3012_0331_1`.
+
+image::images/fu05-geographic-path-hq-to-ut.png[Path from Chimp HQ to UT campus]
+
+When points cross major tile boundaries, the result is less pretty. Austin's airport (quad `0231301212221213`) shares only the zoom-level 8 tile `02313012`:
+
+image::images/fu05-geographic-path-hq-to-airport.png[Path from Chimp HQ to AUS Airport]
+
+==== Calculating Distances ====
+
+To find the distance between two points on the globe, we use the Haversine formula
+
+
+in code:
+
+    # Return the haversine distance in meters between two points
+    def haversine_distance(left, top, right, btm)
+      delta_lng = (right - left).abs.to_radians
+      delta_lat = (btm   - top ).abs.to_radians
+      top_rad = top.to_radians
+      btm_rad = btm.to_radians
+
+      aa = (Math.sin(delta_lat / 2.0))**2 + Math.cos(top_rad) * Math.cos(btm_rad) * (Math.sin(delta_lng / 2.0))**2
+      cc = 2.0 * Math.atan2(Math.sqrt(aa), Math.sqrt(1.0 - aa))
+      cc * EARTH_RADIUS
+    end
+
+    # Return the haversine midpoint in meters between two points
+    def haversine_midpoint(left, top, right, btm)
+      cos_btm   = Math.cos(btm.to_radians)
+      cos_top   = Math.cos(top.to_radians)
+      bearing_x = cos_btm * Math.cos((right - left).to_radians)
+      bearing_y = cos_btm * Math.sin((right - left).to_radians)
+      mid_lat   = Math.atan2(
+        (Math.sin(top.to_radians) + Math.sin(btm.to_radians)),
+        (Math.sqrt((cos_top + bearing_x)**2 + bearing_y**2)))
+      mid_lng   = left.to_radians + Math.atan2(bearing_y, (cos_top + bearing_x))
+      [mid_lng.to_degrees, mid_lat.to_degrees]
+    end
+
+    # From a given point, calculate the point directly north a specified distance
+    def point_north(longitude, latitude, distance)
+      north_lat = (latitude.to_radians + (distance.to_f / EARTH_RADIUS)).to_degrees
+      [longitude, north_lat]
+    end
+
+    # From a given point, calculate the change in degrees directly east a given distance
+    def point_east(longitude, latitude, distance)
+      radius = EARTH_RADIUS * Math.sin(((Math::PI / 2.0) - latitude.to_radians.abs))
+      east_lng = (longitude.to_radians + (distance.to_f / radius)).to_degrees
+      [east_lng, latitude]
+    end
+
+===== Grid Sizes and Sample Preparation =====
+
+Always include as a mountweazel some places you're familiar with. It's much easier for me to think in terms of the distance from my house to downtown, or to Dallas, or to New York than it is to think in terms of zoom level 14 or 7 or 4
+
+==== Distributing Boundaries and Regions to Grid Cells ====
+
+(TODO: Section under construction)
+
+This section will show how to
+
+* efficiently segment region polygons (county boundaries, watershed regions, etc) into grid cells
+* store data pertaining to such regions in a grid-cell form: for example, pivoting a population-by-county table into a population-of-each-overlapping-county record on each quadtile.
+
+==== Reducer: combine objects on each quadtile ====
+
+The reducer is now fairly simple. Each quadtile will have a handful of UFO sightings, and a potentially large number of geonames places to test for nearbyness. The nearbyness test is straightforward:
+
+	# from wukong/geo helpers
+
+        class BoundingBox
+          def contains?(obj)
+	    ( (obj.longitude >= left)  && (obj.latitude <= top) &&
+	      (obj.longitude <= right) && (obj.latitude >= btm)
+	  end
+	end
+
+	# nearby_ufos.rb
+
+	class NearbyReducer
+
+	  def process_group(group)
+	    # gather up all the sightings
+	    sightings = []
+	    group.gather(UfoSighting) do |sighting|
+              sightings << sighting
+            end
+	    # the remaining records are places
+	    group.each do |place|
+	      sighted = false
+	      sightings.each do |sighting|
+	        if sighting.contains?(place)
+		  sighted = true
+		  yield combined_record(place, sighting)
+		end
+              end
+	      yield unsighted_record(place) if not sighted
+	    end
+	  end
+
+	  def combined_record(place, sighting)
+	    (place.to_tuple + [1] + sighting.to_tuple)
+	  end
+	  def unsighted_record(place)
+	    place.to_tuple + [0]
+	  end
+	end
+
+For now I'm emitting the full place and sighting record, so we can see what's going on. In a moment we will change the `combined_record` method to output a more disciplined set of fields.
+
+Output data:
+
+        ...
+
+
 ==== Map Polygons to Grid Tiles
 
 
@@ -479,22 +673,6 @@ What makes a good exemplar?
     * (in fact, Cryptographers have a concept of a "nothing-up-my-sleeve" number: when a large arbitrary collection of numbers is needed, choosing the first twenty-five digits of Pi is believably arbitrary, whereas choosing the 387'th through 412'th digits raises the specter of a purposeful "backdoor").
 
 
-===  Turning Points of Measurements Into Regions of Influence
-
-Frequently, geospatial data is, for practical reasons, sampled at discrete points but should be understood to represent measurements at all points in space.  For example, the measurements in the NCDC datasets are gathered at locations chosen for convenience or value -- in some cases, neighboring stations are separated by blocks, in other cases by hundreds of miles.  It is useful to be able to reconstruct the underlying spatial distribution from point-sample measurements.
-
-Given a set of locations -- broadcast towers, 7-11 stores, hospitals -- it is also useful to be able to determine, for any point in space, which of those objects is nearest.  When the distribution of objects is even, this is straightforward:  choose a bounding box or quad tile you are sure will encompass the point in question and all candidate locations, then choose the nearest candidate.  When the distribution is highly uneven, though, the bounding box that works well in rural Montana may return overwhelmingly many results in midtown Manhattan.
-
-We can solve both those problems with a single elegant approach known as Voronoi partitioning.  Given a set of seed locations, the Voronoi partitioning returns a set of polygons with the following properties:
-
-*  The polygon’s ‘partition’ is the space divided such that every piece of the plane belongs to exactly one polygon.
-*  There is exactly one polygon for each seed location and all points within it are closer to that seed location than to any other seed location.
-*  All points on the boundary of two polygons are equidistant from the two neighboring seed locations; and all vertices where Voronoi polygons meet are equidistant from the respective seed locations.
-
-This effectively precomputes the “nearest x” problem:  For any point in question, find the unique polygon within which it resides (or rarely, the polygon boundaries upon which it lies). Breaking those polygons up by quad tile at a suitable zoom level makes it easy to either store them in HBase (or equivalent) for fast querying or as data files optimized for a spatial JOIN.
-
-It also presents a solution to the spatial sampling problem by assigning the measurements taken at each sample location to its Voronoi region.  You can use these piece-wise regions directly or follow up with some sort of spatial smoothing as your application requires.  Let’s dive in and see how to do this in practice.
-
 ==== Finding Nearby Objects
 
 Let’s use the GeoNames dataset to create a “nearest <whatever> to you” application, one that, given a visitor’s geolocation, will return the closest hospital, school, restaurant and so forth.  We will do so by effectively pre-calculating all potential queries; this could be considered overkill for the number of geofeatures within the GeoNames dataset but we want to illustrate an approach that will scale to the number of cell towers, gas stations or anything else.
@@ -534,29 +712,7 @@ The strategies employed here -- precalculating all possible requests, identifyin
 When you are decomposing spatial data onto quad tiles, you will face the question of what zoom level or zoom levels to choose.  At some point, coarser (lower indexed) zoom levels will lead to overpopulated tiles, tiles whose record size is unmanageably large; depending on your dataset, this could happen at zoom level 9 (the size of outer London), zoom level 12 (the size of Manhattan south of Central Park) or even smaller.  At the other end, finer zoom levels will produce unjustifiably many boring or empty tiles.
 
 To cover the entire globe at zoom level 13 requires 67 million records, each covering about four kilometers; at zoom level 16, you will need four billion records, each covering about a half kilometer on a side; at zoom level 18, you will need 69 billion records, each covering a city block or so.  To balance these constraints, build a histogram of geofeature counts per quad tile at various zoom levels.  Desirable zoom levels are such that the most populous bin will have acceptable size while the number of bins with low geofeature count are not unmanageably numerous.  Quad keys up to zoom level 16 will fit within a 32-bit unsigned integer; the improved efficiency of storage and computation make a powerful argument for using zoom levels 16 and coarser, when possible.
-
-If the preceding considerations leave you with a range of acceptable zoom levels, choose one in the middle.  If they do not, you will need to use the multiscale decomposition approach (TODO:  REF) described later in this chapter.
 ----
-
-=== Weather Near You
-
-The weather station data is sampled at each weather station, and forms our best estimate for the surrounding region's weather.
-
-So weather data is gathered at a _point_, but imputes information about a _region_. You can't just slap each point down on coarse-grained tiles -- the closest weather station might lie just over on the next quad, and you're writing a check for very difficult calculations at run time.
-
-We also have a severe version of the multiscale problem.  The coverage varies wildly over space: a similar number of weather stations cover a single large city as cover the entire Pacific ocean. It also varies wildly over time: in the 1970s, the closest weather station to Austin, TX was about 150 km away in San Antonio. Now, there are dozens in Austin alone.
-
-==== Find the Voronoi Polygon for each Weather Station
-
-There's an elegant solution known as a Voronoi diagram footnote:[see http://en.wikipedia.org/wiki/Voronoi_diagram[Wikipedia entry] or (with a Java-enabled browser) this http://www.cs.cornell.edu/home/chew/Delaunay.html[Voronoi Diagram applet]].
-
-The Voronoi diagram covers the plane with polygons, one per point -- I'll call that the "centerish" of the polygon. Within each polygon, you are closer to its centerish than any other. By extension, locations on the boundary of each Voronoi polygon are equidistant from the centerish on either side; polygon corners are equidistant from centerishes of all touching polygons footnote:[John Snow, the father of epidemiology, mapped cholera cases from an 1854 outbreak against the voronoi regions defined by each neighborhood's closest water pump. The resulting infographic made plain to contemporary physicians and officials that bad drinking water, not "miasma" (bad air), transmitted cholera. http://johnsnow.matrix.msu.edu/book_images12.php].
-
-If you'd like to skip the details, just admire the diagram (REF) and agree that it's the "right" picture. As you would in practice, we're going to use vetted code from someone with a PhD and not write it ourselves.
-
-The details: Connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally. If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other.
-
-<remark>TODO: above paragraph not very clear, may not be necessary.</remark>
 
 ==== Break polygons on quadtiles
 
@@ -709,3 +865,6 @@ Example: merge all cells whose contents lie within 10% of each other
      9   8  12  14     .   . 12  14
     19  20  12  14     . 20. 12  14
     20  21   8   3     .   .  8   3
+
+
+    

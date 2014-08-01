@@ -182,4 +182,16 @@ There are still other details to attend to -- the box could cross over the antim
 image::images/11-circle_of_constant_distance.png[Min/Max Longitudes are not at the same latitude as the center]
 
 
-===
+
+//        +---------+---------+
+//        |                 B |
+//        |                   |
+//        |                   |
+//        |                   |
+//        +         A         +
+//        |                   |   C
+//        |                   |
+//        |                   |
+//        |                   |           B is nearby A; C is not. Sorry, C.
+//        +---------+---------+
+//                  |- 10 km -|
