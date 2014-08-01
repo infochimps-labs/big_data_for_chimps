@@ -1,11 +1,11 @@
 
-    Mme La Blanc	 55  30  	0120
+    Mme La Rose	 55  30  	0120
     Mr Saffron   	 90  40 	0133
     Ms Peach     	165  30 	1123
     Rabbi Green  	120  60 	1211
     The Vicar    	155 170 	1302
     Dr Jade      	 20 115 	2003
-    Sr Rojo      	 23 122 	2003
+    Sr Azul      	 23 122 	2003
     Sgt Teal     	145 130 	3031
     Dean Grey    	 85 180 	2330
 
@@ -50,7 +50,7 @@
     0      0    West Wing       Manor           WestWing        
     00     0    Kitchen         Manor           WestWing        Kitchen
     01     0    Kitchen         Manor           WestWing        Kitchen
-    0120   1    Mme La Blanc    Manor           WestWing        Kitchen                          Mme La Blanc
+    0120   1    Mme La Rose    Manor           WestWing        Kitchen                          Mme La Rose
     0123   0    Pantry          Manor           WestWing        Kitchen         Pantry
     0132   0    Pantry          Manor           WestWing        Kitchen         Pantry
     0133   0    Pantry          Manor           WestWing        Kitchen         Pantry
@@ -107,7 +107,7 @@
     2003   0    Dining          Manor           WestWing        Dining  
     2003   0    Lounge          Manor           WestWing        Dining    Lounge
     2003   1    Dr Jade         Manor           WestWing        Dining    Lounge        Dr Jade
-    2003   1    Sr Rojo         Manor           WestWing        Dining    Lounge        Sr Rojo
+    2003   1    Sr Azul         Manor           WestWing        Dining    Lounge        Sr Azul
     2010   0    Dining          Manor           WestWing        Dining  
     2011   0    Dining          Manor           WestWing        Dining    
     2011   0    Lounge          Manor           WestWing        Dining    Lounge
