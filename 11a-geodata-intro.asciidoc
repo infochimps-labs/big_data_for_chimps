@@ -36,30 +36,23 @@ The key new skill as map/reduce coaches is to do so correctly and efficiently: w
 
 Those strategies aren't unique to the spatial case, and so what we're really trying to do in this chapter is equip you do deal with situations where determining which objects should be related in context is complex and can't be done locally. For example, one way to find pairs of similar documents involves deriving each document's most prominent keywords, then matching each document to all others that share a significant fraction of its keywords. In the spatial analytics case, our cascading love triangles from London to Paris to Lyon to Milan (REF (to E&C preamble)) threatened to crowd the whole world into a single dance hall. The document similarity case presents the same problem. A document mentioning Paris, Lyon, and Milan is a candidate match for one mentioning London+Paris+Lyon and for one mentioning Lyon+Milan+Rome -- but London+Paris+Lyon and Lyon+Milan+Rome don't need to be compared. We want to ensure the necessary pairings are considered, without allowing the chain of candidate matches from London+Paris+Lyon, through Lyon+Milan+Rome, on over to Busan+Osaka+Tokyo to land on the same library table. It's the same problem in different guise, and the essential intuition you build here will carry over.
 
-
 ===== What We'll Cover
 
-We'll start by demonstrating spatial aggregations: counting the number of UFO sightings per area, or smoothing pointwise elevation estimates onto a grid.
-It's one of the frontline tools of spatial analysis, a great way to summarize a large data set, and one of the first things you'll do to Know Thy Data. It's also a direct application of things you've already learned, giving us a chance to introduce some terminology and necessary details. Next is a gallery tour of the basic spatial operations: how to find a shape's area or bounding box, its intersection with another shape, and so forth. We won't spend much of your time here, as these are easy enough to apply once you know their names.
+We'll start by demonstrating spatial aggregations on points: for example, counting the number of UFO sightings per area over a regular grid. This type of aggregation is a frontline tool of spatial analysis, a great way to summarize a large data set, and one of the first things you'll do to Know Thy Data. It draws on methods you've already learned, giving us a chance to introduce some terminology and necessary details. Then we'll go from spatial grouping of a single dataset to demonstrate a point-wise spatial join: matching points in a table with all nearby points in another table. 
 
-Spatially aggregating points onto a grid is straightforward because each point only provides relevant context to the single grid cell it occupies.
+Next is a gallery tour of the basic spatial operations: how to find a shape's area or bounding box, its intersection with another shape, and so forth. We won't spend much of your time here, but it's worth having something to refer to. The real fun comes as the notion of "nearby" becomes less and less predictable in advance.
 
-Gather together each object with every relevant
-Nearby shape
-Without ever accumulating a lopsided share of objects into the same group.
+Spatial aggregations on regions -- e.g. smoothing country-by-country crop production data onto a uniform grid -- demands more subtlety than aggregations of points. In places where multiple regions appear, you must weight their contributions correctly, and in places where only one region is present you'd like to avoid extra work. We handle that using a quad-tree tiling (aka "quadtiles"), a superbly elegant tool for partitioning spatially-nearby objects onto common reducers with minimal waste.
 
-Spatial aggregations on regions -- e.g. smoothing county-by-county data onto a uniform grid -- demands a bit more subtlety than aggregations of points. In places where multiple regions appear you must weight their contributions correctly, and in places where only one region is present you'd like to avoid extra work. We handle that using a quad-tree tiling (aka "quadtiles"), a superbly elegant tool for partitioning spatially-nearby objects onto common reducers with minimal waste.
+The quadtile scheme not only helps to partition the data efficiently but also orders it so that spatially-nearby objects are generally nearby in quadtile order. That lets us perform a spatial join of points with _regions_ using nothing more than Hadoop's native sort and a low-memory-overhead data structure. This is the key material in the chapter, and we'll step through it in detail.
 
-The real fun comes as the notion of "nearby" becomes less and less predictable in advance.
-
-Spatial join of shapes
-
+Lastly, we'll demonstrate how to handle the case where it's difficult in advance to even know how to spatially partition data.
+You see, one way to determine which records are spatially relevant -- the one all the operations to that point in the chapter will have used -- is to define a fixed distance and only relate objects within that nearby-ness threshold.
 When you're matching shapes with objects less than a certain distance away,
 You can set an upper bound in advance on what "nearby" means: the specified distance.
-But when you want to map against the nearest object -- which might be a three-minute walk or might be a three-day sail -- things get more complicated. There's a wonderful trick for doing these kinds of "nearest object" queries without overwhelming your cluster. We'll use it to combine our record of every baseball game played against the historical weather data, and learn an important truth about truth and error along the way.
+But when you want to map against not "_any nearby_" objects but against "_the nearest_" object -- which might be a three-minute walk or might be a three-day sail -- things get more complicated. There's a wonderful trick for doing these kinds of "nearest object" queries without overwhelming your cluster. We'll use it to combine our record of every baseball game played against the historical weather data, and learn an important truth about truth and error along the way.
 
 Let's start off in the best way possible: with a tool for turning lots of data into manageable insight.
-
 
 .The territories of France and the UK are close by in Europe
 image::images/11a-france-uk-calais.png[height=120]
@@ -70,8 +63,6 @@ image::images/11a-france-uk-caribbean.png[height=120]
 .South Africa contains Lesotho: Politics trumps Topology
 image::images/11a-south_africa-lesotho.png[height=150]
 
-
-
 // Features of Features
 // [NOTE]
 // ===============================
@@ -79,6 +70,9 @@ image::images/11a-south_africa-lesotho.png[height=150]
 // ===============================
 
 
+// Spatially aggregating points onto a grid is straightforward because each point only provides relevant context to the single grid cell it occupies.
+// Gather together each object with every relevant Nearby shape
+// Without ever accumulating a lopsided share of objects into the same group.
 
 // * Geometry is hard to do _right_
 // * Pretending the bumpy kinda-ellipsoid is a simple rectangle.
