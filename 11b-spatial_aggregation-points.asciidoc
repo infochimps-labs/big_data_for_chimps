@@ -133,9 +133,10 @@ image::images/11-f-quad_decompositions/11-sphere_distance-all-ortho.png[Two circ
 .Everything is greatly easier on the Equator because everything is a Great Circle
 image::images/11-f-quad_decompositions/11-sphere_distance-0-bbox-ortho.png[Everything is greatly easier on the Equator because everything is a Great Circle]
 
-
+.The point of westmost longitude is _not_ parallel to the center
 image::images/11-f-quad_decompositions/11-sphere_distance-65-toosmall-ortho.png[The point of westmost longitude is _not_ parallel to the center]
 
+.Gridline is tangent at the actual westmost longitude
 image::images/11-f-quad_decompositions/11-sphere_distance-65-bbox-ortho.png[Gridline is tangent at the actual westmost longitude]
 
 
@@ -177,6 +178,7 @@ There are still other details to attend to -- the box could cross over the antim
 
 // 1400 km radius: Boston-Chicago or Paris-Warsaw; 2800 km diameter: SF-St Louis
 
+.Min/Max Longitudes are not at the same latitude as the center
 image::images/11-circle_of_constant_distance.png[Min/Max Longitudes are not at the same latitude as the center]
 
 

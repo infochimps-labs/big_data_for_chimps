@@ -61,10 +61,14 @@ But when you want to map against the nearest object -- which might be a three-mi
 Let's start off in the best way possible: with a tool for turning lots of data into manageable insight.
 
 
-image::images/11a-france-uk-calais.png[The territories of France and the UK are close by in Europe]
-image::images/11a-france-uk-caribbean.png[...and also in the Caribbean]
+.The territories of France and the UK are close by in Europe
+image::images/11a-france-uk-calais.png[height=120]
 
-image::images/11a-south_africa-lesotho.png[South Africa contains Lesotho... Politics trumps Topology]
+.And also in the Caribbean
+image::images/11a-france-uk-caribbean.png[height=120]
+
+.South Africa contains Lesotho: Politics trumps Topology
+image::images/11a-south_africa-lesotho.png[height=150]
 
 
 

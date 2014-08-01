@@ -52,6 +52,7 @@ Joining that to the 2.3 million rows of crop production data produces big data f
 
 Instead of breaking down
 
+.Variable Level of Detail prevents Inefficient Tiny Tiles
 image::images/11-f-quad_decompositions/11-quaddecomp-world-mercator.png[Variable Level of Detail prevents Inefficient Tiny Tiles]
 
 The QuadDecompose UDF accepts an outer and an inner zoom level.
@@ -76,9 +77,11 @@ Our Reindeer friends, with their ample free time and bizarre sense of humor, som
 
 We can apply our spatial analysis tools to its simple geometry and help the investigators make a data-backed decision. Here is a map of the grounds.
 
-image::images/images/11-f-quad_decompositions/spatial_manor-rooms_peeps_grid.png[Spatial Manor - Rooms (and underlying ZL-3 grid)]
+.Spatial Manor - Rooms (and underlying ZL-3 grid)
+image::images/11-f-quad_decompositions/spatial_manor-rooms_peeps_grid.png[Spatial Manor - Rooms (and underlying ZL-3 grid)]
 
-image::images/images/11-f-quad_decompositions/spatial_manor-quadkeys.png[Spatial Manor - Decomposed]
+.Spatial Manor - Decomposed
+image::images/11-f-quad_decompositions/spatial_manor-quadkeys.png[Spatial Manor - Decomposed]
 
 
 
