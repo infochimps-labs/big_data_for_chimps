@@ -2,7 +2,7 @@
 
 While spatially aggregating pointwise data required nothing terribly sophisticated, doing the same for objects with spatial extent will motivate a couple new tricks. As an example, let's take agricultural production for each country footnote:[downloaded from the website of FAOSTAT, The Statistical Division of the Food and Agriculture Organization of the United Nations] and smooth it onto a uniform grid. (We'll find some interesting connections to this data in the final chapter).
 
-Fair warning: though the first version of this script we demonstrate for you is correct as it stands, it will be exceptionally inefficient. But we want to demonstate the problem and then discuss its elegant solution.
+Fair warning: though the first version of this script we demonstrate for you is correct as it stands, it will be sub-optimal. But we want to demonstate the problem and then discuss its elegant solution.
 
 // X points    Y gridcells occupied    ~ 6000 grid cells (50 x 120)
 

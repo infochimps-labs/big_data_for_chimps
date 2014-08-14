@@ -107,6 +107,7 @@ SQL Cookbook
 * http://cogcomp.cs.illinois.edu/page/software_view/4
 * http://opennlp.apache.org/
 
+* http://www.movable-type.co.uk/scripts/latlong.html Calculate distance, bearing and more between Latitude/Longitude points
 
 ==== Locality-Sensitive Hashing & Sketching Algorithms ====
 

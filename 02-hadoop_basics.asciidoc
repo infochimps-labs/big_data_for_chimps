@@ -1,9 +1,40 @@
 [[hadoop_basics]]
 == Hadoop Basics
 
+=== Introduction
+
+In this chapter, we will equip you with two things: the necessary mechanics of working with Hadoop, and a physical intuition for how data and computation move around the cluster during a job. 
+
+Hadoop is a large and complex beast. It can be bewildering to even begin to use the system, and so in this chapter we're going to purposefully charge through the least you need to know to launch jobs and manage data. If you hit trouble, anything past that is well-covered in Hadoop's excellent and detailed documentation or online. But don't go looking for trouble! For every one of its many modes options and configurations that is essential, there are many more that are distracting or even dangerous. The most important optimizations you can make come from designing efficient workflows, and even moreso from knowing when to spend highly valuable programmer time to reduce compute time.
+
+The key to doing so is an intuitive, physical understanding of how data moves around a Hadoop cluster.
+
+how data moves around a hadoop cluster
+how much that costs
+
+The focus of this chapter is on building your intuition on
+how much data should be processed and how much that should cost
+how much data was processed and how much it did cost.
+
+how and why Hadoop distributes data across the machines in a cluster
+how much it costs to
+overhead
+
+basis for comparing human costs to cluster costs
+
+
+How much data was moved 
+
+This chapter will only look at "embarras
+
+Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly 
+How 
+
+// (If you're already familiar with the basics of using Hadoop and are too anxious to get to the specifics of working with data, skip ahead to Chapter 4)
+
 .Chimpanzee and Elephant Start a Business
 ******
-A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant Corporation (C&E Corp for short) was born.
+A few years back, two friends -- JT, a gruff silverback chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant, Incorporated (C&E for short) was born.
 
 The publishing firm’s project was to translate the works of Shakespeare into every language known to man, so JT and Nanette devised the following scheme. Their crew set up a large number of cubicles, each with one elephant-sized desk and one or more chimp-sized desks, and a command center where JT and Nanette can coordinate the action.
 
@@ -16,24 +47,21 @@ If you were to walk by a cubicle mid-workday, you would see a highly-efficient i
 The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the Chimpanzee & Elephant, Inc. crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
 ******
 
-=== Introduction
-
-Hadoop is a large and complex beast. There's a lot to learn before one can even begin to use the system, much less become meaningfully adept at doing so. While Hadoop has stellar documentation, not everyone is comfortable diving right in to the menagerie of Mappers, Reducers, Shuffles, and so on. For that crowd, we've taken a different route, in the form of a story.
-
 === Map-only Jobs: Process Records Individually ===
 
-Having read that short allegory, you've just learned a lot about how Hadoop operates under the hood. We can now use it to walk you through some examples. This first example uses only the _Map_ phase of MapReduce, to take advantage of what some people call an "embarrassingly parallel" problem.
+As you'd guess, the way Chimpanzee and Elephant organize their files and workflow corresponds directly with how Hadoop handles data and computation under the hood. We can now use it to walk you through some examples.
 
-We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_ footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._  That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
+We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
 
 * If the word begins with a consonant-sounding letter or letters, move them to the end of the word adding "ay": "happy" becomes "appy-hay", "chimp" becomes "imp-chay" and "yes" becomes "es-yay".
 * In words that begin with a vowel, just append the syllable "way": "another" becomes "another-way", "elephant" becomes "elephant-way".
 
-<<pig_latin_translator>> is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. It's written in Wukong, a simple library to rapidly develop big data analyses. Like the chimpanzees, it is single-concern: there's nothing in there about loading files, parallelism, network sockets or anything else. Yet you can run it over a text file from the commandline -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
+<<pig_latin_translator>>  is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. This is a Hadoop job stripped to its barest minimum, one that does just enough to each record that you believe it happened but with no distractions. That makes it convenient to learn how to launch a job; how to follow its progress; and where Hadoop reports performance metrics such as run time and amount of data moved.  What's more, the very fact that it's trivial makes it one of the most important examples to run. For comparable input and output size, no regular Hadoop job can out-perform this one in practice, so it's a key reference point to carry in mind.
 
+We've written this example in Wukong, a simple library to rapidly develop big data analyses. Like the chimpanzees, it is single-concern: there's nothing in there about loading files, parallelism, network sockets or anything else. Yet you can run it over a text file from the commandline -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
 
 [[pig_latin_translator]]
-.Igpay Atinlay translator, actual version
+.Igpay Atinlay translator
 ----
 CONSONANTS   = "bcdfghjklmnpqrstvwxz"
 UPPERCASE_RE = /[A-Z]/
@@ -77,7 +105,7 @@ end
 * `yield(latinized)` hands off the `latinized` string for wukong to output
 ****
 
-It's best to begin developing jobs locally on a subset of data. Run your Wukong script directly from your terminal's commandline:
+It's best to begin developing jobs locally on a subset of data, because they are faster and cheaper to run. To run the Wukong script locally, enter this into your terminal's commandline footnote:[If you're not familiar with working from the commandline, Appendix (REF) will give you the bare essentials.]:
 
 ------
 wu-local examples/text/pig_latin.rb data/magi.txt -
@@ -89,15 +117,25 @@ The `-` at the end tells wukong to send its results to standard out (STDOUT) rat
 Everywhere-way ey-thay are-way isest-way. Ey-thay are-way e-thay agi-may.
 ------
 
-That's what it looks like when a `cat` is feeding the program data; let's see how it works when an elephant sets the pace.
+That's what it looks like when a `cat` is feeding the program data. Let's run it on a real Hadoop cluster to see how it works when an elephant is in charge.
+
+NOTE: There are even more reasons why it's best to begin developing jobs locally on a subset of data than just faster and cheaper. What's more, though, extracting a meaningful subset of tables also forces you to get to know your data and its relationships. And since all the data is local, you're forced into the good practice of first addressing "what would I like to do with this data" and only then considering "how shall I do so efficiently". Beginners often want to believe the opposite, but experience has taught us that it's nearly always worth the upfront investment to prepare a subset, and not to think about efficiency from the beginning.
+
+
+=== Transferring data to the cluster
 
 [NOTE]
 .Are you running on a cluster?
 ======
 
-If you've skimmed Hadoop's documentation already, you've probaby seen the terms _fully-distributed,_ _pseudo-distributed,_ and _local,_ bandied about. Those describe different ways to setup your Hadoop cluster, and they're relevant to how you'll run the examples in this chapter.
+If you've skimmed Hadoop's documentation already, you've probaby seen the terms _fully-distributed,_ _pseudo-distributed,_ and _local_ bandied about. Those describe different ways to setup your Hadoop cluster, and they're relevant to how you'll run the examples in this chapter.
+If you follow our advice and only use Hadoop through its medium and high-level abstractions,
+you can develop and test a job using your laptop 
+during a long-haul flight with no network access, then run it on a cluster 
 
-In short: if you're running the examples on your laptop, during a long-haul flight, you're likely running in local mode. That means all of the computation work takes place on your machine, and all of your data sits on your local filesystem.
+If you want to running the examples on the single machine you're sitting in front of, , you're likely running . That means all of the computation work takes place on your machine, and all of your data sits on your local filesystem.
+
+// we recommend you
 
 On the other hand, if you have access to a cluster, your jobs run in fully-distributed mode. All the work is farmed out to the cluster machines. In this case, your data will sit in the cluster's filesystem called HDFS.
 
@@ -110,16 +148,20 @@ hadoop fs -put   wukong_example_data/text ./data/
 
 These commands understand `./data/text` to be a path on the HDFS, not your local disk; the dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `wu-put` command, which takes a list of local paths and copies them to the HDFS, treats its final argument as an HDFS path by default, and all the preceding paths as being local.
 
+// If you want to test you
+// You might also see references to 'pseudo-distributed mode'. Our advice is to avoid it.
+
 (Note: if you don't have access to a Hadoop cluster, Appendix 1 (REF) lists resources for acquiring one.)
 ======
 
 ==== Run the Job ====
 
-First, let's test on the same tiny little file we used at the commandline.
+First, let's test on the same tiny little file we used at the commandline. This command does not process any data but instead instructs _Hadoop_ to process the data, and so its output will contain information on how the job is progressing.
+
 // Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without Hadoop.
 
 ------
-wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
+wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi.txt
 ------
 
 // TODO-CODE: something about what the reader can expect to see on screen
@@ -186,13 +228,23 @@ Visit the jobtracker console (see sidebar REF). The first thing you'll notice is
 
 The most important numbers to note are the number of running tasks (there should be some unless your job is finished or the cluster is congested) and the number of failed tasks (for a healthy job on a healthy cluster, there should never be any). Don't worry about killed tasks; for reasons we'll explain later on, it's OK if a few appear late in a job. We will describe what to do when there are failing attempts later in the section on debugging Hadoop jobs (REF), but in this case, there shouldn't be any. Clicking on the number of running Map tasks will take you to a window that lists all running attempts (and similarly for the other categories). On the completed tasks listing, note how long each attempt took; for the Amazon M3.xlarge machines we used, each attempt took about x seconds (CODE: correct time and machine size). There is a lot of information here, so we will pick this back up in chapter (REF), but the most important indicator is that your attempts complete in a uniform and reasonable length of time. There could be good justification for why task 00001 is still running after five minutes while all other attempts finished in ten seconds, but if that's not what you thought would happen you should dig deeper footnote:[A good justification is that task 00001's input file was compressed in a non-splittable format and is 40 times larger than the rest of the files. It's reasonable to understand how this unfortunate situation unfairly burdened a single mapper task. A bad justification is that task 00001 is trying to read from a failing-but-not-failed datanode, or has a corrupted record that is sending the XML parser into recursive hell. The good reasons you can always predict from the data itself; otherwise assume it's a bad reason].
 
-You should get in the habit of sanity-checking the number of tasks and the input and output sizes at each job phase for the jobs you write. In this case, the job should ultimately require x Map tasks, no Reduce tasks and on our x machine cluster, it completed in x minutes. For this input, there should be one Map task per HDFS block, x GB of input with the typical one-eighth GB block size, means there should be 8x Map tasks. Sanity checking the figure will help you flag cases where you ran on all the data rather than the one little slice you intended or vice versa; to cases where the data is organized inefficiently; or to deeper reasons that will require you to flip ahead to chapter (REF).
+You should get in the habit of sanity-checking the number of tasks and the input and output sizes at each job phase for the jobs you write.
+
+
+Remember, what we're learning to do is 'coach' Hadoop into how to process our data.
+
+In this case, the job should ultimately require x Map tasks, no Reduce tasks and on our x machine cluster, it completed in x minutes. For this input, there should be one Map task per HDFS block, x GB of input with the typical one-eighth GB block size, means there should be 8x Map tasks. Sanity checking the figure will help you flag cases where you ran on all the data rather than the one little slice you intended or vice versa; to cases where the data is organized inefficiently; or to deeper reasons that will require you to flip ahead to chapter (REF).
 
 Annoyingly, the Job view does not directly display the Mapper input data, only the cumulative quantity of data per source, which is not always an exact match. Still, the figure for HDFS bytes read should closely match the size given by ‘Hadoop fs -du’ (CODE: add paths to command).
 
 You can also estimate how large the output should be, using the "Gift of the Magi" sample we ran earlier (one of the benefits of first running in local mode). That job had an input size of x bytes and an output size of y bytes, for an expansion factor of z, and there is no reason to think the expansion factor on the whole Wikipedia corpus should be much different. In fact, dividing the HDFS bytes written by the HDFS bytes read line shows an expansion factor of q.
 
 We cannot stress enough how important it is to validate that your scripts are doing what you think they are. The whole problem of Big Data is that it is impossible to see your data in its totality. You can spot-check your data, and you should, but without independent validations like these you're vulnerable to a whole class of common defects. This habit -- of validating your prediction of the job’s execution -- is not a crutch offered to the beginner, unsure of what will occur; it is a best practice, observed most diligently by the expert, and one every practitioner should adopt.
+
+=== Performance Baseline
+
+This first example is what some people call an "embarrassingly parallel" problem: every record can be processed on its own. As you'll see, that means it uses only the _Map_ phase of Map/Reduce.
+
 
 .How a job is born, the thumbnail version
 *********
@@ -205,6 +257,11 @@ As you have gathered, each Hadoop worker runs a tasktracker daemon to coordinate
 The one important detail to learn in all this is that _task trackers do not run your job, they only launch it_. Your job executes in a completely independent child process with its own Java settings and library dependencies. In fact, if you are using Hadoop streaming programs like Wukong, your job runs in even yet its own process, spawned by the Java child process. We've seen people increase the tasktracker memory sizes thinking it will improve cluster performance -- the only impact of doing so is to increase the likelihood of out-of-memory errors.
 ********
 
-=== Outro
+// === The Cost of a Job
 
-In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.
+
+
+// === Outro
+// 
+// In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.
+

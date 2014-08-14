@@ -1,3 +1,161 @@
+* Tokenize Articles
+* Wordbag articles
+* Corpus term stats
+  - document+term: (all rate figures are ppb)
+    - doc_id, bag:{(term, doc-term-n-usages, doc-term-rate, doc-term-rate-squared, range=1)}, doc-n-terms, doc-n-usages
+    - doc-max-term-usages: usages-ct of term with highest usages-ct
+    - doc-term-tf_1 = 0.5*(1 + (doc-term-n-usages/doc-max-term-usages))
+    - doc-term-tf   = 1 + log(doc-term-n-usages) (or 0 if d-t-n-usages == 0)
+    - doc-term-tf_3 = log(doc-term-n-usages)/(1+log(doc-avg-term-usages))
+    - doc-n-singletons: number of terms in document used exactly once
+  
+  - removing stopwords
+  
+  - all:
+    - tot-usages: sum(doc-term-n-usages) for all docs&terms
+    - n-terms = count(distinct terms): count of distinct terms
+    - n-docs = count(docs): count of docs
+    - avg-doc-terms: avg(doc-n-terms) -- average number of distinct terms in a doc
+    - avg-doc-usages = avg(doc-n-usages) = (tot-usages/n-docs): average number of usages in a doc
+    - sum of doc-term-rate on all docs and terms should be same as docs ct -- see if we get an underflow situation? Do Knuth trick?
+    
+  - term: 
+    - term-n-usages: sum of doc-term-n-usages
+    - term-rate: 1e9*sum(doc-term-n-usages)/tot-usages
+    - term-range: count of docs with word ie. sum of range column
+    - idf: ln(n-docs/term-range)
+    - term-avg-doc-rate: avg(doc-term-rate)
+    - term-sdv-doc-rate: sqrt((n-docs * sum(doc-term-rate-squared) - sum(doc-term-rate)^2)/n-docs
+    - rank-term-rate
+    - ?rank of dispersion*term-rate
+  
+  - term-doc:
+    - term
+      - doc-term-n-usages
+      - doc-term-rate
+      - term-rate
+      - doc-term-tf = 0.5*(1 + (doc-term-n-usages/doc-max-term-usages))
+      - doc-term-tf-idf = tf*idf: significance of document for this term in global corpus
+      - doc-term-rate-sm = (1 - doc-unseen-rate)*(doc-term-n-usages / doc-n-usages)
+    - doc-n-terms
+    - doc-n-usages
+    - doc-unseen-rate = clamp(doc-n-singletons/doc-n-usages, 1/doc-n-usages, 0.5)
+    - doc-unseen-term-rate = ( doc-unseen-rate * (term-rate/(1 - (doc-n-usages/tot-usages))) ) -- rate of a specific unseen word 
+  - all
+    - n-grids
+    - avg-docs-per-grid
+  - grid
+    - term
+      - grid-term-n-usages -- with grid-n-usages, the term rate if longer docs count more. In effect, this treats the whole grid as one document.
+      - grid-avg-doc-term-rate -- term rate if every document weights the same
+      - term-rate -- global term rate, for normalization
+      - grid-term-tf: 0.5*(1 + (doc-term-n-usages/doc-max-term-usages))
+      - grid-term-tf-idf = tf*idf: significance of document for this term in global corpus
+      - avg-doc-term-tf-idf
+    - grid-n-usages
+    - grid-n-terms
+    - grid-n-docs
+    - n-grids
+    - n-docs
+
+The way to think about it is as... You won't believe it... As if there were a chimpanzee at a typewriter sitting at each grid cell littering the floor with documents. Whatever the coherence of their output, they do generally use words at the same rate as normal prose -- but each one has words they've grown particularly fond of.  
+
+=== How to weight tiles
+
+
+We can think of a few ways to look at it:
+
+10/1000    2/100   1/100   0/1000 0/300 
+
+
+
+
+- **grid as doc**: use grid PMI, grid tf-idf. 
+- **average of doc stats**: use average of doc PMI, doc tf-idf. A term used 2 times out of 200 in a smallish document counts the same as a term used 10 times out of 1000 in a larger document. The number of documents mentioning a term doesn't matter if the same average rate is hit: you get the same outcome for a term that appears 1% of the time in both A and B as if it appeared 2% of the time in A and never in B.
+- **RMS averaged docs**: use sum-squared average (`sqrt(sum(x^2))/ct`). A term appearing 1% of the time in both A and B contributes about 30% less than if it appeared 2% of the time in A and never in B.
+- **thresholded doc stats**: a term is prominent if many docs feature it at some level. Three docs featuring a term at _any_ above-cutoff rate contributes much more than one doc which shouts about it. A grid with three docs which use the term just under threshold doesn't is the same as one that doesn't mention it.
+- an ad-hoc mixture of the above.
+
+=== Count-min-sketch
+
+* Count-min-sketch filter for bigrams
+  - hash 
+  - choosing a hash function; watch out for deanonymization
+  - choosing number, length of hash; using parts of a hash as hash. (2^21 = 2 million, getting three from a 64-bit hash; 2^25 = 33 million, getting five from two 64-bit hashes; 2^26 = 66 million, getting six from five 32-bit hashes / 2 64-bit and a 32-bit; 2^27 = 134 million, getting seven from three 64-bit hashes.)
+  - http://web.stanford.edu/class/cs166/lectures/12/Small12.pdf
+  - w is the number of possible hash outcomes. Eg for 21-bit hash get 2 million slots; for 25-bit hash get 33 million slots
+  - dh is the number of hash functions we use
+  - a_i is the usages count for term a
+  - U = |a|_1 (the l1 norm of a) is sum(a_i): the total usage count
+  - |a|_2 (l2 norm) is sqrt(sum(a_i^2)); it is strictly less than |a|_1.
+  - the naive background error with one hash function will be U/w: scattering the U observations evenly across w outcomes. If I have 4 million articles averaging 100 words each, and 25 bits giving 33 million slots, the expected slop is 12 counts. For 21 bits, it's 400m/2m= 191 counts.
+  - with many hash functions, if we take 
+    - eps   = e * U / w = 2.718 * U / 2^hashbits
+    - delta = 1/exp(dh) -- with 4 hashes it's 1/55, 5 hashes it's ~1/150, with seven it's ~1/1100
+  - then with probability delta, the error in count will be less than eps.
+  - summary
+    - w = 2^hbits
+    - data size = dh*w
+    - background bin count = U/w
+    - eps = e * U/w
+    - delta = 1/exp(dh)
+  - for 400m usages, 21 bits, 
+
+
+* BNC stats: #1 "the": 62k ppm; #10, "was": 9.2k ppm; 36 ppm: "at once", empire, sugar; 17 ppm: "as opposed to", horrible, measurements; 10 ppm "relative to", dirt, sexually
+  - http://ucrel.lancs.ac.uk/bncfreq/flists.html
+  - ninety-four: 153/450m, dispersion 0.89; tyrannosaur 134/450m, disp 0.53; combinatorial 123/450m, disp 0.55; fluidly 135/450m, disp 0.90; compassionately 122/450m, disp 0.9
+ 
+
+===== notes on figures 
+
+The inverse document frequency is a measure of how much information the word provides, that is, whether the term is common or rare across all documents. It is the logarithmically scaled fraction of the documents that contain the word, obtained by dividing the total number of documents by the number of documents containing the term, and then taking the logarithm of that quotient.
+
+Range (Ra) is a simple count of how many segments include the tag in question. Dispersion (Disp) is a statistical coefficient (Juilland’s D) of how evenly distributed a tag is across successive segments of the corpus. This is useful, because many segments and texts are made up of a number of smaller, relatively independent units – for example, sectors and stories in newspapers. It may be that, even within a text, certain word classes are overused in a given part – e.g. the football-reporting sector of a newspaper. Juilland’s D is more sensitive to this degree of variation. It was calculated as follows:Vwhere x is the mean sub-frequency of the tag in the subcorpus (i.e. its frequency in each segment averaged) and s is the standard deviation of these sub-frequencies. We selected Juilland’s D as it has been shown by Lyne (1985) to be the most reliable of the various dispersion coefficients that are available. It varies between 0 and 1, where values closer to 0 show that occurrences are focussed in a small number of segments, and values closer to 1 show a more even distribution across all segments.
+    D =1- V/sqrt(n-1)
+    where n is the number of segments in the subcorpus. The variation coefficient V isgiven by:
+    V = s / x
+
+
+http://www.comp.lancs.ac.uk/~paul/publications/rwl_lc36_2002.pdf
+http://nlp.stanford.edu/~wcmac/papers/20050421-smoothing-tutorial.pdf
+http://faculty.cs.byu.edu/~ringger/CS479/papers/Gale-SimpleGoodTuring.pdf
+
+
+http://www.linguistics.ucsb.edu/faculty/stgries/research/2010_STG_UsefulStats4CorpLing_MosaicCorpLing.pdf
+
+
+------
+
+http://www.linguistics.ucsb.edu/faculty/stgries/research/2008_STG_Dispersion_IJCL.pdf
+
+Let us assume this is our corpus of length l = 50, where letters represent words and the pipes the division of the corpus into different, here, n=5 equally-sized parts.3bamnibeupk|basatbewqn|bcagabesta|baghabeaat| ba h a a b e a x aThe percentages that each of the parts makes up of the whole corpus — in this case all 0.2 — are denoted as s1 to s5. Let’s assume we are interested in the word a in the corpus. The frequencies with which a occurs in each part are denoted as v1, v2, etc.; as you can see, a occurs once in the first part, twice in the second part, and so on, such that v1 =1, v2 =2, v3 =3, v4 =4, v5 =5. The vector with all observed frequencies (1, 2, 3, 4, 5) is referred to as v and the sum of all observed frequencies, i.e., the number of occurrences of a is referred to as f (f=Σv=15). Note also some other words’ distributions: x occurs only once in the whole corpus; e occurs once in each segment.
+
+The first are general stats and notspecifically geared to the dispersion of linguistic items in texts but more often used as general indices ofvariation/dispersion: 
+
+* range: number of parts containing term x times) = 5 (x is usually, but need not be, 1)
+* max-min difference: max(v) - min(v) = 4 f
+* standard deviation sd = sqrt( N*sum(x^2) - sum(x)^2 )/N
+* Chi-squared χ : i=1 
+* variation coefficient vcn: The coefficient of variation (CV) is defined as the ratio of the standard deviation sig to the mean mu  http://en.m.wikipedia.org/wiki/Coefficient_of_variation * chi-squared χ : ∑ n − 1 ≈ 3.33 where expected
+Next, a few well-known “classics” from the early 1970s: 1
+* Juilland et al.’s (1971) D: 1 −⎝ i =1⎝ in=1 ⎠ ≈ ⎠0.736 ⎝ ⎛⎝1⎛n−1⎠⎞⎞⎠1
+* Rosengren’s (1971) S: ⎜ ⎜ vcv ⎟ ⎟ ⋅
+* Carroll’s (1970) D : lo⎝g
+* idf 
+* Juillands D adjusted for differing corpus sizes
+    * = D: : ≈ 7.906 ≈ 7.906 where v= 
+
+To determine the degree of dispersion DP of word a in a corpus with n parts, oneneeds to take three simple steps.i. Determine the sizes s1−n of each of the n corpus parts, which are normalized against the overall corpus size and correspond to expected percentages which take differently-sized corpus parts into considerationii. Determine the frequencies v1−n with which a occurs in the n corpus parts, which are normalized against the overall number of occurrences of a and cor- respond to an observed percentage.iii. Compute all n pairwise absolute differences of observed and expected per- centages, sum them up, and divide the result by two. The result is DP, which can theoretically range from approximately 0 to 1, where values close to 0 indicate that a is distributed across the n corpus parts as one would expect given the sizes of the n corpus parts. By contrast, values close to 1 indicate that a is distributed across the n corpus parts exactly the opposite way one would expect given the sizes of the n corpus parts
+* Divide DP by 1 − (1/n) to yield DPnorm.
+
+
+Minimal DP’sWord DPBroad Dispersion: a 0.08 to 0.103 and 0.106 with 0.155 but 0.158 in 0.159 not 0.165 this 0.166 the 0.168 have 0.178 be 0.207 are 0.223 that 0.227 there 0.243 of 0.249
+Lumpy Dispersion: macari 0.999 10 mamluks 0.998 10 lemar 0.996 10 sem 0.994 10 hathor 0.994 10 tatars 0.989 10 scallop 0.989 10 malins 0.988 10 ft 0.986 102 defender 0.98 10 scudamore 0.98 10 pre 0.945 10 diamond 0.941 102 carl 0.938 102 proclaimed 
+
+Medium Dispersion: includes thousands plain formal anywhere properly excuse hardly er each lot house tell came
+------
+
 [[text_data]]
 == Text Data
 
@@ -44,44 +202,9 @@ At a high level, what we'll do is this:
 * Identify prominent (unusually frequent) words on each grid cell
 * Identify words that are prominent on a large number of grid cells -- these have strong geographic "flavor"
 
-
-=== Match Wikipedia Article Text with Article Geolocation
-
-Let's start by assembling the data we need. The wikipedia dataset has three different tables for each article: the metadata for each page (page id, title, size, last update time, and so); the full text of each article (a very large field); and the article geolocations. Below are snippets from the articles table and of the geolocations table:
-
-[[wp_lexington_article]]
-._Wikipedia article record for "Lexington, Texas"_
-------
-Lexington,_Texas  Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
-------
-
-
-[[wp_coords]]
-._Article coordinates_
-------
-Lexington,_Texas -97.01 30.41 023130130
-------
-
-Since we want to place the words in each article in geographic context, our first step is to reunite each article with its geolocation.
-
-----
-article_text = LOAD ('...');
-article_geolocations = LOAD('...');
-articles = JOIN article_geolocations BY page_id, article_text BY page_id;
-articles = FOREACH articles GENERATE article_text::page_id, QUADKEY(lng, lat) as quadcell, text;
-----
-
-The quadkey field you see is a label for the grid cell containing an article's location; you'll learn all about them in the <<quadkey,"Geographic Data">> chapter, but for the moment just trust us that it's a clever way to divide up the world map for big data computation. Here's the result:
-
-[[wp_lexington_wordbag_and_coords]]
-._Wordbag with coordinates_
-------
-Lexington,_Texas 023130130 Lexington is a town in Lee County, Texas ...
-------
-
 === Decompose Wikipedia Articles
 
-Next, we will summarize each article by preparing its "word bag" -- a simple count of the terms on its wikipedia page. We've written a Pig UDF (User-Defined Function) to do so:
+Next, we will summarize each article by preparing its "word bag" -- a simple count of the terms on its wikipedia page. This is an application of "Exploding One Records into Many" (REF), but in this case we've written a Pig UDF (User-Defined Function) that uses a proper Linguistics toolkit (OpenNLP (?)) to perform the splitting.
 
 ----
 REGISTER path/to/udf ...;
@@ -116,8 +239,33 @@ Lexington,_Texas 023130130 tot_usages num_terms 2   "bbq"
 Lexington,_Texas 023130130 tot_usages num_terms 1   "barbecue"
 ------
 
+=== Determining Frequency, Range and Dispersion of Terms within a Corpus
+
+* Doc-term-usages-ct
+* doc-term-usages-rate, 
+* doc-term-frac
+* Doc-all-terms-ct, doc-all-usages-ct
+* Raw Rate in doc; adjusted rate in doc:
+* Docs-ct -- count of documents
+* Terms-ct -- count of terms
+* Usages-ct -- count of usages
+* (doc_id, term, usages-ct, doc-term-usages-rate, all-term-usages-freq)
+
+The term "however" crops up at a rate of XXX ppm across XXX articles
+In contrast, the word "function" XXX ppm of terms, XXX %of articles -- relatively fewer articles employ the term, but they tend to do at a concentrated rate.
+(TODO: histogram of usage counts)
+We can get a sense of this "lumpiness" using the dispersion function footnote:[there are several competing formulas to capture the concept we have in mind; this version, "Juilland's D", is easy to calculate]
+
+=== map decorate
+
+Group all count star
+
+
+
 
 === Term Statistics by Grid Cell
+
+Now comes the fun part.
 
 ----
 taf_g = GROUP term_article_freqs BY quadcell, term;
@@ -225,6 +373,41 @@ In doing so, we've turned articles that have a geolocation into coarse-grained r
 
 Our next task -- the sprint home -- is to use a few more transforms and pivots to separate the signal from the background and, as far as possible, from the noise.
 
+=== Match Wikipedia Article Text with Article Geolocation
+
+Let's start by assembling the data we need. The wikipedia dataset has three different tables for each article: the metadata for each page (page id, title, size, last update time, and so); the full text of each article (a very large field); and the article geolocations. Below are snippets from the articles table and of the geolocations table:
+
+[[wp_lexington_article]]
+._Wikipedia article record for "Lexington, Texas"_
+------
+Lexington,_Texas  Lexington is a town in Lee County, Texas, United States. ... Snow's BBQ, which Texas Monthly called "the best barbecue in Texas" and The New Yorker named "the best Texas BBQ in the world" is located in Lexington.
+------
+
+
+[[wp_coords]]
+._Article coordinates_
+------
+Lexington,_Texas -97.01 30.41 023130130
+------
+
+Since we want to place the words in each article in geographic context, our first step is to reunite each article with its geolocation: a Direct Inner Join (pattern REF). While we've got the data streaming by, we also attach its quadtile sorting key ("Partition Points onto a Spatial Grid", REF) w
+
+----
+article_text = LOAD ('...');
+article_geolocations = LOAD('...');
+articles = JOIN article_geolocations BY page_id, article_text BY page_id;
+articles = FOREACH articles GENERATE article_text::page_id, QUADKEY(lng, lat) as quadcell, text;
+----
+
+Here's the result:
+
+[[wp_lexington_wordbag_and_coords]]
+._Wordbag with coordinates_
+------
+Lexington,_Texas 023130130 Lexington is a town in Lee County, Texas ...
+------
+
+
 ==== Pulling signal from noise
 
 To isolate the signal, we'll pull out a trick called <<pmi,"Pointwise Mutual Information" (PMI)>>. Though it may sound like an insurance holding company, in fact PMI is a simple approach to isolate the noise and background. It compares the following:
@@ -288,8 +471,6 @@ Next, we'll choose some _exemplars_: familiar records to trace through "Barbeque
 * https://github.com/Ganglion/varaha/blob/master/src/main/java/varaha/text/TokenizeText.java
 
 
-
-
 ------
 stream do |article|
   words = Wukong::TextUtils.tokenize(article.text, remove_stopwords: true)
@@ -300,8 +481,6 @@ end
 ------
 
 Reading it as prose the script says "for each article: break it into a list of words; group all occurrences of each word and count them; then output the article id, word and count."
-
-
 
 .Snippet from the Wikipedia article on "Barbecue"
 [quote, wikipedia, http://en.wikipedia.org/wiki/Barbeque]
@@ -357,7 +536,7 @@ To be lazy, add a 'pseudocount' to each term: pretend you saw it an extra small 
 
 Consult a mathematician: for something that is mathematically justifiable, yet still simple enough to be minimally invasive, she will recommend "Good-Turing" smoothing.
 
-In this approach, we expand the dataset to include both the pool of counter for terms we saw, and an "absent" pool of fractional counts, to be shared by all the terms we _didn't_ see. Good-Turing says to count the terms that occurred once, and guess that an equal quantity of things _would_ have occurred once, but didn't. This is handwavy, but minimally invasive; we oughtn't say too much about the things we definitionally can't say much about. 
+In this approach, we expand the dataset to include both the pool of counts for terms we saw, and an "absent" pool of fractional counts, to be shared by all the terms we _didn't_ see. Good-Turing says to count the terms that occurred once, and guess that an equal quantity of things _would_ have occurred once, but didn't. This is hand-wavy, but minimally invasive; we oughtn't say too much about the things we definitionally can't say much about.
 
 We then make the following adjustments:
 
@@ -400,5 +579,5 @@ We then make the following adjustments:
 // 	end
 // 
 
-
+“If one advances confidently in the direction of his dreams, and endeavors to live the life which he has imagined, he will meet with a success unexpected in common hours.” — Henry David Thoreau, Walden: Or, Life in the Woods
 

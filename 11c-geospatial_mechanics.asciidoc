@@ -60,17 +60,31 @@ We'll start with the operations that transform a shape on its own to produce a n
 
 ==== Constructing and Converting Geometry Objects
 
-Somewhat related are operations that bring shapes in and out of Pig's control.
+Somewhat related are operations that change the data types used to represent a shape.
 
-* `FromWKText(chararray)`, `FromGeoJson(chararray)` -- converts the serialized description of a shape into the corresponding geometry object. We'll cover these data formats a bit later in the chapter. Similarly, `ToWKText(geom)` and `ToGeoJson(geom)` serialize a geometry into a string
+Going from shape to coordinates-as-numbers lets you apply general-purpose manipulations
+
+As a concrete example (but without going into the details), to identify patterns of periodic spacing in a set of coordinates footnote:[The methodical rows of trees in an apple orchard will appear as isolated frequency peaks oriented to the orchard plan; an old-growth forest would show little regularity and no directionality]
+you'd quite likely want to extract the coordinates of your shapes as a bag of tuples, apply
+a generic UDF implementing the 2-D FFT (Fast Fourier Transform) algorithm
+
+
+.
+The  files in GeoJSON, WKT, or the other geographic formats described later in this Chapter (REF) produce records directly as geometry objects, 
+
+There are functions to construct Point, Multipoint, LineString, ... objects from coordinates you supply, and counterparts that extract a shape's coordinates as plain-old-Pig-objects. 
+
+
+* `Point` / `MultiPoint` / `LineString` / `MultiLineString` / `Polygon` / `MultiPolygon` -- construct given geometry.
 * `GeoPoint(x_coord, y_coord)` -- constructs a `Point` from the given coordinates
 * `GeoEnvelope( (x_min, y_min), (x_max, y_max) )` -- constructs an `Envelope` object from the numerically lowest and numerically highest coordinates. Note that it takes two tuples as inputs, not naked coordinates.
 * `GeoMultiToBag(geom)` -- splits a (multi)geometry into a bag of simple geometries. A `MultiPoint` becomes a bag of `Points`; a `Point` becomes a bag with a single `Point`, and so forth.
 * `GeoBagToMulti(geom)` -- combines a bag of geometries into a single multi geometry. For instance, a bag with any mixture of `Point` and `MultiPoint` geometries becomes a single `MultiPoint` object, and similarly for (multi)lines and (multi)polygons. All the elements must have the same dimension -- no mixing (multi)points with (multi)lines, etc.
+* `FromWKText(chararray)`, `FromGeoJson(chararray)` -- converts the serialized description of a shape into the corresponding geometry object. We'll cover these data formats a bit later in the chapter. Similarly, `ToWKText(geom)` and `ToGeoJson(geom)` serialize a geometry into a string
+
 
 // * (?name) GetPoints -- extract the collection of points from a geometry. Always returns a MultiPoint no matter what the input geometry.
 // * (?name) GetLines  -- extract the collection of lines or rings from a geometry. Returns `NULL` for a `Point`/`MultiPoint` input, and otherwise returns a MultiPoint no matter what the input geometry.
-// * Point / MultiPoint / LineString / MultiLineString / Polygon / MultiPolygon -- construct given geometry
 //   - ClosedLineString -- bag of points to linestring, appending the initial point if it isn't identical to the final point
 // * ForceMultiness
 // * AsBinary, AsText
@@ -86,22 +100,21 @@ Somewhat related are operations that bring shapes in and out of Pig's control.
 * `GeoX(point)`, `GeoY(point)` -- X or Y coordinates of a point
 * `GeoLength(geom)`
 * `GeoLength2dSpheroid(geom)` — Calculates the 2D length of a linestring/multilinestring on an ellipsoid. This is useful if the coordinates of the geometry are in longitude/latitude and a length is desired without reprojection.
-* `GeoPerimeter(geom)` -- length measurement of a geometry's boundary
-* `GeoDistanceSphere(geom)` — Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius of 6370986 meters. Faster than GeoDistanceSpheroid, but less accurate
 * `GeoDistance(geom)` -- the 2-dimensional cartesian minimum distance (based on spatial ref) between two geometries in projected units.
-* `GeoMinDistance(geom)`
-* `GeoMaxDistance(geom)` -- the 2-dimensional largest distance between two geometries in projected units
+* `GeoDistanceSphere(geom)` — Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius of 6370986 meters.
+// * `GeoMaxDistance(geom)` -- the 2-dimensional largest distance between two geometries in projected units
 // * IsNearby  -- if some part of the geometries lie within the given distance apart
 // * IsNearbyFully(geom_a, geom_b, distance) -- if all parts of each geometry lies within the given distance of each other.
+// * `GeoPerimeter(geom)` -- length measurement of a geometry's boundary
 
 There are also a set of meta-operations that report on the geometry objects representing a shape:
 
 * `Dimension(geom)` -- This operation returns zero for Point and MultiPoint; 1 for LineString and MultiLineString; and 2 for Polygon and MultiPolygon, regardless of whether those shapes exist in a 2-D or 3-D space
 * `CoordDim(geom)` -- the number of axes in the coordinate system being used: 2 for X-Y geometries, 3 for X-Y-Z geometries, and so on. Points, lines and polygons within a common coordinate system will all have the same value for `CoordDim`
 * `GeometryType(geom)` -- string representing the geometry type: `'Point'`, `'LineString'`, ..., `'MultiPolygon'`.
-* `IsGeomEmpty(geom)` -- 1 if the geometry contains no actual points.
-* `IsLineClosed(line)` -- 1 if the given `LineString`'s end point meets its start point.
-* `IsSimple` -- 1 if the geometry has no anomalous geometric aspects, such intersecting or being tangent to itself. A multipoint is 'simple' if none of its points coincide. 
+* `IsGeoEmpty(geom)` -- 1 if the geometry contains no actual points.
+* `IsGeoClosed(line)` -- 1 if the given `LineString`'s end point meets its start point.
+* `IsGeoSimple` -- 1 if the geometry has no anomalous geometric aspects, such intersecting or being tangent to itself. A multipoint is 'simple' if none of its points coincide. 
 * `IsLineRing` -- 1 if the given `LineString` is a ring -- that is, closed and simple.
 
 * `NumGeometries(geom_collection)`
@@ -155,7 +168,7 @@ The geospatial toolbox has a set of precisely specified spatial relationships. T
 * `Contains(geom_a, geom_b)` -- 1 if `geom_a` completely contains `geom_b`: that is, the shapes' interiors intersect, and no part of `geom_b` lies in the exterior of `geom_a`. If two shapes are equal, then it is true that each contains the other. `Contains(A, B)` is exactly equivalent to `Within(B, A)`.
 // - `ContainsProperly(geom_a, geom_b)` -- 1 if : that is, the shapes' interiors intersect, and no part of `geom_b` intersects the exterior _or boundary_ of `geom_a`. The result of `Contains(A, A)` is always 1 and the result of `ContainsProperly(A,A) is always 0.
 * `Within(geom_a, geom_b)` -- 1 if `geom_a` is completely contained by `geom_b`: that is, the shapes' interiors intersect, and no part of `geom_a` lies in the exterior of `geom_b`. If two shapes are equal, then it is true that each is within the other.
-* `Covers(geom_a, geom_b)` -- 1 if no point in `geom_b` is outside `geom_a`. `CoveredBy(geom_a, geom_b)` is sugar for `Covers(geom_b, geom_a)`.
+* `Covers(geom_a, geom_b)` -- 1 if no point in `geom_b` is outside `geom_a`. `CoveredBy(geom_a, geom_b)` is sugar for `Covers(geom_b, geom_a)`. (TODO: verify: A polygon covers its boundary but does not contain its boundary.)
 * `Crosses(geom_a, geom_b)` -- 1 if the shapes cross: their geometries have some, but not all, interior points in common; and the dimension of the intersection is one less than the higher-dimension of the two shapes. That's a mouthful, so let's just look at the cases in turn:
   - A MultiPoint crosses a (multi)line or (multi)polygon as long as at least one of its points lies in the other shape's interior, and at least one of its points lies in the other shape's exterior. Points along the border of the polygon(s) or the endpoints of the line(s) don't matter.
   - A Line/MultiLine crosses a Polygon/MultiPolygon only when part of some line lies within the polygon(s)' interior and part of some line lies within the polygon(s)' exterior. Points along the border of a polygon or the endpoints of a line don't matter.

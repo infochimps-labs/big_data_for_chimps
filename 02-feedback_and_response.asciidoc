@@ -1,0 +1,50 @@
+==== Introduction Structure
+
+
+
+==== Tell readers what the point of this is before you dive into the example. What are you showing them? Why? What will they get out of it? "I'm going to walk you through an example of ___, which will show you _____ so that you'll begin to understand how _____" for example.
+
+[NOTE]
+.Initial version
+======
+Igpay Atinlay translator, actual version is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. It’s written in Wukong, ...
+======
+
+Igpay Atinlay translator is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. This is a Hadoop job stripped to its barest minimum, one that does just enough to each record that you believe it happened but with no distractions. That makes it convenient to learn how to launch a job; how to follow its progress; and where Hadoop reports performance metrics such as run time and amount of data moved.  What's more, the very fact that it's trivial makes it one of the most important examples to run. For comparable input and output size, no regular Hadoop job can out-perform this one in practice, so it's a key reference point to carry in mind.
+
+==== Whenever you say "It's best" be sure to include a statement of why it's best.
+
+[NOTE]
+.Initial version
+======
+It’s best to begin developing jobs locally on a subset of data. Run your Wukong script directly from your terminal’s commandline: ...
+======
+
+
+It's best to begin developing jobs locally on a subset of data: they are faster and cheaper to run. To run the Wukong script locally, enter this into your terminal's commandline:
+
+(... a couple paragraphs later ...)
+
+NOTE: There are even more reasons why it's best to begin developing jobs locally on a subset of data than just faster and cheaper. What's more, though, extracting a meaningful subset of tables also forces you to get to know your data and its relationships. And since all the data is local, you're forced into the good practice of first addressing "what would I like to do with this data" and only then considering "how shall I do so efficiently". Beginners often want to believe the opposite, but experience has taught us that it's nearly always worth the upfront investment to prepare a subset, and not to think about efficiency from the beginning.
+
+==== Tell them what to expect before they run the job.
+
+[NOTE]
+.Initial version
+======
+First, let’s test on the same tiny little file we used at the commandline.
+
+------
+wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi
+------
+
+While the script outputs a bunch of happy robot-ese to your screen...
+======
+
+First, let's test on the same tiny little file we used at the commandline. This command does not process any data but instead instructs _Hadoop_ to process the data, and so its output will contain information on how the job is progressing.
+
+------
+wukong launch examples/text/pig_latin.rb ./data/text/magi.txt ./output/latinized_magi.txt
+------
+
+While the script outputs a bunch of happy robot-ese to your screen ...

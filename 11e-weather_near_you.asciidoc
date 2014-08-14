@@ -144,3 +144,18 @@ The Voronoi diagram covers the plane with polygons, one per point -- I'll call t
 // 
 // The details: Connect each point with a line to its neighbors, dividing the plane into triangles; there's an efficient alorithm (http://en.wikipedia.org/wiki/Delaunay_triangulation[Delaunay Triangulation]) to do so optimally. If I stand at the midpoint of the edge connecting two locations, and walk perpendicular to the edge in either direction, I will remain equidistant from each point. Extending these lines defines the Voronoi diagram -- a set of polygons, one per point, enclosing the area closer to that point than any other.
 
+
+
+=== Spatial Smoothing -- Hot-Spot Analysis
+
+Also known as local auto-correlation
+
+Gi-star (Gettis-Ord)
+
+* http://www.utdallas.edu/~briggs/henan/11SAlocal.ppt
+* http://www.nefmc.org/tech/cte_mtg_docs/130516/CATT%20Report/Getis_Ords_G-star%20and%20Spatial%20Autocorrelation%20implementation%20in%20ArcView.pdf
+* http://www.ucl.ac.uk/jdi/events/int-CIA-conf/ICIAC11_Slides/ICIAC11_3D_SChainey
+* http://resources.esri.com/help/9.3/ArcGISEngine/java/Gp_ToolRef/Spatial_Statistics_tools/how_hot_spot_analysis_colon_getis_ord_gi_star_spatial_statistics_works.htm
+
+
+

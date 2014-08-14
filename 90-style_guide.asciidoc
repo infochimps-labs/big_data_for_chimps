@@ -1,0 +1,7 @@
+
+
+* variable naming: doc_term_n_usages, etc
+* all inputs & outputs have an extension, even on a hadoop cluster: `wukong --run foo.rb ./data/bob.txt ./output/foo_bob.txt` (and so result will be in `./output/foo_bob.txt/part-00000`)
+* make all refs use `./` directory (i.e. the cwd in local mode and the home directory in HDFS mode).
+
+

@@ -1,10 +1,13 @@
 
 ==== Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
 
+Let's start by extending the group-and-aggregate pattern -- introduced in Chapter Six (REF) and ubiqitous since --
 
-We will start, as we always do, by applying patterns that turn Big Data into Much a Less Data. In particular,
-A great tool for visualizing a large spatial data set
 
+
+ a great way to summarize a large data set, and one of the first things you’ll do to Know Thy Data.
+This type of aggregation is a frontline tool of spatial analysis
+It draws on methods you’ve already learned, giving us a chance to introduce some terminology and necessary details. 
 
 // * You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
 // * Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
@@ -58,6 +61,13 @@ Then geonames places -- show lakes and streams (or something nature-y) vs someth
 Do that again, but for a variable: airport flight volume -- researching
 epidemiology
 
+
+This would also be
+n epidemiologist or transportation analyst interested in knowing the large-scale flux of people could throughout the global transportation network
+Combining this with the weather data
+
+
+
 // FAA flight data http://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger/media/cy07_primary_np_comm.pdf
 
 We can plot the number of air flights handled by every airport
@@ -77,8 +87,6 @@ grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
     SUM(n_flights) AS tot_flights;
 ------
 
-An epidemiologist or transportation analyst interested in knowing the large-scale flux of people could throughout the global transportation network
-
 ===== Pattern Recap: Spatial Aggregation of Points
 
 * _Generic Example_ -- group on tile cell, then apply the appropriate aggregation function
@@ -89,8 +97,11 @@ An epidemiologist or transportation analyst interested in knowing the large-scal
 
 === Matching Points within a Given Distance (Pointwise Spatial Join)
 
-Now that you've learned the spatial equivalent of a `GROUP BY`, you'll probably be interested to
-learn the spatial equivalent of `COGROUP` and `JOIN`.
+Now that you've learned the spatial equivalent of a `GROUP BY` aggregation -- combining many records within a grid cell into a single summary record -- you'll probably be interested to
+learn the spatial equivalent of `COGROUP` and `JOIN` --
+collecting all records 
+
+
 In particular, let's demonstrate how to match all points in one table with every point in another table that are less than a given fixed distance apart.
 
 Our reindeer friends would like us to help determin what UFO pilots do while visiting Earth.

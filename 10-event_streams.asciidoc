@@ -151,7 +151,6 @@ Unless of course you are trying to test a service for resilience against an adve
 	flow(:mapper){ input > parse_loglines > elephant_stampede }
 ----
 
-
 You must use Wukong's eventmachine bindings to make more than one simultaneous request per mapper.
 
 === Refs ===
