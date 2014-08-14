@@ -1,0 +1,121 @@
+
+
+
+=== Chapter 11: Geospatial Data
+
+* Intro
+  - mapviewer page: zoom in on English Channel (11a)
+
+* pointwise spatial aggregation
+  - grid UFO sightings by equirectangular tile_ij
+  - mapviewer page to look at it (heatmap layer)
+  - grid airports by # of flights
+  - mapviewer page to look at it
+
+* pointwise spatial join
+  - bounding box for circle of distance
+  - (code block with full bbox-for-circle-of-distance method)
+  - bbox to quadkeys
+  - flatten then group on quadkeys; aggregate
+  - mapviewer page to look at it (layer with points)
+  - mapviewer demo page: two big circles
+  - labelled digram of why max long = point with tangent
+
+* export to tileserver
+  - point -> quadkey
+  - polygon -> quadkey, LineString -> quadkey
+  - (hbase backing?)
+
+* projections
+  - do with mercator (because google)
+  - do with lambert (for equal area)
+  - do with equirectangular (because x/y)
+  - do with coolhat (because poles)
+  - implement coolhat UDF
+  - show our geographic exemplars in each
+  - orthographic projection of each tile scheme on globe (with landmasses?)
+
+* Mechanics of data
+  - Geometric Exemplars
+    - _snake_	   -- Open LineString of an s-like shape. Lies within dotman, its endpoint meets dotman's boundary
+    - _snake_mid_  -- 2nd point of snake
+    - _snake_end_  -- endpoint of snake, meets dotman's boundary
+    - _bar_        -- line. crossed dotman
+    - _bowtie_	   -- LineString of closed non-simple bowtie, one wing larger. touches dotman but doesn't cross.
+    - _banana_	   -- .
+    - _dotman_	   -- MultiPolygon of Dotman (with eye) and Dot, such that centroid is not within interior
+    - _dm_outline_ -- outer ring of dotman body
+    - _hat_	   -- rectangle overlaps dotman's upper half, one corner in middle of dot one corner just left of head
+    - _mote_	   -- small LineString diamond that is inside dotman's eye
+    - _monroe_	   -- small polygon diamond above dotman's mouth
+  - Geographic exemplars
+    - _reyk_ish_   -- Near Reykjavik at (-20, 65) (actual -21.9, 64.1)
+    - _arkh_ish_   -- Near Arkhangelsk at (40, 65) (actual 40.5, 64.5)
+    - _pt_65_10_   -- North of Oslo at (10, 65)
+    - _oslo_ish_   -- Near Oslo at (10, 60) (actual 10.8, 60)
+    - sardinia (40, 10) (actual 40, 9)
+    - milan (45, 10) (actual 45.5, 9.2)
+    - tun_ish (35,  10) (actual 34, 9)
+    - _reyk_arkh_  -- line connecting reyk_ish with arkh_ish
+    - _libr_ish_   -- Near Libreville at (10, 65)
+    - _circ_10_65_1400_ -- circle of 1400km around (10, 65)
+    - _circ_10_0_1400_ -- circle of 1400km around (10, 0)
+    
+  - constructors
+    - assembling point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, Envelope
+  - transforms
+    - envelope: point, LineString, MultiPolygon
+    - centroid: point, line, Dotman
+    - StartPoint(line)
+    - EndPoint(line)
+    - PointN(line)
+    - Boundary
+    - ConvexHull
+    - Simplify
+    - Buffer
+    - Affine Transform; scale, rotate, translate, flipx, flipy
+  - Properties
+    - GeoArea
+    - GeoMinX, GeoMinY, GeoMaxX, GeoMaxY
+    - GeoX, GeoY
+    - GeoLength
+    - GeoLength2dSpheroid (GeodesicLengthWGS84)
+    - GeoDistance
+    - GeoDistanceSphere
+    - GeoDimension
+    - GeoCoordDim
+    - GeoGeometryType
+    - IsGeoEmpty
+    - IsGeoClosed
+    - IsGeoSimple
+  - Combine
+    - Union
+    - Intersection
+    - Difference A-B, Difference B-A
+    - SymmetricDifference
+  - Relationships
+    - Equals
+    - Ordering Equals( dotman, vertically flipped dotman)
+    - Intersects & Disjoint
+      - dotman/hat yes; dotman/mote no; dotman/bowtie yes, (bdy counts); dotman/dm_outline yes. dotman/bar yes.
+    - Within & contains:
+      - dotman/hat no; dotman/mote no, even though its bbox is within; dotman/monroe yes; dotman/dm_outline ??no??
+      - snake/snake_end, snake_mid
+    - Covers & CoveredBy
+      - dotman/hat no; dotman/mote no, even though its bbox is within; dotman/monroe yes; dotman/dm_outline yes
+      - snake/snake_end, snake_mid
+    - Crosses
+      - dotman/snake (no?), dotman/bowtie (no), dotman/hat (no, because makes a polygon), dotman/bar (yes)
+      - snake/snake_end, snake/snake_mid, bowtie/dotman (no: tangent)
+    - Overlaps
+      - dotman/bar (yes), dotman/hat (yes) dotman/mote (yes),
+      - snake/snake_end, snake/snake_mid, bowtie/dotman (no: tangent)
+    - Touches
+      - dotman bowtie yes; dotman mote no, dotman monroe no; dotman/bar
+      - snake/snake_end, snake/snake_mid, bowtie/dotman (yes: tangent),
+* data formats
+  - GeoJSON for exemplar shapes in/out
+  - WKT for exemplar shapes in/out
+  - GeoJSON from ogr2ogr for natural earth
+  - WKT from ogr2ogr for natural earth
+  
