@@ -1,6 +1,14 @@
 ==== Introduction Structure
 
+_Here is the new introduction to the "Hadoop Basics" Chapter two. Does it hit the mark?_
 
+In this chapter, we will equip you with two things: the necessary mechanics of working with Hadoop, and a physical intuition for how data and computation move around the cluster during a job. 
+
+Hadoop is a large and complex beast. It can be bewildering to even begin to use the system, and so in this chapter we're going to purposefully charge through the least you need to know to launch jobs and manage data. If you hit trouble, anything past that is well-covered in Hadoop's excellent and detailed documentation or online. But don't go looking for trouble! For every one of its many modes options and configurations that is essential, there are many more that are distracting or even dangerous. The most important optimizations you can make come from designing efficient workflows, and even moreso from knowing when to spend highly valuable programmer time to reduce compute time.
+
+The key to doing so is an intuitive, physical understanding of how data moves around a Hadoop cluster. Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly, and in the vast majority of cases dominates the cost of your job. We'll describe at a high level how Hadoop organizes data and assigns tasks across compute nodes so that as little data as possible is set in motion with both a physical analogy and by following an example job through its full lifecycle. More importantly, we'll show you how to read a job's Hadoop dashboard to understand how much it cost and why. We strongly urge you to gain access to an actual Hadoop cluster (Appendix X (REF) can help) and run jobs. Your goal for this chapter is to take away a basic understanding of how Hadoop distributes tasks and data, and the ability to run a job and see what's going on with it. As you run more and more jobs through the remaining course of the book, it is the latter ability that will cement your intuition.
+
+Let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
 
 ==== Tell readers what the point of this is before you dive into the example. What are you showing them? Why? What will they get out of it? "I'm going to walk you through an example of ___, which will show you _____ so that you'll begin to understand how _____" for example.
 

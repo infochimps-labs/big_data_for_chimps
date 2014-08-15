@@ -7,30 +7,9 @@ In this chapter, we will equip you with two things: the necessary mechanics of w
 
 Hadoop is a large and complex beast. It can be bewildering to even begin to use the system, and so in this chapter we're going to purposefully charge through the least you need to know to launch jobs and manage data. If you hit trouble, anything past that is well-covered in Hadoop's excellent and detailed documentation or online. But don't go looking for trouble! For every one of its many modes options and configurations that is essential, there are many more that are distracting or even dangerous. The most important optimizations you can make come from designing efficient workflows, and even moreso from knowing when to spend highly valuable programmer time to reduce compute time.
 
-The key to doing so is an intuitive, physical understanding of how data moves around a Hadoop cluster.
+The key to doing so is an intuitive, physical understanding of how data moves around a Hadoop cluster. Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly, and in the vast majority of cases dominates the cost of your job. We'll describe at a high level how Hadoop organizes data and assigns tasks across compute nodes so that as little data as possible is set in motion with both a physical analogy and by following an example job through its full lifecycle. More importantly, we'll show you how to read a job's Hadoop dashboard to understand how much it cost and why. We strongly urge you to gain access to an actual Hadoop cluster (Appendix X (REF) can help) and run jobs. Your goal for this chapter is to take away a basic understanding of how Hadoop distributes tasks and data, and the ability to run a job and see what's going on with it. As you run more and more jobs through the remaining course of the book, it is the latter ability that will cement your intuition.
 
-how data moves around a hadoop cluster
-how much that costs
-
-The focus of this chapter is on building your intuition on
-how much data should be processed and how much that should cost
-how much data was processed and how much it did cost.
-
-how and why Hadoop distributes data across the machines in a cluster
-how much it costs to
-overhead
-
-basis for comparing human costs to cluster costs
-
-
-How much data was moved 
-
-This chapter will only look at "embarras
-
-Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly 
-How 
-
-// (If you're already familiar with the basics of using Hadoop and are too anxious to get to the specifics of working with data, skip ahead to Chapter 4)
+Let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
 
 .Chimpanzee and Elephant Start a Business
 ******
@@ -49,7 +28,7 @@ The fact that each chimpanzee's work is independent of any other's -- no interof
 
 === Map-only Jobs: Process Records Individually ===
 
-As you'd guess, the way Chimpanzee and Elephant organize their files and workflow corresponds directly with how Hadoop handles data and computation under the hood. We can now use it to walk you through some examples.
+As you'd guess, the way Chimpanzee and Elephant organize their files and workflow corresponds directly with how Hadoop handles data and computation under the hood. We can now use it to walk you through an example in detail.
 
 We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
 
@@ -260,7 +239,13 @@ The one important detail to learn in all this is that _task trackers do not run 
 // === The Cost of a Job
 
 
+// So one of the key concepts behind Map/Reduce is the idea of "moving the compute to the data". Hadoop stores data locally across multiple 
+// 
+// The focus of this chapter is on building your intuition on
+// how much data should be processed and how much that should cost
+// how much data was processed and how much it did cost. 
 
+   
 // === Outro
 // 
 // In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm.. Let's start by joining JT and Nannette with their next client.
