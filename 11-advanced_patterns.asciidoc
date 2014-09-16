@@ -38,6 +38,11 @@ In this case we apply STRSPLIT, which makes a tuple (rather than STRSPLITBAG, wh
 
 TODO-reviewer: (combine this with the later chapter? There's a lot going on there, so I think no, but want opinion)
 
+=== Z-scores
+
+Standard scores are also called z-values, z-scores, normal scores, and standardized variables; the use of "Z" is because the normal distribution is also known as the "Z distribution". They are most frequently used to compare a sample to a standard normal deviate (standard normal distribution, with μ = 0 and σ = 1), though they can be defined without assumptions of normality.
+
+
 ==== Flattening a Bag Generates Many Records
 
 attr_strings = FOREACH people {
@@ -1178,3 +1183,349 @@ pairs_r = FOREACH (GROUP raw BY client_ip) {
 ------
 
 
+[[statistics]]
+== Statistics
+
+=== Skeleton: Statistics
+
+Data is worthless. Actually, it's worse than worthless. It costs you money to gather, store, manage, replicate and analyze. What you really want is insight -- a relevant summary of the essential patterns in that data -- produced using relationships to analyze data in context.
+
+Statistical summaries are the purest form of this activity, and will be used repeatedly in the book to come, so now that you see how Hadoop is used it's a good place to focus.
+
+Some statistical measures let you summarize the whole from summaries of the parts: I can count all the votes in the state by summing the votes from each county, and the votes in each county by summing the votes at each polling station. Those types of aggregations -- average/standard deviation, correlation, and so forth -- are naturally scalable, but just having billions of objects introduces some practical problems you need to avoid. We'll also use them to introduce Pig, a high-level language for SQL-like queries on large datasets.
+
+Other statistical summaries require assembling context that grows with the size of the whole dataset. The amount of intermediate data required to count distinct objects, extract an accurate histogram, or find the median and other quantiles can become costly and cumbersome. That's especially unfortunate because so much data at large scale has a long-tail, not normal (Gaussian) distribution -- the median is far more robust indicator of the "typical" value than the average. (If Bill Gates walks into a bar, everyone in there is a billionaire on average.)
+
+==== These go somewhere
+
+.Pig Gotchas
+****
+
+**"dot or colon?"**
+
+Some late night under deadline, Pig will supply you with the absolutely baffling error message "scalar has more than one row in the output". You've gotten confused and used the tuple element operation (`players.year`) when you should have used the disambiguation operator (`players::year`). The dot is used to reference a tuple element, a common task following a `GROUP`. The double-colon is used to clarify which specific field is intended, common following a join of tables sharing a field name.
+
+Where to look to see that Pig is telling you have either nulls, bad fields, numbers larger than your type will hold or a misaligned schema.
+
+Things that used to be gotchas, but aren't, and are preserved here just through the tech review:
+
+* You can rename an alias, and refer to the new name: `B = A;` works. (v10)
+* LIMIT is handled in the loader, and LIMIT accepts an expression (v10)
+* There is an OTHERWISE (else) statement on SPLIT! v10
+* If you kill a Pig job using Ctrl-C or “kill”, Pig will now kill all associated Hadoop jobs currently running. This is applicable to both grunt mode and non-interactive mode.
+* In next Pig (post-0.12.0),
+  - CONCAT will accept multiple args
+  - store can overwrite existing directory (PIG-259)
+
+**"Good Habits of SQL Users That Will Mess You Up in Hadoop"**
+
+* Group/Cogroup is king; Join is a special case
+* Window functions are a recent feature -- use but don't overuse Stitch/Over.
+* Everything is immutable, so you don't need and can't have transactional behavior
+
+TODO: fill this in with more gotchas
+****
+
+. A Foolish Optimization
+****
+TODO: Make this be more generally "don't use the O(N) algorithm that works locally" -- fisher-yates and top-k-via-heap being two examples
+TODO: consider pushing this up, earlier in the chapter, if we find a good spot for it
+
+We will tell you about another "optimization," mostly because we want to illustrate how a naive performance estimation based on theory can lead you astray in practice. In principle, sorting a large table in place takes 'O(N log N)' time. In a single compute node context, you can actually find the top K elements in 'O(N log K)' time -- a big savings since K is much smaller than N. What you do is maintain a heap structure; for every element past the Kth, if it is larger than the smallest element in the heap, remove the smallest member of the heap and add the element to the heap. While it is true that 'O(N log K)' beats 'O(N log N)', this reasoning is flawed in two ways. First, you are not working in a single-node context; Hadoop is going to perform that sort anyway. Second, the fixed costs of I/O almost always dominate the cost of compute (FOOTNOTE:  Unless you are unjustifiably fiddling with a heap in your Mapper.)
+
+The 'O(log N)' portion of Hadoop's log sort shows up in two ways:  The N memory sort that precedes a spill is 'O(N log N)' in compute time but less expensive than the cost of spilling the data. The true 'O(N log N)' cost comes in the reducer: 'O(log N)' merge passes, each of cost 'O(N)'. footnote:[If initial spills have M records, each merge pass combines B spills into one file, and we can skip the last merge pass, the total time is `N (log_B(N/M)-1).` [TODO: double check this]. But K is small, so there should not be multiple merge passes; the actual runtime is 'O(N)' in disk bandwidth. Avoid subtle before-the-facts reasoning about performance; run your job, count the number of merge passes, weigh your salary against the costs of the computers you are running on, and only then decide if it is worth optimizing.
+****
+
+=== Summary Statistics
+
+
+
+* Calculating Summary Statistics on Groups with Aggregate Functions
+  - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
+    - there are a core set of aggregate functions that we use to summarize the
+    - Use COUNT_STAR() to count Records in a Group; MIN() and MAX() to find the single largest / smallest values in a group; SUM() to find the total of all values in a group. The built-in AVG() function returns the arithmetic mean. To find the standard deviation, use the (double check the name) function from Datafu.
+    - describe difference between count and count_star. Note that the number of null values is (count_star - count). Recommend to always use COUNT_STAR unless you are explicitly conveying that you want to exclude nulls. Make sure we follow that advice.
+    - demonstrate this for summarizing players' weight and height by year. Show a stock-market style candlestick graph of weight and of height (min, avg-STDEV, avg, avg+STDEV, max), with graph of "volume" (count, count distinct and count_star) below it. Players are getting bigger and stronger; more of them as league and roster size grows; more data (fewer nulls) after early days.
+    - the median is hard and so we will wait until stats chapter.
+    - other summary stats (kurtosis, other higher-moments), no built-in function
+    - nested FOREACH (in the previous chapter we found obp, slg, ops from counting stats; now do it but for career.
+    - Aggregating Nullable Columns (NULL values don't get counted in an average. To have them be counted, ternary NULL values into a zero)
+
+
+Criteria for being in the structural patterns part: in remainder of book,(a) there's only one way to do it; (b) we don't talk about how it's done.
+
+Later or here or at all demonstrate combiners in m-r?
+
+TODO: content to come
+
+Join      pl-yr on pk-te-yr: pl-pk-te-yr
+Group   ppty on pl: pl-g-pks-tes-yrs
+Agg       pgty on pk and yr: pl-g-tes-stadia
+Flatten  pgty on pk and yr: pl-te-stadia
+Teammates: pl-yr to tm-yr-g-pls; cross to tm-yr-g-plaplbs; project to plas-plbs-gs
+    flatten to pla-plbs group to pla-g-plbs 
+    distinct to pla-d-plbs (or pl[teammates])
+    flatten to pla-plb (or teammates)
+
+
+
+Weather stations: wstn-info ws-dt-hr[obs]
+Wp: art[text] art[info] art-dt-h[views]
+Server Logs: ip-url-time[reqs]
+UFOs: sightings[plc-dt-tm]
+airports: ap-tm[alid,flid,dest,flights] 
+
+
+-- Group on year; find COUNT(), count distinct, MIN(), MAX(), SUM(), AVG(), STDEV(), byte size
+
+SELECT
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+;
+
+SELECT
+    MIN(nameFirst)                     AS nameFirst_min,
+    MAX(nameFirst)                     AS nameFirst_max,
+    --
+    MIN(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_min,
+    MAX(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_max,
+    MIN(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+    MAX(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+    AVG(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_avg,
+    STDDEV_POP(CHAR_LENGTH(nameFirst)) AS nameFirst_strlen_stddev,
+    LEFT(GROUP_CONCAT(nameFirst),25)   AS nameFirst_examples,
+    SUM(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_sum,
+    --
+    COUNT(*)                           AS n_recs,
+    COUNT(*) - COUNT(nameFirst)        AS nameFirst_n_nulls,
+    COUNT(DISTINCT nameFirst)          AS nameFirst_n_distinct
+  FROM bat_career bat
+;
+
+SELECT
+  player_id,
+  MIN(year_id) AS yearBeg,
+  MAX(year_id) AS yearEnd,
+  COUNT(*)    AS n_years,
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+  GROUP BY player_id
+  ORDER BY hr_max DESC
+;
+==== Transpose Columns Into `field name, field value` Pairs
+
+Our next pattern is to transpose fields from each row into records having a column with the field name and a column with the field value, sometimes called attribute-value form.
+
+=== Sampling
+
+
+* Random sampling using the traditional pseudo-random number generators (which can be dangerous; we'll tell you how to do it right) (use input filename as seed)
+* Consistent sampling returns a fraction of records by _key_: if a record with the key "chimpanzee" is selected into the sample, all records with that key are selected into the sample.
+* (with/without replacement; weighted)
+* Reservoir sampling selects a given number of records. A uniform reservoir sample with count 100, say, would return 100 records, each with the same chance of being selected, regardless of the size of the dataset.
+* Subuniverse sampling selects a set of records and all associated records with it -- useful when you want to be able to joins on the sampled data, or to select a dense subgraph of a network. (TECH: is "dense subgraph" right?)
+* Stratified sampling: sampling from groups/bins/strata/whatever - http://en.wikipedia.org/wiki/Stratified_sampling
+* Sampling into multiple groups eg for bootstrapping
+* Note that pig sample is mathematically lame (see Datafu for why)
+* Note that pig sample is nice about eliminating records while loading (find out if Datafu does too)
+* Warning I may have written lies about reservoir sampling make sure to review
+* Spatial Sampling
+* Also: generating distributions (use the random.org data set and generate a column for each dist using it)
+* Expand the random.org by taking each r.o number as seed
+
+
+
+* http://blog.codinghorror.com/shuffling/
+* http://opencoursesfree.org/archived_courses/cs.berkeley.edu/~mhoemmen/cs194/Tutorials/prng.pdf
+    * "numbers with statistical properties of randomness. Note that I didn’t write “random numbers,” but rather, “numbers with statistical properties of randomness.”"
+* Make sure you have enough bits
+* Even 52 cards has 52! =~ 255 bits of permutation... can't possibly get every permutation for a table of even modest size
+* Make sure you look out for ties and shuffle them as well
+* Do you have to be think-y about the partitioner?
+* Download about (8 years *365 days * 1 mebibyte) of randoms from random.org. This is however only 90 million 256-bit (32-byte) numbers, or 350 million 64-bit (8-byte) numbers.
+* Don't just (rand mod 25) for a 1-in-25 random sample -- you'll be biased because it's not an exact number of bits. Instead reject if > 25 and try again.
+* Watch out for non-reentrant rand() -- mutex or something (do we need to worry about this in hadoop?)
+* http://blog.cloudera.com/blog/2013/02/how-to-resample-from-a-large-data-set-in-parallel-with-r-on-hadoop/
+    * Sampling-with-replacement is the most popular method for sampling from the initial data set to produce a collection of samples for model fitting. This method is equivalent to sampling from a multinomial distribution where the probability of selecting any individual input data point is uniform over the entire data set. Unfortunately, it is not possible to sample from a multinomial distribution across a cluster without using some kind of communication between the nodes (i.e., sampling from a multinomial is not embarrassingly parallel). But do not despair: we can approximate a multinomial distribution by sampling from an identical Poisson distribution on each input data point independently, lending itself to an embarrassingly parallel implementation.
+
+Here's a clip from the PokerStars website (they did their homework):
+
+* A deck of 52 cards can be shuffled in 52! ways. 52! is about 2^225 (to be precise, 80,658,175,170,943,878,571,660,636,856,404,000,000,000,000,000 ways). We use 249 random bits from both entropy sources (user input and thermal noise) to achieve an even and unpredictable statistical distribution.
+* Furthermore, we apply conservative rules to enforce the required degree of randomness; for instance, if user input does not generate required amount of entropy, we do not start the next hand until we obtain the required amount of entropy from Intel RNG.
+* We use the SHA-1 cryptographic hash algorithm to mix the entropy gathered from both sources to provide an extra level of security
+* We also maintain a SHA-1-based pseudo-random generator to provide even more security and protection from user data attacks
+* To convert random bit stream to random numbers within a required range without bias, we use a simple and reliable algorithm. For example, if we need a random number in the range 0-25:
+      o we take 5 random bits and convert them to a random number 0-31
+      o if this number is greater than 25 we just discard all 5 bits and repeat the process
+* This method is not affected by biases related to modulus operation for generation of random numbers that are not 2n, n = 1,2,..
+* To perform an actual shuffle, we use another simple and reliable algorithm:
+      o first we draw a random card from the original deck (1 of 52) and place it in a new deck - now original deck contains 51 cards and the new deck contains 1 card
+      o then we draw another random card from the original deck (1 of 51) and place it on top of the new deck - now original deck contains 50 cards and the new deck contains 2 cards
+      o we repeat the process until all cards have moved from the original deck to the new deck
+* This algorithm does not suffer from "Bad Distribution Of Shuffles" described in [2]
+
+[2] "How We Learned to Cheat at Online Poker: A Study in Software Security" - http://itmanagement.earthweb.com/entdev/article.php/616221
+[3] "The Intel Random Number Generator" - http://www.cryptography.com/resources/whitepapers/IntelRNG.pdf"
+
+
+==== Sample Records Consistently
+
+
+----
+-- Consistent sample of events
+SELECT ev.event_id,
+    LEFT(MD5(CONCAT(ev.game_id, ev.event_id)), 4) AS evid_hash,
+    ev.*
+  FROM events ev WHERE LEFT(MD5(CONCAT(ev.game_id, ev.event_id)), 2) = '00';
+----
+
+----
+-- Consistent sample of games -- all events from the game are retained
+-- FLO200310030 has gid_hash 0000... but evid_hash 0097 and so passes both
+SELECT ev.event_id,
+    LEFT(MD5(ev.game_id),4) AS gid_hash,
+    ev.*
+  FROM events ev WHERE LEFT(MD5(ev.game_id),2) = '00';
+----
+
+Out of 1962193 events in the 2010, 7665 expected (1/256th of the total);
+got 8159 by game, 7695 by event
+
+----
+SELECT n_events, n_events/256, n_by_game, n_by_event
+  FROM
+    (SELECT COUNT(*) AS n_events    FROM events) ev,
+    (SELECT COUNT(*) AS n_by_event  FROM events WHERE LEFT(MD5(CONCAT(game_id,event_id)),2) = '00') ev_e,
+    (SELECT COUNT(*) AS n_by_game   FROM events WHERE LEFT(MD5(game_id),2) = '00') ev_g
+    ;
+----
+
+=== Generating Data
+
+-- === Generating an Integers table
+
+DROP TABLE IF EXISTS numbers1k;
+CREATE TABLE `numbers1k` (
+  `idx`  INT(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `ix0`  INT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `ixN`  INT(20) UNSIGNED          DEFAULT '0',
+  `ixS`  INT(20) SIGNED   NOT NULL DEFAULT '0',
+  `zip`  INT(1)  UNSIGNED NOT NULL DEFAULT '0',
+  `uno`  INT(1)  UNSIGNED NOT NULL DEFAULT '1'
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
+
+INSERT INTO numbers1k (ix0, ixN, ixS, zip, uno)
+SELECT
+  (@row := @row + 1) - 1 AS ix0,
+  IF(@row=1, NULL, @row-2) AS ixN,
+  (@row - 500) AS ixS,
+  0 AS zip, 1 AS uno
+ FROM
+(select 0 union all select 1 union all select 3 union all select 4 union all select 5 union all select 6 union all select 6 union all select 7 union all select 8 union all select 9) t,
+(select 0 union all select 1 union all select 3 union all select 4 union all select 5 union all select 6 union all select 6 union all select 7 union all select 8 union all select 9) t2,
+(select 0 union all select 1 union all select 3 union all select 4 union all select 5 union all select 6 union all select 6 union all select 7 union all select 8 union all select 9) t3,
+(SELECT @row:=0) r
+;
+
+DROP TABLE IF EXISTS numbers;
+CREATE TABLE `numbers` (
+  `idx`  INT(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `ix0`  INT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `ixN`  INT(20) UNSIGNED          DEFAULT '0',
+  `ixS`  INT(20) SIGNED   NOT NULL DEFAULT '0',
+  `zip`  INT(1)  UNSIGNED NOT NULL DEFAULT '0',
+  `uno`  INT(1)  UNSIGNED NOT NULL DEFAULT '1'
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
+
+INSERT INTO numbers (ix0, ixN, ixS, zip, uno)
+SELECT
+  (@row := @row + 1) - 1 AS ix0,
+  IF(@row=1, NULL, @row-2) AS ixN,
+  (@row - 500000) AS ixS,
+  0 AS zip, 1 AS uno
+FROM
+(SELECT zip FROM numbers1k) t1,
+(SELECT zip FROM numbers1k) t2,
+(SELECT @row:=0) r
+;
+
+
+----
+    # generate 100 files of 100,000 integers each; takes about 15 seconds to run
+    time ruby -e '10_000_000.times.map{|num| puts num }' | gsplit -l 100000 -a 2 --additional-suffix .tsv -d - numbers
+
+    # in mapper, read N and generate `(0 .. 99).map{|offset| 100 * N + offset }`
+----
+
+
+==== Season leaders
+
+-- * Selecting top-k Records within Group
+-- GROUP...FOREACH GENERATE TOP
+-- most hr season-by-season
+
+==== Transpose record into attribute-value pairs
+
+Group by season, transpose, and take the top 10 for each season, attribute pair
+
+=== Overflow, Underflow and other Dangers
+
+TODO: content to come
+
+=== Quantiles and Histograms
+
+TODO: content to come
+
+
+In the structural operations chapter, we brought up the subject of calculating quantiles (an equal-width histogram), but postponed the discussion, judging it to be fiendishly hard. Calculating even an exact median -- the simplest case -- in a single map-reduce flow is not just hard, it's provably impossible (REF cormode paper). 
+
+The issue is that you need to get all candidates for the edge of a bin onto the same reducer, and know the number of elements that precede the candidates on your reducer. From the mapper, however, it's impossible to know what keys to assign without knowing the global distribution -- the very thing we want to calculate! /end move to statistics)
+
+==== Median
+
+----
+SELECT COUNT(*), CEIL(COUNT(*)/2) AS midrow
+  FROM bat_career
+ ;
+SELECT G, cols.*
+  FROM bat_career bat,
+    (SELECT COUNT(*) AS n_entries, CEIL(COUNT(*)/2) AS midrow FROM bat_career) cols
+  ORDER BY HR
+  LIMIT 1 OFFSET 8954
+;
+----
+
+==== Exact median using RANK
+
+Well, we've met another operation with this problem, namely the sort (ORDER BY) operation. It does a first pass to sample the global distribution of keys, then a full map-reduce to place ordered values on the same reducer. Its numerate younger brother, RANK, will do what we need. The quartiles -- the boundaries of the four bins bins each holding 25% of the values -- ...
+
+(Show using RANK and then filter; use the "pre-inject and assert global values" trick for the bin size. Handle the detail of needing to average two values when boundary splits an index, eg median of a table with even number of rows)
+
+==== Approximate median & quantiles using DataFu
+ (get better title)
+
+ 
+
+=== Exercises
+
+Distributions:
+
+* First letter of Wikipedia article titles
+
+* Count of inbound links for wikipedia articles
+
+* Total sum of pageviews counts for each page

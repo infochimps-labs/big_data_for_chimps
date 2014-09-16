@@ -252,7 +252,6 @@ Just capture substructure
 
 === Glyphing (string encoding), Unicode,UTF-8 ===
 
-
 All of the following examples could be ambiguously referred to as "encoding":
 
 * Compression: gz, LZO, Snappy, etc
@@ -261,8 +260,7 @@ All of the following examples could be ambiguously referred to as "encoding":
 * Glyphing: binary stream (for example UTF8-encoded Unicode) to characters (TODO: make this correct)
 * Structured to modelfootnote:[the worst example iis "node": a LAN node configured by a chef node running a Flume logical node handling graph nodes in a Node.js decorator.]
 
-
-My best advice is 
+Our best advice is 
 
 * Never let *anything* into your system unless it is UTF8, UTF-16, or ASCII.
 * Either:
@@ -272,41 +270,3 @@ My best advice is
   - However complex you think Unicode is, it's slightly more hairy than that.
   -   URL encoding only makes sense when you're shipping urls anyway.
   - TODO: check those character strings for correctness. Also, that I'm using "glyph" correctly
-
-=== ICSS ===
-
-ICSS uses 
-footnote:[Every Avro schema file is a valid ICSS schema file, but Avro will not understand all the fields. In particular, Avro has no notion of `is_a` inheritance; ICSS does]
-
-
-==== Schema.org Types ====
- 
-
-=== Munging
-
-
-    class RawWeatherStation
-      field :wban_id
-      # ...
-      field :latitude
-      field :longitude
-    end
-    
-    class Science::Climatology::WeatherStation < Type::Geo::GovernmentBuilding
-      field :wban_id
-      field :
-    end
-    
-    name:   weatherstation
-    types:
-      name:   raw_weather_station
-      fields:
-        - name:  latitude
-          type:  float
-        - name:  longitude
-          type:  float
-      # ...
-      
-
-
-''''

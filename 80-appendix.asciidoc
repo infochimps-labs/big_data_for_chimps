@@ -1,7 +1,6 @@
 [[appendix]]
 == Appendix
 
-
 === Appendix 1: Acquiring a Hadoop Cluster ===
 
 * Elastic Map-Reduce
@@ -31,9 +30,7 @@ Bachelor of Arts, Computer Science - Cornell University, Ithaca NY, 1992-1996
 * Original author and core committer of Wukong, the leading Ruby library for Hadoop
 * Contributed chapter to _The Definitive Guide to Hadoop_ by Tom White
 
-Dieterich Lawson is a recent graduate of Stanford University.
-
-TODO DL: biography
+TODO Russell: biography
 
 === Colophon ===
 

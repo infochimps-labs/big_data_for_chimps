@@ -1,13 +1,9 @@
 [[filesystem_mojo]]
-== Filesystem Mojo and `cat` Herding
+== Commandline Mojo and `cat` Herding
 
 When working with big data, there are thousands of housekeeping tasks to do. As you will soon discover, moving data around, munging it, transforming it, and other mundane tasks will take up a depressingly inordinate amount of your time. A proper knowledge of some useful tools and tricks will make these tasks doable, and in many cases, easy.
 
 In this chapter we discuss a variety of Unix commandline tools that are essential for shaping, transforming, and munging text. All of these commands are covered elsewhere, and covered more completely, but we've focused in on their applications for big data, specifically their use within Hadoop.
-
-*FLAVORISE*
-
-By the end of this chapter you should be *FINISH*
 
 If you're already familiar with Unix pipes and chaining commands together, feel free to skip the first few sections and jump straight into the tour of useful commands.
 
@@ -313,40 +309,5 @@ EXAMPLE
 
 === Toolset
 
-
-Sun Wukong: "He acquired the powers of shapeshifting known as the "72 transformations"" -- Wikipedia
-
-
 Why not Hive? The appealing thing about Hive is that it feels a lot like SQL. The dismal thing about Hive is that it feels a lot like SQL. Similarly, the wonderful thing about Pig is that its operations more closely mirror the underlying map-reduce setup, making it easier to reason about the performance of your tasks; this however means more brain-bendy at the outset for a traditional DBA. Lastly, Hive organizes your data -- useful for a multi-analyst setup - but it's a pain when using a polyglot toolset. Ultimately, Hive is better for an Enterprise Data Warehouse experience, or if you're already a SQL expert. but all else equal, for exploratory analysis and Data science, you're better off with Pig.
 
-
-=== Best Practices
-
-// ==== Choosing variable names ====
-// 
-// If it's a collection:
-// 
-// * measure  		      -- quantity being measured: frequency, count, height, etc.
-// * free dimensions, pluralized -- dimensions that _don't_ appear in argument list
-// * `for`
-// * given dimensions, singular  -- arguments, in order.
-// 
-// If it's a quantity:
-// 
-// * measure  		      -- quantity being measured: frequency, count, height, etc.
-// * given dimensions, singular  -- arguments, in order.
-// 
-// 
-// So:
-// 
-// 	n_all			# number: sum count across all words, all docs and all cells
-// 	f_wd_doc(wd, doc)	# frequency of word in doc
-// 	f_wd_for_cell		# frequency of word across all cells and docs
-// 	f_wd(wd)		# number: frequency of word across all cells and docs
-// 
-// 
-// 
-// 	n_wds_for_doc(doc)     	# counts for word in given doc
-// 	n_cells_for_all(cell)	# sum counts for cell across all words
-// 	f_wds   		# frequencies of word across all cells/docs
-// 	f_wds_for_doc(doc)	# frequencies of word in given doc

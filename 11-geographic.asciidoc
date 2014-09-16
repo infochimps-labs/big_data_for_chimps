@@ -1,3 +1,0 @@
-[[geographic]]
-== Spatial and Geographic Analysis
-// TODO: should title be "Spatial Analysis", "Geographic Analysis", "Geospatial Analysis"?

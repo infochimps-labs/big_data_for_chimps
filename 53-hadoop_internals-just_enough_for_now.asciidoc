@@ -109,3 +109,40 @@ If your Datanode is backed by remote volumes (common in some virtual environment
 As you can see, unless your cluster is undersized (producing significant merge/sort overhead), the cost of replicating the data rivals the cost of the rest of the job.  The default replication factor is 3 for two very good reasons:  it helps guarantee the permanence of your data and it allows the Job tracker to efficiently allocate Mapper-local tasks.  But in certain cases -- intermediate checkpoint data, scratch data or where backed by a remote file system with its own durability guarantee -- an expert who appreciates the risk can choose to reduce the replication factor to 2 or 1.
 
 
+
+=== Humans are important, robots are cheap. ===
+
+To store 10 Billion records with an average size of 1 kB -- that's 10 TB -- it costs
+
+* $200,000 /month to store it all on ram       ($1315/mo for 150 68.4 GB machines)
+* $ 20,000 /month to have it 10% backed by ram ($1315/mo for  15 68.4 GB machines)
+* $  1,000 /month to store it on disk (EBS volumes)
+
+Compare witih
+
+* $  1,600 /month salary of a part-time intern
+* $  5,500 /month salary of a full-time junior engineer 
+* $ 10,000 /month salary of a full-time senior engineer 
+
+For a 10-hour working day, 
+
+* $ 270 /day  for a 30-machine cluster having a total of 1TB ram, 120 cores
+* $ 650 /day  for that same cluster if it runs for the full 24-hour day
+* $  64 /day  for a 10-machine cluster having a total of 150 GB ram, 40 cores
+* $ 180 /day  for an intern         to operate it
+* $ 300 /day  for a junior engineer to operate it
+* $ 600 /day  for a senior engineer to operate it
+
+
+Suppose you have a job that runs daily, taking 3 hours on a 10-machine cluster of 15 GB machines. That job costs you $600/month.
+
+If you tasked a junior engineer to spend three days optimizing that job, with a 10-machine cluster running the whole time, it would cost you about $1100. If she made the job run three times faster -- so it ran in 1 hour instead of 3 -- the job would now cost about $200. However, it will take three months to reach break-even.
+
+As a rule of thumb, 
+
+    Size your cluster so that it is either almost-always-idle or healthily exceeds the opportunity cost to the humans working on it.
+
+Takeaways:
+
+* Engineers are more expensive than compute. 
+* Use elastic clusters for your data science team

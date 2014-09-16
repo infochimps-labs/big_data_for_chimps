@@ -1,0 +1,38 @@
+
+=== ICSS ===
+
+ICSS uses 
+footnote:[Every Avro schema file is a valid ICSS schema file, but Avro will not understand all the fields. In particular, Avro has no notion of `is_a` inheritance; ICSS does]
+
+
+==== Schema.org Types ====
+ 
+
+=== Munging
+
+
+    class RawWeatherStation
+      field :wban_id
+      # ...
+      field :latitude
+      field :longitude
+    end
+    
+    class Science::Climatology::WeatherStation < Type::Geo::GovernmentBuilding
+      field :wban_id
+      field :
+    end
+    
+    name:   weatherstation
+    types:
+      name:   raw_weather_station
+      fields:
+        - name:  latitude
+          type:  float
+        - name:  longitude
+          type:  float
+      # ...
+      
+
+
+''''

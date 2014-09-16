@@ -406,6 +406,48 @@ See the Pattern in Use for the next section too (REF).
 * _Records_		  -- Something like `mykey, aggregated_value, aggregated_value, ...`
 * _Data Flow_		  -- Map, Combiner & Reduce; combiners quite effective unless cardinality is very high.
 
+
+
+
+// === How a group works
+// 
+// ------
+// team_n_parks = FOREACH (GROUP park_teams BY (team_id,year_id)) GENERATE
+//   group.team_id, COUNT_STAR(park_teams) AS n_parks;
+// vagabonds = FILTER team_n_parks BY n_parks >= 3;
+// 
+// DUMP vagabonds;
+// (CL4,7)
+// (CLE,5)
+// (WS3,4)
+// (CLE,3)
+// (DET,3)
+// ...
+// ------
+// 
+// ------
+// mapper(array_fields_of: ParkTeamYear) do |park_id, team_id, year_id, beg_date, end_date, n_games|
+//  yield [team_id, year_id]
+// end
+// 
+// # In effect, what is happening in Java:
+// reducer do |(team_id, year_id), stream|
+//   n_parks = 0
+//   stream.each do |*_|
+//     n_parks += 1
+//   end
+//   yield [team_id, year_id, n_parks] if n_parks > 1
+// end
+// ------
+// 
+// (In actual practice, the ruby version would just call `n_parks = stream.size` rather than iterating)
+// 
+// 
+// TODO in part on groups note As Jon Covent says, "Bags are what makes Pig Awesome". SQL doesn't have them, and they bring extraordinary power. They can be of arbitrarily large size, present an ad-hoc object representation, and within limits can themselves be limited, transformed, ordered, threaded, and joined.
+// They can't be indexed into, and unless you explicitly say so are not ordered.
+// 
+// TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
+
 ==== Completely Summarizing a Field
 
 

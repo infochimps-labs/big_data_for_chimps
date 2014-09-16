@@ -1,4 +1,4 @@
-== Analytic Patterns: Finding Duplicate and Unique Records
+== Analytic Patterns: Duplicate and Unique Records
 
 === Handling Duplicates
 

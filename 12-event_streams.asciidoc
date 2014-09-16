@@ -1,5 +1,32 @@
 [[event_streams]]
-== Event Streams ==
+== Analyzing Logs and Event Streams
+
+
+////This intro here is a good model for other chapters - this one's rough, but the bones are here.  Amy////
+
+Much of Hadoop's adoption is driven by organizations realizing they the opportunity to measure every aspect of their operation, unify those data sources, and act on the patterns that Hadoop and other Big Data tools uncover.////Share a few examples of things that can be measured (website hits, etc.)  Amy////
+
+For
+
+e-commerce site, an advertising broker, or a hosting provider, there's no wonder inherent in being able to measure every customer interaction, no controversy that it's enormously valuable to uncovering patterns in those interactions, and no lack of tools to act on those patterns in real time.
+
+can use the clickstream of interactions with each email
+; this was one of the cardinal advantages cited in the success of Barack Obama's 2012 campaign.
+
+
+This chapter's techniques will help, say, a hospital process the stream of data from every ICU patient; a retailer process the entire purchase-decision process
+from
+or a political campaign to understand and tune
+the response to
+each email batch and advertising placement.
+
+
+Hadoop cut its teeth at Yahoo, where it was primarily used for processing internet-sized web crawls(see next chapter on text processing) and
+
+// ?? maybe this should just be 'data streams' or something
+
+
+Quite likely, server log processing either a) is the reason you got this book or b) seems utterly boring.////I think you should explain this for readers.  Amy//// For the latter folks, stick with it; hidden in this chapter are basic problems of statistics (finding histogram of pageviews), text processing (regular expressions for parsing), and graphs (constructing the tree of paths that users take through a website).
 
 
 === Webserver Log Parsing ===
@@ -82,6 +109,118 @@ TODO
 ----
 
 
+=== Pageview Histograms ===
+////Ease the reader in with something like, "Our goal here will be..."  Amy////
+
+Let's start exploring the dataset. Andy Baio
+
+----
+include::code/serverlogs/old/logline-02-histograms-mapper.rb[]
+----
+
+We want to group on `date_hr`, so just add a 'virtual accessor' -- a method that behaves like an attribute but derives its value from another field:
+
+----
+include::code/serverlogs/old/logline-00-model-date_hr.rb[]
+----
+
+This is the advantage of having a model and not just a passive sack of data.
+
+Run it in map mode:
+
+----
+include::code/serverlogs/old/logline-02-histograms-02-mapper-wu-lign-sort.log[]
+----
+
+TODO: digression about `wu-lign`.
+
+Sort and save the map output; then write and debug your reducer.
+
+----
+include::code/serverlogs/old/logline-02-histograms-full.rb[]
+----
+
+When things are working, this is what you'll see. Notice that the `.../Star_Wars_Kid.wmv` file already have five times the pageviews as the site root (`/`).
+
+----
+include::code/serverlogs/old/logline-02-histograms-03-reduce.log[]
+----
+
+You're ready to run the script in the cloud! Fire it off and you'll see dozens of workers start processing the data.
+
+----
+include::code/serverlogs/old/logline-02-histograms-04-freals.log[]
+----
+
+
+=== User Paths through the site ("Sessionizing")
+
+We can use the user logs to assemble a picture of how users navigate the site -- 'sessionizing' their pageviews. Marketing and e-commerce sites have a great deal of interest in optimizing their "conversion funnel", the sequence of pages that visitors follow before filling out a contact form, or buying those shoes, or whatever it is the site exists to serve. Visitor sessions are also useful for defining groups of related pages, in a manner far more robust than what simple page-to-page links would define. A recommendation algorithm using those relations would for example help an e-commerce site recommend teflon paste to a visitor buying plumbing fittings, or help a news site recommend an article about Marilyn Monroe to a visitor who has just finished reading an article about John F Kennedy. Many commercial web analytics tools don't offer a view into user sessions -- assembling them is extremely challenging for a traditional datastore. It's a piece of cake for Hadoop, as you're about to see.
+
+////This spot could be an effective place to say more about "Locality" and taking the reader deeper into thinking about that concept in context.  Amy////
+
+NOTE:[Take a moment and think about the locality: what feature(s) do we need to group on? What additional feature(s) should we sort with?]
+
+
+spit out `[ip, date_hr, visit_time, path]`.
+
+----
+include::code/serverlogs/old/logline-03-breadcrumbs-full.rb[]
+----
+
+You might ask why we don't partition directly on say both `visitor_id` and date (or other time bucket). Partitioning by date would break the locality of any visitor session that crossed midnight: some of the requests would be in one day, the rest would be in the next day.
+
+run it in map mode:
+
+----
+include::code/serverlogs/old/logline-02-histograms-01-mapper.log[]
+----
+
+----
+include::code/serverlogs/old/logline-03-breadcrumbs-02-mapper.log[]
+----
+
+group on user
+
+----
+include::code/serverlogs/old/logline-03-breadcrumbs-03-reducer.log[]
+----
+
+We use the secondary sort so that each visit is in strict order of time within a session.
+
+You might ask why that is necessary -- surely each mapper reads the lines in order? Yes, but you have no control over what order the mappers run, or where their input begins and ends.
+
+This script will accumulate multiple visits of a page.
+
+TODO: say more about the secondary sort.
+////This may sound wacky, but please try it out:  use the JFK/MM exmaple again, here. Tie this all together more, the concepts, using those memorable people. I can explain this live, too.   Amy////
+
+==== Web-crawlers and the Skew Problem ====
+
+In a
+
+It's important to use real data when you're testing algorithms:
+a skew problem like this
+
+=== Page-Page similarity
+
+What can you do with the sessionized logs? Well, each row lists a visitor-session on the left and a bunch of pages on the right.  We've been thinking about that as a table, but it's also a graph -- actually, a bunch of graphs! The <<sidebar,serverlogs_affinity_graph>> describes an _affinity graph_, but we can build a simpler graph that just connects pages to pages by counting the number of times a pair of pages were visited by the same session. Every time a person requests the `/archive/2003/04/03/typo_pop.shtml` page _and_ the `/archive/2003/04/29/star_war.shtml` page in the same visit, that's one point towards their similarity. The chapter on <<graph_processing>> has lots of fun things to do with a graph like this, so for now we'll just lay the groundwork by computing the page-page similarity graph defined by visitor sessions.
+
+----
+include::code/serverlogs/old/logline-04-page_page_edges-full.rb[]
+----
+
+----
+include::code/serverlogs/old/logline-04-page_page_edges-03-reducer.log[]
+----
+
+[[serverlogs_affinity_graph]]
+.Affinity Graph
+****
+First, you can think of it as an _affinity graph_ pairing visitor sessions with pages. The Netflix prize motivated a lot of work to help us understand affinity graphs -- in that case, a pairing of Netflix users with movies. Affinity graph-based recommendation engines simultaneously group similar users with similar movies (or similar sessions with similar pages). Imagine the following device. Set up two long straight lengths of wire, with beads that can slide along it. Beads on the left represent visitor sessions, ones on the right represent pages. These are magic beads, in that they can slide through each other, and they can clamp themselves to the wire. They are also slightly magnetic, so with no other tension they would not clump together but instead arrange themselves at some separated interval along the wire. Clamp all the beads in place for a moment and tie a small elastic string between each session bead and each page in that session. (These elastic bands also magically don't interfere with each other). To combat the crawler-robot effect, choose tighter strings when there are few pages in the session, and weaker strings when there are lots of pages in the session. Once you've finished stringing this up, unclamp one of the session beads. It will snap to a position opposit the middle of all the pages it is tied to. If you now unclamp each of those page beads, they'll move to sit opposite that first session bead. As you continue to unclamp all the beads, you'll find that they organize into clumps along the wire: when a bunch of sessions link to a common set of pages, their mutal forces combine to drag them opposite each other. That's the intuitive view; there are proper mathematical treatments, of course, for kind of co-clustering.
+
+TODO: figure showing bipartite session-page graph
+****
 
 === Geo-IP Matching ===
 

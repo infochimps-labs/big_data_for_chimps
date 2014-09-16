@@ -1,4 +1,14 @@
 
+9. Statistics 
+10. Event streams -- has some good examples, no real flow. The topic I'd be most excied to get in the book is the geo-ip matching, which demonstrates a range join.
+12, 21, 22, 23. Hadoop internals and tuning. As you can see just from the number of files involved this is particularly disorganized. If you and I worked out a structure of what should be there I can organize the spare parts around it.
+13. Data munging. This is some of the earliest material and thus some of the messiest. I don't believe this is worth reworking.
+14. Organizing data -- only real material here is a rundown of data formats. Rough.
+15. Filesystem mojo and `cat` herding -- runs down the commandline tools: wc, cut, etc. This is actually in decent shape, but should become an appendix I think.
+18. Native Java API -- I'd like to have this chapter in there with either the content being the single sentence "Don't", or that sentence plus one prose paragraph saying you should write Hive or Pig UDFs instead.
+19. Advanced Pig -- the material that's there, on pig config variables and two of the fancy joins, is not too messy. I'd like to at least tell readers about the replicated join, and probably even move it into the earlier chapters. The most we should do here would be to also describe an inline Python UDF and a Java UDF, but there's no material for that (though I do have code examples of UDFs)
+
+
 10. **Event log**
   - geo IP via range query
   - sessionizing, user paths

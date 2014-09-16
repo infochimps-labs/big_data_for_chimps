@@ -1,3 +1,6 @@
+[[geographic]]
+== Analyzing Spatial and Geographic Data
+
 Having conquered time (or, at least, learned basics of timeseries analysis), let's move on to space.
 Spatial analysis works with _data attached to points, paths and regions_, where the _fundamentally interesting relationships are among nearby objects_. ////The trick being learning how to consider those shapes within the context of what is spatially nearby those objects (say a truck weigh station near a highway patrol station or a 7-11 store near a public shool, as examples).//// This is some of our favorite material in the book for two reasons: because it's really useful, and because it will extend your understanding of map-reduce in a significant way.
 

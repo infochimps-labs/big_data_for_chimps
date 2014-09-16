@@ -59,3 +59,35 @@ Unless any of the following is your full-time job and area of specific expertise
 * matrix solver
 
 Proposed rule: "Never adopt a new lang until it has libs for OAuth+SSL, matrix solving, & LOGO"
+
+
+=== Best Practices
+
+// ==== Choosing variable names ====
+// 
+// If it's a collection:
+// 
+// * measure  		      -- quantity being measured: frequency, count, height, etc.
+// * free dimensions, pluralized -- dimensions that _don't_ appear in argument list
+// * `for`
+// * given dimensions, singular  -- arguments, in order.
+// 
+// If it's a quantity:
+// 
+// * measure  		      -- quantity being measured: frequency, count, height, etc.
+// * given dimensions, singular  -- arguments, in order.
+// 
+// 
+// So:
+// 
+// 	n_all			# number: sum count across all words, all docs and all cells
+// 	f_wd_doc(wd, doc)	# frequency of word in doc
+// 	f_wd_for_cell		# frequency of word across all cells and docs
+// 	f_wd(wd)		# number: frequency of word across all cells and docs
+// 
+// 
+// 
+// 	n_wds_for_doc(doc)     	# counts for word in given doc
+// 	n_cells_for_all(cell)	# sum counts for cell across all words
+// 	f_wds   		# frequencies of word across all cells/docs
+// 	f_wds_for_doc(doc)	# frequencies of word in given doc

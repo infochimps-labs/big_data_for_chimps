@@ -1,7 +1,6 @@
 Standard scores are also called z-values, z-scores, normal scores, and standardized variables; the use of "Z" is because the normal distribution is also known as the "Z distribution". They are most frequently used to compare a sample to a standard normal deviate (standard normal distribution, with μ = 0 and σ = 1), though they can be defined without assumptions of normality.
 
 
-
 > http://www.baseballprospectus.com/article.php?articleid=4845 This figure reveals something very interesting: Power Spikes have occurred more frequently in the Juiced Era, but the increase in frequency is almost entirely attributable to certain types of hitters. In particular, Power Spikes have become more frequent among hitters with average power--those guys who will hit more than 10 home runs but fewer than 30 in a typical season. Power Spikes have not become more frequent among hitters who have no power at all. It has never been very common for a hitter who has a weak, slap-hitting swing to transform into a power threat, and it is no more common today.
 >
 > But there is also no increase in Power Spikes among players who were already very good power hitters, capable of hitting at least 30 home runs per year. Sometimes a very good power hitter will turn into an insanely great one, as Bonds and McGwire did. But this is no more common today than it had been previously. The players who have been most responsible for the Juiced Era home-run boom are the middle-of-the-road players: those guys who used to hit 15 or 20 homers a season and are now hitting 25 or 30.
