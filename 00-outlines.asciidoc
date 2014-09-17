@@ -1,440 +1,89 @@
+=== Outline
 
-9. Statistics 
-10. Event streams -- has some good examples, no real flow. The topic I'd be most excied to get in the book is the geo-ip matching, which demonstrates a range join.
-12, 21, 22, 23. Hadoop internals and tuning. As you can see just from the number of files involved this is particularly disorganized. If you and I worked out a structure of what should be there I can organize the spare parts around it.
+==== Additional Content
+
+10. Statistics and sampling -- this is a shitshow. Cleaning up the sections on sampling may be worth it, and maybe a paragraph on underflow issues.
+    - sampling strategies
+    - covariance
+    - sketching
+    
+11. Advanced patterns -- a dumping ground for things that didn't make it in to chapters 6-9. Some of this is worth cleaning up.
+    - Handling Ties when Ranking Records
+    - Selecting a Single Maximal Record Within a Group, Ignoring Ties
+    - Selecting Records Having the Top K Values in a Group (discarding ties)
+    - Selecting Records Having the Top K Values in a Table
+    - Parsing a Delimited String into a Collection of Values
+    - Flattening a Bag Generates Many Records
+    - Flattening a Tuple Generates Many Columns
+    - Flatten on a Bag Generates Many Records from a Field with Many Elements
+    - Flatten on a Tuple Folds it into its Parent
+    - Generating Data by Distributing Assignments As Input
+    - Generating a Sequence Using an Integer Table
+    - Generating Pairs
+    - Transpose record into attribute-value pairs
+    - Decorate-Flatten-Redecorate -- Generate a won-loss record
+    - Decorate-Flatten-Redecorate -- Run Expectancy
+    - Co-Grouping Elements from Multiple Tables
+    - Cube and rollup
+    - Stitch and Over
+    - multi-join
+    
+12. Event streams -- has some good examples, no real flow. I'd be excited to get geo-ip matching in the book, as it demonstrates a range join.
+    - loading and parsing logs
+    - histogram of page views
+    - funnel analysis (what are the common paths to reach each page)
+    - sessionizing
+    - geo-IP matching and range queries
+    - benign DDOS
+    
 13. Data munging. This is some of the earliest material and thus some of the messiest. I don't believe this is worth reworking.
-14. Organizing data -- only real material here is a rundown of data formats. Rough.
-15. Filesystem mojo and `cat` herding -- runs down the commandline tools: wc, cut, etc. This is actually in decent shape, but should become an appendix I think.
-18. Native Java API -- I'd like to have this chapter in there with either the content being the single sentence "Don't", or that sentence plus one prose paragraph saying you should write Hive or Pig UDFs instead.
-19. Advanced Pig -- the material that's there, on pig config variables and two of the fancy joins, is not too messy. I'd like to at least tell readers about the replicated join, and probably even move it into the earlier chapters. The most we should do here would be to also describe an inline Python UDF and a Java UDF, but there's no material for that (though I do have code examples of UDFs)
 
+15. Text analysis -- the prose is in very rough shape, but the code is worked through.
+    - tokenizing a wordbag
+    - term statistics -- count, relative frequency, range, dispersion
+    - removing stopwords
+    - Good-Turing smoothing
+    - Why you should use crude methods for corrective measures on data
+    - document statistics -- tf/idf, pmi
 
-10. **Event log**
-  - geo IP via range query
-  - sessionizing, user paths
-  - abusing a webserver for testing
-  - One more topic from the chopping block, below
+41. Big Data Ecosystem -- readable; would like this to go in
 
-11. **Geo Analysis**
-  - quad keys for point density heat map
-    - and categorized
-  - Statistics on grid cells
-  - spatial join of airports and sightings (within-X join)
-  - Geospatial data model, GeoJSON
-  - voronoi cells on weather stations
-  - breaking voronoi regions into quad cell regions
-  - joining stadiums onto quads
-  - breaking voronoi regions into multi-scale quads
-  - map weather observations to cells, average
+42. Organizing data and 43. Commandline mojo and `cat` herding -- section on data formats, and section on commandline tools: wc, cut, etc. This is actually in decent shape, if you think it's in scope
+    - data formats:
+      - JSON,
+      - TSV,
+      - XML,
+      - why XML sucks,
+      - Parquet,
+      - Other
+    - commandline tools
+46. Tips and Gotchas -- this is a dumping ground for "little things I've learned". If this can go in as just a set of bullet-points, I think some of it is valuable 
 
-12. **Text Analysis**
-  - grep'ing etc for simple matches
-  - tokenize
-  - stopword removal
-  - assign quadtile
-  - group decorate flatten to get rates
-  - good turing to knock back
-  - pointwise mutual information to see words
+51. Direct Java API -- readable; if you agree with what's there, would like this to go in.
 
-
-10. **Event log** (Chopping Block topics)
-  - Parsing logs and using regular expressions
-  - lead and lag; windowing and rolling statistics
-  - Histograms and time series of pageviews
-  - Anomaly detection on Wikipedia Pageviews
-  - correlation of joint timeseries
-  - Holt-Winters
-  - Correlations
-  
-11. **Geo Analysis** (Chopping Block)
-  - spatial join of points and multi-scale quads
-  - spatial join of quads on quads ("range" query)
-
-12. **Text Analysis** (Chopping Block topics)
-  - Minhashing to combat a massive feature space
-  - How to cheat with Bloom filters
-
-
-14. **Statistics**
-  - subsetting / sampling your data: consistent sampling, distributions, replacement
-  - Summarizing: Averages, Percentiles, and Normalization
-  - Sketching Algorithm
-  - Rolling timeseries averages
-  - Statistical aggregates and the danger of large numbers
-  - Averages, Percentiles, and Normalization
-    - sum, average, standard deviation, etc (airline_flights)
-  - Percentiles / Median: exact percentiles / median; approximate percentiles / median
-  - construct a histogram (tie back to server logs); "Average value frequency"; interquartile
-  - Sampling responsibly: it's harder and more important than you think
-  - Statistical aggregates and the danger of large numbers
-  - normalize data by mapping to percentile, by mapping to Z-score
-
-20. **Advanced Pig**:
-  - merge, replicated joins; point to skew
-  - macros
-  - tuning
-  - why algebraic UDFs are awesome and how to be algebraic
-
-13. **Data Munging (Semi-Structured Data)**
-  - Wikipedia for character encoding
-  - airports for reconciliation
-  - weather: parsing flat pack file
-
-21. *Hadoop Internals*
+52. Advanced Pig -- the material that's there, on pig config variables and two of the fancy joins, is not too messy. I'd like to at least tell readers about the replicated join, and probably even move it into the earlier chapters. The most we should do here would be to also describe an inline Python UDF and a Java UDF, but there's no material for that (though I do have code examples of UDFs)
+    - Simple Java UDF
+    - Simple Python UDF
+    - Range Join
+    - Replicated (HashMap) Join
+    - (Skew Join)
+    - Pig tuning and configuration
+    
+53. and 54. Hadoop internals and tuning. As you can see just from the number of files involved this is particularly disorganized.
   - What happens when a job is launched
   - A shallow dive into the HDFS
-
-22. *Hadoop Tuning*
-  - Tuning for the Wise and Lazy
-  - Tuning for the Brave and Foolish
-  - The USE Method
-23. **Data Modeling for HBase-style Database**
-
-
-=== Chopping Block
-
-
-5. **Pipelineable** Additions/Improvements
-  - Controlling Case Sensitivity in String Comparisons (`ff = FILTER fr BY EqualsIgnoreCase(franch_id, 'bOs'); DUMP ff;`)
-  - Select Records Using a List of Values
-    - very small inline list with the `CASE` statement -- `CASE X WHEN val1 ... WHEN val2 ... ELSE .. END` and `CASE WHEN cond .. WHEN cond .. ELSE .. END`)
-  - Transforming Strings with Regular Expressions
-  - Transforming Nulls into Real Values
-  - Converting a Number to its String Representation (and Back) (cast with (int))
-  - Embedding Quotes and Special Characters Within String Literals.
-  - JSON encoding/decoding on a value (vs on a record)
-  - Assigning a Unique Identifier to Each Record (use `-tagPath` when loading; may require most recent Pig)
-  - `$0` references; `*` and `..` refereces
-
-  - Flattening a tuple gives you columns; Flattening a bag gives you rows
-  - Flattening bags == cross product
-  - Transposing Columns into Records (make the inline bag from several fields, then flatten it)
-  - Converting an Internally-Delimited Field into Multiple Columns Using STRSPLIT
-  - Converting an Internally-Delimited Field into Multiple Rows Using STRSPLITBAG
-  - Exploding a String into its Characters
-  - demonstrate case and ternary statements (combine/move demonstration in filter section?)
-  
-6. **Grouping** Additions/Improvements
-  - JSON-encoded string
-  - completely summarizing
-  
-
-7. **Joining** Additions/Improvements  
-  - Replicated join
-  - stuff in "important notes about joins"
-
-8. **Ordering and Uniquing**
-  - Demonstrate Sort in map/reduce
-  - max with/without ties, with/without record
-  - top-k with/without ties, with/without record
-  - running min/max
-  - mode (make an exercise)
-  - cardinality ie count of distict values
-
-9. **Advanced Patterns**
-  - Better COGROUP
-  - Stitch and Over
-  - multi-join,
-  - master-detail
-  - z-score
-  - group/decorate/flatten
-  - group/flatten/re-flatten
-  - cube & rollup
-  - run expectancy (prediction) 
-  
-27. **Intro to Storm+Trident**
-28. **Machine Learning without Grad School**:
-  - Naive Bayes
-  - Logistic Regression
-  - Random Forest (using Mahout)
-
-
-30. *The Toolset*
-  - toolset overview: pig vs hive vs impala; hbase & elasticsearch (not accumulo or cassandra)
-  - launching jobs: seeing the data, seeing the logs, simple debugging, `wu-ps`, `wu-kill`, globbing, and caveat about shell vs. hdfs globs
-  - overview of wukong: installing it (pointer to internet), classes you inherit from, options, launching
-  - overview of pig: options, launching, operations, functions
-
-31. **Filesystem Mojo and `cat` herding**
-  - commandline workflow tips: `> /dev/	null 2>&1`; `for` loops; nohup, disown, bg and `&`; `time`
-  - pipelineable: `ruby -ne`; grep, cut, seq, (reference back to `wu-lign`); wc, sha1sum, md5sum, nl, bzip2, gzcat
-  - structural: wu-box, head, tail, less, split, uniq, sort, join, `sort| uniq -c`,
-  - advanced hadoop filesystem (chmod, setrep, fsck)
-    - `wu-dump`, `wu-lign`, `wu-ls`, `wu-du`, `wu-cp`, `wu-mv`, `wu-put`, `wu-get`, `wu-mkdir`, `wu-rm`, `wu-rm -r`, `wu-rm -r --skip_trash`, `wu-distcp`
-    - filenames, wu style: s3n, s3hdfs, hdfs, file (note: 'hdfs:///~' should translate to 'hdfs:///.').
-    - templating: `{user}`, `{pid}`, `{uuid}`; `{date}`, `{time}`, `{tod}`, `{epoch}`, `{yr}`, `{mo}`, `{day}`, `{hr}`, `{min}`, `{sec}`; `{run_env}`, `{project}`)
-  - sugared jobs (wu-identity, wu-grep, wu-wc, wu-bzip, wu-gzip, wu-snappify, wu-digest (md5/sha1/etc))
-  - loading & storing advanced file formats: generic JSON,  schematized JSON, loading parquet or Trevni
-  - Data formats: airing of grievances on XML, CSV; don’t quote, escape; 3 good formats; restartability; best practices for naming files
-  - compression: gz, bz2, snappy, LZO
-  - tidy data
-  - split/apply/combine
-
-32. **Best Practices**
-
-
-
-30. **Overview of Datasets and Scripts**
-  - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
-  - Airline Flights
-  - UFO Sightings
-  - Global Hourly Weather
-  - Waxy.org "Star Wars Kid" Weblogs
-  - Github
-
-31. **Cheatsheets**:
-  - Regular Expressions
-  - Sizes of the Universe
-  - Hadoop Tuning & Configuration Variables
-  - SQL - Pig - Hive Patterns
-
-32. **References**
-
-* E-commerce
-* Biotech
-* Manufacturing defects
-* Security
-* Reccommenders
-* Finance
-* Intelligence
-
-* Recommender
-  -
-* Defect patterns (security breach, manufacturing defect, insider security,
-  - anomaly detection
-  - causal analysis
-* Prediction
-  - patient likely to get sepsis
-*
-
-
-
-* Generate pairs of teams, use ternary to choose lexicographic firstmost
-
-
-* See time series chapter: Discrete interval sampling (convert value-over-range to date-value)
-* See text chapter: Wordbag, Flatten
-* See statistics chapter: generating data
-* See statistics chapter: Transpose data
-
-* Caution on Floating Point comparisons
-* For sort note a udf to unique (distinct) won't work because keys can be split
-* season-by-season trends using Over
-* Note: HAVING not needed, just use a filter after the group by.
-* Cube and rollup
-  - stats by team, division and league
-* bag left outer join from DataFu
-* Left outer join on three tables: http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html
-* Sparse joins for filtering
-    * HashMap (replicated) join
-    * bloom filter join
-* Bitmap index
-* Self-join for successive row differences
-* Group flatten regroup
-    * OPS+ -- group on season, normalize, reflatten
-    * player's highest OPS+: season, normalize, flatten, group on player, top
-* Group Elements From Multiple Tables On A Common Attribute (COGROUP)
-* GROUP/COGROUP To Restructure Tables
-* Cogroup and aggregate (vs SQL Cookbook 3.10)
-
-* Find Overlapping Rows
-* Find Gaps in Time-Series..
-* Find Missing Rows in Series / Count all Values
-
-* Sort ASC / DESC
-
-* Number records with a serial or unique index
-* Running total 
-* http://en.wikipedia.org/wiki/Prefix_sum
-
-=== Graph Operatioms
-
-* Neighborhood extraction
-* Graph statistics: degree, clustering coefficient
-* symmetrize a graph
-* Triangles
-* Eulerian Walk
-* Connected components, Union find
-* Graph matching
-* Minimum spanning tree
-* Pagerank
-* label propagation
-* k-means clustering
-* Layout / Lgl
-* List all children of AAA
-
-=== Time Series Operations
-
-* Interval coalesce: given a set of intervals, what is the smallest set of intervals that covers all of them? for each team, what is the smallest number of stints (continuous player for team) needed so that every player was a teammate of one of them for that team? http://www.dba-oracle.com/t_sql_patterns_interval_coalesce.htm
-* Turn player-seasons into stints (like the sessionize operation I think)
-* Sessionize web logs; Continuous game streak    
-
-=== Statistics
-
-* Data Generation
-* Make Reproducible Random Data - Varying Distribution
-* Calculating Linear Regressions or Correlation Coefficients
-* Calculate the summary statistics: Transpose (datafu) and flatten; group on attribute; calculate statistics; unionize the stats
-* Sniff through the data: extrema, mountweazels, exemplars
-* Make a histogram: bin; log bins; by lookup table; by Z-score; equal-width
-* Plot it: time series, trellis plot
-
-* Strings 
-    * length: COUNT(), count star, count distinct, MIN(), MAX(), SUM(), AVG(), 
-    * **byte size, character size, line / word count**
-    * Number of Distinct elements (Cardinality)
-* Sum, sumsq, Entropy, Standard Deviation, variance, moments (eg GINI)
-* Correlation /covariance: what rate stats go with game time temp?
-* Streaming moments (see Alon, Matias, and Szegedy)
-* Heavy hitters -- Count-Min sketch
-* Running averages
-
-=== Advanced Patterns
-
-* Vertical and horizontal partitioning
-* Serial ids -- natural ids -- composite keys, foreign keys
-* Small record with large blob (eg video file and metadata)
-* Using float data type when you should use fixed point
-* Skyline query (elements not dominated)
-    * eliminate all players with no claim to be the best ever: their full set of core stats are less than some other player's full set of core stats. Related to convex hull http://www.cs.umd.edu/class/spring2005/cmsc828s/slides/skyline.pdf
-    * like the hipmunk "agony" ranking
-    * http://projekter.aau.dk/projekter/files/77335632/Scientific_Article.pdf - do this with quad keys - http://www.vldb.org/pvldb/vol6/p2002-shim.pdf
-* Relational division
-    * for each job listing (table of name, qualification pairs), find applicants who have all job qualifications (table is listing if, qualification pairs)
-    * an applicant who is not qualified has one (listing, qual) pair missing
-
-=== SQL-to-Pig-to-Hive
-
-* SELECT..WHERE
-* SELECT...LIMit
-* GROUP BY...HAVING
-* SELECT WHERE... ORDER BY
-* SELECT WHERE... SORT BY (just use reducer sort) ~~ (does reducer in Pig guarantee this?)
-* SELECT … DISTRIBUTE BY … SORT BY ...
-* SELECT ... CLUSTER BY (equiv of distribute by X sort by X)
-* Indexing tips
-* CASE...when...then
-* Block Sampling / Input pruning
-* SELECT country_name, indicator_name, `2011` AS trade_2011 FROM wdi WHERE (indicator_name = 'Trade (% of GDP)' OR indicator_name = 'Broad money (% of GDP)') AND `2011` IS NOT NULL CLUSTER BY indicator_name;
-
-SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVING condition ORDER BY column  [ASC | DESC] LIMIT offset,count;
-|
-
-  - adv.pig     udfs    (When do UDFs, compare JRuby UDF to Java UDF to Stream, and cite difference in $AWS cluster time and $ programmer salary to wait the extra time.
-  - adv.pig             Storing and Loading to/from a Database
-  - adv.pig     sparse  ‘merge-sparse’. This is useful for cases when both joined tables are pre-sorted and indexed, and the right-hand table has few ( < 1% of its total) matching keys. http://pig.apache.org/docs/r0.12.0/perf.html#merge-sparse-joins
-  - stats       advagg  Computing Averages Without High and Low Values (Trimmed Mean by rejecting max and min values)
-  - stats       genrte  Generating Frequency Distributions
-  - stats       genrte  Generating Random Numbers
-  - stats       genrte  Generating Repeating Sequences
-  - stats       maybe   Calculating Linear Regressions or Correlation Coefficients
-  - stats       advagg  Transposing Columns into Records
-  - stats       ntiles  Find Outliers Using the 1.5-Inter-Quartile-Range Rule
-  - eventlog            Fill in Missing Dates (apply fill gaps pattern)
-  - stats       sample  Sample a Fixed Number of Records with Reservoir Sampling
-  - eventlog            Identifying Overlapping Date Ranges
-  - eventlog            Parsing an IP Address or Hostname (and while we're at it, reverse dot the hostname)
-  - eventlog            Sorting Dotted-Quad IP Values in Numeric Order
-  - eventlog            Sorting Hostnames in Domain Order
-  - munging             Choose a String Data Type (-> munging-- get it the hell into utf-8)
-  - intro       usage   (mention that 'SET' on its own dumps the config)
-  - eventlog             Expanding Ranges into Fixed Intervals
-  - histogram   macros  (making a snippet a macro. Maybe in histogram? or summary stats?)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Introduce the chapter to the reader
-* take the strands from the last chapter, and show them braided together
-* in this chapter, you'll learn .... OR ok we're done looking at that, now let's xxx
-* Tie the chapter to the goals of the book, and weave in the larger themes
-* perspective, philosophy, what we'll be working, a bit of repositioning, a bit opinionated, a bit personal.
-
-
-The stakeholders' opinions are the data; the subject under vote is the context; the room and time define the arena of computation; and the decision is synthesized according to the relevant organizational bylaws.
-=====  HDFS
-
-Lifecycle of a File:
-
-* What happens as the Namenode and Datanode collaborate to create a new file.
-* How that file is replicated to acknowledged by other Datanodes.
-* What happens when a Datanode goes down or the cluster is rebalanced.
-* Briefly, the S3 DFS facade // (TODO: check if HFS?).
-
-===== Hadoop Job Execution
-
-* Lifecycle of a job at the client level including figuring out where all the source data is; figuring out how to split it; sending the code to the JobTracker, then tracking it to completion.
-* How the JobTracker and TaskTracker cooperate to run your job, including:  The distinction between Job, Task and Attempt., how each TaskTracker obtains its Attempts, and dispatches progress and metrics back to the JobTracker, how Attempts are scheduled, including what happens when an Attempt fails and speculative execution, ________, Split.
-* How TaskTracker child and Datanode cooperate to execute an Attempt, including; what a child process is, making clear the distinction between TaskTracker and child process.
-* Briefly, how the Hadoop Streaming child process works.
-
-==== Skeleton: Map-Reduce Internals
-
-* How the mapper and Datanode handle record splitting and how and when the partial records are dispatched.
-* The mapper sort buffer and spilling to disk (maybe here or maybe later, the I/O.record.percent).
-* Briefly note that data is not sent from mapper-to-reducer using HDFS and so you should pay attention to where you put the Map-Reduce scratch space and how stupid it is about handling an overflow volume.
-* Briefly that combiners are a thing.
-* Briefly how records are partitioned to reducers and that custom partitioners are a thing.
-* How the Reducer accepts and tracks its mapper outputs.
-* Details of the merge/sort (shuffle and sort), including the relevant buffers and flush policies and why it can skip the last merge phase.
-* (NOTE:  Secondary sort and so forth will have been described earlier.)
-* Delivery of output data to the HDFS and commit whether from mapper or reducer.
-* Highlight the fragmentation problem with map-only jobs.
-* Where memory is used, in particular, mapper-sort buffers, both kinds of reducer-merge buffers, application internal buffers.
-
-18. *Hadoop Tuning*
-  - Tuning for the Wise and Lazy
-  - Tuning for the Brave and Foolish
-  - The USE Method for understanding performance and diagnosing problems
-
-19. *Storm+Trident Internals*
-
-* Understand the lifecycle of a Storm tuple, including spout, tupletree and acking.
-* (Optional but not essential) Understand the details of its reliability mechanism and how tuples are acked.
-* Understand the lifecycle of partitions within a Trident batch and thus, the context behind partition operations such as Apply or PartitionPersist.
-* Understand Trident’s transactional mechanism, in the case of a PartitionPersist.
-* Understand how Aggregators, Statemap and the Persistence methods combine to give you _exactly once_  processing with transactional guarantees.  Specifically, what an OpaqueValue record will look like in the database and why.
-* Understand how the master batch coordinator and spout coordinator for the Kafka spout in particular work together to uniquely and efficiently process all records in a Kafka topic.
-* One specific:  how Kafka partitions relate to Trident partitions.
-
-20. *Storm+Trident Tuning*
-
-23. *Overview of Datasets and Scripts*
- - Datasets
-   - Wikipedia (corpus, pagelinks, pageviews, dbpedia, geolocations)
-   - Airline Flights
-   - UFO Sightings
-   - Global Hourly Weather
-   - Waxy.org "Star Wars Kid" Weblogs
- - Scripts
-
-24. *Cheatsheets*:
-  - Regular Expressions
-  - Sizes of the Universe
-  - Hadoop Tuning & Configuration Variables
-    
-1. Interlude I: *Organizing Data*:
-  - How to design your data models
-  - How to serialize their contents (orig, scratch, prod)
-  - How to organize your scripts and your data
-
-4. Interlude II: *Best Practices and Pedantic Points of style*
-  - Pedantic Points of Style
-  - Best Practices
-  - How to Think: there are several design patterns for how to pivot your data, like Message Passing (objects send records to meet together); Set Operations (group, distinct, union, etc); Graph Operations (breadth-first search). Taken as a whole, they're equivalent; with some experience under your belt it's worth learning how to fluidly shift among these different models.
-
+  - What happens in a Reducer, in detail
+  - What happens in a Mapper, in detail
+  - What a Happy Mapper looks like
+  - What a Happy Reducer looks like
+  - How to tune your cluster to your job
+  - notable configuration settings
+  - USE method
+
+55. HBase data modeling -- mostly readable, but somewhat disconnected from the rest of the book
+
+80. Appendixes
+  - how to get a hadoop cluster (pointers only, no instructions
+  - overview of datasets
+  - Cheatsheets
+  - references

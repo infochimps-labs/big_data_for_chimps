@@ -1,500 +1,243 @@
+[[statistics]]
 == Statistics and Sampling
 
-simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
+=== Skeleton: Statistics
 
-Describe long-tail and normal distribution
+Data is worthless. Actually, it's worse than worthless. It costs you money to gather, store, manage, replicate and analyze. What you really want is insight -- a relevant summary of the essential patterns in that data -- produced using relationships to analyze data in context.
 
-Build intuition about long-tail
+Statistical summaries are the purest form of this activity, and will be used repeatedly in the book to come, so now that you see how Hadoop is used it's a good place to focus.
 
-Log counts and combinators (see blekko posts)
+Some statistical measures let you summarize the whole from summaries of the parts: I can count all the votes in the state by summing the votes from each county, and the votes in each county by summing the votes at each polling station. Those types of aggregations -- average/standard deviation, correlation, and so forth -- are naturally scalable, but just having billions of objects introduces some practical problems you need to avoid. We'll also use them to introduce Pig, a high-level language for SQL-like queries on large datasets.
 
-
-Libraries:
-
-* https://github.com/SciRuby/sciruby.git[SciRuby]
-  ** https://github.com/clbustos/distribution.git[Distribution] -- probability distributions; uses fast GSL or Statistics2 if available
-
-* https://github.com/v01d/ruby-gsl-ng[ruby-gsl-ng] -- interface to the GSL, JRuby-compatible. Incomplete tho. 
+Other statistical summaries require assembling context that grows with the size of the whole dataset. The amount of intermediate data required to count distinct objects, extract an accurate histogram, or find the median and other quantiles can become costly and cumbersome. That's especially unfortunate because so much data at large scale has a long-tail, not normal (Gaussian) distribution -- the median is far more robust indicator of the "typical" value than the average. (If Bill Gates walks into a bar, everyone in there is a billionaire on average.)
 
 
-=== Line numbering and exact median ===
+=== Z-scores
 
-Line numbering is _astonishingly_ hard. Each reducer needs to know how many records came before it -- but that information is non-local. It's a total sort with a degree of difficulty.
+Standard scores are also called z-values, z-scores, normal scores, and standardized variables; the use of "Z" is because the normal distribution is also known as the "Z distribution". They are most frequently used to compare a sample to a standard normal deviate (standard normal distribution, with μ = 0 and σ = 1), though they can be defined without assumptions of normality.
 
+=== Summary Statistics
 
-==== Mapper
-
-Choose how you're going to partition and order the data.
-
-Pig comes with a sampling partitioner to do a total sort with no pre-knowledge of the key distribution. If you know something about the data, you can partition yourself, saving a pass over the data. Temperature has a non-uniform distribution (there are more warm and chilly days than boiling or frigid days) Let's be thoughtful but not overthink; we'll take 25 C as the midpoint
-
-	# TODO: inverse distribution 
-        return low_bound if temp < -30
-        return hi_bound  if temp >= 80
-        (temp - 25.0)
-
-sidebar: If the partition is the filename: in Pig, look at the `PathPartitioner`; in Wukong and Hadoop streaming, use the `ENV['map_input_file']` environment variable. To partition randomly see <<consistent_random_sampling>>. 
-
-For each record, emit a 
-
-        [partition_key]   B    [key]  [record]
-
-Each mapper must also emit how many keys _it_ saw for each partition key, and send that list to every partition:
-
-        0   A    [p0_count, p1_count, ... pN_count]
-        1   A    [p0_count, p1_count, ... pN_count]
-	...
-        N   A    [p0_count, p1_count, ... pN_count]
-
-Now each reducer can figure out which partition key in order it is, sum the counts for every partition, 
+* Calculating Summary Statistics on Groups with Aggregate Functions
+  - COUNT_STAR(), Count Distinct, count of nulls, MIN(), MAX(), SUM(), AVG() and STDEV()
+    - there are a core set of aggregate functions that we use to summarize the
+    - Use COUNT_STAR() to count Records in a Group; MIN() and MAX() to find the single largest / smallest values in a group; SUM() to find the total of all values in a group. The built-in AVG() function returns the arithmetic mean. To find the standard deviation, use the (double check the name) function from Datafu.
+    - describe difference between count and count_star. Note that the number of null values is (count_star - count). Recommend to always use COUNT_STAR unless you are explicitly conveying that you want to exclude nulls. Make sure we follow that advice.
+    - demonstrate this for summarizing players' weight and height by year. Show a stock-market style candlestick graph of weight and of height (min, avg-STDEV, avg, avg+STDEV, max), with graph of "volume" (count, count distinct and count_star) below it. Players are getting bigger and stronger; more of them as league and roster size grows; more data (fewer nulls) after early days.
+    - the median is hard and so we will wait until stats chapter.
+    - other summary stats (kurtosis, other higher-moments), no built-in function
+    - nested FOREACH (in the previous chapter we found obp, slg, ops from counting stats; now do it but for career.
+    - Aggregating Nullable Columns (NULL values don't get counted in an average. To have them be counted, ternary NULL values into a zero)
 
 
-=== Approximate Median ===
+Criteria for being in the structural patterns part: in remainder of book,(a) there's only one way to do it; (b) we don't talk about how it's done.
 
-Compare :
-Count bins (histogram)
-For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possible values?
+Later or here or at all demonstrate combiners in m-r?
 
-observations:
+TODO: content to come
 
-* it's hadoop, we don't have to be total wusses
-* the reducer already does a sort, so worrying about order N beyond that is silly
-* 
-
-set of numbers with exact ranks below and above -- might not be members though
-cap on output from any mapper -- target of data sent to each reducer
-if binning is easy then data sent to reducer will be small, if not it will be large
-can also adjust the partition vs local sort
-
-* single precision: 24 bits, exp - 126 to + 127 (8 bits)
-* double precision: 53 bits, exp -1022 to +1023 (11 bits)
+Join      pl-yr on pk-te-yr: pl-pk-te-yr
+Group   ppty on pl: pl-g-pks-tes-yrs
+Agg       pgty on pk and yr: pl-g-tes-stadia
+Flatten  pgty on pk and yr: pl-te-stadia
+Teammates: pl-yr to tm-yr-g-pls; cross to tm-yr-g-plaplbs; project to plas-plbs-gs
+    flatten to pla-plbs group to pla-g-plbs
+    distinct to pla-d-plbs (or pl[teammates])
+    flatten to pla-plb (or teammates)
 
 
 
+Weather stations: wstn-info ws-dt-hr[obs]
+Wp: art[text] art[info] art-dt-h[views]
+Server Logs: ip-url-time[reqs]
+UFOs: sightings[plc-dt-tm]
+airports: ap-tm[alid,flid,dest,flights]
 
 
-=== Some Useful Statistical Functions ===
+-- Group on year; find COUNT(), count distinct, MIN(), MAX(), SUM(), AVG(), STDEV(), byte size
 
-==== avoiding ((underflow)) and ((loss of precision)) ====
+SELECT
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+;
 
-* avoid subtracting nearly equal numbers footnote:[John Cook's "cardinal rule of numerical computing" is "If `x` and `y` agree to `m` bits, up to `m` bits can be lost in computing `x-y`."]
-* avoid adding small numbers to very large numbers
-* stop and think any time you are mixing addition and exponentiation
-* stop and think any time you make a number huge, then regular (`log(fact(x))`)
-* stop and think any time you make a number tiny, then regular (`1 - exp(-exp(x))`)
+SELECT
+    MIN(nameFirst)                     AS nameFirst_min,
+    MAX(nameFirst)                     AS nameFirst_max,
+    --
+    MIN(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_min,
+    MAX(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_max,
+    MIN(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+    MAX(OCTET_LENGTH(nameFirst))       AS nameFirst_bytesize_max,
+    AVG(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_avg,
+    STDDEV_POP(CHAR_LENGTH(nameFirst)) AS nameFirst_strlen_stddev,
+    LEFT(GROUP_CONCAT(nameFirst),25)   AS nameFirst_examples,
+    SUM(CHAR_LENGTH(nameFirst))        AS nameFirst_strlen_sum,
+    --
+    COUNT(*)                           AS n_recs,
+    COUNT(*) - COUNT(nameFirst)        AS nameFirst_n_nulls,
+    COUNT(DISTINCT nameFirst)          AS nameFirst_n_distinct
+  FROM bat_career bat
+;
 
-Float times are sneaky examples of this
+SELECT
+  player_id,
+  MIN(year_id) AS yearBeg,
+  MAX(year_id) AS yearEnd,
+  COUNT(*)    AS n_years,
+    MIN(HR)              AS hr_min,
+    MAX(HR)              AS hr_max,
+    AVG(HR)              AS hr_avg,
+    STDDEV_POP(HR)       AS hr_stddev,
+    SUM(HR)              AS hr_sum,
+    COUNT(*)             AS n_recs,
+    COUNT(*) - COUNT(HR) AS hr_n_nulls,
+    COUNT(DISTINCT HR)   AS hr_n_distinct -- doesn't count NULL
+  FROM bat_season bat
+  GROUP BY player_id
+  ORDER BY hr_max DESC
+;
 
-use special functions for the following:
+=== Transpose Columns Into `field name, field value` Pairs
 
-* `log(1 + x)`   	   	when x might be small	log_one_plus(x)
-* `log(1 + exp(x))`					log_one_plus_exp(x)
-* `log( -log(1 - x) )`			        	complementary_log_log(x)
-* `1 - exp(-exp(x))`					complementary_log_log_inverse(x)
-* `log(n!)`						log_fact(x)
-* `exp(x) - 1`				            	exp_x_minus_one(x)
-* `log( x / (1-x) )`    	the "logit" function	logit(x)
-* `exp(x)/(1 + exp(x))` 	inverse logit		inverse_logit(x)
-* `log(logit(x))`       	log logit		log_logit(x)
-
-* Ratios of factorials -- `log( 200! / (190! * 10!))` = `logfact(200) - logfact(190) - logfact(10)`
-
-Always add a comment explaining *why* you used these crazy functions, or some helpful soul will "refactor" your code to be simpler (and, unwittingly, wrong).
-
-* `def approx_eq(xx,yy) (xx - yy).abs < TOL ; end`
-
-* If you want to find weirdness, 0.1 cannot be exactly represented in a float.
-* to uniquely represent in decimal,
-  ** `%12.9e3f` for a float,   9 decimal digits of mantissa, exponent, and sign 
-  ** for a double, 16 decimal digits of mantissa (plus sign and exponent)
-  ** note `%a` -- a direct hex representation of the floating-point number. `"%a" % 1e-100` is `"0x1.bff2ee48e053p-333"`; `"%a" % 0.1` is `"0x1.999999999999ap-4"`
-
-
-TODO: ensure some calculations would cause underflow, overflow, etc with float/int; and maybe even double/long.
-
-reference: http://www.codeproject.com/Articles/25294/Avoiding-Overflow-Underflow-and-Loss-of-Precision[Avoiding Overflow, Underflow, and Loss of Precision]
-reference: http://www.altdevblogaday.com/2012/02/05/dont-store-that-in-a-float/[Don’t Store That in a Float]
-
-Generate exponential variate:
-
-    expdist  = Math.log( rand ) / log_one_plus( -geomparam )
-    geomdist = floor( expdist )
-
-
-----    
-Error function            	| `Math.erf`   		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erf
-  Complementary Error func	| `Math.erfc`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erfc
-Inverse Error function   	| 
-Phi (standard normal CDF) 	| `0.5 * ( 1 + erf( x / sqrtof2 ) )`
-Phi inverse               	| `sqrt(2.0) * ierf(2.0*x - 1.0)`
-    				| `CC0, CC1, CC2 = [2.515517, 0.802853, 0.010328] ; DD0, DD1, DD2 = [1.432788, 0.189269, 0.001308]`
-				| `def approx_rational(t) numerator = (CC2*t + CC1)*t + CC0 ; denominator = ((DD2*t + DD1)*t + DD0)*t + 1.0 ; t - numerator / denominator ; end`
-				| `def inv_phi(p) if p < 0.5 then -approx_rational( Math.sqrt(-2.0 * Math.log(p)) ) else  approx_rational( Math.sqrt(-2.0 * Math.log(1.0 - p)) ) ; end`
-Gamma                     	| `Math.gamma`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-gamma
-Log Gamma                 	| `Math.lgamma`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-lgamma
-`log(1 + x)` for small x  	| `(fabs(x) > 1e-4) ? log(1.0 + x) : (-0.5*x + 1.0)*x`
-    else
-`exp(x) - 1` for small x  	|
-`log(n!)`                 	| `Math.lgamma(n+1)`	|
-fraction+exponent of `exp()`	| `Math.frexp`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erfc
-
-    fr, ex = Math.frexp(val)
-    # fr a float, ex an int
-    fr * 2**ex   == val # => true
-    ldexp(fr,ex) == val # => true
-
-Uniform distributed (0.2 uSec)	| `rand`
-Gamma distributed         	| 
-Normal distributed  (1.9 uSec) 	| `mean + stddev * Math.sqrt(-2.0 * Math.log(uniform)) * Math.cos(2.0 * Math::PI * uniform)`
-                          	| `mean + stddev * Math.sqrt(-2.0 * Math.log(uniform)) * Math.sin(2.0 * Math::PI * uniform)`
-    
-Beta distributed          	| `uu = gammadist(a, 1) ; vv = gammadist(b, 1) ; u / (u + v)`
-Cauchy distributed        	| `median + scale * Math.tan(Math::PI * (uniform - 0.5))`
-Chi-square distributed    	| `gammadist(0.5 * degrees_of_freedom, 2.0)`
-Exponential distributed   	| `1.0 / gammadist(shape, 1.0 / scale)`
-Inverse gamma distributed 	| `1.0 / gammadist(shape, 1.0 / scale)`
-Laplace distributed       	| `mean + Math.log(2) + ((u < 0.5 ? 1 : -1) * scale * Math.log(u < 0.5 ? u : 1 - u))`
-Log normal distributed    	| `Math.exp(normal(mu, sigma))`
-Poisson distributed       	| 
-Student-t distributed     	| `normal / ((chi_square(degrees_of_freedom) / degrees_of_freedom) ** 0.5)`
-Weibull distributed       	| `scale * ((-Math.log(uniform)) ** (1.0 / shape))`
-Geometric distributed      	| `expdist( -1.0 / log_one_plus(-geomparam) ).floor`
-
-Binomial probability
-
-        # @param pp [Float]
-	# @param qq [Float]
-	# @param mm [Integer]
-	# @param nn [Integer]
-	def binomial_prob(pp, qq, m, n)
-	  log_bin  = gamma(mm + nn + 1.0)
-	  log_bin -= lgamma(nn + 1.0) + lgamma(mm + 1.0)
-	  log_bin += (mm * log(pp)) + (nn*log(qq))
-	  return exp(log_bin)
-	end
-----
+Our next pattern is to transpose fields from each row into records having a column with the field name and a column with the field value, sometimes called attribute-value form.
 
 
-references:
+=== Overflow, Underflow and other Dangers
 
-* John D Cook's http://www.johndcook.com/stand_alone_code.html[Stand Alone Code]
-* ealdent's https://github.com/ealdent/simple-random[simple-random], CPOL (MIT-compatible) license
+TODO: content to come
 
-=== Average and Standard Deviation using Welford's Method ===
+=== Quantiles and Histograms
 
-The naive method is `var = ( sum(xx**2) - (sum(x)**2/count) ) / (count-1)` (if it's the entire population, divide by `count` not `count-1`. The difference is negligible for large count).
-
-But wait!! We're **subtracting two possibly-close numbers**, breaking the cardinal rule of numerical computing.
+TODO: content to come
 
 
-Welford's method calculates these moments in a streaming fashion, in one pass. 
-It avoids the danger of loss of numerical precision present in the naive approach.
+In the structural operations chapter, we brought up the subject of calculating quantiles (an equal-width histogram), but postponed the discussion, judging it to be fiendishly hard. Calculating even an exact median -- the simplest case -- in a single map-reduce flow is not just hard, it's provably impossible (REF cormode paper).
+
+The issue is that you need to get all candidates for the edge of a bin onto the same reducer, and know the number of elements that precede the candidates on your reducer. From the mapper, however, it's impossible to know what keys to assign without knowing the global distribution -- the very thing we want to calculate! /end move to statistics)
+
+==== Median
 
 ----
-    field :count,  Integer,  doc: "Number of records seen so far"
-    field :mm,     Float,    doc: "A running estimate of the mean"
-    field :ss,     Float,    doc: "A running proportion of the variance; the variance is `ss / (count-1)`"
-    
-    class Welford
-      def initialize
-        first_row(0.0)
-      end
-      
-      def first_row(first_val)
-        @count  = 0
-	@mm     = first_val
-	@ss     = 0.0
-      end
-      
-      def process(val)
-        @count   += 1
-        diff      = val - @mm
-        @mm, @ss  = [ @mm + (diff / @count), @ss + (diff * diff) ]
-      end
-      
-      def stop
-        emit( results )
-      end
-
-      def results
-        [ count, mean, variance, stddev, mm, ss ]
-      end	
-      
-      def mean
-        return 0.0 if count < 1
-        mm
-      end
-      
-      def variance
-        return 0.0 if count < 2
-        ss / (count - 1)
-      end
-      
-      def stddev
-        Math.sqrt(variance)
-      end
-    end
-
-    class WelfordReducer
-      mm_all  = sum{|count, mm| count * mm } / sum{|count| count }
-      ss_all  = sum{ FIXME }
-    end  
+SELECT COUNT(*), CEIL(COUNT(*)/2) AS midrow
+  FROM bat_career
+ ;
+SELECT G, cols.*
+  FROM bat_career bat,
+    (SELECT COUNT(*) AS n_entries, CEIL(COUNT(*)/2) AS midrow FROM bat_career) cols
+  ORDER BY HR
+  LIMIT 1 OFFSET 8954
+;
 ----
 
-Weighted:
+==== Exact median using RANK
 
-----
+Well, we've met another operation with this problem, namely the sort (ORDER BY) operation. It does a first pass to sample the global distribution of keys, then a full map-reduce to place ordered values on the same reducer. Its numerate younger brother, RANK, will do what we need. The quartiles -- the boundaries of the four bins bins each holding 25% of the values -- ...
 
-    class WeightedWelford
+(Show using RANK and then filter; use the "pre-inject and assert global values" trick for the bin size. Handle the detail of needing to average two values when boundary splits an index, eg median of a table with even number of rows)
 
-      def process(val, weight)
-        new_total_weight = total_weight + weight
-	diff  = val - @mm
-	rr    = diff * weight / new_total_weight
-	@mm  += rr
-	@ss  += @mm + (total_weight * diff * rr)
-	total_weight = new_total_weight
-	super
-      end
-
-      def variance
-        ( ss * count.to_f / total_weight ) / (count-1)
-      end
-    end
-
-    class WeightedWelfordReducer
-      mm_all  = sum{ FIXME: what goes here }
-      ss_all  = sum{ FIXME: what goes here }
-    end  
-    
-----
+==== Approximate median & quantiles using DataFu
+ (get better title)
 
 
-Naively:
-
-----
-    class Naive < Welford
-      field :sum,    Float,    doc: "The simple sum of all the numbers"
-      field :sum_sq, Float,    doc: "The simple sum of squares for all the numbers"
-
-      def first_row(*)
-	@sum    = 0
-	@sum_sq = 0
-	super
-      end	
-      
-      def process(val)
-	@sum     += val
-	@sum_sq  += val * val
-	super        
-      end
-
-      def results
-        super + [ naive_mean, naive_variance, naive_stddev, sum, sum_sq ]
-      end
-      
-      def naive_average   ; ( sum / count ) 				 ; end
-      def naive_variance  ; ( sum_sq - ((sum * sum)/count) ) / (count-1) ; end
-      def naive_stddev    ; Math.sqrt(naive_variance) 			 ; end
-    end
-----
-
-Directly:
-	
-----
-    def DirectMoments < Naive
-      field :known_count,    doc: "The already-computed final count of all values"
-      field :known_mean,     doc: "The already-computed final mean of all values"
-      field :sum_dev_sq,     doc: "A running sum of the squared difference between each value and the mean"
-      field :sdsq_adj,       doc: "A compensated-summation correction of the running sum"
-
-      def first_row(*)
-        @sum_dev_sq  = 0
-	@sdsq_adj    = 0
-	super
-      end
-
-      def process(val)
-        @sum_dev_sq  += (val - known_mean)**2
-	@sdsq_adj    += (val - known_mean)
-	super
-      end
-
-      def results
-        super + [ direct_mean, direct_variance, direct_stddev, compsum_variance, @sum_dev_sq, @sdsq_adj ]
-      end
-      
-      def direct_mean      ; known_mean                 ; end
-      def direct_stddev    ; Math.sqrt(direct_variance) ; end
-      
-      def direct_variance  ; sum_dev_sq / (count - 1)   ; end
-      def compsum_variance
-        ( sum_dev_sq - (sdsq_adj**2 / count) ) / (count-1)
-      end
-    end  
-----
+=== Sampling
 
 
-To find higher moments,
+* Random sampling using the traditional pseudo-random number generators (which can be dangerous; we'll tell you how to do it right) (use input filename as seed)
+* Consistent sampling returns a fraction of records by _key_: if a record with the key "chimpanzee" is selected into the sample, all records with that key are selected into the sample.
+* (with/without replacement; weighted)
+* Reservoir sampling selects a given number of records. A uniform reservoir sample with count 100, say, would return 100 records, each with the same chance of being selected, regardless of the size of the dataset.
+* Subuniverse sampling selects a set of records and all associated records with it -- useful when you want to be able to joins on the sampled data, or to select a dense subgraph of a network. (TECH: is "dense subgraph" right?)
+* Stratified sampling: sampling from groups/bins/strata/whatever - http://en.wikipedia.org/wiki/Stratified_sampling
+* Sampling into multiple groups eg for bootstrapping
+* Note that pig sample is mathematically lame (see Datafu for why)
+* Note that pig sample is nice about eliminating records while loading (find out if Datafu does too)
+* Warning I may have written lies about reservoir sampling make sure to review
+* Spatial Sampling
+* Also: generating distributions (use the random.org data set and generate a column for each dist using it)
+* Expand the random.org by taking each r.o number as seed
 
-* each partition calculates the statistical moments `(g0, mu, var, alpha_3, alpha_4)`
-  - for a time series, `g0` is the duration; for a series, it's the count.
-* now get `g_mo_part(mo, part) := mm(mo,part) * g0(part)`
-* then    `raw_moment(mo) := g_mo_all / g0_all`
-* from raw moments get central moments: `theta_mo(mo) := Expectation[(val - mean)**mo]`
-* finally
-  ** `mean_all    := m_1_all`
-  ** `var_all     := theta_2_all`
-  ** `alpha_3_all := theta_3_all / (var_all ** 3)`
-  ** `alpha_4_all := theta_4_all / (var_all ** 4)
 
 
-references:
+* http://blog.codinghorror.com/shuffling/
+* http://opencoursesfree.org/archived_courses/cs.berkeley.edu/~mhoemmen/cs194/Tutorials/prng.pdf
+    * "numbers with statistical properties of randomness. Note that I didn’t write “random numbers,” but rather, “numbers with statistical properties of randomness.”"
+* Make sure you have enough bits
+* Even 52 cards has 52! =~ 255 bits of permutation... can't possibly get every permutation for a table of even modest size
+* Make sure you look out for ties and shuffle them as well
+* Do you have to be think-y about the partitioner?
+* Download about (8 years *365 days * 1 mebibyte) of randoms from random.org. This is however only 90 million 256-bit (32-byte) numbers, or 350 million 64-bit (8-byte) numbers.
+* Don't just (rand mod 25) for a 1-in-25 random sample -- you'll be biased because it's not an exact number of bits. Instead reject if > 25 and try again.
+* Watch out for non-reentrant rand() -- mutex or something (do we need to worry about this in hadoop?)
+* http://blog.cloudera.com/blog/2013/02/how-to-resample-from-a-large-data-set-in-parallel-with-r-on-hadoop/
+    * Sampling-with-replacement is the most popular method for sampling from the initial data set to produce a collection of samples for model fitting. This method is equivalent to sampling from a multinomial distribution where the probability of selecting any individual input data point is uniform over the entire data set. Unfortunately, it is not possible to sample from a multinomial distribution across a cluster without using some kind of communication between the nodes (i.e., sampling from a multinomial is not embarrassingly parallel). But do not despair: we can approximate a multinomial distribution by sampling from an identical Poisson distribution on each input data point independently, lending itself to an embarrassingly parallel implementation.
 
-* John Cook's http://www.johndcook.com/standard_deviation.html[Accurately computing running variance], who in turn cites
-  ** "Chan, Tony F.; Golub, Gene H.; LeVeque, Randall J. (1983). Algorithms for Computing the Sample Variance: Analysis and Recommendations. The American Statistician 37, 242-247."
-  ** "Ling, Robert F. (1974). Comparison of Several Algorithms for Computing Sample Means and Variances. Journal of the American Statistical Association, Vol. 69, No. 348, 859-866."
+Here's a clip from the PokerStars website (they did their homework):
 
-* http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics[Algorithms for calculating variance]
+* A deck of 52 cards can be shuffled in 52! ways. 52! is about 2^225 (to be precise, 80,658,175,170,943,878,571,660,636,856,404,000,000,000,000,000 ways). We use 249 random bits from both entropy sources (user input and thermal noise) to achieve an even and unpredictable statistical distribution.
+* Furthermore, we apply conservative rules to enforce the required degree of randomness; for instance, if user input does not generate required amount of entropy, we do not start the next hand until we obtain the required amount of entropy from Intel RNG.
+* We use the SHA-1 cryptographic hash algorithm to mix the entropy gathered from both sources to provide an extra level of security
+* We also maintain a SHA-1-based pseudo-random generator to provide even more security and protection from user data attacks
+* To convert random bit stream to random numbers within a required range without bias, we use a simple and reliable algorithm. For example, if we need a random number in the range 0-25:
+      o we take 5 random bits and convert them to a random number 0-31
+      o if this number is greater than 25 we just discard all 5 bits and repeat the process
+* This method is not affected by biases related to modulus operation for generation of random numbers that are not 2n, n = 1,2,..
+* To perform an actual shuffle, we use another simple and reliable algorithm:
+      o first we draw a random card from the original deck (1 of 52) and place it in a new deck - now original deck contains 51 cards and the new deck contains 1 card
+      o then we draw another random card from the original deck (1 of 51) and place it on top of the new deck - now original deck contains 50 cards and the new deck contains 2 cards
+      o we repeat the process until all cards have moved from the original deck to the new deck
+* This algorithm does not suffer from "Bad Distribution Of Shuffles" described in [2]
 
-=== Total ===
+[2] "How We Learned to Cheat at Online Poker: A Study in Software Security" - http://itmanagement.earthweb.com/entdev/article.php/616221
+[3] "The Intel Random Number Generator" - http://www.cryptography.com/resources/whitepapers/IntelRNG.pdf"
+
+
+==== Sample Records Consistently
 
 
 ----
-
-   class CompensatedSummer
-     field :tot, Float, doc: "Total of all values seen so far"
-     field :adj,  Float, doc: "Accumulated adjustment to total"
-
-     def first_record(val)
-       self.tot = val
-       self.adj  = 0
-      end
-     
-     def process(val)
-       old_tot  = @tot
-       adj_val  = val - @adj
-       @tot     =         old_tot  + adj_val
-       @adj     = (@tot - old_tot) - adj_val
-     end
-   end
+-- Consistent sample of events
+SELECT ev.event_id,
+    LEFT(MD5(CONCAT(ev.game_id, ev.event_id)), 4) AS evid_hash,
+    ev.*
+  FROM events ev WHERE LEFT(MD5(CONCAT(ev.game_id, ev.event_id)), 2) = '00';
 ----
 
-Consider this diagram, adapted from http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html[What Every Computer Scientist Should Know About Floating-Point Arithmetic]
-
 ----
-a      ____total____
-a    +        _valH_ _valL_
-a    = ___tmptot____
-a
-a      ___tmptot____
-a    - ____total____
-a    =        _valH_
-a    
-a             _valH_
-a    -        _valH_ _valL_
-a    =               _valL_    (-corr)
+-- Consistent sample of games -- all events from the game are retained
+-- FLO200310030 has gid_hash 0000... but evid_hash 0097 and so passes both
+SELECT ev.event_id,
+    LEFT(MD5(ev.game_id),4) AS gid_hash,
+    ev.*
+  FROM events ev WHERE LEFT(MD5(ev.game_id),2) = '00';
 ----
 
-
-
-===  Covariance ===
-
-
-do
-
-    `( 1 / (count-1)) * sum[ ((val_x - mean_x) / stddev_x) * ((val_y - mean_y) / stddev_y) ]
-
-
-To combine covariance of two sets,
-
-    CovAB = Cov_A + Cov_B + ( (mean_x_a - mean_x_b) * (mean_y_a - mean_y_b) * (count_a * count_b / (count_a + count_b)) )
-
-
-REFERENCE: http://www.johndcook.com/blog/2008/11/05/how-to-calculate-pearson-correlation-accurately/[How to calculate correlation accurately]    
-
-
-=== Regression ===
+Out of 1962193 events in the 2010, 7665 expected (1/256th of the total);
+got 8159 by game, 7695 by event
 
 ----
-    sx = 0, sy = 0, stt = 0.0, sts = 0.0
-
-    sx = x_vals.sum
-    sy = y_vals.sum
-
-    x_vals.zip(y_vals).each do |xval, yval|
-      t    = xval - (sx / count)
-      stt += t * t
-      sts += t * yval
-    end
-
-    slope     = sts / stt
-    intercept = (sy - sx*slope) / count
+SELECT n_events, n_events/256, n_by_game, n_by_event
+  FROM
+    (SELECT COUNT(*) AS n_events    FROM events) ev,
+    (SELECT COUNT(*) AS n_by_event  FROM events WHERE LEFT(MD5(CONCAT(game_id,event_id)),2) = '00') ev_e,
+    (SELECT COUNT(*) AS n_by_game   FROM events WHERE LEFT(MD5(game_id),2) = '00') ev_g
+    ;
 ----
 
-To make a naive algorithm fail,
-
-----
-    num_samples      = 1e6
-
-    def generate_samples
-      xvals = num_samples.times.map{|i| x_offset   + i * x_spread }
-      yvals = xvals.map{|xval| (actual_slope * xval) + actual_intercept + (actual_variance * normaldist()) }
-    end
-
-    large constant offset causes loss of precision:
-   
-    actual_slope     = 3
-    actual_intercept = 1e10
-    actual_variance  = 100
-    x_offset         = 1e10
-    x_spread         = 1
-    generate_samples(...)
-
-    very large slope causes inaccurate intercept:
-
-    actual_slope     = 1e6
-    actual_intercept = 50
-    actual_variance  = 1
-    x_offset         = 0
-    x_spread         = 1e6
-    generate_samples(...)
-----
-
-
-* John Cook, http://www.johndcook.com/blog/2008/10/20/comparing-two-ways-to-fit-a-line-to-data/[Comparing two ways to fit a line to data]
-
-=== Using frexp, ldexp, and tracking int and frac separately ===
-
-
-break numbers into bins where we can conveniently do exact Bignum math.
-
-running totals --
-
-    int_part, frac_part
-    frac_part = frac_part * smallest possible
-
-keep sums using
-
-    
-  
-==== Approximate methods ====
-
-We can also just approximate. 
-
-Reservoir sampling. 
-
-If you know distribution, can do a good job.
-I know that cities of the world lie between 1 and 8 billion. If I want to know median within .1% (one part in 1000), 
-
-    X_n / X_n-1 = 1.001 or log(xn) - log(xn1) = -3
 
 === Sampling ===
 
 
 ==== Random numbers + Hadoop considered harmful ====
 
-Don't generate a random number as a sampling or sort key in a map job. The problem is that map tasks  can be restarted - because of speculative execution, a failed machine, etc. -- and with random records, each of those runs will dispatch differently. It also makes life hard in general when your jobs aren't predictable run-to-run. You want to make friends with a couple records early in the so urge, and keep track of its passage though the full data flow. Similarly to the best practice of using intrinsic vs synthetic keys, it's always better to use intrinsic metadata --  truth should flow from the edge inward. 
+Don't generate a random number as a sampling or sort key in a map job. The problem is that map tasks  can be restarted - because of speculative execution, a failed machine, etc. -- and with random records, each of those runs will dispatch differently. It also makes life hard in general when your jobs aren't predictable run-to-run. You want to make friends with a couple records early in the so urge, and keep track of its passage though the full data flow. Similarly to the best practice of using intrinsic vs synthetic keys, it's always better to use intrinsic metadata --  truth should flow from the edge inward.
 
 === Refs ===
 
@@ -566,7 +309,7 @@ A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby e
 	  def emit? line
 	     digest_i < sampling_threshold
 	  end
-	  
+
         protected
 
 	  # Uses the sampling_fraction, a real value between 0 and 1 giving the fraction of lines to
@@ -577,7 +320,7 @@ A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby e
             if not options[:sampling_fraction] then raise ArgumentError, "Please supply a --sampling_fraction -- a real value between 0 and 1" ; end
 	    @sampling_threshold = (Float(options[:sampling_fraction]) * MAX_DIGEST).to_i
 	  end
-	  
+
 	  # @return [Integer] the last 64 bits of the record's md5 hash
 	  def digest_i(record)
 	    Digest::MD5.digest(record.to_s).unpack('Q*').last
@@ -591,7 +334,7 @@ A [http://github.com/mrflip/wukong/blob/master/examples/sample_records.rb Ruby e
 
 
 * See this http://blog.rapleaf.com/dev/?p=187[rapleaf blog post] for why randomness is considered harmful.
-	
+
 === Random Sampling using strides ===
 
 Another, often faster, way of doing random sampling is to
@@ -632,9 +375,494 @@ For an `n1` by `n2` matrix of numbers,
       matrix[ii] = row = []
       (0..n2).each do |jj|
         row[jj] = digest( ii*n2 + jj ) / n_elems
-      end	 
-    end	 
+      end
+    end
 
+
+simplify and summarize patterns in data: even simple counts and frequencies require some craft at large scale; measures that require any global context, like the median, become fiendish.
+
+Describe long-tail and normal distribution
+
+Build intuition about long-tail
+
+Log counts and combinators (see blekko posts)
+
+
+Libraries:
+
+* https://github.com/SciRuby/sciruby.git[SciRuby]
+  ** https://github.com/clbustos/distribution.git[Distribution] -- probability distributions; uses fast GSL or Statistics2 if available
+
+* https://github.com/v01d/ruby-gsl-ng[ruby-gsl-ng] -- interface to the GSL, JRuby-compatible. Incomplete tho.
+
+
+=== Line numbering and exact median ===
+
+Line numbering is _astonishingly_ hard. Each reducer needs to know how many records came before it -- but that information is non-local. It's a total sort with a degree of difficulty.
+
+
+==== Mapper
+
+Choose how you're going to partition and order the data.
+
+Pig comes with a sampling partitioner to do a total sort with no pre-knowledge of the key distribution. If you know something about the data, you can partition yourself, saving a pass over the data. Temperature has a non-uniform distribution (there are more warm and chilly days than boiling or frigid days) Let's be thoughtful but not overthink; we'll take 25 C as the midpoint
+
+	# TODO: inverse distribution
+        return low_bound if temp < -30
+        return hi_bound  if temp >= 80
+        (temp - 25.0)
+
+sidebar: If the partition is the filename: in Pig, look at the `PathPartitioner`; in Wukong and Hadoop streaming, use the `ENV['map_input_file']` environment variable. To partition randomly see <<consistent_random_sampling>>.
+
+For each record, emit a
+
+        [partition_key]   B    [key]  [record]
+
+Each mapper must also emit how many keys _it_ saw for each partition key, and send that list to every partition:
+
+        0   A    [p0_count, p1_count, ... pN_count]
+        1   A    [p0_count, p1_count, ... pN_count]
+	...
+        N   A    [p0_count, p1_count, ... pN_count]
+
+Now each reducer can figure out which partition key in order it is, sum the counts for every partition,
+
+
+=== Approximate Median ===
+
+Compare :
+Count bins (histogram)
+For 100 M rows -- What about when there are 10,000 values? 1m values? 1B possible values?
+
+observations:
+
+* it's hadoop, we don't have to be total wusses
+* the reducer already does a sort, so worrying about order N beyond that is silly
+*
+
+set of numbers with exact ranks below and above -- might not be members though
+cap on output from any mapper -- target of data sent to each reducer
+if binning is easy then data sent to reducer will be small, if not it will be large
+can also adjust the partition vs local sort
+
+* single precision: 24 bits, exp - 126 to + 127 (8 bits)
+* double precision: 53 bits, exp -1022 to +1023 (11 bits)
+
+=== Some Useful Statistical Functions ===
+
+==== avoiding ((underflow)) and ((loss of precision)) ====
+
+* avoid subtracting nearly equal numbers footnote:[John Cook's "cardinal rule of numerical computing" is "If `x` and `y` agree to `m` bits, up to `m` bits can be lost in computing `x-y`."]
+* avoid adding small numbers to very large numbers
+* stop and think any time you are mixing addition and exponentiation
+* stop and think any time you make a number huge, then regular (`log(fact(x))`)
+* stop and think any time you make a number tiny, then regular (`1 - exp(-exp(x))`)
+
+Float times are sneaky examples of this
+
+use special functions for the following:
+
+* `log(1 + x)`   	   	when x might be small	log_one_plus(x)
+* `log(1 + exp(x))`					log_one_plus_exp(x)
+* `log( -log(1 - x) )`			        	complementary_log_log(x)
+* `1 - exp(-exp(x))`					complementary_log_log_inverse(x)
+* `log(n!)`						log_fact(x)
+* `exp(x) - 1`				            	exp_x_minus_one(x)
+* `log( x / (1-x) )`    	the "logit" function	logit(x)
+* `exp(x)/(1 + exp(x))` 	inverse logit		inverse_logit(x)
+* `log(logit(x))`       	log logit		log_logit(x)
+
+* Ratios of factorials -- `log( 200! / (190! * 10!))` = `logfact(200) - logfact(190) - logfact(10)`
+
+Always add a comment explaining *why* you used these crazy functions, or some helpful soul will "refactor" your code to be simpler (and, unwittingly, wrong).
+
+* `def approx_eq(xx,yy) (xx - yy).abs < TOL ; end`
+
+* If you want to find weirdness, 0.1 cannot be exactly represented in a float.
+* to uniquely represent in decimal,
+  ** `%12.9e3f` for a float,   9 decimal digits of mantissa, exponent, and sign
+  ** for a double, 16 decimal digits of mantissa (plus sign and exponent)
+  ** note `%a` -- a direct hex representation of the floating-point number. `"%a" % 1e-100` is `"0x1.bff2ee48e053p-333"`; `"%a" % 0.1` is `"0x1.999999999999ap-4"`
+
+
+TODO: ensure some calculations would cause underflow, overflow, etc with float/int; and maybe even double/long.
+
+reference: http://www.codeproject.com/Articles/25294/Avoiding-Overflow-Underflow-and-Loss-of-Precision[Avoiding Overflow, Underflow, and Loss of Precision]
+reference: http://www.altdevblogaday.com/2012/02/05/dont-store-that-in-a-float/[Don’t Store That in a Float]
+
+Generate exponential variate:
+
+    expdist  = Math.log( rand ) / log_one_plus( -geomparam )
+    geomdist = floor( expdist )
+
+
+----
+Error function            	| `Math.erf`   		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erf
+  Complementary Error func	| `Math.erfc`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erfc
+Inverse Error function   	|
+Phi (standard normal CDF) 	| `0.5 * ( 1 + erf( x / sqrtof2 ) )`
+Phi inverse               	| `sqrt(2.0) * ierf(2.0*x - 1.0)`
+    				| `CC0, CC1, CC2 = [2.515517, 0.802853, 0.010328] ; DD0, DD1, DD2 = [1.432788, 0.189269, 0.001308]`
+				| `def approx_rational(t) numerator = (CC2*t + CC1)*t + CC0 ; denominator = ((DD2*t + DD1)*t + DD0)*t + 1.0 ; t - numerator / denominator ; end`
+				| `def inv_phi(p) if p < 0.5 then -approx_rational( Math.sqrt(-2.0 * Math.log(p)) ) else  approx_rational( Math.sqrt(-2.0 * Math.log(1.0 - p)) ) ; end`
+Gamma                     	| `Math.gamma`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-gamma
+Log Gamma                 	| `Math.lgamma`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-lgamma
+`log(1 + x)` for small x  	| `(fabs(x) > 1e-4) ? log(1.0 + x) : (-0.5*x + 1.0)*x`
+    else
+`exp(x) - 1` for small x  	|
+`log(n!)`                 	| `Math.lgamma(n+1)`	|
+fraction+exponent of `exp()`	| `Math.frexp`		| http://www.ruby-doc.org/core-1.9.3/Math.html#method-c-erfc
+
+    fr, ex = Math.frexp(val)
+    # fr a float, ex an int
+    fr * 2**ex   == val # => true
+    ldexp(fr,ex) == val # => true
+
+Uniform distributed (0.2 uSec)	| `rand`
+Gamma distributed         	|
+Normal distributed  (1.9 uSec) 	| `mean + stddev * Math.sqrt(-2.0 * Math.log(uniform)) * Math.cos(2.0 * Math::PI * uniform)`
+                          	| `mean + stddev * Math.sqrt(-2.0 * Math.log(uniform)) * Math.sin(2.0 * Math::PI * uniform)`
+
+Beta distributed          	| `uu = gammadist(a, 1) ; vv = gammadist(b, 1) ; u / (u + v)`
+Cauchy distributed        	| `median + scale * Math.tan(Math::PI * (uniform - 0.5))`
+Chi-square distributed    	| `gammadist(0.5 * degrees_of_freedom, 2.0)`
+Exponential distributed   	| `1.0 / gammadist(shape, 1.0 / scale)`
+Inverse gamma distributed 	| `1.0 / gammadist(shape, 1.0 / scale)`
+Laplace distributed       	| `mean + Math.log(2) + ((u < 0.5 ? 1 : -1) * scale * Math.log(u < 0.5 ? u : 1 - u))`
+Log normal distributed    	| `Math.exp(normal(mu, sigma))`
+Poisson distributed       	|
+Student-t distributed     	| `normal / ((chi_square(degrees_of_freedom) / degrees_of_freedom) ** 0.5)`
+Weibull distributed       	| `scale * ((-Math.log(uniform)) ** (1.0 / shape))`
+Geometric distributed      	| `expdist( -1.0 / log_one_plus(-geomparam) ).floor`
+
+Binomial probability
+
+        # @param pp [Float]
+	# @param qq [Float]
+	# @param mm [Integer]
+	# @param nn [Integer]
+	def binomial_prob(pp, qq, m, n)
+	  log_bin  = gamma(mm + nn + 1.0)
+	  log_bin -= lgamma(nn + 1.0) + lgamma(mm + 1.0)
+	  log_bin += (mm * log(pp)) + (nn*log(qq))
+	  return exp(log_bin)
+	end
+----
+
+
+references:
+
+* John D Cook's http://www.johndcook.com/stand_alone_code.html[Stand Alone Code]
+* ealdent's https://github.com/ealdent/simple-random[simple-random], CPOL (MIT-compatible) license
+
+=== Average and Standard Deviation using Welford's Method ===
+
+The naive method is `var = ( sum(xx**2) - (sum(x)**2/count) ) / (count-1)` (if it's the entire population, divide by `count` not `count-1`. The difference is negligible for large count).
+
+But wait!! We're **subtracting two possibly-close numbers**, breaking the cardinal rule of numerical computing.
+
+
+Welford's method calculates these moments in a streaming fashion, in one pass.
+It avoids the danger of loss of numerical precision present in the naive approach.
+
+----
+    field :count,  Integer,  doc: "Number of records seen so far"
+    field :mm,     Float,    doc: "A running estimate of the mean"
+    field :ss,     Float,    doc: "A running proportion of the variance; the variance is `ss / (count-1)`"
+
+    class Welford
+      def initialize
+        first_row(0.0)
+      end
+
+      def first_row(first_val)
+        @count  = 0
+	@mm     = first_val
+	@ss     = 0.0
+      end
+
+      def process(val)
+        @count   += 1
+        diff      = val - @mm
+        @mm, @ss  = [ @mm + (diff / @count), @ss + (diff * diff) ]
+      end
+
+      def stop
+        emit( results )
+      end
+
+      def results
+        [ count, mean, variance, stddev, mm, ss ]
+      end
+
+      def mean
+        return 0.0 if count < 1
+        mm
+      end
+
+      def variance
+        return 0.0 if count < 2
+        ss / (count - 1)
+      end
+
+      def stddev
+        Math.sqrt(variance)
+      end
+    end
+
+    class WelfordReducer
+      mm_all  = sum{|count, mm| count * mm } / sum{|count| count }
+      ss_all  = sum{ FIXME }
+    end
+----
+
+Weighted:
+
+----
+
+    class WeightedWelford
+
+      def process(val, weight)
+        new_total_weight = total_weight + weight
+	diff  = val - @mm
+	rr    = diff * weight / new_total_weight
+	@mm  += rr
+	@ss  += @mm + (total_weight * diff * rr)
+	total_weight = new_total_weight
+	super
+      end
+
+      def variance
+        ( ss * count.to_f / total_weight ) / (count-1)
+      end
+    end
+
+    class WeightedWelfordReducer
+      mm_all  = sum{ FIXME: what goes here }
+      ss_all  = sum{ FIXME: what goes here }
+    end
+
+----
+
+
+Naively:
+
+----
+    class Naive < Welford
+      field :sum,    Float,    doc: "The simple sum of all the numbers"
+      field :sum_sq, Float,    doc: "The simple sum of squares for all the numbers"
+
+      def first_row(*)
+	@sum    = 0
+	@sum_sq = 0
+	super
+      end
+
+      def process(val)
+	@sum     += val
+	@sum_sq  += val * val
+	super
+      end
+
+      def results
+        super + [ naive_mean, naive_variance, naive_stddev, sum, sum_sq ]
+      end
+
+      def naive_average   ; ( sum / count ) 				 ; end
+      def naive_variance  ; ( sum_sq - ((sum * sum)/count) ) / (count-1) ; end
+      def naive_stddev    ; Math.sqrt(naive_variance) 			 ; end
+    end
+----
+
+Directly:
+
+----
+    def DirectMoments < Naive
+      field :known_count,    doc: "The already-computed final count of all values"
+      field :known_mean,     doc: "The already-computed final mean of all values"
+      field :sum_dev_sq,     doc: "A running sum of the squared difference between each value and the mean"
+      field :sdsq_adj,       doc: "A compensated-summation correction of the running sum"
+
+      def first_row(*)
+        @sum_dev_sq  = 0
+	@sdsq_adj    = 0
+	super
+      end
+
+      def process(val)
+        @sum_dev_sq  += (val - known_mean)**2
+	@sdsq_adj    += (val - known_mean)
+	super
+      end
+
+      def results
+        super + [ direct_mean, direct_variance, direct_stddev, compsum_variance, @sum_dev_sq, @sdsq_adj ]
+      end
+
+      def direct_mean      ; known_mean                 ; end
+      def direct_stddev    ; Math.sqrt(direct_variance) ; end
+
+      def direct_variance  ; sum_dev_sq / (count - 1)   ; end
+      def compsum_variance
+        ( sum_dev_sq - (sdsq_adj**2 / count) ) / (count-1)
+      end
+    end
+----
+
+
+To find higher moments,
+
+* each partition calculates the statistical moments `(g0, mu, var, alpha_3, alpha_4)`
+  - for a time series, `g0` is the duration; for a series, it's the count.
+* now get `g_mo_part(mo, part) := mm(mo,part) * g0(part)`
+* then    `raw_moment(mo) := g_mo_all / g0_all`
+* from raw moments get central moments: `theta_mo(mo) := Expectation[(val - mean)**mo]`
+* finally
+  ** `mean_all    := m_1_all`
+  ** `var_all     := theta_2_all`
+  ** `alpha_3_all := theta_3_all / (var_all ** 3)`
+  ** `alpha_4_all := theta_4_all / (var_all ** 4)
+
+
+references:
+
+* John Cook's http://www.johndcook.com/standard_deviation.html[Accurately computing running variance], who in turn cites
+  ** "Chan, Tony F.; Golub, Gene H.; LeVeque, Randall J. (1983). Algorithms for Computing the Sample Variance: Analysis and Recommendations. The American Statistician 37, 242-247."
+  ** "Ling, Robert F. (1974). Comparison of Several Algorithms for Computing Sample Means and Variances. Journal of the American Statistical Association, Vol. 69, No. 348, 859-866."
+
+* http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics[Algorithms for calculating variance]
+
+=== Total ===
+
+
+----
+
+   class CompensatedSummer
+     field :tot, Float, doc: "Total of all values seen so far"
+     field :adj,  Float, doc: "Accumulated adjustment to total"
+
+     def first_record(val)
+       self.tot = val
+       self.adj  = 0
+      end
+
+     def process(val)
+       old_tot  = @tot
+       adj_val  = val - @adj
+       @tot     =         old_tot  + adj_val
+       @adj     = (@tot - old_tot) - adj_val
+     end
+   end
+----
+
+Consider this diagram, adapted from http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html[What Every Computer Scientist Should Know About Floating-Point Arithmetic]
+
+----
+a      ____total____
+a    +        _valH_ _valL_
+a    = ___tmptot____
+a
+a      ___tmptot____
+a    - ____total____
+a    =        _valH_
+a
+a             _valH_
+a    -        _valH_ _valL_
+a    =               _valL_    (-corr)
+----
+
+
+
+===  Covariance ===
+
+
+do
+
+    `( 1 / (count-1)) * sum[ ((val_x - mean_x) / stddev_x) * ((val_y - mean_y) / stddev_y) ]
+
+
+To combine covariance of two sets,
+
+    CovAB = Cov_A + Cov_B + ( (mean_x_a - mean_x_b) * (mean_y_a - mean_y_b) * (count_a * count_b / (count_a + count_b)) )
+
+
+REFERENCE: http://www.johndcook.com/blog/2008/11/05/how-to-calculate-pearson-correlation-accurately/[How to calculate correlation accurately]
+
+
+=== Regression ===
+
+----
+    sx = 0, sy = 0, stt = 0.0, sts = 0.0
+
+    sx = x_vals.sum
+    sy = y_vals.sum
+
+    x_vals.zip(y_vals).each do |xval, yval|
+      t    = xval - (sx / count)
+      stt += t * t
+      sts += t * yval
+    end
+
+    slope     = sts / stt
+    intercept = (sy - sx*slope) / count
+----
+
+To make a naive algorithm fail,
+
+----
+    num_samples      = 1e6
+
+    def generate_samples
+      xvals = num_samples.times.map{|i| x_offset   + i * x_spread }
+      yvals = xvals.map{|xval| (actual_slope * xval) + actual_intercept + (actual_variance * normaldist()) }
+    end
+
+    large constant offset causes loss of precision:
+
+    actual_slope     = 3
+    actual_intercept = 1e10
+    actual_variance  = 100
+    x_offset         = 1e10
+    x_spread         = 1
+    generate_samples(...)
+
+    very large slope causes inaccurate intercept:
+
+    actual_slope     = 1e6
+    actual_intercept = 50
+    actual_variance  = 1
+    x_offset         = 0
+    x_spread         = 1e6
+    generate_samples(...)
+----
+
+
+* John Cook, http://www.johndcook.com/blog/2008/10/20/comparing-two-ways-to-fit-a-line-to-data/[Comparing two ways to fit a line to data]
+
+=== Using frexp, ldexp, and tracking int and frac separately ===
+
+
+break numbers into bins where we can conveniently do exact Bignum math.
+
+running totals --
+
+    int_part, frac_part
+    frac_part = frac_part * smallest possible
+
+keep sums using
+
+
+
+==== Approximate methods ====
+
+We can also just approximate.
+
+Reservoir sampling.
+
+If you know distribution, can do a good job.
+I know that cities of the world lie between 1 and 8 billion. If I want to know median within .1% (one part in 1000),
+
+    X_n / X_n-1 = 1.001 or log(xn) - log(xn1) = -3
 
 
 === Refs ===
@@ -655,24 +883,24 @@ Working python code (see [http://github.com/dataspora/big-data-tools/blob/master
 
   import sys
   import random
-  
+
   if len(sys.argv) == 3:
       input = open(sys.argv[2],'r')
   elif len(sys.argv) == 2:
       input = sys.stdin;
   else:
       sys.exit("Usage:  python samplen.py <lines> <?file>")
-  
+
   N = int(sys.argv[1]);
   sample = [];
-  
+
   for i,line in enumerate(input):
       if i < N:
           sample.append(line)
       elif i >= N and random.random() < N/float(i+1):
           replace = random.randint(0,len(sample)-1)
           sample[replace] = line
-  
+
   for line in sample:
       sys.stdout.write(line)
 
@@ -684,7 +912,7 @@ Working python code (see [http://github.com/dataspora/big-data-tools/blob/master
 * Approx histogram
 
 - Counting
-  - total burgers sold - total commits, repos, 
+  - total burgers sold - total commits, repos,
 - counting a running and or smoothed average
 - standard deviation
 - sampling
@@ -696,5 +924,3 @@ Working python code (see [http://github.com/dataspora/big-data-tools/blob/master
 - use countmin sketch to turn a holistic aggregate into an algebraic aggregate
 - quantile or histogram
 - numeric stability
-
-      

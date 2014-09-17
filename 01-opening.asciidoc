@@ -257,3 +257,22 @@ TODO: sample output
 This travel guide is a bit of a gimmick so far, but hey, we're only at the end of the first chapter. We can come up with all sorts of ways to improve it. For instance, a proper guide would hold not just the one article about the general location, but a set of nearby places of interest. Later in the book we'll show you how to do a nearby-ness query (in the Geodata chapter (REF)), which is fiendishly hard until you know how. You'll immediately find that an undifferentiated listing of points of interest is almost worse than only listing one. Later in the book, we'll show you how to attach a notion of "prominence" (in the event log chapter (REF)).
 
 To get us started, we're going to meet Chimpanzee & Elephant, some new friends whose adventures seem to curiously correspond to ours...
+
+=== Applications
+
+
+* E-commerce
+* Biotech
+* Manufacturing defects
+* Security
+* Reccommenders
+* Finance
+* Intelligence
+
+* Recommender
+  -
+* Defect patterns (security breach, manufacturing defect, insider security,
+  - anomaly detection
+  - causal analysis
+* Prediction
+  - patient likely to get sepsis
