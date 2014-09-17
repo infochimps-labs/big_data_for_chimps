@@ -1,5 +1,18 @@
+[[appendix]]
+= Appendixes
 
-The examples in this book use the "Chimpmark" datasets: a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. They are the same datasets as used in the upcoming Chimpmark Challenge big-data benchmark. The datasets are:
+=== Appendix 1: Acquiring a Hadoop Cluster ===
+
+* Elastic Map-Reduce
+* Brew
+* Amazon
+* CDH and HortonWorks
+* MortarData and TreasureData
+
+
+=== Appendix 2: Overview of Datasets
+
+The examples in this book use a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. The datasets are:
 
 * Wikipedia English-language Article Corpus (`wikipedia_corpus`; 38 GB, 619 million records, 4 billion tokens): the full text of every English-language wikipedia article.
 
@@ -19,7 +32,7 @@ The examples in this book use the "Chimpmark" datasets: a set of freely-redistri
 
 * Gutenberg Corpus
 
-=== Wikipedia Page Traffic Statistic V3  ===
+==== Wikipedia Page Traffic Statistic V3
   -
   - a 150 GB sample of the data used to power trendingtopics.org. It includes a full 3 months of hourly page traffic statistics from Wikipedia (1/1/2011-3/31/2011).
 
@@ -63,33 +76,30 @@ Here are a few ideas to get you started exploring the data:
 
 The airport datasets contain errors and conflicts; we've done some hand-curation and verification to reconcile them. The file `wikipedia_conflicting.tsv` shows where my patience wore out.
 
-=== ITA World Cup Apache Logs
+==== ITA World Cup Apache Logs
 
 * 1998 World Cup access logs (`access_logs/ita_world_cup_apachelogs`; 123 GB, 1.3 billion records): every request made to the 1998 World Cup Web site between April 30, 1998 and July 26, 1998, in apache log format.
 
-===  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD) ===
+====  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD)
 
+20 GB
+geo, stats
 
-  - 20 GB
-  - geo, stats
-
-  - http://blog.oldweather.org/results/[Old Weather project] --
-    - http://philip.brohan.org.transfer.s3.amazonaws.com/oW_imma_20120801.tgz
+* http://blog.oldweather.org/results/[Old Weather project] --
+* http://philip.brohan.org.transfer.s3.amazonaws.com/oW_imma_20120801.tgz
 
 === Supplementary Data
 
-* US City Populations:
-  - https://en.wikipedia.org/wiki/Cities_and_metropolitan_areas_of_the_United_States[The 100 most populous cities\, Metropolitan Statistical Areas\, and Primary Statistical Areas of the United States and Puerto Rico]
-  - http://www.census.gov/popest/data/cities/totals/2011/tables/SUB-EST2011-01.csv[US Census -- Annual Estimates of the Resident Population for Incorporated Places Over 50_000 Population]
+US City Populations:
 
+* https://en.wikipedia.org/wiki/Cities_and_metropolitan_areas_of_the_United_States[The 100 most populous cities\, Metropolitan Statistical Areas\, and Primary Statistical Areas of the United States and Puerto Rico]
+* http://www.census.gov/popest/data/cities/totals/2011/tables/SUB-EST2011-01.csv[US Census -- Annual Estimates of the Resident Population for Incorporated Places Over 50_000 Population]
 
     
 === Retrosheet
 
-
-            25	 	Retrosheet: MLB play-by-play, high detail, 1840-2011	ripd/www.retrosheet.org-2007/boxesetc/2006
-            25	 	Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
-
+* Retrosheet: MLB play-by-play, high detail, 1840-2011	ripd/www.retrosheet.org-2007/boxesetc/2006
+* Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
 
 === Gutenberg corpus
 
@@ -104,7 +114,6 @@ The main collection is about 650GB (as of October 2011) with nearly 2 million fi
     cd /mnt/gutenberg/ ; mkdir -p logs/gutenberg
     nohup rsync -aviHS --max-size=10M --delete --delete-after --exclude=\*.{m4a,m4b,ogg,spx,tei,md5,db,mus,mid,rst,sib,xml,zip,pdf,jpg,jpeg,png,htm,html,mp3,rtf,wav,mov,mp4,avi,mpg,mpeg,doc,docx,xml,tex,ly,eps,iso,rar} --exclude={\*-h*,old,images} --exclude '*cache/generated' {ftp@ftp.ibiblio.org::gutenberg,/mnt/gutenberg/ftp.ibiblio.org}/2 >> /mnt/gutenberg/logs/gutenberg/rsync-gutenberg-`datename`-part_2.log 2>&1 &
 ----
-
 
 * http://ftp.ibiblio.org/1/1/0/100/100.txt[Complete works of William Shakespeare]
 

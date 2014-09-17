@@ -675,3 +675,26 @@ Working python code (see [http://github.com/dataspora/big-data-tools/blob/master
   
   for line in sample:
       sys.stdout.write(line)
+
+
+* Holistic vs algebraic aggregations
+* Underflow and the "Law of Huge Numbers"
+* Approximate holistic aggs: Median vs remedian; percentile; count distinct (hyperloglog)
+* Count-min sketch for most frequent elements
+* Approx histogram
+
+- Counting
+  - total burgers sold - total commits, repos, 
+- counting a running and or smoothed average
+- standard deviation
+- sampling
+  - uniform
+  - top k
+  - reservior
+  - ?rolling topk/reservior sampling?
+- algebraic vs holistic aggregate
+- use countmin sketch to turn a holistic aggregate into an algebraic aggregate
+- quantile or histogram
+- numeric stability
+
+      

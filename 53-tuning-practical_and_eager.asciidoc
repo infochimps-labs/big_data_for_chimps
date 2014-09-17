@@ -1,6 +1,3 @@
-[[hadoop_tuning]]
-== Hadoop Tuning
-
 
 One of the wonderful and terrible things about Hadoop (or anything else at Big Data scale) is that there are very few boundary cases for performance optimization.  If your dataflow has the wrong shape, it is typically so catastrophically inefficient as to be unworkable.  Otherwise, Hadoop’s scalability makes the price of simply throwing more hardware at the problem competitive with investing to optimize it, especially for exploratory analytics.  That’s why the repeated recommendation of this book is: Get the algorithm right, get the contextability right and size your cluster to your job.  
 
@@ -200,81 +197,137 @@ The cost of excessive merge passes, however, accrues directly to the total runti
 (TODO: complete)
 
 
-=== Cluster Sizing Rules of thumb
+== Pathology of Tuning (aka "when you should touch that dial") ==
 
-Let's define
+=== Mapper ===
 
-* ram_total == total cluster ram = ram_per_machine * num_machines
-* cpu_bw_per_slot == actual CPU bandwidth per mapreduce slot for a highly cpu-intensive job ~= actual CPU bandwidth / cores per machine
-* disk_bw_per_slot == actual disk bandwidth per mapreduce slot ~= actual disk bandwidth / cores per machine
-* ntwk_bw_per_slot == actual ntwk bandwidth per mapreduce slot ~= actual ntwk bandwidth / cores per machine
-* X = amount of data sent to the reducers in the largest job the customer expects to run performantly.
-* max_data_under_management == amount of data stored on HDFS, not accounting for replication
+==== A few map tasks take noticably longer than all the rest
 
-Consider a job that reads X data into mapper, sends X data to the reducer, and emits X data from that reducer (put another way: one of the following stages will be limiting, in which case increasing the amount of data the other stages handle won't slow down the job.)
+Typically, the only good reason for a map task to run much longer than its peers is if it's processing a lot more data.
 
-* A: mapper stage
-  - reading X data from hdfs disk for mapper via local datanode
-  - processing X data in mapper (not limiting)
-  - spilling X data to scratch disk (parallelized with mapper reading)
-  - sending X data over network to reducer (parallelized with mapper reading)
-  - writing X data to scratch disk in first-pass merge sorting (parallelized with mapper reading)
-* B: follow-on merge sort stage
-  - reading/writing (Q-2)*X data to scratch disk in follow-on merge sort passes, where Q is the total number of merge-sort passes required (somewhat parallelized with above). It goes as the log of the reduce size over the reducer child process ram size.
-* C: output stage
-  - reading X data from scratch disk for reducer
-  - processing X data in reducer (not limiting)
-  - writing X data to hdfs disk via local datanode (not limiting)
-  - sending/receiving 2*X data over network for replication (parallelized with reducing)
-  - writing 2*X data to disk for replication by local datanode (parallelized with reducing)
+The jobtracker assigns blocks in decreasing order of size to help prevent the whole job waiting on one last mapper.  If your input format is non-splitable (eg it's `.bz2` compressed), and some files are huge, those files will take proportionally longer. If these are so imbalanced as to cause trouble, I can't offer much more than a) don't write imbalance files, or b) switch to a splitable format.
 
-----------
+If some map tasks are very slow, but aren't processing proportionally more data, look for the following:
+
+* Check the logs of the slow tasks -- did they hit a patch of bad records and spend all their time rescuing a ton of exceptions?
+* Some records take far longer to process than others -- for example a complex regexp (regular expression) that requires a lot of backtracking.
+* If the slow tasks always occur on the same machine(s), they might be failing.
+* Check the logs for both the child processes and the daemons -- are there timeouts or other errrors?
+
+==== Tons of tiny little mappers ====
+
+For jobs with a reduce step, the number of map tasks times the heap size of each mapper should be about twice the size of the input data. 
+
+===== CombineFileInputFormat =====
+
+...TODO...
 
 
-* A well-configured cluster has disk_bw_per_slot as the limiting bottleneck.
-  - ntwk_bw_per_slot >= disk_bw_per_slot in-rack
-  - ntwk_bw_per_slot >=  80% disk_bw_per_slot between pairs of machines in different racks under full load.
-  - cpu_bw_per_slot >= disk_bw_per_slot -- it's actually really hard to find the practical job where this isn't the case
-* Thus stage A takes X / disk_bw_per_slot amount of time
-* And stage C takes 3*X / disk_bw_per_slot amount of time
-* If ram_total >= 40% X, the number of merge passes won't much exceed the runtime of the mappers. A job that sends more than two or three times ram_total to its reducers starts to really suck.
+[[many_non_local_mappers]]
+==== Many non-local mappers ====
 
-----------
+* A prior stage used one (or very few) reducers
+* You recently enlarged your cluster
+* HDFS is nearly full
+* Overloaded data nodes
 
-Implications:
+==== Map tasks "spill" multiple times ====
 
-* ram_total = 40% of the largest amount of data they care to regularly process
-* cpu = size each machine so its cpu is faster than its disk, and not faster
-* network = size each machine so its network is faster than its disk, and not too much faster
-* cross-rack switches = size the cross-rack switches so actual bandwidth between pairs of machines in different racks under full load isn't too much slower than the in-rack bandwidth (say, 80%)
-* the bigjob you've just sized the cluster against should take about (5 * X / disk_bw_per_machine) to run
-* total cluster disk capacity = size to 5 * max_data_under_management -- factor of 3 for replication, another factor of 1.5 for computing by-production, and then bump it up for overhead
-  - scratch space volume capacity >= 2 * X -- I assume that X is much less than max_data_under_management, so scratch space fits in the overhead. It's really nice to have the scratch disks and the hdfs disks held separate.  
+Each mapper is responsible for sorting the individual records it emits, allowing the reducers to just do a merge sort. It does so by filing records into a fixed-size sort buffer (the analog of the inbox sorter on the back of each elephant). Each time the sort buffer overflows, the mapper will "spill" it to disk; once finished, it merge sorts those spills to produce its final output. Those merge passes are not cheap -- the full map output is re-read and re-written. If the midflight data size is several times your allocable heap, then those extra merge passes are necessary: you should smile at how well Hadoop is leveraging what RAM you have.
+
+However, if a mapper's midflight size even slightly exceeds the sort buffer size, it will trigger an extra spill, causing a 20-40% performance hit.
+
+On the jobtracker, check that the 
+
+==== Job output files that are each slightly larger than an HDFS block ====
+
+If your mapper task is slightly expansive (outputs more data than it reads), you may end up with an output file that for every input block emits one full block and almost-empty block. For example, a task whose output is about 120% of its input will have an output block ratio of 60% -- 40% of the disk space is wasted, and downstream map tasks will be inefficient.
+
+. Check this by comparing (TODO: grab actual terms) HDFS bytes read with mapper output size.
+
+You can check the block ratio of your output dataset with `hadoop fsck -blocks`
+
+(TODO: capture output)
+
+If your mapper task is expansive and the ratio is less than aobut 60%, you may want to set a min split size of about
+
+Alternatively, turn up the min split size on the _next_ stage, sized so that it
+
+=== Reducer ===
 
 
-=== Top-line Performance/Sanity Checks
+==== Tons of data to a few reducers (high skew)
 
-*  The first wave of Mappers should start simultaneously.
-*  In general, all a job’s full block Map attempts should take roughly the same amount of time.
-*  The full map phase should take around ‘average_Map_task_time*(number_of_Map_tasks/number_of_Mapper_slots+1)’
-*  Very few non-local Map tasks.
-*  Number of spills equals number of Map tasks (unless there are Combiners).
-*  If there are Combiners, the Reducer input data should be much less than the Mapper output data (TODO: check this).  
-*  Record counts and data sizes for Mapper input, Reducer input and Reducer output should correspond to your conception of what the job is doing.
-*  Map tasks are full speed (data rate matches your measured baseline) 
-*  Most Map tasks process a full block of data.
-*  Processing stage of Reduce attempts should be full speed.
-*  Not too many Merge passes in Reducers.
-*  Shuffle and sort time is explained by the number of Merge passes.
-*  Commit phase should be brief.
-*  Total job runtime is not much more than the combined Map phase and Reduce phase runtimes.
-*  Reducers generally process the same amount of data.
-*  Most Reducers process at least enough data to be worth it.
-*  
+* Did you set a partition key?
+* Can you use a finer partition key?
+* Can you use a combiner?
 
-// ____________________________________
+* Are there lots of records with a NULL key?
 
-=== Performance Comparison Worksheet
+  - Here's a great way to get null keys: `j = JOIN a BY akey LEFT OUTER, b by bkey; res = FOREACH j GENERATE bkey AS key, a::aval, b::bval; grouped = GROUP res BY key;`. Whenever there's a key in `a` with no match in `b`, `bkey` will be null and the final `GROUP` statement will be painful. You probably meant to say `... GENERATE akey AS key ....`.
 
-(TODO: DL Make a table comparing performance baseline figures on AWS and fixed hardware.  reference clusters.)
+* Does your data have intrinsically high skew? -- If records follow a long-tail distribution, 
+* Do you have an "LA and New York" problem? If you're unlucky, the two largest keys might be hashed to the same reducer. Try running with one fewer reducers -- it should jostle the keys onto different machines.
 
+If you have irrevocably high skew, Pig offers a http://pig.apache.org/docs/r0.9.2/perf.html#Skewed-Joins[`skewed` join] operator.
+
+==== Reducer merge (sort+shuffle) is longer than Reducer processing ====
+
+==== Output Commit phase is longer than Reducer processing ====
+
+==== Way more total data to reducers than cumulative cluster RAM ====
+
+If you are generating a huge amount of midflight data for a merely-large amount of reducer output data, you might be a candidate for a better algorithm.
+
+
+In the graph analytics chapter, we talk about "counting triangles": how many of your friends-of-friends are also direct friends? 
+More than a million people follow Britney Spears and Justin Bieber on Twitter. If they follow each other (TODO: verify that they do), the "obvious" way of counting shared friends will result in trillions (`10^12`) of candidates -- but only millions if results. This is an example of "multiplying the short tails" of two distributions. The graph analytics chapter shows you one pattern for handling this.
+
+If you can't use a better algorithm, then as they said in Jaws: "you're going to need a bigger boat".
+
+
+=== System ===
+
+
+==== Excessive Swapping ====
+
+* don't use swap -- deprovision it.
+* if you're going to use swap, set swappiness and overcommit
+
+Otherwise, treat the presence of _any_ significant swap activity as if the system were <<out_of_memory>>.
+
+[[out_of_memory]]
+==== Out of Memory / No C+B reserve ====
+
+Your system is out of memory if any of the following occurs:
+
+* there is no remaining reserve for system caches+buffers
+* significant swap activity
+* OOM killer (the operating system's Out Of Memory handler) kills processes
+
+For Hadoop's purposes, if the OS has no available space for caches+buffers, it has already run out of system RAM -- even if it is not yet swapping or OOMing
+
+* check overcommit
+
+You may have to reduce slots, or reduce heap per slot.
+
+
+==== Stop-the-world (STW) Garbage collections ====
+
+STW garbage collection on a too-large heap can lead to socket timeouts, increasing the load and memory pressure on other machines, leading to a cascading degradation of the full cluster.
+
+=== Checklist ===
+
+* Unless your map task is CPU-intensive, mapper task throughput should be comparable to baseline throughput.
+* The number of non-local map tasks is small.
+* Map tasks take more than a minute or so.
+* Either 'Spilled bytes' and 'mapper output bytes' are nearly equal, or 'Spilled bytes' is three or more times 'mapper output bytes'.
+* The size of each output file is not close-to-but-above the HDFS block size
+
+=== Other ===
+
+==== Basic Checks ====
+
+* enough disk space
+* hadoop native libraries are discovered (`org.apache.hadoop.util.NativeCodeLoader: Loaded the native-hadoop library` appears in the logs).
+* midstream data uses snappy compression (`org.apache.hadoop.io.compress.snappy.LoadSnappy: Snappy native library is available` appears in the logs).

@@ -1,4 +1,7 @@
 
+"The modeling is interesting and fun to do, but nearly all of the work involved collecting and assembling the data.  This will not be a surprise to you if you have worked on a project with real data. I have also emphasized this point in the course I’m teaching this semester. 'If he had known how long it would take to assemble the data,” Dan tells Co.Design, “maybe Tim would’ve told me to work on something else.'” -- http://punkrockor.wordpress.com/2014/02/09/predicting-olympic-medal-counts-per-country/
+
+
 To explore data, you need data, in a form you can use, and that means engaging in the necessary evils of data munging: code to turn the data you have into the data you'd like to use. Whether it's public or commercial data ((data_commons)), data from a legacy database, or managing unruly human-entered data, you will need to effectively transform the data into a format that can be used and understood.
 
 Your goal is to take data from the _source domain_ (the shape, structure and cognitive model of the raw data) to the _target domain_ (the shape, structure and cognitive model you will work with). If you separate 

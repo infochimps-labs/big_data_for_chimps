@@ -1,3 +1,30 @@
+== Hadoop Internals: Just Enough for Now
+
+TODO: write Intro
+
+TODO: Move the part about tiny files to here
+TODO: See if other parts of the Hadoop tuning or internals chapters should move here or v/v
+
+ 3a: Hadoop Internals and Performance: Just Enough for Now
+. the HDFS at moderate detail
+. ??? job orchestration/lifecycle at light detail
+  - how a job is born
+
+The harsh realities of the laws of physics and economics prevent traditional data analysis solutions such as relational databases, supercomputing and so forth from economically scaling to arbitrary-sized data.  By comparison, Hadoop's Map/Reduce paradigm does not provide complex operations, modification of existing records, fine-grain control over how the data is distributed or anything else beyond the ability to write programs that adhere to a single, tightly-constrained template.  If Hadoop were a publishing medium, it would be one that refused essays, novels, sonnets and all other literary forms beyond the haiku:
+
+ 	data flutters by
+     	elephants make sturdy piles
+   	context yields insight
+
+Our Map/Reduce haiku illustrates Hadoop's template:
+
+1. The Mapper portion of your script processes records, attaching a label to each.
+2. Hadoop assembles those records into context groups according to their label.
+3. The Reducer portion of your script processes those context groups and writes them to a data store or external system.
+
+
+What is remarkable is that from this single primitive, we can construct the familiar relational operations (such as `GROUP`s and `ROLLUP`s) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.  In the next two chapters, we will demonstrate high-level relational operations and illustrate the Map/Reduce patterns they express.  In order to understand the performance and reasoning behind those patterns, let's first understand the motion of data within a Map/Reduce job.
+
 === Hadoop Tuning for the wise and lazy ===
 
 There are enough knobs and twiddles on a hadoop installation to fully stock the cockpit of a 747. Many of them interact surprisingly, and many settings improve some types of jobs while impeding others. This chapter will help you determin
@@ -20,6 +47,98 @@ best-case scenario:
 * shuffle is largely complete when last merge segments come in
 * reducer throughput at baseline rate
 * low replication overhead
+
+
+== Hadoop Tuning for the Brave and Foolish
+
+*  A happy Mapper spends most of its time processing data..
+*  Happy Mappers all finish at the same time.
+*  A happy Mapper uses local data.
+*  A happy Mapper does not have unnecessary spills.
+*  A happy Mapper has enough Java memory heap to avoid costly garbage collection.
+*  A happy Mapper has a justifiable data rate.
+*  A happy Reducer finishes its merge/sort in reasonable time.
+*  A happy Reducer has enough Java memory heap to avoid costly garbage collection.
+*  Happy Hadoop processes of all kinds do not keep customers waiting in line.
+*  Happy Hadoop programmers have all the logs they need.
+*  A happy Hadoop cluster should never over tax its name nodes, job tracker, datanodes or task tracker.
+
+=== Introduction
+
+Throughout the book, we have emphasized using Hadoop from the outside.  In almost all cases, the benefits to performance of fine-grained configuration changes do not exceed the opportunity cost of your time and the impact on maintainability and production confidence.  It is now time to arm you with the full tool set necessary to optimize Hadoop clusters and your jobs.  
+
+The overall strategy we recommend is as follows:
+
+1.  First, most importantly and hopefully last: Optimize the programmer not the program.  Write simple jobs that are easy to read and easy to reason about. If your job's throughput per task slot compares reasonably to the baseline throughput of your cluster, there's nothing fruitful to optimize.  The previous chapter (REF) on Tuning for the Wise and Lazy prescribed a process for determining that baseline and identifying bottlenecks.  
+2. The best way to address a costly bottleneck is to minimize the amount of data Hadoop moves around. Almost nothing that follows will have as large an impact on performance as, say, filtering nulls before a JOIN.  We have spent most of the book equipping you with techniques and best practices for making your job efficient from the outside.
+3.  When it is time to get hard-core, you will next want to start all the way from the inside and work your way out; this chapter will take you from the fine-grained details of how Hadoop manages memory, disk and network resources to its outward effects on machine and cluster.  While we can break the system into largely decoupled parts, there are a significant number of complex interactions, so only engage this phase if you have time for careful trials.  
+4.  Finally, there are cases where nothing but a comprehensive understanding of the system will do.  We have adapted an approach called the "USCE" method made popular for low-level systems analysts by Joyent's Brendan Gregg.  (FOOTNOTE:  Brendan's original method does not include connectivity, so is called the "USE" method; putting the "C" for connectivity as "USCE" lets us still pronounce it like the word "use.")  Start by enumerating every significant resource within the system -- internal memory buffers, disks, thread pools and a few dozen others.  Then, for each resource, characterize its utilization (how busy it is), saturation (demand versus capacity), connectivity (influence of interacting resources) and errors.  It is hard work but straightforward and leaves nowhere for problems to hide.
+
+==== A happy Reducer finishes its merge/sort in reasonable time.
+
+As you learned in the previous chapter, and have surely experienced many times, the critical bottleneck of most costly jobs is the group-sort phase that must complete before your Reducer can run.  We will assume you have done everything you can to minimize the amount of data coming into your Reducers and minimize skew that would unfairly burden some Reducers.  We also assume you cannot solve your problem by simply commissioning more machines.  Your poor little Reducers will have to handle the amount of data you are sending to it, so it is now our job to help them do so as efficiently as possible.  
+
+Although the group-sort phase cannot complete until all Map tasks have succeeded, you will notice the Reduce tasks start partway through the Map phase, as set by the slow start (FIX) parameter; a value of 0.3 causes it to launch when the Map phase has processed 30-percent of its input data.  This lets the Reducers perform the group-sort in parallel with the Mappers for a significant improvement in pipeline efficiency.  Setting a slow start parameter (FIX) too high leaves you doing the same amount of work in the Reducers but unnecessarily delaying it past the Map phase completion.  Setting the value too low is unfair to your friend, colleagues.  Cases where the progress estimate is particularly unreliable may justify reducing this parameter to 0.  
+
+If you look at the Reducer log files (TODO:  find path), you will start seeing lines that read (TODO: find log message for merge during the shuffle).  These should be happening throughout the time the Map phase is executing and with the amount of data you would expect for the parameters you have just set.  
+
+A Reducer receives its portion of fully-sorted midstream data, in parallel, as each Mapper successfully completes.  We have been using the phrase "group-sort" to describe the full process by which the Reducer receives, sorts and groups its midstream data.  For internal reasons, Hadoop describes the group-sort as being two distinct phases:  the shuffle phase, where it receives Mapper output data and opportunistically group-sorts it and the sort phase, where it completes all remaining group-sort passes.  (TODO: make sure you're calling it a group-sort and not a merge/sort throughout this phase).  
+
+As data streams in from the Map tasks, the Reducer sorts the set of incoming records into the shuffle input buffer, very similarly to what you are familiar with in the Mapper.  The size of this buffer is not only one of the most important Hadoop settings.  It is also, in the 1.0 branch, widely and dangerously misunderstood.  
+
+As soon as the shuffle input buffer exceeds its threshold, the Reducer flushes its data to disk, resulting in a number of spilled merge chunks.  After some number of spills have occurred (TODO: what is that number?), a parallel thread within the Reducer will begin merge/sorting the chunks.  (TODO: keep this as merge/sorting, don't change to group-sorting in this paragraph)  For good reason, each merge/sort pass can combine only a limited number of chunks, so fully sorting large amounts of midstream data will require multiple passes.  
+
+Let's sketch a picture of what a Reducer configured to spill 1.5 GB chunks and merge them 10 at a time might do during its shuffle and sort phases.  For a job with 20 GB of midstream data per Reducer, the first merge pass would initiate soon after 10 chunks, totalling 15 GB, had been spilled.  (TODO: what triggers the merge?)  As this proceeds, however, the final 5 GB of midstream data continue to roll in -- so when the first merge pass concludes, there are 51 segments on disk.  Since the number of chunks is less than the threshold of 10, the final merge/sort can begin.  Hadoop cleverly avoids writing the merged data back to disk as a single spill by feeding the merged data directly to the merge task.  That means that in the shuffle and sort phases, Hadoop has written 35 GB to disk (20 GB as initial spills and 15 GB again as merge/sort output), and read 35 GB from disk (15 as merge/sort input, and 20 as reducer input).
+
+If this job, instead, sent 200 GB of data to each Reducer, we will simplistically assume the first pass created 13 merged chunks of 15 GB each and four small merged chunks for the remaining 5 GB for a total of 17 chunks.  (TODO: does it try to only merge files with similar sizes?)  This means it has to do one more merge pass on 10 of the files (TODO: or 8?), producing a second-pass merge chunk of 95 GB and seven remaining first-pass merge chunks of 15 GB.  In this case, the total amount of data written and read was 490 GB of data.  
+
+With 20 GB of data, the first merge pass has a 50-GB head start on Map phase completion, so should not continue for terribly long after the final Mapper output is received.  The merge/sort overhead is 75-percent:  an excess 15 GB above the 20 it received.  In the 200 GB case, that overhead is almost 150-percent; most of the initial merge passes and all of the second-pass merge will extend past the completion of the Map phase.  If this cluster's baseline throughput is (TODO: find an actual baseline number), processing the extra 15 GB of data took about ?15 minutes? while processing 290 GB of data took ?5 hours?.  The additional merge activity is enormously costly.  
+
+As you can see, the number of merge passes is governed by the size of the shuffle spills and the number of parallel merges.  The larger their product, the fewer merge passes, so all other things being equal, we would like to set them as high as possible.  
+
+The I/O sort factor variable sets the maximum number of merge segments that can be combined.  For production clusters, it should be set higher than the default of 10 but you cannot increase it too much.  The number of parallel streams the OS can provide is limited to some modest multiple of the number of disks that can be read in parallel.  (TODO: find out what the limits are on this in better detail).  Setting this too low will choke parallelism and lead to excess merge/sort passes.  Further increase above the parallelism the OS can reasonably supply has no effect; setting it too high will incur increasing bookkeeping costs and eventually exhaust system limit.  (TODO: ? recommended value ?)  
+
+The size of the buffer is set by `mapred.job.shuffle.input.buffer.percent`, as a fraction of the total Reducer heap size.  For example, with a 1.5 GB Reducer heap, the default value of 0.66 will yield a 1 GB shuffle input buffer.  In the 1.0 branch of Hadoop, this setting, unfortunately, does not work as advertised; instead, that fraction is applied to the _lesser of the Java heap size and 2 GB_.  This means a Reducer with 2.0 GB heap gets a 1.3 GB shuffle input buffer -- and so does a Reducer of 4, 6, 8 or anything larger!!   
+
+The final size of the spill is limited to the heap size times the shuffle input percent times a further parameter (TODO: look up name) that initiates the spill to disk before the buffer is full.  If that buffer fills, the threads receiving data from the Mappers will have to wait, slowing things down globally.  On the other hand, flushing too early leads to smaller initial spills, so more merge/sort passes.  We would leave this one where it is.  
+
+=== Happy Mappers ===
+
+==== A Happy Mapper is **well-fed**, **finishes with its friends**, **uses local data**, **doesn't have extra spills**, and has a **justifiable data rate**. =====
+
+==== A Happy Mapper is Well-fed
+
+* Map tasks should take longer to run than to start. If mappers finish in less than a minute or two, and you have control over how the input data is allocated, try to feed each more data. In general, 128MB is sufficient; we set our HDFS block size to that value.
+
+==== A Happy Mapper finishes with its friends ====
+
+Assuming well-fed mappers, you would like every mapper to finish at roughly the same time. The reduce cannot start until all mappers have finished. Why would different mappers take different amounts of time?
+
+* large variation in file size
+* large variation in load -- for example, if the distribution of reducers is uneven, the machines with multiple reducers will run more slowly in general
+* on a large cluster, long-running map tasks will expose which machines are slowest.
+
+==== A Happy Mapper is Busy ====
+
+Assuming mappers are well fed and prompt, you would like to have nearly every mapper running a job.
+
+
+* Assuming every mapper is well fed and every mapper is running a job, 
+
+
+Pig can use the combine splits setting to make this intelligently faster. Watch out for weirdness with newer versions of pig and older versions of HBase.
+
+If you're reading from S3, dial up the min split size as large as 1-2 GB (but not 
+
+==== A Happy Mapper has no Reducer =====
+
+
+
+
+The default settings are those that satisfy in some mixture the constituencies of a) Yahoo, Facebook, Twitter, etc; and b) Hadoop developers, ie. peopl who *write* Hadoop but rarely *use* Hadoop. This means that many low-stakes settings (like keeping jobs stats around for more than a few hours) are at the values that make sense when you have a petabyte-scale cluster and a hundred data engineers; 
+
+* If you're going to run two master nodes, you're a bit better off running one master as (namenode only) and the other master as (jobtracker, 2NN, balancer) -- the 2NN should be distinctly less utilized than the namenode. This isn't a big deal, as I assume your master nodes never really break a sweat even during heavy usage.
+
 
 
 === Performance constraints: job stages ===
