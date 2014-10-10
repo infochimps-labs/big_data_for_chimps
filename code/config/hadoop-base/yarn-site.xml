@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<configuration>
+
+  <!-- Directories -->
+
+  <property> <name>yarn.nodemanager.log-dirs</name>                <value>/data/hadoop/log/yarn-containers</value>                      <description>Container log location</description>                                     </property>
+  <property> <name>yarn.nodemanager.remote-app-log-dir</name>      <value>/data/hadoop/log/yarn-apps</value>                            <description>Application log location</description>                                   </property>
+  <!-- <property> <name>yarn.nodemanager.local-dirs</name>         <value>/data/hadoop/local/yarn/${user.name}-yarn</value>             <description>Job-local file location</description> </property> -->
+
+  <!-- Logging -->
+
+  <!-- Temp files kept for five hours. Logs kept for 10 days. -->
+  <property> <name>yarn.nodemanager.delete.debug-delay-sec</name>  <value>18000</value>                                                 <description>Delay before removing local files following job completion</description> </property>
+  <property> <name>yarn.log-aggregation-enable</name>              <value>true</value> </property>
+  <property> <name>yarn.log-aggregation.retain-seconds</name>      <value>864000</value> </property>
+  <property> <name>yarn.nodemanager.log.retain-seconds</name>      <value>864000</value> </property>
+
+  <!-- Performance -->
+
+  <property> <name>yarn.nodemanager.resource.cpu-vcores</name>     <value>10</value>  </property>
+  <property> <name>yarn.nodemanager.resource.memory-mb</name>      <value>12000</value>  </property>
+  <property> <name>yarn.scheduler.minimum-allocation-mb</name>     <value>256</value> </property>
+  <property> <name>yarn.app.mapreduce.am.command-opts</name>       <value>-Djava.awt.headless=true -Xmx256m</value> </property>
+  <property> <name>yarn.app.mapreduce.am.admin-command-opts</name> <value>-Djava.awt.headless=true</value> </property>
+
+  <!-- Map/Reduce -->
+
+  <property> <name>yarn.nodemanager.aux-services</name>            <value>mapreduce_shuffle</value>                                                                                                                          </property>
+  <property> <name>yarn.log-aggregation-enable</name>              <value>true</value>                                                                                                                                       </property>
+
+  <property> <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name> <value>org.apache.hadoop.mapred.ShuffleHandler</value>                                                                                                    </property>
+  <property> <name>yarn.application.classpath</name>                            <value>$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_MAPRED_HOME/*,$HADOOP_MAPRED_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*</value> <description>Classpath for typical applications.</description>        </property>
+
+</configuration>

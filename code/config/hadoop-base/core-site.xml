@@ -1,0 +1,14 @@
+<configuration>
+  <!-- <property> <name>fs.defaultFS</name>                        <value>hdfs://HOSTNAMEGOESHERE:8020</value>          </property> -->
+
+  <property> <name>hadoop.tmp.dir</name>                      <value>/data/hadoop/tmp/hadoop-${user.name}</value> </property>
+  <property> <name>fs.checkpoint.dir</name>                   <value>/data/hadoop/nn2</value>      </property>
+  <property> <name>hadoop.log.dir</name>                      <value>/data/hadoop/log</value> </property>
+
+
+  <property><name>fs.trash.interval</name>                    <value>1440</value>                          </property>
+
+  <!-- com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec -->
+  <!-- <property> <name>io.compression.codecs</name>          <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.SnappyCodec</value> </property> -->
+  <!-- <property> <name>io.compression.codec.lzo.class</name> <value>com.hadoop.compression.lzo.LzoCodec</value> </property> -->
+</configuration>

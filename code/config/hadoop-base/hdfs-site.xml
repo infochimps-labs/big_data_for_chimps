@@ -1,0 +1,13 @@
+<configuration>
+
+  <property> <name>dfs.namenode.name.dir</name>          <value>file:///data/hadoop/name</value></property>
+  <property> <name>dfs.datanode.data.dir</name>          <value>file:///data/hadoop/hdfs</value></property>
+
+  <property> <name>dfs.replication</name>                <value>1</value> </property>
+
+  <property> <name>dfs.blocksize</name>                  <value>268435456</value></property>
+  <property> <name>dfs.permissions</name>                <value>false</value></property>
+  <property> <name>dfs.permissions.enabled</name>        <value>false</value></property>
+  <property> <name>dfs.permissions.superusergroup</name> <value>supergroup</value></property>
+
+</configuration>
