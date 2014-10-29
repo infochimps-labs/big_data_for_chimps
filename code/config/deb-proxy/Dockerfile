@@ -19,7 +19,7 @@ RUN diff -uw /etc/squid-deb-proxy/squid-deb-proxy.conf.orig /etc/squid-deb-proxy
 ADD start.sh /start.sh
 RUN chmod +x /start.sh
 
-VOLUME ["/cachedir"]
+VOLUME ["/deb-proxy"]
 
 EXPOSE 8000
 

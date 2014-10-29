@@ -1,22 +1,6 @@
-FROM ubuntu-bd4c
+FROM hadoop-client
 MAINTAINER Flip Kromer <flip@infochimps.com>
 MAINTAINER Russell Jurney
-WORKDIR /root
-
-#
-# Stabilize user IDs for hadoop daemons
-#
-
-RUN addgroup supergroup --gid 900
-#
-RUN adduser hadoop      --uid 901 --group --system
-RUN adduser hdfs        --uid 902 --group --system
-RUN adduser mapred      --uid 903 --group --system
-RUN adduser yarn        --uid 904 --group --system
-RUN adduser hive        --uid 905 --group --system
-RUN adduser zookeeper   --uid 906 --group --system
-#
-RUN usermod -a -G hdfs,mapred,yarn hadoop
 
 # ---------------------------------------------------------------------------
 #
@@ -25,84 +9,82 @@ RUN usermod -a -G hdfs,mapred,yarn hadoop
 
 # Basics
 RUN \
-  apt-get --force-yes -y install hadoop hadoop-hdfs hadoop-mapreduce hadoop-yarn hadoop-doc hadoop-client hadoop-lzo
+  apt-get --force-yes -y install -t precise-cdh5 hadoop hadoop-doc hadoop-client \
+    hadoop-hdfs hadoop-lzo  \
+    hadoop-yarn hadoop-mapreduce hadoop-0.20-mapreduce
 
 # All them daemons
 RUN \
-  apt-get --force-yes -y install hadoop-yarn-resourcemanager hadoop-hdfs-namenode hadoop-hdfs-secondarynamenode \
-    hadoop-yarn-nodemanager hadoop-hdfs-datanode hadoop-mapreduce-historyserver hadoop-yarn-proxyserver
+  apt-get --force-yes -y install -t precise-cdh5 \
+    hadoop-yarn-resourcemanager hadoop-yarn-nodemanager hadoop-mapreduce-historyserver hadoop-yarn-proxyserver \
+    hadoop-hdfs-datanode hadoop-hdfs-namenode hadoop-hdfs-secondarynamenode parquet hadoop-hdfs-nfs3
 
 # Hadoop Applications
 RUN \
   apt-get --force-yes -y install pig hive
 
 # ---------------------------------------------------------------------------
-# 
-# Make a user account named 'chimpy'
-#
-
-# home directory /home/chimpy, password 'chimpy'
-RUN adduser chimpy --uid 2000 --disabled-password --gecos "Hadoop Programmer"
-RUN echo chimpy:chimpy | chpasswd
-
-# a superuser on the HDFS
-RUN usermod -a -G supergroup chimpy
-
-# # Setup chimpy environment
-# ADD bashrc /home/chimpy/.bashrc
-# 
-# # Setup SSH keys
-# RUN su -l -c 'ssh-keygen -t rsa -f /home/chimpy/.ssh/id_rsa -P ""' chimpy && \
-#   cat /home/chimpy/.ssh/id_rsa.pub | su -l -c 'tee -a /home/chimpy/.ssh/authorized_keys' chimpy
-# ADD ssh-config /home/chimpy/.ssh/config
-# RUN chmod 600  /home/chimpy/.ssh/config
-
-# # Fix Ubuntu 13.10 SSH daemon problem with docker: http://docs.docker.io/en/latest/examples/running_ssh_service/
-# RUN sed -ri 's/session[[:blank:]]+required[[:blank:]]+pam_loginuid.so/session optional pam_loginuid.so/g' /etc/pam.d/sshd
-
-# ---------------------------------------------------------------------------
 #
 # Configure Hadoop
 #
 
-ENV HADOOP_CONF /etc/hadoop/pseudo
-
-RUN cp -rp    /etc/hadoop/conf.empty $HADOOP_CONF
-RUN ln -snf         $HADOOP_CONF /etc/hadoop/conf
-RUN ln -snf         $HADOOP_CONF /etc/alternatives/hadoop-conf
-
-RUN mkdir -p /data/hadoop ; cd /data/hadoop ; \
-  mkdir -p hdfs name nn2 mapred local/mapred mapred/jobstatus yarn local/yarn yarn/staging tmp log ; \
-  chown hdfs:hdfs     hdfs name nn2 ; \
-  chown mapred:mapred mapred local/mapred mapred/jobstatus ; \
-  chown yarn:yarn     yarn   local/yarn   yarn/staging; \
-  chown hadoop:hadoop tmp log ; \
-  chmod 0577 tmp log
-
+RUN mkdir -p            $HADOOP_DATA_DIR/hdfs      $HADOOP_DATA_DIR/name   $HADOOP_DATA_DIR/nn2 && \
+    chown hdfs:hdfs     $HADOOP_DATA_DIR/hdfs      $HADOOP_DATA_DIR/name   $HADOOP_DATA_DIR/nn2 && \
+    mkdir -p            $HADOOP_DATA_DIR/jobstatus $HADOOP_JRNL_DIR/mapred                      && \
+    chown mapred:mapred $HADOOP_DATA_DIR/jobstatus $HADOOP_JRNL_DIR/mapred                      && \
+    mkdir -p            $HADOOP_JRNL_DIR/yarn-jobs $HADOOP_JRNL_DIR/yarn-staging                && \
+    chown yarn:yarn     $HADOOP_JRNL_DIR/yarn-jobs $HADOOP_JRNL_DIR/yarn-staging
+  
 ADD core-site.xml   $HADOOP_CONF/core-site.xml
 ADD hdfs-site.xml   $HADOOP_CONF/hdfs-site.xml
 ADD mapred-site.xml $HADOOP_CONF/mapred-site.xml
 ADD yarn-site.xml   $HADOOP_CONF/yarn-site.xml
-RUN perl -p -i -e 's/HOSTNAMEGOESHERE/'`hostname`'/g' $HADOOP_CONF/core-site.xml
+
+# TODO: figure out hostnames across containers
+
+# Point the HDFS at the port exposed via the host
+RUN perl -p -i -e 's~%HADOOP_DATA_DIR~'$HADOOP_DATA_DIR'~g' $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_JRNL_DIR~'$HADOOP_JRNL_DIR'~g' $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_TMP_DIR~'$HADOOP_TMP_DIR'~g'   $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_LOG_DIR~'$HADOOP_LOG_DIR'~g'   $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_NN_IP~localhost~g'             $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_YARN_IP~localhost~g'           $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_JT_IP~localhost~g'             $HADOOP_CONF/*-site.xml && \
+    perl -p -i -e 's~%HADOOP_HIST_IP~localhost~g'           $HADOOP_CONF/*-site.xml
+
+perl -p -i -e 's~/var/log~/data/log/hadoop~g'           /etc/default/hadoop*    
+
+# ---------------------------------------------------------------------------
 #
-# RUN colordiff -rwu /etc/hadoop/conf.empty $HADOOP_CONF ; true
+# Zookeeper
+#
 
-ENV JAVA_HOME /usr/lib/jvm/java-7-oracle
-ENV PATH $PATH:$JAVA_HOME/bin
+ENV ZK_CONF /etc/zookeeper/conf.pseudo
 
-RUN hdfs namenode -format
+RUN apt-get --force-yes -y install -t precise-cdh5 zookeeper zookeeper-server zookeeper-native
 
-# CMD ["/usr/sbin/runsvdir-start"]
+RUN mkdir -p           $ZK_DATA_DIR  $ZK_JRNL_DIR $ZK_LOG_DIR && \
+    chown -R zookeeper $ZK_DATA_DIR  $ZK_JRNL_DIR $ZK_LOG_DIR
 
+RUN cp -rp /etc/zookeeper/conf.dist $ZK_CONF
+RUN update-alternatives --install /etc/zookeeper/conf zookeeper-conf $ZK_CONF 50 && \
+    update-alternatives --set                         zookeeper-conf $ZK_CONF
 
-# Hadoop Server Daemons
+ADD zoo.cfg  $ZK_CONF/zoo.cfg
+RUN perl -p -i -e 's~^dataDir=.*~dataDir='$ZK_DATA_DIR'~g'       $ZK_CONF/zoo.cfg && \
+    perl -p -i -e 's~^dataLogDir=.*~dataLogDir='$ZK_JRNL_DIR'~g' $ZK_CONF/zoo.cfg
 
-# RUN apt-get --force-yes -y install --download-only \
-#   zookeeper-server hadoop-yarn-resourcemanager hadoop-hdfs-namenode hadoop-hdfs-secondarynamenode \
-#   hadoop-yarn-nodemanager hadoop-hdfs-datanode hadoop-mapreduce-historyserver hadoop-yarn-proxyserver
+# Be server 1 of 1 in standalone mode
+RUN service zookeeper-server init --myid=1
 
-# # *** hadoop-zk
-# RUN apt-get --force-yes -y install zookeeper-server
+# ---------------------------------------------------------------------------
+#
+# Configure Hadoop Namenode
+#
+
+RUN sudo -u hdfs hdfs namenode -format
+
+# https://www.cloudera.com/content/cloudera/en/documentation/cdh5/latest/CDH5-Quick-Start/cdh5qs_yarn_pseudo.html
 
 # # *** hadoop-yarn
 # RUN apt-get --force-yes -y install hadoop-yarn-resourcemanager
@@ -124,10 +106,13 @@ RUN hdfs namenode -format
 # ADD hdfs-site.xml   $HADOOP_CONF/hdfs-site.xml
 # ADD mapred-site.xml $HADOOP_CONF/mapred-site.xml
 # ADD yarn-site.xml   $HADOOP_CONF/yarn-site.xml
+
+# ---------------------------------------------------------------------------
 #
-# # TODO this needs to be the host actually
-# RUN perl -p -i -e 's/HOSTNAMEGOESHERE/'`hostname`'/g' $HADOOP_CONF/core-site.xml
+# Launch Services
+#
 
-RUN aptitude search hadoop
+# Cleanup
 
-RUN updatedb 
+RUN aptitude search hadoop | sort
+RUN updatedb
