@@ -1,2 +1,0 @@
-
-RUN hdfs namenode -format
