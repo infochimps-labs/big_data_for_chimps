@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 bat_seasons = load_bat_seasons();
 peeps       = load_people();
@@ -15,9 +15,9 @@ SPLIT bat_career
   INTO allstar IF G_allstar > 0,
   INTO neither OTHERWISE
   ;
-STORE hof     INTO '/data/out/baseball/hof_careers';
-STORE allstar INTO '/data/out/baseball/allstar_careers';
-STORE neither INTO '/data/out/baseball/neither_careers';
+STORE hof     INTO '/data/outd/baseball/hof_careers';
+STORE allstar INTO '/data/outd/baseball/allstar_careers';
+STORE neither INTO '/data/outd/baseball/neither_careers';
 
 -- ==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
 

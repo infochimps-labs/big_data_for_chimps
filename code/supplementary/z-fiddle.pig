@@ -1,6 +1,6 @@
 IMPORT 'common_macros.pig';
-%DEFAULT rawd    '/data/rawd';
-%DEFAULT out_dir '/data/out/baseball';
+%DEFAULT rawd    '/data/gold';
+%DEFAULT out_dir '/data/outd/baseball';
 
 -- cities = LOAD '$rawd/geo/census/us_city_pops.tsv' AS (city:chararray, state:chararray, pop:int);
 -- New York    	New York    	8244910
@@ -137,7 +137,7 @@ STORE_TABLE('ranked_cities', ranked);
 
 -- SET;
 
-top_queries = LOAD '/data/rawd/misc/pigunit/top_queries_input_data.txt' AS (site:chararray, hits:int);
+top_queries = LOAD '/data/gold/misc/pigunit/top_queries_input_data.txt' AS (site:chararray, hits:int);
   
 -- top_queries_g = GROUP top_queries BY site;
 -- top_queries_x = FOREACH top_queries_g GENERATE

@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 bat_seasons       = load_bat_seasons();
 peeps       = load_people();
@@ -23,8 +23,8 @@ team_scores = UNION games_a, games_b;
 DESCRIBE team_scores;
 --   team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
 
--- bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
--- pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
+-- bat_career = LOAD '/data/gold/baseball/sports/bat_career AS (...);
+-- pit_career = LOAD '/data/gold/baseball/sports/pit_career AS (...);
 bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
 pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
 names_in_both = UNION bat_names, pit_names;

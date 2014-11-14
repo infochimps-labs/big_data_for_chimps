@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 bat_seasons = load_bat_seasons();
 peeps       = load_people();
@@ -53,8 +53,8 @@ hist_G = ORDER hist_G BY bin ASC;
 --
 -- ===== Power-law (Long-Tail) Distribution: Wikipedia Pageviews
 --
-pagecount_views = LOAD '/data/out/wikipedia/pagecount-views.tsv' AS (val:long);
-pagecount_bytes = LOAD '/data/out/wikipedia/pagecount-bytes.tsv' AS (val:long);
+pagecount_views = LOAD '/data/outd/wikipedia/pagecount-views.tsv' AS (val:long);
+pagecount_bytes = LOAD '/data/outd/wikipedia/pagecount-bytes.tsv' AS (val:long);
 
 view_vals = FOREACH pagecount_views GENERATE
   (long)EXP( FLOOR(LOG((val == 0 ? 0.001 : val)) * 10)/10.0) AS bin;

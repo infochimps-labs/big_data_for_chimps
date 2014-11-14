@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 bat_seasons = load_bat_seasons();
 people      = load_people();
@@ -175,8 +175,8 @@ STORE_TABLE(graphable,  'graphable');
 -- STORE_TABLE(formatted, 'formatted');
 
 -- From the commandline:
-sh egrep '^\\(aaronha01\\|gwynnto02\\|pedrodu01\\|carewro01\\|ansonca01\\|vanlaw01\\|reedeic01\\|willite01\\)\\|HIMOM' /data/out/baseball/graphable/part\* | wu-lign
--- sh egrep '^\\(aaronha01\\|gwynnto02\\|pedrodu01\\|carewro01\\|ansonca01\\|vanlaw01\\|reedeic01\\|willite01\\)\\|HIMOM' /data/out/baseball/date_converted/part\* | wu-lign
+sh egrep '^\\(aaronha01\\|gwynnto02\\|pedrodu01\\|carewro01\\|ansonca01\\|vanlaw01\\|reedeic01\\|willite01\\)\\|HIMOM' /data/outd/baseball/graphable/part\* | wu-lign
+-- sh egrep '^\\(aaronha01\\|gwynnto02\\|pedrodu01\\|carewro01\\|ansonca01\\|vanlaw01\\|reedeic01\\|willite01\\)\\|HIMOM' /data/outd/baseball/date_converted/part\* | wu-lign
 
 
 --   full_name  = CONCAT(name_first, ' ', name_last);
