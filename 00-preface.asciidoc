@@ -78,7 +78,7 @@ Together, they'll equip you with a physical metaphor for how to work with data a
 
 In Doug Cutting's words, Hadoop is the "kernel of the big-data operating system". It's the dominant batch-processing solution, has both commercial enterprise support and a huge open source community, runs on every platform and cloud, and there are no signs any of that will change in the near term.
 
-The code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster. (Of course you will need to use a reduced data set for the laptop). You do need a Hadoop installation of some sort -- Appendix (TODO: ref) describes your options, including instructions for running hadoop on a multi-machine cluster in the public cloud -- for a few dollars a day you can analyze terabyte-scale datasets.
+The code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster. (Of course you will need to use a reduced data set for the laptop). We'll provide you with a virtual Hadoop cluster of sorts that will run on your own laptop. 
 
 ==== A Note on Ruby and Wukong ====
 
@@ -90,7 +90,6 @@ In particular, we've chosen the Ruby-language Wukong framework. We're the princi
 
 * Hadoop the Definitive Guide by Tom White is a must-have. Don't try to absorb its whole -- the most powerful parts of Hadoop are its simplest parts -- but you'll refer to often it as your applications reach production.
 * Hadoop Operations by Eric Sammer -- hopefully you can hand this to someone else, but the person who runs your hadoop cluster will eventually need this guide to configuring and hardening a large production cluster.
-* "Big Data: principles and best practices of scalable realtime data systems" by Nathan Marz
 * Patterns of MapReduce
 
 ==== What This Book Does Not Cover ====
@@ -106,10 +105,10 @@ This book picks up where the internet leaves off -- apart from cheatsheets at th
 
 ==== Feedback ====
 
-* The http://github.com/infochimps-labs/big_data_for_chimps[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps`.
+* The http://github.com/infochimps-labs/big_data_for_chimps-code[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps-code`.
 * Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
 
-OK! On to the book. Or, on to the introductory parts of the book and then the book.
+OK! On to the book. 
 
 [[about_how_written]]
 ==== How this book is being written ====
@@ -133,5 +132,6 @@ To comment or ask technial questions about this book, send email to bookquestion
 To reach the authors:
 
 Flip Kromer is @mrflip on Twitter
+Russell Jurney is @rjurney on Twitter
 
 For comments or questions on the material, file a github issue at http://github.com/infochimps-labs/big_data_for_chimps/issues
