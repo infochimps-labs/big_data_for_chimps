@@ -1,4 +1,4 @@
-IMPORT 'geo_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/geo';
+IMPORT 'geo_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/geo';
 
 %DEFAULT zl  8; -- 100 km at 50 deg N lat (top of continental US)
 

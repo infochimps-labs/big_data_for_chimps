@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 seed = LOAD '06-structural_operations/j-important_notes_about_joins.tsv' AS (
   row:int,

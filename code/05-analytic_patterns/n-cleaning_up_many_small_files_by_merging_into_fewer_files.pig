@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 bat_seasons = load_bat_seasons();
 peeps       = load_people();
@@ -14,7 +14,7 @@ set pig.maxCombinedSplitSize   120100100;
 
 TODO make this use the results of the MultiStorage script
 
--- mkdir /tmp/events_many ; split -a3 -l 10000 /data/rawd/sports/baseball/events_lite.tsv /tmp/events_many/events-
+-- mkdir /tmp/events_many ; split -a3 -l 10000 /data/gold/sports/baseball/events_lite.tsv /tmp/events_many/events-
 
 -- 900+ input files of about 1 MB each; 10 output files of about 120 MB each
 

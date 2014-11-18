@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 %DEFAULT beg_year 1993
 %DEFAULT end_year 2010

@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 IMPORT 'summarizer_bot_9000.pig';
 
 bat_seasons = load_bat_seasons();
@@ -17,7 +17,7 @@ bat_seasons = load_bat_seasons();
 -- stats_ht  = summarize_values_by(bat_seasons, 'height', 'ALL'); STORE_TABLE('stats_ht', stats_ht);
 
 -- pig ./06-structural_operations/c-summary_statistics.pig
--- cat /data/out/baseball/stats_*/{.pig_header,part-r-00000} | wu-lign -- %s %s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f
+-- cat /data/outd/baseball/stats_*/{.pig_header,part-r-00000} | wu-lign -- %s %s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f
 
 -- group   field   average  stdev     min     p01     p05    p50     p95     p99      max  count   nulls   cardnty    sum     examples
 -- all     BAV       0.209   0.122   0.000   0.000   0.000   0.231   0.333   0.500   1.000 69127     0     11503       14415  0.0^0.015625^0.01639344262295082^0.01694915254237288^0.017543859649122806

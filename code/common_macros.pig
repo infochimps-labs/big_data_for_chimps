@@ -11,9 +11,9 @@
 %DEFAULT piggybank_version '';
 %DEFAULT pigsy_version	   '-2.1.0-SNAPSHOT';
 
-REGISTER           '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank$piggybank_version.jar';
-REGISTER           '$dsfp_dir/pig/datafu/datafu-pig/build/libs/datafu-pig$datafu_version.jar';
-REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy$pigsy_version.jar';
+-- REGISTER           '$dsfp_dir/pig/pig/contrib/piggybank/java/piggybank$piggybank_version.jar';
+-- REGISTER           '$dsfp_dir/pig/datafu/datafu-pig/build/libs/datafu-pig$datafu_version.jar';
+-- REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy$pigsy_version.jar';
 
 -- ***************************************************************************
 --
@@ -21,11 +21,11 @@ REGISTER           '$dsfp_dir/pig/pigsy/target/pigsy$pigsy_version.jar';
 --
 
 DEFINE STORE_TABLE(table, filename) RETURNS void {
-  STORE $table INTO '$out_dir/$filename' USING PigStorage('\t', '--overwrite true -schema');
+  STORE $table INTO '$out_dir/$filename' USING PigStorage('\t'); -- , '--overwrite true -schema');
 };
 
 DEFINE LOAD_RESULT(filename) RETURNS loaded {
-  $loaded = LOAD '$out_dir/$filename' USING PigStorage('\t', '-schema');
+  $loaded = LOAD '$out_dir/$filename' USING PigStorage('\t'); -- , '-schema');
 };
 
 -- ***************************************************************************
@@ -194,7 +194,7 @@ DEFINE load_us_city_pops() RETURNS loaded {
 };
 
 DEFINE load_sightings() RETURNS loaded {
-  $loaded = LOAD '/Users/flip/ics/core/wukong/data/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+  $loaded = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv.bz2'  AS (
     sighted_at: chararray,   reported_at: chararray,    location_str: chararray, shape: chararray,
     duration_str: chararray, description: chararray,    lng: float,              lat: float,
     city: chararray,         county: chararray,         state: chararray,        country: chararray );

@@ -1,4 +1,4 @@
-IMPORT 'geo_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/geo';
+IMPORT 'geo_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/geo';
 
 %DEFAULT zl  9; -- 50-80 km at mid latitudes, about the size of Outer London (M25) or Silicon Valley (San Francisco-San Jose)
 

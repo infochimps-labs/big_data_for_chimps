@@ -1,4 +1,4 @@
-IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/rawd'; %DEFAULT out_dir '/data/out/baseball';
+IMPORT 'common_macros.pig'; %DEFAULT data_dir '/data/gold'; %DEFAULT out_dir '/data/outd/baseball';
 
 vals = LOAD 'us_city_pops.tsv' USING PigStorage('\t', '-tagMetadata')
   AS (metadata:map[], city:chararray, state:chararray, pop:int);
@@ -37,13 +37,13 @@ STORE_TABLE('vals_ided',  vals_ided);
 --   GENERATE HashVal((chararray)line_info) AS rand_id, city, state, pop, FLATTEN(split_attrs) AS (sp_path, sp_idx, sp_offs, sp_size);
 --   };
 -- vals_shuffled = FOREACH (ORDER vals_wtag BY rand_id) GENERATE *;
--- STORE vals_shuffled INTO '/data/out/vals_shuffled';
+-- STORE vals_shuffled INTO '/data/outd/vals_shuffled';
 
 
 DEFINE Hasher datafu.pig.hash.MD5('hex');
 -- DEFINE Hasher org.apache.pig.piggybank.evaluation.string.HashFNV();
 
--- evs = LOAD '/data/rawd/sports/baseball/events_lite-smallblks.tsv' USING PigStorage('\t', '-tagSplit') AS (
+-- evs = LOAD '/data/gold/sports/baseball/events_lite-smallblks.tsv' USING PigStorage('\t', '-tagSplit') AS (
 --     split_info:chararray, game_id:chararray, event_seq:int, year_id:int, game_date:chararray, game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int, inn_home:int, beg_outs_ct:int, away_score:int, home_score:int, event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int, ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int, is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray, fld_team_id:chararray, pit_id:chararray, bat_id:chararray, run1_id:chararray, run2_id:chararray, run3_id:chararray
 --     );
 -- evs_numd = RANK evs;
@@ -56,7 +56,7 @@ DEFINE Hasher datafu.pig.hash.MD5('hex');
 -- STORE_TABLE('evs_shuffled', evs_shuffled);
 
 -- -- -smallblks
--- vals = LOAD '/data/rawd/sports/baseball/events_lite.tsv' USING PigStorage('\t', '-tagSplit') AS (
+-- vals = LOAD '/data/gold/sports/baseball/events_lite.tsv' USING PigStorage('\t', '-tagSplit') AS (
 --     split_info:chararray, game_id:chararray, event_seq:int, year_id:int, game_date:chararray, game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int, inn_home:int, beg_outs_ct:int, away_score:int, home_score:int, event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int, ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int, is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray, fld_team_id:chararray, pit_id:chararray, bat_id:chararray, run1_id:chararray, run2_id:chararray, run3_id:chararray
 --     );
 -- vals = FOREACH vals GENERATE MurmurH32((chararray)split_info) AS split_info:chararray, $1..;
@@ -78,7 +78,7 @@ DESCRIBE vals_shuffled;
 STORE_TABLE('vals_shuffled', vals_shuffled);
 
 
--- vals_shuffled = LOAD '/data/rawd/sports/baseball/events_lite.tsv' AS (
+-- vals_shuffled = LOAD '/data/gold/sports/baseball/events_lite.tsv' AS (
 --     sh_key:chararray, line_id:int, spl_key:chararray, game_id:chararray, event_seq:int, year_id:int, game_date:chararray, game_seq:int, away_team_id:chararray, home_team_id:chararray, inn:int, inn_home:int, beg_outs_ct:int, away_score:int, home_score:int, event_desc:chararray, event_cd:int, hit_cd:int, ev_outs_ct:int, ev_runs_ct:int, bat_dest:int, run1_dest:int, run2_dest:int, run3_dest:int, is_end_bat:int, is_end_inn:int, is_end_game:int, bat_team_id:chararray, fld_team_id:chararray, pit_id:chararray, bat_id:chararray, run1_id:chararray, run2_id:chararray, run3_id:chararray
 --     );
 -- vals_foo = ORDER vals_shuffled BY sh_key;
