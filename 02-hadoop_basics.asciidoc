@@ -41,7 +41,7 @@ The fact that each chimpanzee's work is independent of any other's -- no interof
 
 As you'd guess, the way Chimpanzee and Elephant organize their files and workflow corresponds directly with how Hadoop handles data and computation under the hood. We can now use it to walk you through an example in detail.
 
-Nanette is the Hadoop http://wiki.apache.org/hadoop/NameNode[NameNode]. The NameNode stores the directory tree structure (card catalog), and references to the data nodes for each file (librarians). JT is the http://wiki.apache.org/hadoop/JobTracker[JobTracker]. He coordinates the work of individual MapReduce tasks into a cohesive whole system. To illustrate how Hadoop works, lets dive into some code with the simplest example possible.
+The bags on trees scheme represents transactional relational database systems. Nanette is the Hadoop http://wiki.apache.org/hadoop/NameNode[NameNode]. The NameNode stores the directory tree structure (card catalog), and references to the data nodes for each file (librarians). JT is the http://wiki.apache.org/hadoop/JobTracker[JobTracker]. He coordinates the work of individual MapReduce tasks into a cohesive whole system. To illustrate how Hadoop works, lets dive into some code with the simplest example possible.
 
 We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
 
@@ -50,34 +50,34 @@ We may not be as clever as JT's multilingual chimpanzees, but even we can transl
 
 <<pig_latin_translator>>  is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. This is a Hadoop job stripped to its barest minimum, one that does just enough to each record that you believe it happened but with no distractions. That makes it convenient to learn how to launch a job; how to follow its progress; and where Hadoop reports performance metrics such as run time and amount of data moved.  What's more, the very fact that it's trivial makes it one of the most important examples to run. For comparable input and output size, no regular Hadoop job can out-perform this one in practice, so it's a key reference point to carry in mind.
 
-We've written this example in Wukong, a simple library to rapidly develop big data analyses. Like the chimpanzees, it is single-concern: there's nothing in there about loading files, parallelism, network sockets or anything else. Yet you can run it over a text file from the commandline -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
+We've written this example in Python, a language that has become the lingua franca of data science. You can run it over a text file from the command line -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
 
 [[pig_latin_translator]]
 .Igpay Atinlay translator (ch_01/pig_latin.rb)
 ----
-from mrjob.job import MRJob
-import re
+#!/usr/bin/bash
+
+import sys, re
 
 WORD_RE = re.compile(r"\b([bcdfghjklmnpqrstvwxz]*)([\w\']+)")
 CAPITAL_RE = re.compile(r"[A-Z]")
 
-class MRWordFreqCount(MRJob):
-
-    def mapper(self, _, line):
-        words = WORD_RE.findall(line)
-        for word in words:
-					original_word = ''.join(word)
-          head, tail = word
-          head = 'w' if not head else head
-          pig_word = tail + head + 'ay'
-          if CAPITAL_RE.match(pig_word):
-            pig_word = pig_word.lower().capitalize()
-          else:
-            pig_word = pig_word.lower()
-          yield (original_word, pig_word)
+def mapper(line):
+  words = WORD_RE.findall(line)
+  pig_latin_words = []
+  for word in words:
+    original_word = ''.join(word)
+    head, tail = word
+    head = 'w' if not head else head
+    pig_latin_word = tail + head + 'ay'
+    pig_latin_word = pig_latin_word.lower().capitalize() if CAPITAL_RE.match(pig_latin_word) else pig_latin_word.lower()
+    pig_latin_words.append(pig_latin_word)
+  return " ".join(pig_latin_words)
 
 if __name__ == '__main__':
-     MRWordFreqCount.run()
+  for line in sys.stdin:
+    print mapper(line)
+
 ----
 
 [[pig_latin_translator]]
@@ -95,39 +95,25 @@ for each line,
 end
 ----
 
-.Python helper
-****
-* The first few lines define "regular expressions" selecting the initial characters (if any) to move.
-* MrJob calls the `mapper` function with each line; 
-* the `gsub` ("globally substitute") statement calls its `do ... end` block with each matched word, and replaces that word with the last line of the block.
-* `yield(latinized)` hands off the `latinized` string for wukong to output
-****
-
-It's best to begin developing jobs locally on a subset of data, because they are faster and cheaper to run. To run the Wukong script locally, enter this into your terminal's commandline:
+It's best to begin developing jobs locally on a subset of data, because they are faster and cheaper to run. To run the Python script locally, enter this into your terminal's command line:
 
 ------
-python ch_01/pig_latin.py ../README.md
+cat /data/gold/text/gift_of_the_magi.txt|python examples/ch_01/pig_latin.py
 ------
 
-The output should look like this, with the original word followed by the Pig Latin word at each line.
+The output should look like this:
 ------
-"volumes"	"olumesvay"
-"https"	"shttpay"
-"github"	"ithubgay"
-"com"	"omcay"
-"docker"	"ockerday"
-"docker"	"ockerday"
-"issues"	"issuesway"
-"github"	"ithubgay"
-"docker"	"ockerday"
-"issue"	"issueway"
-"github"	"ithubgay"
-"com"	"omcay"
-"docker"	"ockerday"
-"docker"	"ockerday"
-"issues"	"issuesway"
-"has"	"ashay"
-"workarounds"	"orkaroundsway"
+Theway agimay asway youway owknay ereway iseway enmay onderfullyway iseway enmay owhay oughtbray
+iftsgay otay ethay Babeway inway ethay angermay Theyway inventedway ethay artway ofway ivinggay
+Christmasway esentspray Beingway iseway eirthay iftsgay ereway onay oubtday iseway onesway
+ossiblypay earingbay ethay ivilegepray ofway exchangeway inway asecay ofway uplicationday Andway
+erehay Iway avehay amelylay elatedray otay youway ethay uneventfulway oniclechray ofway otway
+oolishfay ildrenchay inway away atflay owhay ostmay unwiselyway acrificedsay orfay eachway otherway
+ethay eatestgray easurestray ofway eirthay ousehay Butway inway away astlay ordway otay ethay iseway
+ofway esethay aysday etlay itway ebay aidsay atthay ofway allway owhay ivegay iftsgay esethay otway ereway
+ethay isestway Ofway allway owhay ivegay andway eceiveray iftsgay uchsay asway eythay areway isestway
+Everywhereway eythay areway isestway Theyway areway ethay agimay
+
 ------
 
 That's what it looks like when run locally. Let's run it on a real Hadoop cluster to see how it works when an elephant is in charge.
@@ -145,7 +131,13 @@ Run the following commands to check out what lies on HDFS:
 hadoop fs -ls .
 ------
 
-The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-head` and `-tail` also work. Note the data directory, which contains the data for our examples.
+The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-head` and `-tail` also work. Now check out /data:
+
+------
+hadoop fs -ls /data/gold
+------
+
+You'll see some of the data we'll be using throughout the book.
 
 ==== Run the Job ====
 
@@ -154,75 +146,124 @@ First, let's test on the same tiny little file we used at the command-line. This
 // Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without Hadoop.
 
 ------
-python ch_01/pig_latin.py hdfs://data/ch_01/translate.txt -r hadoop --output-dir hdfs://transalate.out
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -file ./examples/ch_01/pig_latin.py -mapper ./examples/ch_01/pig_latin.py -input /data/gold/text/gift_of_the_magi.txt -output ./translation.out
 ------
 
-// TODO-CODE: something about what the reader can expect to see on screen
+You should see something like this:
 
-While the script outputs a bunch of happy robot-ese to your screen, open up the jobtracker at http://localhost:50030 in your browser window. The job should appear on the jobtracker window within a few seconds -- likely in more time than the whole job took to complete.
+------
+14/11/20 06:03:51 WARN streaming.StreamJob: -file option is deprecated, please use generic option -files instead.
+packageJobJar: [./examples/ch_01/pig_latin.py] [/usr/lib/hadoop-mapreduce/hadoop-streaming-2.5.0-cdh5.2.0.jar] /tmp/streamjob829238017433781936.jar tmpDir=null
+14/11/20 06:03:52 INFO client.RMProxy: Connecting to ResourceManager at rm/172.17.0.11:8032
+14/11/20 06:03:52 INFO client.RMProxy: Connecting to ResourceManager at rm/172.17.0.11:8032
+14/11/20 06:03:53 INFO mapred.FileInputFormat: Total input paths to process : 1
+14/11/20 06:03:53 INFO mapreduce.JobSubmitter: number of splits:2
+14/11/20 06:03:53 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1416458740373_0004
+14/11/20 06:03:54 INFO impl.YarnClientImpl: Submitted application application_1416458740373_0004
+14/11/20 06:03:54 INFO mapreduce.Job: The url to track the job: http://rm:8088/proxy/application_1416458740373_0004/
+14/11/20 06:03:54 INFO mapreduce.Job: Running job: job_1416458740373_0004
+14/11/20 06:04:00 INFO mapreduce.Job: Job job_1416458740373_0004 running in uber mode : false
+14/11/20 06:04:00 INFO mapreduce.Job:  map 0% reduce 0%
+14/11/20 06:04:05 INFO mapreduce.Job:  map 50% reduce 0%
+14/11/20 06:04:05 INFO mapreduce.Job:  map 100% reduce 0%
+14/11/20 06:04:10 INFO mapreduce.Job:  map 100% reduce 100%
+14/11/20 06:04:10 INFO mapreduce.Job: Job job_1416458740373_0004 completed successfully
+14/11/20 06:04:10 INFO mapreduce.Job: Counters: 49
+	File System Counters
+		FILE: Number of bytes read=16495
+		FILE: Number of bytes written=349741
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		HDFS: Number of bytes read=14008
+		HDFS: Number of bytes written=16039
+		HDFS: Number of read operations=9
+		HDFS: Number of large read operations=0
+		HDFS: Number of write operations=2
+	Job Counters 
+		Launched map tasks=2
+		Launched reduce tasks=1
+		Data-local map tasks=2
+		Total time spent by all maps in occupied slots (ms)=6827
+		Total time spent by all reduces in occupied slots (ms)=3068
+		Total time spent by all map tasks (ms)=6827
+		Total time spent by all reduce tasks (ms)=3068
+		Total vcore-seconds taken by all map tasks=6827
+		Total vcore-seconds taken by all reduce tasks=3068
+		Total megabyte-seconds taken by all map tasks=6990848
+		Total megabyte-seconds taken by all reduce tasks=3141632
+	Map-Reduce Framework
+		Map input records=225
+		Map output records=225
+		Map output bytes=16039
+		Map output materialized bytes=16501
+		Input split bytes=204
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=180
+		Reduce shuffle bytes=16501
+		Reduce input records=225
+		Reduce output records=225
+		Spilled Records=450
+		Shuffled Maps =2
+		Failed Shuffles=0
+		Merged Map outputs=2
+		GC time elapsed (ms)=112
+		CPU time spent (ms)=1970
+		Physical memory (bytes) snapshot=685285376
+		Virtual memory (bytes) snapshot=2261647360
+		Total committed heap usage (bytes)=496500736
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=13804
+	File Output Format Counters 
+		Bytes Written=16039
+14/11/20 06:04:10 INFO streaming.StreamJob: Output directory: ./translation.out
+------
 
-.The Jobtracker Console
+.The Job Browser
 ********
-The jobtracker offers a built-in console for monitoring and diagnosing jobs. You can access the jobtracker for the virtual cluster we've setup by pointing your web browser at 'http://localhost:50030[http://localhost:50030]'. 
+While the script outputs a bunch of happy robot-ese to your screen, open up the job browser at http://$CLUSTER_IP:9001/jobbrowser/ in your browser window. You'll need to login with chimpy/chimpy. The job should appear on the job browser window within a few seconds.
 
-INSERT PICTURE OF JOB TRACKER UI
+The job browser offers a built-in console for monitoring and diagnosing jobs. It is part of Hue, or "Hadoop User Experience" - a graphical interface for Hadoop.
 
-At the top, the cluster summary shows how many jobs are running and how many worker slots exist. Clicking on the hyperlinked value under "nodes" will take you to a screen summarizing all the task trackers in the cluster. Keep an eye out for other such hyperlinked values within the jobtracker console -- they lead to screens describing those elements in details.
+image:images/01_job_browser_1.png[Hue Job Browser Interface]
 
-Further down the page, you will see sections for running, completed and failed jobs. The last part of each job's name is an index showing the order it was received and appears in the flurry of messages when you launched your job.
+You will notice a list of jobs, the only entry being the job you just executed. Columns called map and reduce denote the percentage of completeness for mappers and reducers. Clicking on the job's id will take you to a page summarizing that job. To the left of the page is a box summarizing the job: user, status, a link to logs, as well as a count of maps and reduces and the duration of the job. You can also view the logs of the job, which is helpful during debugging.
 
-Clicking on the job name will take you to a page summarizing that job. We will walk through the page from the bottom up because that is how to best understand the job's progress. The very bottom of the page contains a fun pair of bar charts showing the progress of each Map and Reduce task, from zero to 100-percent complete. A healthy job with many tasks should look like the screenshots below (CODE: Screenshot). During the Map phase, you should see a rolling wave of bars:  completed tasks at 100 percent on the left, pending tasks at zero percent on the right and a wavefront of running tasks that smoothly advance from zero to 100 percent at a fairly uniform pace. During the Reduce phase, you should see the full set of bars advanced at nearly the same rate up the page. Each bar has three sections (we will learn later more about what they mean but it is enough for now to know how they should behave).
-
-INSERT PICTURE OF JOB PAGE
-
-For a larger job, you should observe slow progress through the shuffle stage beginning part way through the Map phase of the job and steady progress at a slightly higher pace as soon as the Map phase concludes. Unless you are heavily burdening your Reducers, the graph should walk right through the Sort stage and begin making steady uniform progress through the final Reduce step. (CODE: Check that shuffle progress is displayed as non-0 during Map phase).
-
-The job is not completely finished when the last Reducer hits 100 percent -- there remains a Commit phase with minor bookkeeping chores, and replication of the output data -- but the delay from end of Reduce to successful job completion should be small. Do not put too much faith in the "percent complete" numbers for the job as a whole and even for its individual tasks.
-
-Above  the job progress bar graphs is a hot mess of a table showing all sorts of metrics about your job, such as how much data read and written at each phase. We will run down the important ones a bit later in the book.
+image:images/01_job_browser_2.png[Hue Job Browser Interface - Job Page]
 
 ******
 
-You can compare its output to the earlier by running:
+You can compare the job's output to the local execution we ran earlier by running:
 
 ------
-hadoop fs -cat ./transalate.out/*
+hadoop fs -cat ./translation.out/*
 ------
 
-That command, like the Unix ‘cat’ command, dumps the contents of a file to standard out, so you can pipe it into any other command line utility. It produces the full contents of the file, which is what you would like for use within scripts but if your file is hundreds of MB large, as HDFS files typically are, dumping its entire contents to your terminal screen is ill appreciated. We typically, instead, use the Unix ‘head’ command to limit its output (in this case, to the first ten lines).
+That command, like the Unix ‘cat’ command, dumps the contents of a file to standard out, so you can pipe it into any other command line utility. It produces the full contents of the file, which is what you would like for use within scripts but if your file is hundreds of MB large, as HDFS files typically are, dumping its entire contents to your terminal screen is ill appreciated. We typically, instead, use the Unix ‘head’ or 'tail' command to limit its output (in this case, to the last ten lines).
 
 ------
-hadoop fs -cat ./translate.out/* | head -n 10
+hadoop fs -cat ./translation.out/* | tail -n 20
 ------
 
 Since you wouldn't want to read a whole 10GB file just to see whether the right number of closing braces come at the end, there is also a `hadoop fs -tail` command that dumps the last one kilobyte of a file to the terminal.
 
 Here's what the head and tail of your output should contain:
 
-------
-CODE screenshot of hadoop fs -cat ./translate.out/* | head -n 10
-CODE screenshot of hadoop fs -tail ./translate.out/*
-------
+image:images/01_pig_latin_output_1.png[Pig Latin Job Output]
 
-==== See Progress and Results
-
-Till now, we've run small jobs so you could focus on learning. Hadoop is built for big jobs, though, and it's important to understand how work flows through the system.
-
-So let's run it on a corpus large enough to show off the power of distributed computing. http://www.gutenberg.org/ebooks/100[Shakespeare's combined works] are too small -- at 5.3MB even the prolific bard's lifetime of work won't make Hadoop break a sweat. Luckily, we've had a good slice of humanity typing thoughts into wikipedia for several years, and the corpus containing every single wikipedia article is enough to warrant Hadoop's power.
+Hadoop has its own 'head' and 'tail' commands:
 
 ------
-python ch_01/pig_latin.py hdfs://data/ch_01/wikipedia/wp_articles -r hadoop --output-dir hdfs://latinized_wikispedia
+hadoop fs -tail ./translation.out/*
 ------
-
-// CODE screenshot of output, and fix up filenames
-
-Visit the http://localhost:50030[jobtracker console] again. The first thing you'll notice is how much slower this job runs! That gives us a chance to demonstrate how to monitor its progress. Select your job from the list of running jobs. In the center of the Job Tracker’s view of your job you will find a table that lists status of map and reduce tasks. The number of tasks pending (waiting to be run), running, complete, killed (terminated purposefully not by error) and failed (terminated due to failure).
-
-The most important numbers to note are the number of running tasks and the number of failed tasks (for a healthy job on a healthy cluster, there should never be any). Don't worry about killed tasks; for reasons we'll explain later on, it's OK if a few appear late in a job. We will describe what to do when there are failing attempts later in the section on debugging Hadoop jobs (REF), but in this case, there shouldn't be any. Clicking on the number of running Map tasks will take you to a window that lists all running attempts (and similarly for the other categories). On the completed tasks listing, note how long each attempt took. Your attempts should complete in a uniform and reasonable length of time.
-
-You should get in the habit of sanity-checking the number of tasks and the input and output sizes at each job phase for the jobs you write. Remember, what we're learning to do is 'coach' Hadoop into how to process our data. In this case, the job should ultimately requires x Map tasks, no Reduce tasks and on our 1 machine virtual cluster, it completed in x minutes. 
-
-This first example is what some people call an "embarrassingly parallel" problem: every record can be processed on its own. As you'll see, that means it uses only the _Map_ phase of Map/Reduce.
 
 === Outro
 
