@@ -319,7 +319,7 @@ You'll see output similar to that you saw in the last chapter. When the job is c
 hadoop fs -cat ./ufo.out/* | sort -n
 ------
 
-They should be identical to the output of the local execution:
+The results should be identical to the output of the local execution:
 
 ------
 -1	3
@@ -340,11 +340,45 @@ They should be identical to the output of the local execution:
 203	1
 ------
 
-The difference being that the Hadoop execution on a large cluster could scale to petabytes of UFO sightings!
+The difference being that the Hadoop execution on a large cluster could scale to petabytes of UFO sightings! Note that there are some negative values - imperfections in our data that we'll need to filter out before visualizing our results.
 
 ===== Plot the Data
 
-When people work with data, their end goal is to uncover some answer or pattern.  They most often employ Hadoop to turn Big Data into small data, then use traditional analytics techniques to turn small data into insight.  One such technique is to _plot_ the information.  If a picture is worth a thousand words, then even a basic data plot is worth reams of statistical analysis. (TODO-qem: I think that line is original, but it sounds familiar.  Must check around to make sure I didn't just pinch someone's quote.) That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result.  Here, we've used the free, open-source http://r-project.org/[R programming language] to see how UFO sightings are distributed around the country. footnote:[That said, people sometimes want to run R _inside_ Hadoop, to analyze large-scale datasets. If you're interested in using R and Hadoop together, please check out Q's other book, _Parallel R_ (O'Reilly) http://shop.oreilly.com/product/0636920021421.do]
+When people (or Reindeer) work with data, their end goal is to uncover some answer or pattern. They most often employ Hadoop to turn Big Data into small data, then use traditional analytics techniques to turn small data into answers and insight. One such technique is to _plot_ the information.  If a picture is worth a thousand words, then even a basic data plot is worth reams of statistical analysis. 
+
+That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result. A few lines of Python can create a histogram to present to our Reindeer pals, to give a gestalt sense of UFO reporting delays.
+
+------
+#!/usr/bin/python
+# Example histogram: UFO reporting delay by day
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+day_labels = []
+counts = []
+
+file = open("ufo_hist.tsv")
+for line in file:
+  fields = line.rstrip("\n").split("\t", 1)
+  days, count = fields
+  day_labels.append(int(days))
+  counts.append(int(count))
+
+plt.bar(day_labels, counts)
+plt.savefig("UFO_Reporting_Delays.png")
+------
+
+Get the image back on your local machine and open it using:
+
+------
+scp -i insecure_key.pem -P 9022 chimpy@$DOCKER_IP:UFO_Reporting_Delays.png . # Enter password 'chimpy'
+open test.png
+------
+
+The image looks like this:
+
+image::images/images/02_ufo_reporting_delays.png["UFO Reporting Delays, by Day"]
 
 // CODE: add simple R code to make a graph (and justify the following note)
 
