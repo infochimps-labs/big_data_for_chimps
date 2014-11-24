@@ -4,7 +4,7 @@
 .Chimpanzee and Elephant Save Christmas
 ******
 
-It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But one year several years ago, the world had grown just a bit too much. The elves just could not keep up with the scale of requests -- Christmas was in danger! Luckily, their friends at the Elephant & Chimpanzee Corporation were available to help. Packing their typewriters and good winter coats, JT, Nanette and the crew headed to the Santaplex, the headquarters for toy manufacture at the North Pole. Here's what they found.
+It was holiday time at the North Pole, and letters from little boys and little girls all over the world flooded in as they always do. But one year several years ago, the world had grown just a bit too much. The elves just could not keep up with the scale of requests -- Christmas was in danger! Luckily, their friends at the Elephant & Chimpanzee Corporation were available to help. Packing their typewriters and good winter coats, JT, Nanette and the crew headed to the Santaplex at the North Pole. here's what they found.
 
 [float]
 ==== Trouble in Toyland
@@ -13,9 +13,9 @@ As you know, each year children from every corner of the earth write to Santa to
 
 Under the elves' old system, as bags of mail arrived they were examined by an elven postal clerk and then hung from the branches of the Big Tree at the center of the Santaplex. Letters were organized on the tree according to the child's town, as the shipping department has a critical need to organize toys by their final delivery schedule. But the toymaker elves must know what toys to make as well, and so for each letter a postal clerk recorded its Big Tree coordinates in a ledger that was organized by type of toy.
 
-So to retrieve a letter, a doll-making elf would look under "Doll" in the ledger to find the next letter's coordinates, then wait as teamster elves swung a big claw arm to retrieve it from the Big Tree. As JT readily observed, the mail couldn't be organized both by toy type and also by delivery location, and so this ledger system was a necessary evil. "The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
+So to retrieve a letter, a doll-making elf would look under "Doll" in the ledger to find the next letter's coordinates, then wait as teamster elves swung a big claw arm to retrieve it from the Big Tree. As JT readily observed, the mail couldn't be organized both by toy type and also by delivery location, and so this ledger system was a necessary evil."The next request for Lego is as likely to be from Cucamonga as from Novosibirsk, and letters can't be pulled from the tree any faster than the crane arm can move!"
 
-What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in. The hallways were clogged with frazzled elves running from Big Tree to workbench and back, spending as much effort requesting and retrieving letters as they did making toys. "Throughput, not Latency!" trumpeted Nanette. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
+What's worse, the size of Santa's operation meant that the workbenches were very far from where letters came in. The hallways were clogged with frazzled elves running from Big Tree to workbench and back, spending as much effort requesting and retrieving letters as they did making toys. This complex transactional system was a bottleneck in toy making, and mechanic elves were constantly scheming ways to make the claw arm cope with increased load. "Throughput, not Latency!" trumpeted Nanette. "For hauling heavy loads, you need a stately elephant parade, not a swarm of frazzled elves!"
 
 [[elf_workstation]]
 .The elves' workbenches are meticulous and neat.
@@ -28,11 +28,11 @@ image::images/chimps_and_elves/bchm_0202.png[Fetching the next letter to Santa]
 [float]
 ==== Chimpanzees Process Letters into Labelled Toy Forms
 
-In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate.
+In marched Chimpanzee and Elephant, Inc, and set up a finite number of chimpanzees at a finite number of typewriters, each with an elephant desk-mate. Strangely, the C&E solution to the too-many-letters problem involved producing *more* paper. The problem wasn't in the amount of paper, it was in all the work being done to service the paper. In the new world, all the rules for handling documents are simple, uniform and local.
 
 Postal clerks still stored each letter on the Big Tree (allowing the legacy shipping system to continue unchanged), but now also handed off bags holding copies of the mail. As she did with the translation passages, Nanette distributed these mailbags across the desks just as they arrived. The overhead of recording each letter in the much-hated ledger was no more, and the hallways were no longer clogged with elves racing to and fro.
 
-The chimps' job was to take letters one after another from a mailbag, and fill out a toyform for each request. A toyform has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Nice/Naughty Status, Location, and so forth. You can see some examples here:
+The chimps' job was to take letters one after another from a mailbag, and fill out a toy-form for each request. A toy-form has a prominent label showing the type of toy, and a body with all the information you'd expect: Name, Nice/Naughty Status, Location, and so forth. You can see some examples here:
 
 ------
 Deer SANTA
@@ -73,15 +73,15 @@ image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms. The third one yields a toyform directing Santa to put coal in Frank's stocking.
 
 [float]
-=== Pygmy Elephants Carry Each Toyform to the Appropriate Workbench
+=== Pygmy Elephants Carry Each Toy-form to the Appropriate Workbench
 
-Here's the new wrinkle on top of the system used in the translation project. Next to every desk now stood a line of pygmy elephants, each dressed in a capes that listed the types of toy it would deliver. Each desk had a pygmy elephant for Archery Kits and Dolls, another one for Xylophones and Yo-Yos, and so forth -- matching the different specialties of toymaker elves.
+Here's the new wrinkle on top of the system used in the translation project. Next to every desk now stood a line of pygmy elephants, dressed in capes listing the types of toy it would deliver. Each desk had a pygmy elephant for Archery Kits and Dolls, another one for Xylophones and Yo-Yos, and so forth -- matching the different specialties of toymaker elves.
 
-As the chimpanzees would work through a mail bag, they'd place each toyform into the basket on the back of the pygmy elephant that matched its type. At the completion of a bag, the current line of elephants would march off to the workbenches, and behind them a new line of elephants would trundle into place. What fun!
+As the chimpanzees would work through a mail bag, they'd place each toy-form into the basket on the back of the pygmy elephant that matched its type. At the completion of a bag, the current line of elephants would march off to the workbenches, and behind them a new line of elephants would trundle into place. What fun!
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
-Finally, the pygmy elephants would march through the now-quiet hallways to the toy shop floor, each reporting to the workbench that matched its toy types. So the Archery Kit/Doll workbench had a line of pygmy elephants, one for every Chimpanzee&Elephant desk; similarly the Xylophone/Yo-Yo workbench, and all the rest.
+Finally, the pygmy elephants would march through the now-quiet hallways to the toy shop floor, each reporting to the workbench that matched its toy types. So the Archery Kit/Doll workbench had a line of pygmy elephants, one for every Chimpanzee & Elephant desk; similarly the Xylophone/Yo-Yo workbench, and all the rest.
 
 Toymaker elves now began producing a steady stream of toys, no longer constrained by the overhead of walking the hallway and waiting for Big-Tree retrieval on every toy.
 
@@ -100,55 +100,118 @@ image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
 //
 // a cookbook: this chapter "OK let's talk about leavening agents... "When I think about leavening agents, I think""
 
-In the previous chapter, you worked with the simple-as-possible Pig Latin script, which let you learn the mechanics of running Hadoop jobs, understand the essentials of the HDFS, and appreciate its scalability. It is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files.
+Having previously introduced 'map only Hadoop' in our first story, in this story, we introduced the shuffle and reduce operations of Hadoop MapReduce. The toymaker elves are the reducers - they receive all the mapped records (toy forms) corresponding to one or more group keys - the type of toy. The act of toy-making is the reduce operation. The pygmy elephants are the shuffle - the movement of data from mappers to reducers. That is how the MapReduce paradigm works! This simple abstraction powers Hadoop MapReduce programs. It is the simplicity of the scheme that makes it so powerful.
 
-Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. Every map/reduce job is a program with the same three phases: map, group-sort, and reduce. In the map phase, your program processes its input in any way you see fit, emitting labelled output records. In the group-sort phase, Hadoop groups and sorts those records according to their labels. Finally, in the reduce phase, your program processes each sorted group and Hadoop stores its output. That grouping-by-label part is where the magic lies: it ensures that no matter where the relevant records started, they arrive at the same place in a predictable manner, ready to be synthesized.
+In the previous chapter, you worked with the simple-as-possible Python script, which let you learn the mechanics of running Hadoop jobs, and understand the essentials of the HDFS. Document translation is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files.
+
+Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. Every map/reduce job is a program with the same three phases: map, combine, and reduce. In the map phase, your program processes its input in any way you see fit, emitting labelled output records. In the optional combine phase, map-side aggregation occurs. Between map and reduce (or between combine and reduce) is the Hadoop shuffle. In the shuffle phase, Hadoop groups and sorts those records according to their labels. Finally, in the reduce phase, your program processes each sorted group and Hadoop stores its output. That shuffle, or 'grouping-by-label' part is where the magic lies: it ensures that no matter where the relevant records started, they arrive at the same place in a predictable manner, ready to be synthesized.
 
 // footnote:[Some may argue that it should be called "MapShuffleReduce," but it's too late to go back and change that.]
 // (Hadoop is but one of many Map/Reduce implementations.  Any discussion thereof will necessarily be a mix of the higher-level, generic, Map/Reduce concepts, and Hadoop-specific implementation details.)
 
-If Map/Reduce is the core of Hadoop's operation, then getting to _think_ in Map/Reduce terms is the key to effectively using Hadoop.  In turn, thinking in Map/Reduce requires that you develop an innate, physical sense of how Hadoop moves data around. You can't understand the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth -- without knowing the basics. footnote:[When he lectures on Hadoop, Q often gets questions to the effect of, "Can I do _X_ in Hadoop?" and the answer is always, "If you can express that problem or algorithm in Map/Reduce terms, then, yes."]
-// TODO-qem: should I expand on this point? ... flip: I think maybe yes. I'd say if you can express it in a set operation, a database operation, as a graph problem... In fact maybe that's what the book is about?
+If Map/Reduce is the core of Hadoop's operation, then getting to _think_ in Map/Reduce terms is the key to effectively using Hadoop.  In turn, thinking in Map/Reduce requires that you develop an innate, physical sense of how Hadoop moves data around. You can't understand the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth -- without knowing the basics.
 
-It can take some time to wrap one's head around Map/Reduce, though, so we're going to move slowly in this chapter.  We'll open with a straightforward example map/reduce program: aggregating records from a dataset of Unidentified Flying Object sightings to find out when UFOs are most likely to appear.  Next, we'll revisit our friends at Elephant and Chimpanzee, Inc, to explore how a Map/Reduce dataflow works.  We'll round out the chapter with a deeper, more technical look into map/reduce from a Hadoop perspective.
+It can take some time to wrap one's head around Map/Reduce, though, so we're going to move slowly in this chapter. We'll open with a straightforward example map/reduce program: aggregating records from a dataset of Unidentified Flying Object sightings to find out when UFOs are most likely to appear. Next, we'll revisit our friends at Elephant and Chimpanzee, Inc, to explore how a Map/Reduce dataflow works. We'll round out the chapter with a deeper, more technical look into map/reduce from a Hadoop perspective.
 
-The one thing we won't be doing too much of yet is actually writing lots of Hadoop programs. That will come in Chapter 5 (REF), which has example after example demonstrating core map/reduce programming patterns -- those patterns are difficult to master without a grounding in this chapter's material. But if you're the type of reader who learns best by seeing multiple examples in practice and then seeing its internal mechanics, skim that chapter and then come back.
+The one thing we won't be doing too much of yet is actually writing lots of Hadoop programs. That will come in later -- map/reduce patterns are difficult to master without a grounding in this chapter's material. But if you're the type of reader who learns best by seeing multiple examples in practice and then seeing its internal mechanics, skip ahead and then come back.
 
 === Simulation 
 
-Santa Corp does not want any future logistical surprises, and so along with their new streamlined manufacturing workflow they would like to perform scenario planning.
-Ms Claus, the CIO of Santa Corp, has heard about this new "map/reduce" 
-
-
-
-
+Santa Corp does not want any future logistical surprises, and so along with their new streamlined manufacturing workflow they would like to perform scenario planning. Mrs Claus, the CIO of Santa Corp, has heard about this new "map/reduce." C&E company are brought in as consultants.
 
 === Example: Reindeer Games
 
 Santa Claus and his elves are busy year-round, but outside the holiday season Santa's flying reindeer do not have many responsibilities. As flying objects themselves, they spend a good part of their multi-month break pursuing their favorite hobby: UFOlogy (the study of Unidentified Flying Objects and the search for extraterrestrial civilization). So you can imagine how excited they were to learn about the data set of more than 60,000 documented UFO sightings we worked with in the first chapter.
 
-Sixty thousand sightings is much higher than a reindeer can count (only four hooves!), so JT and Nanette occasionally earn a little good favor from Santa Claus by helping the reindeer answer questions about the UFO data. We can do our part by helping our reindeer friends understand when, during the day, UFOs are most likely to be sighted.
+Sixty thousand sightings is much higher than a reindeer can count (only four hooves!), so JT and Nanette occasionally earn a little good favor from Santa Claus by helping the reindeer answer questions about the UFO data. We can do our part by helping our reindeer friends understand how long people wait to report UFOs.
 
-==== UFO Sighting Data Model
+==== Group the UFO Sightings by Reporting Delay
 
-The data model for a UFO sighting has fields for: date of sighting and of report; human-entered location; duration; shape of craft; and eye-witness description.
+In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted, from the time the UFO was reported. This occurs in the map phase of our map/reduce job.
+
+The mapper looks like this:
+
+.UFO Mapper (ch_02/ufo_mapper.py)
+------
+#!/usr/bin/python
+# Example MapReduce job: count ufo sightings by location.
+
+import sys, re, time, iso8601
+
+# Pull out city/state from ex: Town, ST
+word_finder = re.compile("([\w\s]+),\s(\w+)")
+
+# Loop through each line from standard input
+for line in sys.stdin:
+  # Remove the carriage return, and split on tabs - maximum of 3 fields
+  fields = line.rstrip("\n").split("\t", 2)
+  try:
+    # Parse the two dates, then find the time between them
+    sighted_at, reported_at, rest = fields
+    sighted_dt = iso8601.parse_date(sighted_at)
+    reported_dt = iso8601.parse_date(reported_at)
+    diff = reported_dt - sighted_dt
+  except:
+    sys.stderr.write("Bad line: {}".format(line))
+    continue
+  # Emit the number of days and one
+  print "\t".join((str(diff.days), "1"))
 
 ------
-class SimpleUfoSighting
-include Wu::Model
-  field :sighted_at,   Time
-  field :reported_at,  Time
-  field :shape,        Symbol
-  field :city,         String
-  field :state,        String
-  field :country,      String
-  field :duration_str, String
-  field :location_str, String
-  field :description,  String
-end
+
+the reducer looks like this:
+
+.UFO Reducer (ch_02/ufo_reducer.py)
+------
+#!/usr/bin/python
+"""Example MapReduce job: count ufo sightings by hour. Based on example at http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
+"""
+import sys, re
+
+current_days = None
+curreent_count = 0
+days = None
+
+# Loop tbrough each line from standard input
+for line in sys.stdin:
+  # split the line into two values, using the tab character
+  days, count = line.rstrip("\n").split("\t", 1)
+  
+  # Streaming always reads strings, so must convert to integer
+  try:
+    count = int(count)
+  except:
+    sys.stderr.write("Can't convert '{}' to integer\n".format(count))
+    continue
+  
+  # If sorted input key is the same, increment counter
+  if current_days == days:
+    current_count += count
+  # If the key has changed...
+  else:
+    # This is a new reduce key, so emit the total of the last key
+    if current_days: 
+      print "{}\t{}".format(current_days, current_count)
+    
+    # And set the new key and count to the new reduce key/reset total
+    current_count = count
+    current_days = days
+
+# Emit the last reduce key
+if current_days == days:
+  print "{}\t{}".format(current_days, current_count)
 ------
 
-==== Group the UFO Sightings by Time Bucket
+We can execute our mapreduce job locally, like so:
+
+------
+cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv |python examples/ch_02/ufo_mapper.py|sort|python examples/ch_02/ufo_reducer.py|sort -r -n
+------
+
+We execute our mapreduce job like so:
+------
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files ./ufo_mapper.py,./ufo_reducer.py -mapper ./ufo_mapper.py -reducer ./ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out.1
+------
 
 // TODO: figure out which exploration this should be and make it actually make sense...
 
