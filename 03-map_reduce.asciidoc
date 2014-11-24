@@ -303,12 +303,44 @@ This command demonstrates an execution pattern for testing map/reduce code, and 
 cat /path/to/data/file | mapper | sort | reducer
 ------
 
-Now we can execute our mapreduce job on Hadoop using Hadoop Streaming, like so:
+Being able to test map/reduce code locally is important because Hadoop is a batch system. In other words, Hadoop is 'slow.' Thats a relative term - because a large Hadoop cluster is blazingly fast at processing terabytes and even petabytes of data. However, the shortest Hadoop job takes a few minutes, which can make debugging a slow and cumbersome process. The ability to bypass this several minute wait by running locally on a sample of data is essential to being productive as a Hadoop developer or analyst.
+
+Now that we've tested locally, we're ready to execute our map/reduce job on Hadoop using Hadoop Streaming. http://wiki.apache.org/hadoop/HadoopStreaming[Hadoop Streaming] is a utility which lets users run jobs with any executable program as the mapper and/or the reducer. You can use Python scripts, or even simple shell commands like `wc` or others. If you're writing a Python, Ruby, Perl or other dynamic language script as a mapper or reducer, be sure to make the script executable, or the hadoop job will fail.
+
+The streaming command to run our Python mapper and reducer looks like this:
 
 ------
-hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files ./ufo_mapper.py,./ufo_reducer.py -mapper ./ufo_mapper.py -reducer ./ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files examples/ch_02/ufo_mapper.py,examples/ch_02/ufo_reducer.py -mapper examples/ch_02/ufo_mapper.py -reducer examples/ch_02/ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
 ------
 
+You'll see output similar to that you saw in the last chapter. When the job is complete, view the results:
+
+------
+hadoop fs -cat ./ufo.out/* | sort -n
+------
+
+They should be identical to the output of the local execution:
+
+------
+-1	3
+0	51
+1	17
+2	9
+3	4
+4	4
+5	2
+6	1
+10	1
+15	1
+30	2
+57	1
+74	1
+115	1
+179	1
+203	1
+------
+
+The difference being that the Hadoop execution on a large cluster could scale to petabytes of UFO sightings!
 
 ===== Plot the Data
 
