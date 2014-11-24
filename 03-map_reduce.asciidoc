@@ -125,11 +125,43 @@ Santa Claus and his elves are busy year-round, but outside the holiday season Sa
 
 Sixty thousand sightings is much higher than a reindeer can count (only four hooves!), so JT and Nanette occasionally earn a little good favor from Santa Claus by helping the reindeer answer questions about the UFO data. We can do our part by helping our reindeer friends understand how long people wait to report UFOs.
 
+==== UFO Data
+
+For starters, lets check out our input data:
+
+------
+cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv|head -5
+------
+
+The UFO data is in 'TSV' format - Tab Separated Values.
+
+------
+1995-10-09T05:00:00Z	1995-10-09T05:00:00Z	Iowa City, IA			Man repts. witnessing "flash, ...	
+1995-10-10T05:00:00Z	1995-10-11T05:00:00Z	Milwaukee, WI		2 min.	Man  on Hwy 43 SW of Mil...
+1995-01-01T06:00:00Z	1995-01-03T06:00:00Z	Shelton, WA			Telephoned Report:CA woman visit...
+1995-05-10T05:00:00Z	1995-05-10T05:00:00Z	Columbia, MO		2 min.	Man repts. son's bizarre...
+1995-06-11T05:00:00Z	1995-06-14T05:00:00Z	Seattle, WA			Anonymous caller repts. sighting...
+------
+
 ==== Group the UFO Sightings by Reporting Delay
 
-In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted, from the time the UFO was reported. This occurs in the map phase of our map/reduce job. The mapper emits the time delay in days, and a counter - that is always one.
+In the Chimpanzee & Elephant world, a chimp had the following role:
 
-The mapper looks like this:
+1. Read and understand each letter
+2. Create a new intermediate item having a label (the type of toy) and information about the toy (the work order)
+3. Hand it to the elephant which delivers to that toy's workbench
+
+We're going to write a Hadoop _mapper_ which performs a similar purpose:
+
+1. Reads the raw data and parses it into a structured record
+2. Creates a new intermediate item having a label (the number of days delay before reporting a UFO) and a count (one sighting for each input record).
+3. Hands it to Hadoop for delivery to that group's reducer
+
+==== Mapper
+
+In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted, from the time the UFO was reported. As above, this occurs in the map phase of our map/reduce job. The mapper emits the time delay in days, and a counter - that is always one.
+
+The mapper code in Python looks like this:
 
 .UFO Mapper (ch_02/ufo_mapper.py)
 ------
@@ -159,7 +191,37 @@ for line in sys.stdin:
 
 ------
 
-The reducer is concerned with grouping like time delays together. The reduce key in this case is the number of hours delay - for instance 1, 10 or 35. In the reducer, the count for each element of the reduce key/group is incremented by the count (1) as each record is processed. Because Hadoop guarantees that all reduce keys of one value go to one reducer, we can extrapolate that if the reduce key changes - then we are done with the previous group and reduce key. Being done with the previous group, it is time to emit our record about that group: in this case the reduce key itself and the sum of counts of values for that reduce key.
+Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each record to the _reducer_, the second stage of our job.
+
+You can test the mapper like this:
+
+------
+cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv | python examples/ch_02/ufo_mapper.py
+------
+
+The intermediate output looks like this:
+
+------
+74	1
+0	1
+5	1
+6	1
+0	1
+0	1
+4	1
+15	1
+2	1
+------
+
+These are the records our reducer will receive as input.
+
+==== Reducer
+
+In our previous example, the elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type.
+
+Similarly, in this job the reducer receives a series of records, grouped by label (the number of hours delay), with a guarantee that it is the unique processor for such records.
+
+The reducer is thus concerned with grouping like time delays together. The reduce key in this case is the number of hours delay - for instance 1, 10 or 35 days. In the reducer, the count for each element of the reduce key/group is incremented by the count (1) as each record is processed. Because Hadoop guarantees that all reduce keys of one value go to one reducer, we can extrapolate that if the reduce key changes - then we are done with the previous group and reduce key. Being done with the previous group, it is time to emit our record about that group: in this case the reduce key itself and the sum of counts of values for that reduce key.
 
 Note that in this example, to sort is to group. This is the magic of map/reduce.
 
@@ -206,112 +268,47 @@ if current_days == days:
   print "{}\t{}".format(current_days, current_count)
 ------
 
-Always test locally on a sample of data, if at all possible. We can execute our map/reduce job locally, like so:
+Always test locally on a sample of data, if at all possible:
 
 ------
-cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv |python examples/ch_02/ufo_mapper.py|sort|python examples/ch_02/ufo_reducer.py|sort -r -n
+cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv |python examples/ch_02/ufo_mapper.py|sort|python examples/ch_02/ufo_reducer.py|sort -n
 ------
 
-Note that we've added a sort to the end - to show the lowest values first. On Hadoop, this would take another map/reduce job.
+Note that we've added a `sort -n` to the end of the commands - to show the lowest values first. On Hadoop, this would take another map/reduce job.
+
+The output looks like this:
+
+------
+-1	3
+0	51
+1	17
+2	9
+3	4
+4	4
+5	2
+6	1
+10	1
+15	1
+30	2
+57	1
+74	1
+115	1
+179	1
+203	1
+------
 
 This command demonstrates an execution pattern for testing map/reduce code, and it goes like this:
 
 ------
-cat /path/to/data/file|mapper|sort|reducer
+cat /path/to/data/file | mapper | sort | reducer
 ------
 
-We can execute our mapreduce job on Hadoop using Hadoop Streaming, like so:
+Now we can execute our mapreduce job on Hadoop using Hadoop Streaming, like so:
 
 ------
-hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files ./ufo_mapper.py,./ufo_reducer.py -mapper ./ufo_mapper.py -reducer ./ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out.1
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files ./ufo_mapper.py,./ufo_reducer.py -mapper ./ufo_mapper.py -reducer ./ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
 ------
 
-// TODO: figure out which exploration this should be and make it actually make sense...
-
-The first request from the reindeer team is to organize the sightings into groups by the shape of craft, and to record how many sightings there are for each shape.
-
-===== Mapper
-
-In the Chimpanzee & Elephant world, a chimp had the following role:
-
-1. read and understand each letter
-2. create a new intermediate item having a label (the type of toy) and information about the toy (the work order)
-3. hand it to the elephant which delivers to that toy's workbench
-
-We're going to write a Hadoop _mapper_ which performs a similar purpose:
-
-1. reads the raw data and parses it into a structured record
-2. creates a new intermediate item having a label (the shape of craft) and information about the sighting (the original record).
-3. hands it to Hadoop for delivery to that group's reducer
-
-The program looks like this:
-
-------
-mapper(:count_ufo_shapes) do
-  consumes UfoSighting, from: json
-  #
-  process do |ufo_sighting|     # for each record
-    record = 1                  # create a dummy payload,
-    label  = ufo_sighting.shape # label with the shape,
-    yield [label, record]       # and send it downstream for processing
-  end
-end
-------
-
-You can test the mapper on the commandline:
-
-------
-$ cat ./data/geo/ufo_sightings/ufo_sightings-sample.json   |
-./examples/geo/ufo_sightings/count_ufo_shapes.rb --map |
-head -n25 | wu-lign
-disk      1972-06-16T05:00:00Z  1999-03-02T06:00:00Z    Provo (south of), UT      disk      several min.    Str...
-sphere    1999-03-02T06:00:00Z  1999-03-02T06:00:00Z    Dallas, TX                sphere    60 seconds      Whi...
-triangle  1997-07-03T05:00:00Z  1999-03-09T06:00:00Z    Bochum (Germany),         triangle  ca. 2min        Tri...
-light     1998-11-19T06:00:00Z  1998-11-19T06:00:00Z    Phoenix (west valley), AZ light     15mim           Whi...
-triangle  1999-02-27T06:00:00Z  1999-02-27T06:00:00Z    San Diego, CA             triangle  10 minutes      cha...
-triangle  1997-09-15T05:00:00Z  1999-02-17T06:00:00Z    Wedgefield, SC            triangle  15 min          Tra...
-...
-------
-
-The intermediate output is simply the partitioning label (UFO shape), followed by the attributes of the sighting, separated by tabs. The framework uses the first field to group by default; the rest is cargo.
-
-===== Reducer
-
-Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each record to the _reducer_, the second stage of our job.
-
-------
-reducer(:count_sightings) do
-  def process_group(label, group)
-    count = 0
-    group.each do |record|      # on each record,
-      count += 1                #   increment the count
-      yield record              #   re-output the record
-    end                         #
-    yield ['    %%%% end of group %%%%     ct:', count, label] # at end of group, summarize
-  end
-end
-------
-
-The elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type.
-
-Similarly, the reducer receives a series of records, grouped by label, with a guarantee that it is the unique processor for such records. All we have to do here is re-emit records as they come in, then add a line following each group with its count. We've put a '#' at the start of the summary lines, which lets you easily filter them.
-
-Test the full map/reduce stack from the commandline:
-
-------
-$ ./examples/geo/ufo_sightings/count_ufo_shapes.rb --run \
-    ./data/geo/ufo_sightings/ufo_sightings-sample.json - | wu-lign
-
-1985-06-01T05:00:00Z    1999-01-14T06:00:00Z    North Tonawanda, NY chevron  1 hr       7 lights in a chevron shape...
-1999-01-20T06:00:00Z    1999-01-31T06:00:00Z    Olney, IL           chevron  10 seconds Stargazing, saw a dimly lit V-shape ...
-1998-12-16T06:00:00Z    1998-12-16T06:00:00Z    Lubbock, TX         chevron  3 minutes  Object southbound, slowed, hovered, ...
-    %%%% end of group %%%%      ct:  3  chevron
-1999-01-16T06:00:00Z    1999-01-16T06:00:00Z    Deptford, NJ        cigar    2 Hours    An aircraft of some type...
-    %%%% end of group %%%%      ct:  1  cigar
-1947-10-15T06:00:00Z    1999-02-25T06:00:00Z    Palmira,            circle   1 hour     After a concert...
-1999-01-10T06:00:00Z    1999-01-11T06:00:00Z    Tyson's Corner, VA  circle   1 to 2 sec Bright green circular light..
-...
-------
 
 ===== Plot the Data
 
