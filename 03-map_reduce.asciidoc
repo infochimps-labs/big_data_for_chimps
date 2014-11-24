@@ -127,7 +127,7 @@ Sixty thousand sightings is much higher than a reindeer can count (only four hoo
 
 ==== Group the UFO Sightings by Reporting Delay
 
-In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted, from the time the UFO was reported. This occurs in the map phase of our map/reduce job.
+In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted, from the time the UFO was reported. This occurs in the map phase of our map/reduce job. The mapper emits the time delay in days, and a counter - that is always one.
 
 The mapper looks like this:
 
@@ -159,7 +159,11 @@ for line in sys.stdin:
 
 ------
 
-the reducer looks like this:
+The reducer is concerned with grouping like time delays together. The reduce key in this case is the number of hours delay - for instance 1, 10 or 35. In the reducer, the count for each element of the reduce key/group is incremented by the count (1) as each record is processed. Because Hadoop guarantees that all reduce keys of one value go to one reducer, we can extrapolate that if the reduce key changes - then we are done with the previous group and reduce key. Being done with the previous group, it is time to emit our record about that group: in this case the reduce key itself and the sum of counts of values for that reduce key.
+
+Note that in this example, to sort is to group. This is the magic of map/reduce.
+
+The reducer looks like this:
 
 .UFO Reducer (ch_02/ufo_reducer.py)
 ------
@@ -202,13 +206,22 @@ if current_days == days:
   print "{}\t{}".format(current_days, current_count)
 ------
 
-We can execute our mapreduce job locally, like so:
+Always test locally on a sample of data, if at all possible. We can execute our map/reduce job locally, like so:
 
 ------
 cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv |python examples/ch_02/ufo_mapper.py|sort|python examples/ch_02/ufo_reducer.py|sort -r -n
 ------
 
-We execute our mapreduce job like so:
+Note that we've added a sort to the end - to show the lowest values first. On Hadoop, this would take another map/reduce job.
+
+This command demonstrates an execution pattern for testing map/reduce code, and it goes like this:
+
+------
+cat /path/to/data/file|mapper|sort|reducer
+------
+
+We can execute our mapreduce job on Hadoop using Hadoop Streaming, like so:
+
 ------
 hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files ./ufo_mapper.py,./ufo_reducer.py -mapper ./ufo_mapper.py -reducer ./ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out.1
 ------
