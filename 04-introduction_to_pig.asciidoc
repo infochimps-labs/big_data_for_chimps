@@ -55,52 +55,62 @@
 
 === Pig Helps Hadoop work with Tables, not Records
 
-Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts. Its interface is similar to SQL, which makes it a great choice for folks with significant experience there. (It’s not identical, though, and things that are efficient in SQL may not be so in Pig; we will try to highlight those traps.)
+Apache Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts. Its interface is similar to SQL, which makes it a great choice for folks with significant experience there. It’s not identical, though, and things that are efficient in SQL may not be so in Pig (we will try to highlight those traps).
 
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
-// PARALLEL 1;
-// SET pig.exec.nocombiner true
-
+.Pig - UFO Sightings by Month (ch_03/ufos_by_month.pig)
 ------
-sightings = LOAD '/path/to/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv'  AS (
     sighted_at: chararray,   reported_at: chararray,    location_str: chararray, shape: chararray,
     duration_str: chararray, description: chararray,    lng: float,              lat: float,
     city: chararray,         county: chararray,         state: chararray,        country: chararray );
 
-year_month_ct      = FOREACH sightings GENERATE SUBSTRING(sighted_at, 0, 7) AS yrmo;
-sightings_hist     = FOREACH (GROUP year_month_ct BY yrmo) GENERATE
-  group, COUNT_STAR(year_month_ct);
-STORE sightings_hist INTO '/data/out/ufo/sightings_hist';
+-- Take the 6th and 7th character from the original string, as in '2010-06-25T05:00:00Z', take '06'
+year_month_count = FOREACH sightings GENERATE SUBSTRING(sighted_at, 5, 7) AS year_month;
+
+-- Group by year_month, and then count the size of the 'bag' this creates to get a total
+ufos_by_month    = FOREACH (GROUP year_month_count BY year_month) GENERATE
+  group AS year_month, COUNT_STAR(year_month_count);
+STORE ufos_by_month INTO './ufos_by_month.out';
 ------
 
-In a Wukong script or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping. In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
+In a Python streaming or traditional Hadoop job, the focus is on the record and you’re best off thinking in terms of message passing or grouping. In Pig, the focus is much more on the structure and you should think in terms of relational and set operations. In the example above, each line described an operation on the full dataset; we declared what change to make and Pig, as you’ll see, executes those changes by dynamically assembling and running a set of Map/Reduce jobs.
 
-// Here’s what you might write in Wukong to answer the same question:
-//
-// ----
-// DEFINE MODEL FOR INPUT RECORDS
-// MAPPER EXTRACTS MONTHS, EMITS MONTH AS KEY WITH NO VALUE
-// COUNTING REDUCER INCREMENTS ON EACH ENTRY IN GROUP AND EMITS TOTAL IN FINALIZED METHOD
-// ----
-//
-// Did you notice, by the way, that in both cases, the output was sorted? that is no coincidence -- as you saw in Chapter (REF), Hadoop sorted the results in order to group them.
-
-To run the Pig job, go into the example code repository and run
+To run the Pig job, go into the example code repository and run:
 
 ------
-pig 04-intro_to_pig/a-ufo_visits_by_month.pig
+pig examples/ch_03/ufos_by_month.pig
 ------
 
-// To run the Wukong job, go into the (REF) directory and run
-//
-// ----
-// wu-run monthly_visit_counts.rb --reducers_count=1 /data_UFO_sightings.tsv /dataresults monthly_visit_counts-wu.tsv
-// ----
-//
-// If you consult the output, you’ll see (TODO: INSERT CONCLUSIONS).
+If you consult the Job Browser, you should a single Map/Reduce jobs; the dataflow Pig instructed Hadoop to run is essentially similar to the Python script you ran. What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
 
-If you consult the Job Tracker Console, you should see a single Map/Reduce for each with effectively similar statistics; the dataflow Pig instructed Hadoop to run is essentially similar to the Wukong script you ran. What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
+To see the result of the Pig script:
+
+------
+hadoop fs -cat ufos_by_month.out/*
+------
+
+Which will result in:
+------
+01	4263
+02	3644
+03	4170
+04	4120
+05	4220
+06	6745
+07	7361
+08	6641
+09	5665
+10	5421
+11	4954
+12	3933
+	256
+------
+
+Note that 256 records had no such value - data will often surprise you. You might filter these empty values, or look closer at the raw data to see what is going on. Also, did you notice the output was sorted? That is no coincidence -- as you saw in Chapter 2, Hadoop sorted the results in order to group them. Sorting in this case is free! We'll learn how to explicitly sort data in Pig in a future chapter.
+
+image::images/images/03-first-pig-run.png["First Pig Script Run, and Result"]
 
 ==== Wikipedia Visitor Counts
 

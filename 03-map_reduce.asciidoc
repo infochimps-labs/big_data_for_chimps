@@ -348,6 +348,7 @@ When people (or Reindeer) work with data, their end goal is to uncover some answ
 
 That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result. A few lines of Python can create a histogram to present to our Reindeer pals, to give a gestalt sense of UFO reporting delays.
 
+.Python Histogram (ch_02/histogram.py)
 ------
 #!/usr/bin/python
 # Example histogram: UFO reporting delay by day
