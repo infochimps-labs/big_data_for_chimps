@@ -65,7 +65,7 @@ FRANK
 # Frank is a jerk. He will get a lump of coal.
 # Toy Forms:
 #   coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
-----
+------
 
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
