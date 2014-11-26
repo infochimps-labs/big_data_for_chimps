@@ -265,6 +265,7 @@ Hadoop has its own 'head' and 'tail' commands:
 hadoop fs -tail ./translation.out/*
 ------
 
+
 === Outro
 
 In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm. Let's start by joining JT and Nannette with their next client.
