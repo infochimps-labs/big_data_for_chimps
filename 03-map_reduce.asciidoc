@@ -380,7 +380,7 @@ open UFO_Reporting_Delays.png
 
 The chart looks like this:
 
-image::images/images/02_ufo_reporting_delays.png["UFO Reporting Delays, by Day"]
+image::images/02_ufo_reporting_delays.png["UFO Reporting Delays, by Day"]
 
 === Hadoop vs Traditional Databases
 
@@ -425,12 +425,12 @@ Hadoop feeds the mapper that one record, and in turn, the mapper spits out one o
 
 // TODO: would be cool to have an image here, showing a record entering a box, which outputs a key and value
 
-==== Group-Sort Phase, in Light Detail
+==== Shuffle or 'Group-Sort' Phase, in Light Detail
 
 In the group-sort phase, Hadoop transfers all the map output records in a partition to the corresponding reducer. That reducer merges the records it receives from all mappers, so that each group contains all records for its label regardless of what machine it came from. What's nice about the group-sort phase is that you don't have to do anything for it. Hadoop takes care of moving the data around for you. What's less nice about the group-sort phase is that it is typically the performance bottleneck. We'll learn how to take care of Hadoop so that it can move the data around smartly.
 
 // TODO: neato diagram
-    Code
+
 ==== Reducers, in Light Detail
 
 Whereas the mapper sees single records in isolation, a reducer receives one key (the label) and _all_ records that match that key.  In other words, a reducer operates on a group of related records. Just as with the mapper, as long as it keeps eating records and doesn't fail the reducer can do anything with those records it pleases and emit anything it wants. It can nothing, it can contact a remote database, it can emit nothing until the very end and then emit one or a zillion records. The output can be text, it can be video files, it can be angry letters to the President. They don't have to be labelled, and they don't have to make sense. Having said all that, usually what a reducer emits are nice well-formed records resulting from sensible transformations of its input, like the count of records, the largest or smallest value from a field, or full records paired with other records. And though there's no explicit notion of a label attached to a reducer output record, it's pretty common that within the record's fields are values that future mappers will use to form labels.
