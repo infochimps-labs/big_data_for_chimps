@@ -67,11 +67,11 @@ sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv'  AS (
     city: chararray,         county: chararray,         state: chararray,        country: chararray );
 
 -- Take the 6th and 7th character from the original string, as in '2010-06-25T05:00:00Z', take '06'
-year_month_count = FOREACH sightings GENERATE SUBSTRING(sighted_at, 5, 7) AS year_month;
+month_count = FOREACH sightings GENERATE SUBSTRING(sighted_at, 5, 7) AS month;
 
 -- Group by year_month, and then count the size of the 'bag' this creates to get a total
-ufos_by_month    = FOREACH (GROUP year_month_count BY year_month) GENERATE
-  group AS year_month, COUNT_STAR(year_month_count);
+ufos_by_month    = FOREACH (GROUP month_count BY month) GENERATE
+  group AS month, COUNT_STAR(month_count) AS total;
 STORE ufos_by_month INTO './ufos_by_month.out';
 ------
 
@@ -92,6 +92,7 @@ hadoop fs -cat ufos_by_month.out/*
 ------
 
 Which will result in:
+
 ------
 01	4263
 02	3644
@@ -114,41 +115,59 @@ image::images/images/03-first-pig-run.png["First Pig Script Run, and Result"]
 
 ==== Wikipedia Visitor Counts
 
-Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset and to assemble counts by hour, not month:
+Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset, and this time to assemble counts by hour:
 
+.Pig - Wikipedia Page Views/Total Bytes by Project (ch_03/wikipedia_page_counts.pig)
 ------
-SET DEFAULT_PARALLEL 3
-  ;
+/* Wikipedia pagecounts data described at https://dumps.wikimedia.org/other/pagecounts-raw/
+   The first column is the project name. The second column is the title of the page retrieved, 
+   the third column is the number of requests, and the fourth column is the size of the content returned. */
+   
+-- LOAD the data, which is space-delimited
+pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.log' USING PigStorage(' ') AS (
+   project_name:chararray, 
+   page_title:chararray, 
+   requests:long, 
+   bytes:long
+);
 
-pageviews = LOAD '/data/rawd/wikipedia/pagecounts/pagecounts-20081002-230001.log'  AS (
-   filename:chararray, ns:chararray, wikipedia_id:chararray, views:long, bytes:long
-    ) USING PigStorage('\t', 'tagFile');
+-- Group the data by project name, and then get counts of total pageviews and bytes sent for each project
+per_project_counts = FOREACH (GROUP pageviews BY project_name) GENERATE
+  group AS project_name, 
+  SUM(pageviews.requests) AS total_pageviews, 
+  SUM(pageviews.bytes) AS total_bytes;
+-- Order the output by the total pageviews, in descending order
+sorted_per_project_counts = ORDER per_project_counts BY total_pageviews DESC;
+-- Store the data in our home directory
+STORE sorted_per_project_counts INTO 'sorted_per_project_counts.out';
 
-year_month_ct      = FOREACH pageviews  GENERATE SUBSTRING(sighted_at, 0, 7) AS yrmo;
-sightings_hist     = FOREACH (GROUP year_month_ct BY yrmo) GENERATE
-  group, COUNT_STAR(year_month_ct);
-STORE sightings_hist INTO '/data/out/ufo/sightings_hist';
-
-
+/*
 LOAD SOURCE FILE
-TURN RECORD INTO HOUR PART OF TIMESTAMP AND COUNT
-GROUP BY HOUR
-SUM THE COUNTS BY HOUR
-ORDER THE RESULTS BY HOUR
+GROUP BY PROJECT NAME
+SUM THE PAGE VIEWS AND BYTES FOR EACH PROJECT
+ORDER THE RESULTS BY PAGE VIEWS, HIGHEST VALUE FIRST
 STORE INTO FILE
+*/
 ------
 
-// (TODO: If you do an order and then group, is Pig smart enough to not add an extra REDUCE stage?)
+Run the script just as you did above:
 
-// Run the script just as you did above:
-//
-// ----
-// (TODO: command to run the script)
-// ----
+------
+hadoop fs -cat sorted_per_project_counts.out/* | head -10
 
-Until now, we have described Pig as authoring the same Map/Reduce job you would. In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part. If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although TODO:x bytes were read by the Mapper, only TODO:y bytes were output. Pig instructed Hadoop to use a Combiner. In the naive Wukong job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (REF), the Mapper output files have already been partitioned and sorted. Hadoop offers you the opportunity to do pre-Aggregation on those groups. Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
+meta.m	14163318	42739631770
+en	8464555	271270368044
+meta.mw	8070652	10197686607
+en.mw	4793661	113071171104
+es	2105765	48775855730
+ru	1198414	38771387406
+es.mw	967440	16660332837
+de	967435	20956877209
+fr	870142	22441868998
+pt	633136	16647117186
+------
 
-// IMPROVEME:  Combiners in Wukong
+Until now, we have described Pig as authoring the same Map/Reduce job you would. In fact, Pig has automatically introduced the same optimizations an advanced practitioner would have introduced, but with no effort on your part. If you compare the Job Tracker Console output for this Pig job with the earlier ones, you’ll see that, although TODO:x bytes were read by the Mapper, only TODO:y bytes were output. Pig instructed Hadoop to use a Combiner. In the naive Python job, every Mapper output record was sent across the network to the Reducer but in Hadoop, as you will recall from (REF), the Mapper output files have already been partitioned and sorted. Hadoop offers you the opportunity to do pre-Aggregation on those groups. Rather than send every record for, say, August 8, 2008 8 pm, the Combiner outputs the hour and sum of visits  emitted by the Mapper.
 
 The second script instructed Pig to explicitly sort the output by minute, an additional operation. We did not do that in the first example because its data was so small that we had instructed Hadoop to use a single Reducer. As you will recall from the previous chapter (REF), Hadoop uses a Sort to prepare the Reducer groups, so its output was naturally ordered. If there are multiple Reducers, however, that would not be enough to give you a Result file you can treat as ordered. By default, Hadoop assigns partitions to Reducers using the ‘RandomPartitioner’, designed to give each Reducer a uniform chance of claiming any given partition. This defends against the problem of one Reducer becoming overwhelmed with an unfair share of records but means the keys are distributed willy-nilly across machines. Although each Reducer’s output is sorted, you will see records from 2008 at the top of each result file and records from 2012 at the bottom of each result file.
 

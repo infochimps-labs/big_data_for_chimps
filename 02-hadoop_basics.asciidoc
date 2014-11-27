@@ -131,7 +131,7 @@ Run the following commands to check out what lies on HDFS:
 hadoop fs -ls .
 ------
 
-The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-head` and `-tail` also work. Now check out /data:
+The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-get`, `-put` and `-tail` also work. Now check out /data:
 
 ------
 hadoop fs -ls /data/gold
