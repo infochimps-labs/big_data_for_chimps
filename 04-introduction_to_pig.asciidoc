@@ -337,38 +337,11 @@ A few lines of the relation `team_park_seasons` look like this:
 (BL3,{(1891,BAL06),(1891,BAL07),(1890,BAL06)})
 ------
 
-You can also address values within a bag using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples. You'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
-
-==== Complex Type 3, Maps: Collection of Key-Value Pairs for Lookup
-
-Pig offers a `map` datatype to represent a collection of key-value pairs. The only context we've seen them used is for loading JSON data. A tweet from the twitter firehose has a sub-hash holding info about the user; the following snippet loads raw JSON data, immediately fixes the schema, and then describes the new schema to you:
-
-------
-REGISTER piggybank.jar
-raw_tweets = LOAD '/tmp/tweets.json' USING org.apache.pig.piggybank.storage.JsonLoader(
-             'created_at:chararray, text:chararray, user:map[]');
-------
-
-A `map` schema is described using square brackets: `map[value_schema]`. You can leave the value schema blank if you supply one later (as in the example that follows). The keys of a map are _always_ of type chararray; the values can be any simple type. Pig renders a map as `[key#value,key#value,...]`: Flip's twitter user record as a hash would look like `[name#Philip (flip) Kromer,id#1554031,screen_name#mrflip]'.
-
-Apart from loading complex data, the `map` type is surprisingly useless. You might think it would be useful to carry around a lookup-table in a map field -- a mapping from ids to names, say -- and then index into it using the value of some other field, but a) you cannot do so and b) it isn't useful. The only thing you can do with a `map` field is dereference by a constant string, as we did above (`user#'id'`). Carrying around such a lookup table would be kind of silly, anyway, as you'd be duplicating it on every row. What you most likely want is either an off-the-cuff UDF or to use Pig's "replicated" `JOIN` operation; both are described in the chapter on Advanced Pig (TODO ref).
-
 ==== Defining the Schema of a Transformed Record
 
-Since the map type is mostly useless, we'll seize the teachable moment and use this space to illustrate the other way schema are constructed: using a `FOREACH`. As always when given a complex schema, we took the first available opportunity to simplify it. The `FOREACH` in the snippet above dereferences the elements of the user `map` and supplies a schema for each new field with the `AS <schema>` clauses. The `DESCRIBE` directive that follows causes Pig to dump the schema to console: in this case, you should see `tweets: {created_at: chararray,text: chararray,user_id: long,user_name: chararray,user_screen_name: chararray}`.
+You can also address values within a bag using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples. You'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
 
-------
-REGISTER piggybank.jar
-raw_tweets = LOAD '/tmp/tweets.json' USING org.apache.pig.piggybank.storage.JsonLoader(
-             'created_at:chararray, text:chararray, user:map[]');
-tweets = FOREACH raw_tweets GENERATE
-        created_at,
-        text,
-        user#'id' AS user_id:long,
-        user#'name' AS user_name:chararray,
-        user#'screen_name' AS user_screen_name:chararray;
-DESCRIBE tweets;
-------
+It is worth noting the way schema are constructed in the example above: using a `FOREACH`. The `FOREACH` in the snippet above emits two fields of the elements of the `bag` park_team_years, and supplies a schema for each new field with the `AS <schema>` clauses.
 
 In the chapter on Advanced Pig (REF), we'll cover some further topics: loading from alternate file formats or from databases; how Pig and Hadoop assign input file splits to mappers; and custom load/store functions.
 
