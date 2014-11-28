@@ -245,6 +245,16 @@ home_wins = FILTER games BY home_runs_ct > away_runs_ct;
 STORE home_wins INTO './home_wins.tsv';
 ------
 
+Note the output shows us how many records were read and written. This happens to tell us there are 206,015 games total, 111,890 or 54.3% of which were won by the home team. We have quantified the home field advantage!
+
+------
+Input(s):
+Successfully read 206015 records (6213566 bytes) from: "/data/gold/sports/baseball/games_lite.tsv"
+
+Output(s):
+Successfully stored 111890 records (3374003 bytes) in: "hdfs://nn:8020/user/chimpy/home_wins.tsv"
+------
+
 ==== Simple Types ====
 
 As you can see, the `LOAD` statement not only tells pig where to find the data, it also describes the table's schema. Pig understands ten kinds of simple type. Six of them are numbers: signed machine integers, as `int` (32-bit) or `long` (64-bit); signed floating-point numbers, as `float` (32-bit) or `double` (64-bit); arbitrary-length integers as `biginteger`; and arbitrary-precision real numbers, as `bigdecimal`. If you're supplying a literal value for a long, you should append a capital 'L' to the quantity: `12345L`; if you're supplying a literal float, use an 'f': `123.45f`.
@@ -266,29 +276,65 @@ Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, a
 Pig also has three complex types, representing collections of fields. A `tuple` is a fixed-length sequence of fields, each of which has its own schema. They're ubiquitous in the results of the various structural operations you're about to learn. We usually don't serialize tuples, but so far `LOAD` is the only operation we've taught you, so for pretend's sake here's how you'd load a listing of major-league ballpark locations:
 
 ------
-    -- The address and geocoordinates are stored as tuples. Don't do that, though.
-    ballpark_locations = LOAD 'ballpark_locations' AS (
-        park_id:chararray, park_name:chararray,
-        address:tuple(full_street:chararray, city:chararray, state:chararray, zip:chararray),
-        geocoordinates:tuple(lng:float, lat:float)
-    );
-    ballparks_in_texas = FILTER ballpark_locations BY (address.state == 'TX');
-    STORE ballparks_in_texas INTO '/tmp/ballparks_in_texas.tsv'
+-- The address and geocoordinates are stored as tuples. Don't do that, though.
+ballpark_locations = LOAD 'ballpark_locations' AS (
+    park_id:chararray, park_name:chararray,
+    address:tuple(full_street:chararray, city:chararray, state:chararray, zip:chararray),
+    geocoordinates:tuple(lng:float, lat:float)
+);
+ballparks_in_texas = FILTER ballpark_locations BY (address.state == 'TX');
+STORE ballparks_in_texas INTO '/tmp/ballparks_in_texas.tsv'
 ------
 
-Pig displays tuples using parentheses: it would dump a line from the input file as `BOS07,Fenway Park,(4 Yawkey Way,Boston,MA,02215),(-71.097378,42.3465909)'. As shown above, you address single values within a tuple using `tuple_name.subfield_name` -- for example, `address.state` will have the schema `state:chararray`. You can also create a new tuple that projects or rearranges fields from a tuple by writing `tuple_name.(subfield_a, subfield_b, ...)` -- for example, `address.(zip, city, state)` will have schema `address_zip_city_state:tuple(zip:chararray, city:chararray, state:chararray)`. (Pig helpfully generated a readable name for the tuple).
+Pig displays tuples using parentheses. It would dump a line from the input file as:
+
+------
+BOS07,Fenway Park,(4 Yawkey Way,Boston,MA,02215),(-71.097378,42.3465909)
+------
+
+As shown above, you address single values within a tuple using `tuple_name.subfield_name` -- for example, `address.state` will have the schema `state:chararray`. You can also create a new tuple that projects or rearranges fields from a tuple by writing `tuple_name.(subfield_a, subfield_b, ...)` -- for example, `address.(zip, city, state)` will have schema `address_zip_city_state:tuple(zip:chararray, city:chararray, state:chararray)`. (Pig helpfully generated a readable name for the tuple).
 
 Tuples can contain values of any type, even bags and other tuples, but that's nothing to be proud of. We follow almost every structural operation with a `FOREACH` to simplify its schema as soon as possible, and so should you -- it doesn't cost anything and it makes your code readable.
 
 ==== Complex Type 2, Bags: Unbounded Collection of Tuples
 
-A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Again for pretend's sake we can load a dataset listing for each team the year and park id of the ballparks it played in:
+A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Below we demonstrate the creation and storing of bags, as well as how to load them again. Here we prepare, store and load a dataset listing for each team the year and park id of the ballparks it played in:
+
+.Pig - Create, STORE and LOAD a Bag (ch_03/create_store_load_bag.pig)
+------
+park_team_years = LOAD '/data/gold/sports/baseball/park_team_years.tsv' USING PigStorage('\t') AS (
+    park_id:chararray, team_id:chararray, year:long, beg_date:chararray, end_date:chararray, n_games:long
+);
+team_park_seasons = FOREACH (GROUP park_team_years BY team_id) GENERATE 
+	group AS team_id, 
+	park_team_years.(year, park_id) AS park_years;
+	
+DESCRIBE team_park_seasons
+
+STORE team_park_seasons INTO './bag_of_park_years.txt';
+
+team_park_seasons = LOAD './bag_of_park_years.txt' AS (
+    team_id:chararray,
+    park_years: bag{tuple(year:int, park_id:chararray)}
+    );
+
+DESCRIBE team_park_seasons
+------
+
+A `DESCRIBE` of the data looks like so:
 
 ------
-    team_park_seasons = LOAD 'team_parks' AS (
-        team_id:chararray,
-        park_years: bag{tuple(year:int, park_id:chararray)}
-        );
+team_park_seasons: {team_id: chararray,park_years: {(year: long,park_id: chararray)}}
+------
+
+A few lines of the relation `team_park_seasons` look like this:
+
+------
+(BFN,{(1884,BUF02),(1882,BUF01),(1883,BUF01),(1879,BUF01),(1885,MIL02),(1885,ELM01),(1880,BUF01),(1881,BUF01),(1885,BUF02)})
+(BFP,{(1890,BUF03)})
+(BL1,{(1872,BAL02),(1873,BAL02),(1874,BAL02)})
+(BL2,{(1887,BAL03),(1883,BAL03),(1889,BAL06),(1885,BAL03),(1888,BAL03),(1886,BAL03),(1884,BAL03),(1882,BAL02)})
+(BL3,{(1891,BAL06),(1891,BAL07),(1890,BAL06)})
 ------
 
 You can also address values within a bag using `bag_name.(subfield_a, subfield_b)`, but this time the result is a bag with the given projected tuples. You'll see examples of this shortly when we discuss `FLATTEN` and the various group operations. Note that the _only_ type a bag holds is tuple, even if there's only one field -- a bag of just park ids would have schema `bag{tuple(park_id:chararray)}`.
