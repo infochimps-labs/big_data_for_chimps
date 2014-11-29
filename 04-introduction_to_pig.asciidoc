@@ -418,7 +418,7 @@ The `EXPLAIN` directive writes the "execution graph" of your job to the console.
 
 === Pig Functions act on fields
 
-Pig wouldn't be complete without a way to _act_ on the various fields.  It offers a sparse but essential set of built-in functions -- the Pig cheatsheet (TODO ref) at the end of the book gives a full list. The whole middle of the book is devoted to examples of Pig and map/reduce programs in practice (and in particular a chapter on Statistics), so we'll just list the highlights here:
+Pig wouldn't be complete without a way to _act_ on the various fields. It offers a sparse but essential set of built-in functions. Pig has builtin functions, as well as a rich collection of UDFs or 'User Defined Functions' in the https://github.com/apache/pig/tree/trunk/contrib/piggybank/java[Piggybank], and the http://datafu.incubator.apache.org/[Apache DataFu] project. The whole middle of the book is devoted to examples of Pig and map/reduce programs in practice, so we'll just list the highlights here:
 
 * *Math functions* for all the things you'd expect to see on a good calculator: `LOG`/`LOG10`/`EXP`, `RANDOM`, `ROUND`/’DOUND_TO`/`FLOOR`/`CEIL`, `ABS`, trigonometric functions, and so forth.
 * *String comparison*:
@@ -447,10 +447,34 @@ Pig wouldn't be complete without a way to _act_ on the various fields.  It offer
   - `TOP(num, column_index, bag)` selects the top `num` of elements from each tuple in the given bag, as ordered by `column_index`. This uses a clever algorithm that doesn't require an expensive total sort of the data -- you'll learn about it in the Statistics chapter (TODO ref)
 * *Conversion Functions* to perform higher-level type casting: `TOTUPLE`, `TOBAG`, `TOMAP`
 
-* Add all the DataFu operations: http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html and coalesce http://datafu.incubator.apache.org/docs/datafu/guide/more-tips-and-tricks.html and maybe others
-  - Hasher
+=== Piggybank
 
+Piggybank comes with Pig, all you have to do to access them is `REGISTER /usr/lib/pig/piggybank.jar;` At the time of writing, the Piggybank has the following Pig UDFs:
+
+`CustomFormatToISO`, `ISOToUnix`, `UnixToISO`, `ISODaysBetween`, `ISOHoursBetween`, `ISOMinutesBetween`, `ISOMonthsBetween`, `ISOSecondsBetween`, `ISOYearsBetween`, `DiffDate`, `ISOHelper`, `ISOToDay`, `ISOToHour`, `ISOToMinute`, `ISOToMonth`, `ISOToSecond`, `ISOToWeek`, `ISOToYear`, `Bin`, `BinCond`, `Decode`, `ExtremalTupleByNthField`, `IsDouble`, `IsFloat`, `IsInt`, `IsLong`, `IsNumeric`, `ABS`, `ACOS`, `ASIN`, `ATAN`, `ATAN2`, `Base`, `CBRT`, `CEIL`, `copySign`, `COS`, `COSH`, `DoubleAbs`, `DoubleBase`, `DoubleCopySign`, `DoubleDoubleBase`, `DoubleGetExponent`, `DoubleMax`, `DoubleMin`, `DoubleNextAfter`, `DoubleNextup`, `DoubleRound`, `DoubleSignum`, `DoubleUlp`, `EXP`, `EXPM1`, `FloatAbs`, `FloatCopySign`, `FloatGetExponent`, `FloatMax`, `FloatMin`, `FloatNextAfter`, `FloatNextup`, `FloatRound`, `FloatSignum`, `FloatUlp`, `FLOOR`, `getExponent`, `HYPOT`, `IEEEremainder`, `IntAbs`, `IntMax`, `IntMin`, `LOG`, `LOG10`, `LOG1P`, `LongAbs`, `LongMax`, `LongMin`, `MAX`, `MIN`, `nextAfter`, `NEXTUP`, `POW`, `RANDOM`, `RINT`, `ROUND`, `SCALB`, `SIGNUM`, `SIN`, `SINH`, `SQRT`, `TAN`, `TANH`, `toDegrees`, `toRadians`, `ULP`, `Util`, `MaxTupleBy1stField`, `Over`, `COR`, `COV`, `Stitch`, `HashFNV`, `HashFNV1`, `HashFNV2`, `INDEXOF`, `LASTINDEXOF`, `LcFirst`, `LENGTH`, `LookupInFiles`, `LOWER`, `RegexExtract`, `RegexExtractAll`, `RegexMatch`, `REPLACE`, `Reverse`, `Split`, `Stuff`, `SUBSTRING`, `Trim`, `UcFirst`, `UPPER`, `DateExtractor`, `HostExtractor`, `SearchEngineExtractor`, `SearchTermExtractor`, `SearchQuery`, `ToBag`, `Top`, `ToTuple`, `XPath`, `LoadFuncHelper`, `AllLoader`, `CombinedLogLoader`, `CommonLogLoader`, `AvroSchema2Pig`, `AvroSchemaManager`, `AvroStorage`, `AvroStorageInputStream`, `AvroStorageLog`, `AvroStorageUtils`, `PigAvroDatumReader`, `PigAvroDatumWriter`, `PigAvroInputFormat`, `PigAvroOutputFormat`, `PigAvroRecordReader`, `PigAvroRecordWriter`, `PigSchema2Avro`, `CSVExcelStorage`, `CSVLoader`, `DBStorage`, `FixedWidthLoader`, `FixedWidthStorer`, `HadoopJobHistoryLoader`, `HiveColumnarLoader`, `HiveColumnarStorage`, `HiveRCInputFormat`, `HiveRCOutputFormat`, `HiveRCRecordReader`, `HiveRCSchemaUtil`, `IndexedStorage`, `JsonMetadata`, `MultiStorage`, `MyRegExLoader`, `PathPartitioner`, `PathPartitionHelper`, `PigStorageSchema`, `RegExLoader`, `SequenceFileLoader`, `XMLLoader`, `TestOver`, `TestStitch`, `TestConvertDateTime`, `TestDiffDateTime`, `TestDiffDate`, `TestTruncateDateTime`, `TestDecode`, `TestHashFNV`, `TestLength`, `TestLookupInFiles`, `TestRegex`, `TestReverse`, `TestSplit`, `TestStuff`, `TestUcFirst`, `TestEvalString`, `TestExtremalTupleByNthField`, `TestIsDouble`, `TestIsFloat`, `TestIsInt`, `TestIsLong`, `TestIsNumeric`, `TestMathUDF`, `TestStat`, `TestDateExtractor`, `TestHostExtractor`, `TestSearchEngineExtractor`, `TestSearchTermExtractor`, `TestSearchQuery`, `TestToBagToTuple`, `TestTop`, `XPathTest`, `TestAvroStorage`, `TestAvroStorageUtils`, `TestAllLoader`, `TestCombinedLogLoader`, `TestCommonLogLoader`, `TestCSVExcelStorage`, `TestCSVStorage`, `TestDBStorage`, `TestFixedWidthLoader`, `TestFixedWidthStorer`, `TestHadoopJobHistoryLoader`, `TestHelper`, `TestHiveColumnarLoader`, `TestHiveColumnarStorage`, `TestIndexedStorage`, `TestLoadFuncHelper`, `TestMultiStorage`, `TestMultiStorageCompression`, `TestMyRegExLoader`, `TestPathPartitioner`, `TestPathPartitionHelper`, `TestRegExLoader`, `TestSequenceFileLoader`, and `TestXMLLoader`.
+
+To use a UDF, you must call on its full classpath. The `DEFINE` command can help you make a shortcut to the UDF. Define can also add any initialization parameters the UDF requires.
+
+------
+DEFINE Reverse org.apache.pig.piggybank.evaluation.string.Reverse();
+
+b = FOREACH a GENERATE Reverse(char_field) AS reversed_char_field;
+------
+
+=== Apache DataFu
+
+At the time of writing, Apache DataFu has the following Pig UDFs:
+
+`AppendToBag`, `BagConcat`, `BagGroup`, `BagJoin`, `BagLeftOuterJoin`, `BagSplit`, `CountEach`, `DistinctBy`, `EmptyBagToNull`, `EmptyBagToNullFields`, `Enumerate`, `FirstTupleFromBag`, `NullToEmptyBag`, `package-info`, `PrependToBag`, `ReverseEnumerate`, `UnorderedPairs`, `ZipBags`, `HaversineDistInMiles`, `package-info`, `HyperplaneLSH`, `package-info`, `CosineDistanceHash`, `LSH`, `LSHCreator`, `package-info`, `Sampler`, `L1PStableHash`, `L2PStableHash`, `LSHFamily`, `LSHFunc`, `Cosine`, `L1`, `L2`, `MetricUDF`, `package-info`, `AbstractStableDistributionFunction`, `L1LSH`, `L2LSH`, `package-info`, `package-info`, `RepeatingLSH`, `DataTypeUtil`, `package-info`, `MD5`, `package-info`, `SHA`, `package-info`, `PageRank`, `PageRankImpl`, `ProgressIndicator`, `package-info`, `RandInt`, `RandomUUID`, `package-info`, `Reservoir`, `ReservoirSample`, `SampleByKey`, `ScoredTuple`, `SimpleRandomSample`, `SimpleRandomSampleWithReplacementElect`, `SimpleRandomSampleWithReplacementVote`, `WeightedReservoirSample`, `WeightedSample`, `package-info`, `SessionCount`, `Sessionize`, `package-info`, `SetDifference`, `SetIntersect`, `SetOperationsBase`, `SetUnion`, `DoubleVAR`, `ChaoShenEntropyEstimator`, `CondEntropy`, `EmpiricalCountEntropy`, `EmpiricalEntropyEstimator`, `Entropy`, `EntropyEstimator`, `EntropyUtil`, `FloatVAR`, `HyperLogLogPlusPlus`, `IntVAR`, `LongVAR`, `MarkovPairs`, `Median`, `package-info`, `Quantile`, `QuantileUtil`, `StreamingMedian`, `StreamingQuantile`, `VAR`, `WilsonBinConf`, `CachedFile`, `POSTag`, `SentenceDetect`, `TokenizeME`, `TokenizeSimple`, `TokenizeWhitespace`, `package-info`, `URLInfo`, `UserAgentClassify`, `AliasableEvalFunc`, `Assert`, `AssertUDF`, `Base64Decode`, `Base64Encode`, `BoolToInt`, `Coalesce`, `ContextualEvalFunc`, `DataFuException`, `FieldNotFound`, `In`, `IntToBool`, `InUDF`, `SelectStringFieldByName`, `SimpleEvalFunc`, and `TransposeTupleToBag`.
+
+As in Piggybank, you must register the DataFu jar and then call on the full classpath of the UDF, or use `DEFINE` to make a shortcut:
+
+------
+DEFINE COALESCE datafu.pig.util.Coalesce();
+
+b = FOREACH a GENERATE COALESCE(field1, field2) AS coalesced;
+------
 
 === Moving right along …
 
-This chapter was a gentle introduction to Pig and its basic operations.  In the next two chapters, we'll see Pig in action. footnote:[Your authors struggled to not make a "see Pig fly" joke. Oh, wait, looks like we did …]
+This chapter was a gentle introduction to Pig and its basic operations.  In the next two chapters, we'll see Pig in action.
