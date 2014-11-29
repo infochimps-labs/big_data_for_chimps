@@ -456,6 +456,8 @@ Piggybank comes with Pig, all you have to do to access them is `REGISTER /usr/li
 To use a UDF, you must call on its full classpath. The `DEFINE` command can help you make a shortcut to the UDF. Define can also add any initialization parameters the UDF requires.
 
 ------
+REGISTER /usr/lib/pig/piggybank.jar
+
 DEFINE Reverse org.apache.pig.piggybank.evaluation.string.Reverse();
 
 b = FOREACH a GENERATE Reverse(char_field) AS reversed_char_field;
@@ -470,6 +472,8 @@ At the time of writing, Apache DataFu has the following Pig UDFs:
 As in Piggybank, you must register the DataFu jar and then call on the full classpath of the UDF, or use `DEFINE` to make a shortcut:
 
 ------
+REGISTER /usr/lib/pig/datafu.jar
+
 DEFINE COALESCE datafu.pig.util.Coalesce();
 
 b = FOREACH a GENERATE COALESCE(field1, field2) AS coalesced;
