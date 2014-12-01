@@ -1,17 +1,20 @@
 == Analytic Patterns: Map-only Operations
 
-This chapter focuses exclusively on what we'll call 'Map-only operations'.
-A map-only operation is one that can handle each record in isolation, like the translator chimps from Chimpanzee & Elephant Corp's first job. That property makes those operations trivially parallelizable: they require no reduce phase of their own.
+This chapter focuses exclusively on what we'll call 'Map-only operations'. A map-only operation is one that can handle each record in isolation, like the translator chimps from Chimpanzee & Elephant Corp's first job. That property makes those operations trivially parallelizable: they require no reduce phase of their own. 
 
-When a script has only map-only operations, they give rise to one mapper-only job which executes the composed pipeline stages. When map-only operations are combined with the structural operations you'll meet in the next chapter, they are composed with the stages of the mapper or reducer (depending on whether they come before or after the structural operation).
+Technically, these operations can be run in the map or reduce phase of map/reduce. When a script has only map-only operations, they give rise to one mapper-only job which executes the composed pipeline stages. When map-only operations are combined with the structural operations you'll meet in the next chapter, they are composed with the stages of the mapper or reducer (depending on whether they come before or after the structural operation).
 
 All of these are listed first and together for two reasons. One, they are largely fundamental; it's hard to get much done without `FILTER` or `FOREACH`. Two, the way you reason about the performance impact of these operations is largely the same. Since these operations are trivially paralellizable, they scale efficiently and the computation cost rarely impedes throughput. And when pipelined, their performance cost can be summarized as "kids eat free with purchase of adult meal". For datasets of any material size, it's very rare that the cost of preliminary or follow-on processing rivals the cost of the reduce phase. Finally, since these operations handle records in isolation, their memory impact is modest. So learn to think of these together.
 
 === Eliminating Data
 
-The first round of patterns will focus on methods to shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We finally develop models based on the entire population, not a sample thereof, so why should we scale down our data?
+The first round of patterns will focus on methods to shrink your dataset.  This may sound  counterintuitive to the novice ear: isn't the whole point of "Big Data" that we get to work with the entire dataset at once? We ultimately develop models based on the entire population, not a sample thereof, so why should we scale down our data?
 
-The primary reason is to focus on a subset of records: only website requests with an external referrer, only security events with high threat levels, only accounts of than $1 million. And even when you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research. For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. footnote:[This will certainly simplify debugging.  It also plays to Q's favorite refrain of, _know your data_.  If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model?  The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. (In essence: imagine saying you can predict today's high temperature, so long as you are first provided today's high temperature.) A feature leak can lead to painful surprises when you deploy this model to the real world.] Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. footnote:[This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.]  Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
+The primary reason is to focus on a subset of records: only website requests with an external referrer, only security events with high threat levels, only accounts of more than $1 million. And even when you work with every _record_ in a dataset, you may be interested in a subset of _fields_ relevant to your research. For reasons of memory and computational efficiency, and also your sanity, you'd do yourself a favor to immediately trim a working dataset down to just those records and fields relevant to the task at hand. Last, but not least, you may want to draw a random sample just to spot-check a dataset when it's too computationally expensive to inspect every element.
+
+Working with a sub-set of data will simplify debugging. It also plays to our favorite refrain of, _know your data_. If you're working on a dataset and there are additional fields or records you don't plan to use, can you be certain they won't somehow creep into your model? The worst-case scenario here is what's called a feature leak, wherein your target variable winds up in your training data. In essence: imagine saying you can predict today's high temperature, so long as you are first provided today's high temperature. A feature leak can lead to painful surprises when you deploy this model to the real world. 
+
+Furthermore, you may wish to test some code on a small sample before unleashing it on a long-running job. This is generally a good habit to develop, especially if you're one to kick off jobs before leaving the office, going to bed, or boarding a long-haul flight.
 
 The goal of course isn't to _eliminate_ data, it's to be _selective_ about your data, and so we will introduce you to a variety of techniques for doing so.
 
@@ -21,11 +24,12 @@ The first step to eliminating (or being selective about) data is to reject recor
 
 The baseball stats go back to 1871 (!), but it took a few decades for the game to reach its modern form.  Let's say we're only interested in seasons since 1900. In Pig, we apply the `FILTER` operation footnote:[In this and in further scripts, we're going omit the `LOAD`, `STORE` and other boilerplate except to prove a point. See the example code (REF) for fully-working snippets]:
 
+.Pig - Filter Data (ch_04/filtering_data.pig)
 ------
-modern_stats = FILTER bats BY (year_id >= 1900);
+modern_bats = FILTER bats BY (year_id >= 1900);
 ------
 
-The range of conditional expressions you'd expect are present: `==` (double-equals) to express an equality condition, `!=` for not-equals, and `>`, `>=`, `<`, `<=` for inequalities; `IN` for presence in a list; and `MATCHES` for string pattern matching. (More on those last two in a bit.)
+The range of conditional expressions you'd expect are present: `==` (double-equals) to express an equality condition, `!=` for not-equals, and `>`, `>=`, `<`, `<=` for inequalities; `IN` for presence in a list; and `MATCHES` for string pattern matching.
 
 ==== Selecting Records that Satisfy Multiple Conditions
 
@@ -33,6 +37,7 @@ In a data exploration, it's often important to exclude subjects with sparse data
 
 In Pig, you can also combine conditional statements with  `AND`, `OR`, `NOT`. The following selects we'll call "qualified modern seasons": regular players, competing in the modern era, in either of the two modern leagues.
 
+.Pig - Filter Data by Multiple Conditions (ch_04/filtering_data.pig)
 ------
 modsig_stats = FILTER bats BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
@@ -50,12 +55,12 @@ Another table we'll be working with is the `people` table. It describes players'
 
 We can exclude players whose birth year or birth place is unknown with a `FILTER` statement:
 
+.Pig - Filtering Nulls (ch_04/filtering_data.pig)
 ------
 borned = FILTER people BY (birth_year IS NOT NULL) AND (birth_place IS NOT NULL);
 ------
 
 For those coming from a SQL background, Pig's handling of `null` values will be fairly familiar. For the rest of us, good luck. Null values generally disappear without notice from operations, and generally compare as `null` (which signifies neither `false` nor `true`). And so `null` is not less than 5.0, it is not greater than 5.0, and it is not equal to 5.0. A null value is not equal to `null`, and is not _unequal_ to `null`. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
-
 
 ===== Pattern in Use
 
