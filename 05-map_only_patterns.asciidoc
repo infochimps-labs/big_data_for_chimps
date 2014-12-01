@@ -85,21 +85,20 @@ A `MATCHES` expression employs regular expression pattern matching against strin
 
 This operation uses a regular expression to select players with names similar to either of your authors' names:
 
+.Pig - Filtering via Regular Expressions (ch_04/filtering_data.pig)
 ------
--- Name contains a Q; is `Flip` or anything in the Philip/Phillip/... family. (?i) means be case-insensitive:
-namesakes = FILTER people BY (nameFirst MATCHES '(?i).*(q|flip|phil+ip).*');
+-- Name is `Russ`, or `Russell`; is `Flip` or anything in the Philip/Phillip/... family. (?i) means be case-insensitive:
+namesakes = FILTER people BY (name_first MATCHES '(?i).*(russ|russell|flip|phil+ip).*');
 ------
 
 It's easy to forget that people's names can contain spaces, dots, dashes, apostrophes; start with lowercase letters or apostrophes, and have accented or other non-latin characters footnote:[A demonstration of the general principle that if you believe an analysis involving people will be simple, you're probably wrong.]. So as a less silly demonstration of `MATCHES`, this snippet extracts all names which do not start with a capital letter or which contain a non-word non-space character:
 
+.Pig - Filtering via Regular Expressions (ch_04/filtering_data.pig)
 ------
-funnychars = FILTER people BY (nameFirst MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
+funnychars = FILTER people BY (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 ------
 
-TODO: state very explicitly that these are just Java regexes, and point to docco on that
-TODO: maybe rephrase the below as "How to convert from a sane Regexp to a Pig/Java Regexp"
-
-There are many players with non-word,non-space characters, but none whose names are represented as starting with a lowercase character. However, in early drafts of the book this query caught a record with the value "nameFirst" -- the header rows from a source datafile had contaminated the table. Sanity checks like these are a good idea always, even moreso in Big Data. When you have billions of records, a one-in-a-million exception will appear thousands of times.
+There are many players with non-word, non-space characters, but none whose names are represented as starting with a lowercase character. However, in early drafts of the book this query caught a record with the value "name_first" -- the header rows from a source datafile had contaminated the table. Sanity checks like these are a good idea always, even moreso in Big Data. When you have billions of records, a one-in-a-million exception will appear thousands of times.
 
 .Important Notes about String Matching
 ******
@@ -137,12 +136,13 @@ NOTE: Sadly, the Nobel Prize-winning physicists Gerard 't Hooft, Louis-Victor Pi
 
 If you plan to filter by matching against a small static list of values, Pig offers the handy `IN` expression: true if the value is equal (case-sensitive) to any of the listed values. This selects the stadiums used each year by the current teams in baseball's AL-east division:
 
+.Pig - Filtering Against a List of Values (ch_04/filtering_data.pig)
 ------
 al_east_parks = FILTER park_team_years BY
   team_id IN ('BAL', 'BOS', 'CLE', 'DET', 'ML4', 'NYA', 'TBA', 'TOR', 'WS2');
 ------
 
-Sometimes a regular expression alternation can be the right choice instead. `bubba MATCHES 'shrimp (kabobs|creole|gumbo|soup|stew|salad|and potatoes|burger|sandwich)' OR bubba MATCHES '(pineapple|lemon|coconut|pepper|pan.fried|deep.fried|stir.fried) shrimp'` is more readable than `bubba IN ('shrimp kabobs', 'shrimp creole', 'shrimp gumbo', ...)`.
+Sometimes a regular expression alternative can be the right choice instead. `bubba MATCHES 'shrimp (kabobs|creole|gumbo|soup|stew|salad|and potatoes|burger|sandwich)' OR bubba MATCHES '(pineapple|lemon|coconut|pepper|pan.fried|deep.fried|stir.fried) shrimp'` is more readable than `bubba IN ('shrimp kabobs', 'shrimp creole', 'shrimp gumbo', ...)`.
 
 When the list grows somewhat larger, an alternative is to read it into a set-membership data structure footnote:[For a dynamic language such as Ruby, it can often be both faster and cleaner to reformat the table into the language itself than to parse a data file. Loading the table is now a one-liner (`require "lookup_table"`), and there's nothing the Ruby interpreter does faster than interpret Ruby.], but ultimately large data sets belong in data files.
 
@@ -165,6 +165,7 @@ While a `FILTER` selects _rows_ based on an expression, Pig's `FOREACH` selects 
 
 The tables we're using come with an overwhelming wealth of stats, but we only need a few of them to do fairly sophisticated explorations. The gamelogs table has more than 90 columns; to extract just the teams and the final score, use a FOREACH:
 
+.Pig - Projecting Only Chosen Columns by Name (ch_04/filtering_data.pig)
 ------
 game_scores = FOREACH games GENERATE
   away_team_id, home_team_id, home_runs_ct, away_runs_ct;
