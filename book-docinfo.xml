@@ -1,7 +1,13 @@
-<author>
-  <firstname>Philip (flip)</firstname>
-  <surname>Kromer</surname>
-</author>
+<authorgroup>
+	<author>
+  	<firstname>Philip (flip)</firstname>
+  	<surname>Kromer</surname>
+	</author>
+	<author>
+		<firstname>Russell</firstname>
+		<surname>Jurney</surname>
+	<author>
+</authorgroup>
 
 <publisher>
   <publishername>O’Reilly Media, Inc.</publishername>
