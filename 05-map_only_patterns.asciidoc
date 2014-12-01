@@ -165,7 +165,7 @@ While a `FILTER` selects _rows_ based on an expression, Pig's `FOREACH` selects 
 
 The tables we're using come with an overwhelming wealth of stats, but we only need a few of them to do fairly sophisticated explorations. The gamelogs table has more than 90 columns; to extract just the teams and the final score, use a FOREACH:
 
-.Pig - Projecting Only Chosen Columns by Name (ch_04/filtering_data.pig)
+.Pig - Projecting Only Chosen Columns by Name (ch_04/data_elimination.pig)
 ------
 game_scores = FOREACH games GENERATE
   away_team_id, home_team_id, home_runs_ct, away_runs_ct;
@@ -175,6 +175,7 @@ game_scores = FOREACH games GENERATE
 
 You're not limited to simply restricting the number of columns; you can also rename and reorder them in a projection. Each record in the table above has _two_ game outcomes, one for the home team and one for the away team. We can represent the same data in a table listing outcomes purely from each team's perspective:
 
+.Pig - Altering Column Names (ch_04/data_elimination.pig)
 ------
 games_a = FOREACH games GENERATE
   year_id, home_team_id AS team,
@@ -209,6 +210,7 @@ Another common operation is to extract a _uniform_ sample -- one where every rec
 
 The following Pig code will return a randomly-selected 10% (that is, 1/10 = 0.10) of the records from our baseball dataset:
 
+.Pig - Sampling Data (ch_04/data_elimination.pig)
 ------
 some_seasons_samp = SAMPLE bat_seasons 0.10;
 ------
@@ -234,14 +236,12 @@ A good way to stabilize the sample from run to run is to use a 'consistent hash 
 
 Unfortunately, Pig doesn't have a good built-in hash digest function! Do we have to give up all hope? You'll find the answer later in the chapter (REF) footnote:[Spoiler alert: No, you don't have to give up all hope when Pig lacks a built-in function you require.], but for now instead of using a good built-in hash digest function let's use a terrible hash digest function. A bit under 10% of player_ids start with the letter 's', and any coupling between a player's name and performance would be far more subtle than we need to worry about. So the following simple snippet gives a 10% sample of batting seasons whose behavior should reasonably match that of the whole:
 
+.Pig - Extracting a Consistent Sample (ch_04/data_elimination.pig)
 ------
 some_seasons  = FILTER bat_seasons BY (SUBSTRING(player_id, 0, 1) == 's');
 ------
 
-We called this a terrible hash function, but it does fit the bill. When applied to an arbitrary serial identifier it's not terrible at all -- the Twitter firehose provides a 1% service tier which returns only tweets from users whose numeric ID ends in '00', and a 10% tier with user IDs ending in `0`. We'll return to the subject with a proper hash digest function later on in the chapter, once you're brimming with even more smartitude than you are right now. We'll also have a lot more to say about sampling in the Statistics chapter (REF).
-
-// I don't want to have to explain this, so I'm omitting unless you think I must include: "Make sure you're matching against the end (least significant) digits ... (Explanation why)"
-
+We called this a terrible hash function, but it does fit the bill. When applied to an arbitrary serial identifier it's not terrible at all -- the Twitter firehose provides a 1% service tier which returns only tweets from users whose numeric ID ends in '00', and a 10% tier with user IDs ending in `0`. We'll return to the subject with a proper hash digest function later on in the chapter, once you're brimming with even more smartitude than you are right now. 
 
 * _Where You'll Use It_  -- At the start of the exploration,
 * _Important to Know_
@@ -258,8 +258,9 @@ Sometimes you just want to knock down the data size while developing your script
 
 A much blunter way to create a smaller dataset is to take some fixed number 'K' of records. Pig offers the `LIMIT` operator for this purpose. To select 25 records from our `bat_seasons` data, you would run:
 
+.Pig - Selecting N Arbitrary Records (ch_04/data_elimination.pig)
 ------
-some_players = LIMIT player_year_stats 25;
+some_players = LIMIT bat_seasons 25;
 ------
 
 This is somewhat similar to running the `head` command in Unix-like operating systems, or using the `LIMIT` clause in a SQL `SELECT` statement.
@@ -281,14 +282,15 @@ The `FOREACH` lets you develop simple transformations based on each record. It's
 
 To start with a basic example, this `FOREACH` statement combines the fields giving the city, state and country of birth for each player into the familiar comma-space separated combined form (`Austin, TX, USA`) footnote:[The country field uses some ad-hoc mixture of full name and arbitrary abbreviations.  In practice, we would have converted the country fields to use ISO two-letter abbreviations -- and that's just what we'll do in a later section (REF)].
 
+.Pig - FOREACH Example One (ch_04/foreach.pig)
 ------
 birthplaces = FOREACH people GENERATE
     player_id,
-    CONCAT(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc
+    StringConcat(birth_city, ', ', birth_state, ', ', birth_country) AS birth_loc
     ;
 ------
 
-The syntax should be largely self-explanatory: this runs through the people table, and outputs a table with two columns, the player ID and our synthesized string. In the output you'll see that when `CONCAT` encounters records with `null` values, it returned `null` as well without an error.
+The syntax should be largely self-explanatory: this runs through the people table, and outputs a table with two columns, the player ID and our synthesized string. In the output you'll see that when `StringConcat` encounters records with `null` values, it returned `null` as well without an error.
 
 For the benefit of SQL aficionados, here's an equivalent SQL query:
 
@@ -313,7 +315,7 @@ A `FOREACH` won't cause a new Hadoop job stage: it's chained onto the end of the
 
 Earlier we promised you a storyline in the form of an extended exploration of player performance. We've now gathered enough tactical prowess to set out footnote:[We also warned you we'd wander away from it frequently -- the bulk of it sits in the next chapter.].
 
-The stats in the `bat_seasons` table are all "counting stats" -- total numbers of hits, of games, and so forth -- and certainly from the team's perspective the more hits the more better. But for comparing players, the counting stats don't distinguish between the player who eared 70 hits in a mere 200 trips to the plate before a season-ending injury, and the player who squandered 400 of his team's plate appearances getting to a similar total  footnote:[Here's to you, 1970 Rod Carew and 1979 Mario Mendoza]. We should also form "rate stats", normalizing those figures against plate appearances. The following simple metrics do quite a reasonable job of characterizing players' performance:
+The stats in the `bat_seasons` table are all "counting stats" -- total numbers of hits, of games, and so forth -- and certainly from the team's perspective the more hits the better. But for comparing players, the counting stats don't distinguish between the player who eared 70 hits in a mere 200 trips to the plate before a season-ending injury, and the player who squandered 400 of his team's plate appearances getting to a similar total  footnote:[Here's to you, 1970 Rod Carew and 1979 Mario Mendoza]. We should also form "rate stats", normalizing those figures against plate appearances. The following simple metrics do quite a reasonable job of characterizing players' performance:
 
 * 'On-base percentage' (`OBP`) indicates how well the player meets offensive goal #1: get on base, thus becoming a potential run and _not_ consuming a precious out. It is given as the fraction of plate appearances that are successful: (`(H + BB + HBP) / PA`) footnote:[Although known as percentages, OBP and SLG are always given as fractions to 3 decimal places. For OBP, we're also using a slightly modified formula to reduce the number of stats to learn. It gives nearly identical results but you will notice small discrepancies with official figures]. An `OBP` over 0.400 is very good (better than 95% of significant seasons).
 
@@ -323,6 +325,7 @@ The stats in the `bat_seasons` table are all "counting stats" -- total numbers o
 
 Doing this with the simple form of `FOREACH` we've been using would be annoying and hard to read -- for one thing, the expressions for OBP and SLG would have to be repeated in the expression for OPS, since the full statement is evaluated together. Pig provides a fancier form of `FOREACH` (a 'nested' `FOREACH`) that allows intermediate expressions:
 
+.Pig - Nested FOREACH (ch_04/foreach.pig)
 ------
 bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
 core_stats  = FOREACH bat_seasons {
@@ -345,14 +348,13 @@ You'll notice that we multiplied by `1.0` while calculating `OBP` and `SLG`. If 
 
 By the way, the filter above is sneakily doing two things. It obviously eliminates records where `PA` is equal to zero, but it also eliminates records where `PA` is `null`. (See the section "Selecting or Rejecting Records with `null` Values" (REF) above for details.)
 
-// TODO-reviewer: In practice what I would write is what is above, using `1.0f` to get a float value. I want to talk about the integer arithmetic but not have to call this nitty little detail out; it's clarified three paragraphs later. Do we (a) write `1.0f` and sneak it by, describing it below (the way it is now); (b) write `1.0` and then fix it up below, or (c) write `1.0f` and call it out?
-
 In addition to applying arithmetic expressions and functions, there are a set of _operations_ (`ORDER`, `DISTINCT`, `FOREACH`, `FILTER`, `LIMIT`) you can apply to bags within a nested FOREACH. We'll wait until the section on grouping operations to introduce their nested-foreach ("inner bag") forms.
 
 ==== Formatting a String According to a Template
 
 The `SPRINTF` function is a great tool for assembling a string for humans to look at. It uses the printf-style templating convention common to C and many other languages to assemble strings with consistent padding and spacing. It's best learned by seeing it in action:
 
+.Pig - Formatting Strings (ch_04/foreach.pig)
 ------
 formatted = FOREACH bat_seasons GENERATE
   SPRINTF('%4d\t%-9s %-19s\tOBP %5.3f / %-3s %-3s\t%4$012.3e',
@@ -392,7 +394,7 @@ The parts of the template are as follows:
   - Each of the preceding has pulled its value from the next argument in sequence. Here, the `4$` part of the specifier uses the value of the fourth non-template argument (the OBP) instead.
   - The remaining `012.3e` part of the specifier says to use scienfific notation, with three decimal places and twelve total characters. Since the strings don't reach full width, their decimal parts are padded with zeroes. When you're calculating the width of a scientific notation field, don't forget to include the _two_ sign characters: one for the number and one for the exponent
 
-We won't go any further into the details, as the `SPRINTF` function is well documented (REF) and examples of printf-style templating abound on the web. But this is a useful and versatile tool, and if you're able to mimic the elements used above you understand its essentials.
+We won't go any further into the details, as the `SPRINTF` function is http://pig.apache.org/docs/r0.14.0/api/org/apache/pig/builtin/SPRINTF.html:[well documented] and examples of printf-style templating abound on the web. But this is a useful and versatile tool, and if you're able to mimic the elements used above you understand its essentials.
 
 ==== Assembling Literals with  Complex Types
 
@@ -400,15 +402,21 @@ Another reason you may need the nested form of `FOREACH` is to assemble a comple
 
 ===== Parsing a Date
 
-.Assembling Complex Types
+.Pig - Assembling Complex Types (ch_04/foreach.pig)
 ------
-date_converted = FOREACH people {
-  beg_dt   = ToDate(CONCAT(beg_date, 'T00:00:00.000Z'));
-  end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
-  birth_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1)));
-  death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
+REGISTER /usr/lib/pig/datafu.jar
+DEFINE Coalesce datafu.pig.util.Coalesce();
+DEFINE SPRINTF datafu.pig.util.SPRINTF();
 
-  GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt, name_first, name_last;
+people = FILTER people BY (beg_date IS NOT NULL) AND (end_date IS NOT NULL) AND (birth_year IS NOT NULL) AND (death_year IS NOT NULL);
+
+date_converted = FOREACH people {
+    beg_dt   = ToDate(CONCAT(beg_date, 'T00:00:00.000Z'));
+    end_dt   = ToDate(end_date, 'yyyy-MM-dd', '+0000');
+    birth_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', birth_year, Coalesce(birth_month,1), Coalesce(birth_day,1)));
+    death_dt = ToDate(SPRINTF('%s-%s-%sT00:00:00Z', death_year, Coalesce(death_month,1), Coalesce(death_day,1)));
+
+    GENERATE player_id, birth_dt, death_dt, beg_dt, end_dt, name_first, name_last;
 };
 ------
 
@@ -441,34 +449,35 @@ NOTE: Apart from subtracting one epoch milliseconds from another to get a durati
 
 ===== Assembling a Bag
 
-.Assembling Complex Types
+We can take things further and assemble truly complex records of bags of tuples, and nested tuples.
+
+.Pig - Assembling Very Complex Types (ch_04/foreach.pig)
 ------
 graphable = FOREACH people {
-  birth_month = Coalesce(birth_month, 1); birth_day = Coalesce(birth_day, 1);
-  death_month = Coalesce(death_month, 1); death_day = Coalesce(death_day, 1);
-  beg_dt   = ToDate(beg_date);
-  end_dt   = ToDate('yyyy-MM-dd', end_date);
-  birth_dt = ToDate(SPRINTF('%s-%s-%s', birth_year, birth_month, birth_day));
-  death_dt = ToDate(SPRINTF('%s-%s-%s', death_year, death_month, death_day));
-  --
-  occasions = {
-      ('birth', birth_year, birth_month, birth_day),
-      ('death', death_year, death_month, death_day),
-      ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
-      ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
+    birth_month = Coalesce(birth_month, 1); birth_day = Coalesce(birth_day, 1);
+    death_month = Coalesce(death_month, 1); death_day = Coalesce(death_day, 1);
+    beg_dt   = ToDate(beg_date);
+    end_dt   = ToDate('yyyy-MM-dd', end_date);
+    birth_dt = ToDate(SPRINTF('%s-%s-%s', birth_year, birth_month, birth_day));
+    death_dt = ToDate(SPRINTF('%s-%s-%s', death_year, death_month, death_day));
+    --
+    occasions = {
+        ('birth', birth_year, birth_month, birth_day),
+        ('death', death_year, death_month, death_day),
+        ('debut', (int)SUBSTRING(beg_date,0,4), (int)SUBSTRING(beg_date,5,7), (int)SUBSTRING(beg_date,8,10)),
+        ('lastg', (int)SUBSTRING(end_date,0,4), (int)SUBSTRING(end_date,5,7), (int)SUBSTRING(end_date,8,10))
     };
-  --
-  places = (
-    (birth_dt, birth_city, birth_state, birth_country),
-    (birth_dt, death_city, death_state, death_country),
-    (beg_dt,   null,       null,        null),
-    (end_dt));
+    --
+    places = (
+        (birth_dt, birth_city, birth_state, birth_country),
+        (death_dt, death_city, death_state, death_country)
+    );
 
-  GENERATE
+    GENERATE
     player_id,
-    occasions AS occasions:bag{t:(occasion:chararray, year:int, month:int, day:int)},
-    places    AS places:tuple( birth:tuple(city, state, country),
-                               death:tuple(city, state, country) )
+    occasions AS occasions:bag{occasion:(name:chararray, year:int, month:int, day:int)},
+    places    AS places:tuple( birth:tuple(date, city, state, country),
+                               death:tuple(date, city, state, country) )
     ;
 };
 ------
@@ -476,32 +485,17 @@ graphable = FOREACH people {
 
 The `occasions` intermediate alias is a bag of event tuples holding a chararray and three ints. Bags are disordered (unless you have transiently applied an explicit sorted), and so we've prefixed each event with a slug naming the occasion.
 
-You can do this inline (non-nested `FOREACH`) but we wouldn't. If you find yourself with the error `Error during parsing. Encountered " "as" "AS "" at line X`, just pay for the ext
-
-===== Assembing a Tuple
-
-* how tupple is made
-
-==== Specifying Schema for Complex Types
-
-TODO: clean up
-
-* how bag is made
-
-* We may not have needed to write out the types -- it's likely that
-  `occasions:bag{t:(occasion, year, month, day)}` would suffice. But this is another scenario where if you ask the question "Hey, do I need to specify the types or will Pig figure it out?" you've answered the question: yes, state them explicitly. The important point isn't whether Pig will figure it out, it's whether stupider-you at 3 am will figure it out.
-
-* how tupple is made
+You can do this inline (non-nested `FOREACH`) but we wouldn't, as it is not readable.
 
 ==== Manipulating the Type of a Field
 
-We used `CONCAT` to combine players' city, state and country of birth into a combined field without drama. But if we tried to do the same for their date of birth by writing `CONCAT(birth_year, '-', birth_month, '-', birth_day)`, Pig would throw an error: `Could not infer the matching function for org.apache.pig.builtin.CONCAT...`. You see, `CONCAT` understandably wants to consume and deliver strings, and so isn't in the business of guessing at and fixing up types. What we need to do is coerce the `int` values -- eg, `1961`, a 32-bit integer -- into `chararray` values -- eg `'1961'`, a string of four characters. You do so using C-style typecast expression: `(chararray)birth_year`. Here it is in action:
+We used `StringConcat` to combine players' city, state and country of birth into a combined field without drama. But if we tried to do the same for their date of birth by writing `StringConcat(birth_year, '-', birth_month, '-', birth_day)`, Pig would throw an error: `Could not infer the matching function for org.apache.pig.builtin.StringConcat...`. You see, `StringConcat` understandably wants to consume and deliver strings, and so isn't in the business of guessing at and fixing up types. What we need to do is coerce the `int` values -- eg, `1961`, a 32-bit integer -- into `chararray` values -- eg `'1961'`, a string of four characters. You do so using C-style typecast expression: `(chararray)birth_year`. Here it is in action:
 
 ------
 birthplaces = FOREACH people GENERATE
     player_id,
-    CONCAT((chararray)birth_year, '-', (chararray)birth_month, '-', (chararray)birth_day) AS birth_date
-  ;
+    StringConcat((chararray)birth_year, '-', (chararray)birth_month, '-', (chararray)birth_day) AS birth_date
+;
 ------
 
 In other cases you don't need to manipulate the type going in to a function, you need to manipulate the type going out of your `FOREACH`. Here are several takes on a `FOREACH` statement to find the slugging average:
