@@ -361,15 +361,15 @@ Try removing the STORE line from the script above, and re-run the script. You'll
 The behavior of only evaluating on demand is an incredibly useful feature for development work. One of the best pieces of advice we can give you is to checkpoint all the time. Smart data scientists iteratively develop the first few transformations of a project, then save that result to disk; working with that saved checkpoint, develop the next few transformations, then save it to disk; and so forth. Here's a demonstration:
 
 ------
-    great_start = LOAD '...' AS (...);
-    -- ...
-    -- lots of stuff happens, leading up to
-    -- ...
-    important_milestone = JOIN [...];
+great_start = LOAD '...' AS (...);
+-- ...
+-- lots of stuff happens, leading up to
+-- ...
+important_milestone = JOIN [...];
 
-    -- reached an important milestone, so checkpoint to disk.
-    STORE important_milestone INTO './important_milestone.tsv';
-        important_milestone = LOAD './important_milestone.tsv' AS (...schema...);
+-- reached an important milestone, so checkpoint to disk.
+STORE important_milestone INTO './important_milestone.tsv';
+    important_milestone = LOAD './important_milestone.tsv' AS (...schema...);
 ------
 
 // TODO cover the STORE_TABLE / LOAD_RESULT macros
