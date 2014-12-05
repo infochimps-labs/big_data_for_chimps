@@ -1,3 +1,31 @@
 = Big Data for Chimps
 
-include::02-feedback_and_response.asciidoc[]
+include::02-hadoop_basics.asciidoc[]
+
+include::03-map_reduce.asciidoc[]
+
+include::03.9-introducing-baseball-data.asciidoc[]
+
+include::04---part_two-patterns.asciidoc[]
+
+include::04-introduction_to_pig.asciidoc[]
+
+include::05-map_only_patterns.asciidoc[]
+
+include::06-grouping_patterns.asciidoc[]
+
+include::07-joining_patterns.asciidoc[]
+
+include::08-ordering_patterns.asciidoc[]
+
+include::09-uniquing-patterns.asciidoc[]
+
+include::12---part_three-applications.asciidoc[]
+
+include::14a-spatial-intro.asciidoc[]
+
+include::14b-spatial-mechanics.asciidoc[]
+
+include::14c-spatial-aggregations_on_regions.asciidoc[]
+
+include::14d-spatial-joins_on_regions.asciidoc[]

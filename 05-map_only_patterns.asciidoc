@@ -491,6 +491,7 @@ You can do this inline (non-nested `FOREACH`) but we wouldn't, as it is not read
 
 We used `StringConcat` to combine players' city, state and country of birth into a combined field without drama. But if we tried to do the same for their date of birth by writing `StringConcat(birth_year, '-', birth_month, '-', birth_day)`, Pig would throw an error: `Could not infer the matching function for org.apache.pig.builtin.StringConcat...`. You see, `StringConcat` understandably wants to consume and deliver strings, and so isn't in the business of guessing at and fixing up types. What we need to do is coerce the `int` values -- eg, `1961`, a 32-bit integer -- into `chararray` values -- eg `'1961'`, a string of four characters. You do so using C-style typecast expression: `(chararray)birth_year`. Here it is in action:
 
+.Pig - Manipulating Field Types (ch_04/types.pig)
 ------
 birthplaces = FOREACH people GENERATE
     player_id,
@@ -500,6 +501,7 @@ birthplaces = FOREACH people GENERATE
 
 In other cases you don't need to manipulate the type going in to a function, you need to manipulate the type going out of your `FOREACH`. Here are several takes on a `FOREACH` statement to find the slugging average:
 
+.Pig - Managing Floating Point Schemas (ch_04/types.pig)
 ------
 obp_1 = FOREACH bat_seasons {
   OBP = 1.0f * (H + BB + HBP) / PA; -- constant is a float
@@ -540,6 +542,7 @@ In the fourth stanza, the constant was given as a double. However, this time the
 
 Another occasion for type conversion comes when you are trying to round or truncate a fractional number. The first four fields of the following statement turn the full-precision result of calculating OBP (`0.31827113`) into a result with three fractional digits (`0.318`), as OBP is usually represented.
 
+.Pig - Rounding (ch_04/types.pig)
 ------
 rounded = FOREACH bat_seasons GENERATE
   (ROUND(1000.0f*(H + BB + HBP) / PA)) / 1000.0f AS round_and_typecast,
@@ -560,8 +563,6 @@ That is why the formulation we would actually use to find a rounded number is th
 
 ==== Calling a User-Defined Function (UDF) from an External Package
 
-In the section on "Extracting a Consistent Sample of Records by Key",
-
 You can extend Pig's functionality with 'User-Defined Functions' (UDFs) written in Java, Python, Ruby, Javascript and others. These have first-class functionality -- almost all of Pig's native functions are actually Java UDFs that just happen to live in a builtin namespace. We'll describe how to author a UDF in a later chapter (REF), but this is a good time to learn how to call one.
 
 The DataFu package is an collection of Pig extensions open-sourced by LinkedIn, and in our opinion everyone who uses Pig should install it. It provides the most important flavors of hash digest and checksum you need in practice, and explains how to choose the right one. For consistent hashing purposes, the right choice is the "Mumur 3" function footnote:[Those familiar with the MD5 or SHA hashes might have expected we'd use one of them. Those would work as well, but Murmur3 is faster and has superior statistical properties; for more, see the DataFu documentation. Oh and if you're not familiar with any of the stuff we just said: don't worry about it, just know that `'murmur3-32'` is what you should type in.], and since we don't need many bytes we'll use the 32-bit flavor.
@@ -570,40 +571,23 @@ You must do two things to enable use of a UDF. First, so that pig can load the U
 
 Second, use the `DEFINE` command to construct it. `DEFINE` takes two arguments, separated by spaces: the short name you will use to invoke the command, and the fully-qualified package name of its class (eg `datafu.pig.hash.Hasher`). Some UDFs, including the one we're using, accept or require constructor arguments (always strings). These are passed function-call style, as shown below. There's nothing wrong with `DEFINE`-ing a UDF multiple times with different constructor arguments -- for example, adding a line `DEFINE DigestMD5  datafu.pig.hash.Hasher('md5');` would create a hash function that used the MD5 (REF) algorithm.
 
+.Pig - REGISTERing jars and Using UDFs (ch_04/udf.pig)
 ------
--- Please substitute the right path (and for citizens of the future, the right version number)
-REGISTER       '/path/to/data_science_fun_pack/pig/datafu/datafu-pig/build/libs/datafu-pig-1.2.1.jar';
--- Murmur3, 32 bit version: a fast statistically smooth hash digest function
-DEFINE Digest  datafu.pig.hash.Hasher('murmur3-32');
+bat_seasons = LOAD '/data/gold/sports/baseball/bat_seasons.tsv' USING PigStorage('\t') AS (
+    player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
+    year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
+    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,  --  $6-$12
+    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int  -- $13-$19
+);
+bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
 
 -- Prepend a hash of the player_id
 keyed_seasons = FOREACH bat_seasons GENERATE Digest(player_id) AS keep_hash, *;
 
+-- Prepare a reproducible sample of bat seasons
 some_seasons  = FOREACH (
     FILTER keyed_seasons BY (SUBSTRING(keep_hash, 0, 1) == '0')
   ) GENERATE $0..;
-------
-
-There are three ways to accomplish this.
-
-One is to use the `REGISTER` keyword, demonstrated below. This is by far the simplest option, but our least favorite. Every source file becomes contaminated by a line that is machine-dependent and may break when packages are updated.
-
-===== Enabling UDFs using Java Properties
-
-Lastly, you can set the `pig.additional.jars` and `udf.import.list` java properties. For packages that you want to regard as being effectively built-in, this is our favorite method -- but the hardest to figure out. We can't go into the details (see the Pig documentation, there are many) but we can show you how to match what we used above:
-
-.Using Pig Properties to Enable UDFs
-------
-# Remove backslashes and spaces: these must sit on the same line
-pig.additional.jars=\
-  /path/to/data_science_fun_pack/pig/datafu/datafu-pig/build/libs/datafu-pig-1.2.1.jar:\
-  /path/to/data_science_fun_pack/pig/pig/contrib/piggybank/java/piggybank.jar:\
-  /path/to/data_science_fun_pack/pig/pigsy/target/pigsy-2.1.0.jar
-
-# Remove backslashes and spaces: these also must sit on the same line
-udf.import.list=\
-  datafu.pig.bags:datafu.pig.hash:datafu.pig.stats:datafu.pig.sets:datafu.pig.util:\
-  org.apache.pig.piggybank.evaluation:pigsy.text
 ------
 
 === Operations that Break One Table Into Many

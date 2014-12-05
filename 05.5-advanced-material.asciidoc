@@ -110,9 +110,29 @@ One is to perform a final `ORDER BY` operation footnote:[The tuning chapter (REF
 
 Sorting is a fairly expensive operation, though; luckily, Pig can do this reasonably well with a mapper-only job by setting the `pig.splitCombination` configuration to true and setting `pig.maxCombinedSplitSize` to the size of the input divided by the number of files you'd like to produce.
 
+REGISTERING STUFF IN PIG BELOW
+
 ----
 set pig.splitCombination true;
 set pig.maxCombinedSplitSize 2100100100;
 ----
 
 The `maxCombinedSplitSize` should be much larger than the HDFS block size so that blocks are fully used. Also note the old sailor's trick in the last line -- since there's no essential difference between 2 billion bytes, 2 gigabytes, or a number nearby, the value `2100100100` is much easier to read accurately than `2000000000` or `2147483648`.
+
+===== Enabling UDFs using Java Properties
+
+Lastly, you can set the `pig.additional.jars` and `udf.import.list` java properties. For packages that you want to regard as being effectively built-in, this is our favorite method -- but the hardest to figure out. We can't go into the details (see the Pig documentation, there are many) but we can show you how to match what we used above:
+
+.Using Pig Properties to Enable UDFs
+------
+# Remove backslashes and spaces: these must sit on the same line
+pig.additional.jars=\
+  /path/to/data_science_fun_pack/pig/datafu/datafu-pig/build/libs/datafu-pig-1.2.1.jar:\
+  /path/to/data_science_fun_pack/pig/pig/contrib/piggybank/java/piggybank.jar:\
+  /path/to/data_science_fun_pack/pig/pigsy/target/pigsy-2.1.0.jar
+
+# Remove backslashes and spaces: these also must sit on the same line
+udf.import.list=\
+  datafu.pig.bags:datafu.pig.hash:datafu.pig.stats:datafu.pig.sets:datafu.pig.util:\
+  org.apache.pig.piggybank.evaluation:pigsy.text
+------
