@@ -111,7 +111,7 @@ Which will result in:
 
 Note that 256 records had no such value - data will often surprise you. You might filter these empty values, or look closer at the raw data to see what is going on. Also, did you notice the output was sorted? That is no coincidence -- as you saw in Chapter 2, Hadoop sorted the results in order to group them. Sorting in this case is free! We'll learn how to explicitly sort data in Pig in a future chapter.
 
-image::images/images/03-first-pig-run.png["First Pig Script Run, and Result"]
+image::images/03-first-pig-run.png["First Pig Script Run, and Result"]
 
 ==== Wikipedia Visitor Counts
 
