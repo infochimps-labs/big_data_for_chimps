@@ -59,7 +59,8 @@ Apache Pig is an open-source, high-level language that enables you to create eff
 
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
-.Pig - UFO Sightings by Month (ch_03/ufos_by_month.pig)
+[source,sql]
+.UFO Sightings by Month (ch_03/ufos_by_month.pig)
 ------
 sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv'  AS (
     sighted_at: chararray,   reported_at: chararray,    location_str: chararray, shape: chararray,
@@ -117,7 +118,8 @@ image::images/03-first-pig-run.png["First Pig Script Run, and Result"]
 
 Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset, and this time to assemble counts by hour:
 
-.Pig - Wikipedia Page Views/Total Bytes by Project (ch_03/wikipedia_page_counts.pig)
+[source,sql]
+.Wikipedia Page Views/Total Bytes by Project (ch_03/wikipedia_page_counts.pig)
 ------
 /* Wikipedia pagecounts data described at https://dumps.wikimedia.org/other/pagecounts-raw/
    The first column is the project name. The second column is the title of the page retrieved, 
@@ -233,7 +235,8 @@ In the remainder of this chapter, we'll illustrate the mechanics of using Pig an
 
 Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
 
-.Pig - LOADing, FILTERing and STORing Data (ch_03/load_filter_store.pig)
+[source,sql]
+.LOADing, FILTERing and STORing Data (ch_03/load_filter_store.pig)
 ------
 games = LOAD '/data/gold/sports/baseball/games_lite.tsv' AS (
   game_id:chararray,      year_id:int,
@@ -275,6 +278,7 @@ Boolean, date and the biginteger/bigdecimal types are recent additions to Pig, a
 
 Pig also has three complex types, representing collections of fields. A `tuple` is a fixed-length sequence of fields, each of which has its own schema. They're ubiquitous in the results of the various structural operations you're about to learn. We usually don't serialize tuples, but so far `LOAD` is the only operation we've taught you, so for pretend's sake here's how you'd load a listing of major-league ballpark locations:
 
+[source,sql]
 ------
 -- The address and geocoordinates are stored as tuples. Don't do that, though.
 ballpark_locations = LOAD 'ballpark_locations' AS (
@@ -300,7 +304,8 @@ Tuples can contain values of any type, even bags and other tuples, but that's no
 
 A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Below we demonstrate the creation and storing of bags, as well as how to load them again. Here we prepare, store and load a dataset listing for each team the year and park id of the ballparks it played in:
 
-.Pig - Create, STORE and LOAD a Bag (ch_03/create_store_load_bag.pig)
+[source,sql]
+.Create, STORE and LOAD a Bag (ch_03/create_store_load_bag.pig)
 ------
 park_team_years = LOAD '/data/gold/sports/baseball/park_team_years.tsv' USING PigStorage('\t') AS (
     park_id:chararray, team_id:chararray, year:long, beg_date:chararray, end_date:chararray, n_games:long
@@ -323,6 +328,7 @@ DESCRIBE team_park_seasons
 
 A `DESCRIBE` of the data looks like so:
 
+[source,sql]
 ------
 team_park_seasons: {team_id: chararray,park_years: {(year: long,park_id: chararray)}}
 ------
@@ -349,6 +355,7 @@ In the chapter on Advanced Pig (REF), we'll cover some further topics: loading f
 
 The STORE operation writes your data to the destination you specify (typically and by default, the HDFS). As we mentioned in Chapter 1, the current working directory and your home directory on HDFS is referenced by `./`.
 
+[source,sql]
 ------
 STORE my_records INTO './my/output/my_records.tsv';
 ------
@@ -360,6 +367,7 @@ Try removing the STORE line from the script above, and re-run the script. You'll
 [[checkpointing_your_data]]
 The behavior of only evaluating on demand is an incredibly useful feature for development work. One of the best pieces of advice we can give you is to checkpoint all the time. Smart data scientists iteratively develop the first few transformations of a project, then save that result to disk; working with that saved checkpoint, develop the next few transformations, then save it to disk; and so forth. Here's a demonstration:
 
+[source,sql]
 ------
 great_start = LOAD '...' AS (...);
 -- ...
@@ -397,6 +405,7 @@ DUMP dumpable;
 
 The `SAMPLE` command does what it sounds like: given a relation and a ratio, randomly sample the proportion of the ratio from the relation. Sample is useful because it gives you a random sample of your data - as opposed to `LIMIT`/`DUMP`, which tends to give you a small, very 'local' sorted piece of the data. You can combine `SAMPLE`, `LIMIT` and `DUMP`:
 
+[source,sql]
 ------
 -- Sample 5% of our data, then view 10 records from the sample
 sampled = SAMPLE large_relation 0.05
@@ -455,6 +464,7 @@ Piggybank comes with Pig, all you have to do to access them is `REGISTER /usr/li
 
 To use a UDF, you must call on its full classpath. The `DEFINE` command can help you make a shortcut to the UDF. Define can also add any initialization parameters the UDF requires.
 
+[source,sql]
 ------
 REGISTER /usr/lib/pig/piggybank.jar
 
@@ -471,6 +481,7 @@ At the time of writing, Apache DataFu has the following Pig UDFs:
 
 As in Piggybank, you must register the DataFu jar and then call on the full classpath of the UDF, or use `DEFINE` to make a shortcut:
 
+[source,sql]
 ------
 REGISTER /usr/lib/pig/datafu.jar
 
