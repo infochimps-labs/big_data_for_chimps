@@ -569,10 +569,16 @@ The DataFu package is an collection of Pig extensions open-sourced by LinkedIn, 
 
 You must do two things to enable use of a UDF. First, so that pig can load the UDF's code, call the `REGISTER` command with the path to the UDF's `.jar` file. You only need to `REGISTER` a jar once, even if you'll use more than one of its UDFs.
 
-Second, use the `DEFINE` command to construct it. `DEFINE` takes two arguments, separated by spaces: the short name you will use to invoke the command, and the fully-qualified package name of its class (eg `datafu.pig.hash.Hasher`). Some UDFs, including the one we're using, accept or require constructor arguments (always strings). These are passed function-call style, as shown below. There's nothing wrong with `DEFINE`-ing a UDF multiple times with different constructor arguments -- for example, adding a line `DEFINE DigestMD5  datafu.pig.hash.Hasher('md5');` would create a hash function that used the MD5 (REF) algorithm.
+Second, use the `DEFINE` command to construct it. `DEFINE` takes two arguments, separated by spaces: the short name you will use to invoke the command, and the fully-qualified package name of its class (eg `datafu.pig.hash.Hasher`). Some UDFs, including the one we're using, accept or require constructor arguments (always strings). These are passed function-call style, as shown below. There's nothing wrong with `DEFINE`-ing a UDF multiple times with different constructor arguments -- for example, adding a line `DEFINE DigestMD5 datafu.pig.hash.Hasher('md5');` would create a hash function that used the MD5 (REF) algorithm.
 
+[source,pig]
 .Pig - REGISTERing jars and Using UDFs (ch_04/udf.pig)
 ------
+-- Register the jar containing the UDFs
+REGISTER /usr/lib/pig/datafu.jar
+-- Murmur3, 32 bit version: a fast statistically smooth hash digest function
+DEFINE Digest datafu.pig.hash.Hasher('murmur3-32');
+
 bat_seasons = LOAD '/data/gold/sports/baseball/bat_seasons.tsv' USING PigStorage('\t') AS (
     player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
     year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
@@ -600,18 +606,20 @@ The careers table gives the number of times each player was elected to the All-S
 
 Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
 
+[source,pig]
+.Pig - Splitting Relations (ch_04/split_union.pig)
 ----
-SPLIT bat_career
-  INTO hof     IF hofYear > 0, -- the '> 0' eliminates both NULLs and 0s
-  INTO allstar IF G_allstar > 0,
-  INTO neither OTHERWISE
-  ;
-STORE hof     INTO '/data/out/baseball/hof_careers';
-STORE allstar INTO '/data/out/baseball/allstar_careers';
-STORE neither INTO '/data/out/baseball/neither_careers';
+SPLIT bat_seasons
+  INTO young   IF age <= 30,
+       middle  IF (age >= 30) AND (age < 40),
+       old OTHERWISE
+;
+STORE young  INTO 'young_players';
+STORE middle INTO 'middle_age_players';
+STORE old    INTO 'old_players';
 ----
 
-The `SPLIT` operator does not short-circuit: every record is tested against every condition, and so a player who is both a hall-of-famer and an allstar will be written into both files.
+The `SPLIT` operator does not short-circuit: every record is tested against every condition, so a player who is 30 will be written to both young_players and middle_age_players.
 
 The most natural use of the SPLIT operator is when you really do require divergent processing flows. In the next chapter, you'll use a JOIN LEFT OUTER to geolocate (derive longitude and latitude from place name) records. That method is susceptible to missing matches, and so in practice a next step might be to apply a fancier but more costly geolocation tool. This is a strategy that arises often in advanced machine learning applications: run a first pass with a cheap algorithm that can estimate its error rate; isolate the low-confidence results for harder processing; then reunite the whole dataset.
 
