@@ -606,7 +606,7 @@ The careers table gives the number of times each player was elected to the All-S
 
 Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
 
-[source,pig]
+[source,sql]
 .Pig - Splitting Relations (ch_04/split_union.pig)
 ----
 SPLIT bat_seasons
