@@ -644,24 +644,6 @@ The most natural use of the SPLIT operator is when you really do require diverge
 
 The syntax of the SPLIT command does not have an equals sign to the left of it; the new table aliases are created in its body.
 
-------
-SPLIT players_geoloced_some INTO
-  players_non_geoloced_us IF ((IsNull(lng) OR IsNull(lat)) AND (country_id == "US")),
-  players_non_geoloced_fo IF ((IsNull(lng) OR IsNull(lat)),
-  players_geoloced_a OTHERWISE;
-
--- ... Pretend we're applying a more costly / higher quality geolocation tool, rather than just sending all unmatched records to Disneyland...
-players_geoloced_b = FOREACH players_non_geoloced_us GENERATE
-  player_id..country_id,
-  FLATTEN((Disney,land)) as (lng, lat);
--- ... And again, pretend we are not just sending all non-us to the Eiffel Tower.
-players_geoloced_c = FOREACH players_non_geoloced_us GENERATE
-  player_id..country_id,
-  FLATTEN((Eiffel,tower)) as (lng, lat);
-
-Players_geoloced = UNION alloftheabove;
-------
-
 === Operations that Treat the Union of Several Tables as One
 
 The counterpart to splitting a table into pieces is to treat many pieces as a single table. This really only makes sense when all those pieces have the same schema, so that's the only case we'll handle here.
@@ -686,26 +668,50 @@ The counterpart to splitting a table into pieces is to treat many pieces as a si
 
 In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and id of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
 
-.Union Treats Several Tables as a Single Table
+[source,sql]
+.Union Treats Several Tables as a Single Table (ch_04/split_union.pig)
 ------
-bat_career = LOAD '/data/rawd/baseball/sports/bat_career AS (...);
-pit_career = LOAD '/data/rawd/baseball/sports/pit_career AS (...);
-bat_names = FOREACH bat_career GENERATE player_id, nameFirst, nameLast;
-pit_names = FOREACH pit_career GENERATE player_id, nameFirst, nameLast;
-names_in_both = UNION bat_names, pit_names;
-player_names = DISTINCT names_in_both;
+-- Unions can bring relations with the same schema together
+young_player_seasons = LOAD 'young_player_seasons' USING PigStorage('\t') AS (
+    player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
+    year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
+    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,  --  $6-$12
+    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int  -- $13-$19
+);
+middle_age_player_seasons = LOAD 'middle_age_player_seasons' USING PigStorage('\t') AS (
+    player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
+    year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
+    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,  --  $6-$12
+    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int  -- $13-$19
+);
+old_player_seasons = LOAD 'old_player_seasons' USING PigStorage('\t') AS (
+    player_id:chararray, name_first:chararray, name_last:chararray,     --  $0- $2
+    year_id:int,        team_id:chararray,     lg_id:chararray,         --  $3- $5
+    age:int,  G:int,    PA:int,   AB:int,  HBP:int,  SH:int,   BB:int,  --  $6-$12
+    H:int,    h1B:int,  h2B:int,  h3B:int, HR:int,   R:int,    RBI:int  -- $13-$19
+);
+
+young_names = FOREACH young_player_seasons GENERATE player_id, name_first, name_last;
+middle_age_names = FOREACH middle_age_player_seasons GENERATE player_id, name_first, name_last;
+old_names = FOREACH old_player_seasons GENERATE player_id, name_first, name_last;
+
+all_players = UNION young_names, middle_age_names, old_names;
+all_unique_players = DISTINCT all_players;
 ------
 
-Note that this is not a Join (which requires a reduce, and changes the schema
-of the records) -- this is more like stacking one table atop another, making
-no changes to the records (schema or otherwise) and does not require a
-reduce.
+Note that this is not a Join (which requires a reduce, and changes the schema of the records) -- this is more like stacking one table atop another, making no changes to the records (schema or otherwise) and does not require a reduce.
 
 A common use of the UNION statement comes in 'symmetrizing' a relationship. For example, each line in the games table describes in a sense two game outcomes: one for the home team and one for the away team. We might reasonably want to prepare another table that listed game _outcomes_: game_id, team, opponent, team's home/away position, team's score, opponent's score. The game between BAL playing at BOS on XXX (final score BOS Y, BAL Z) would get two lines: `GAMEIDXXX BOS BAL 1 Y Z` and `GAMEID BAL BOS 0 Z Y`.
 
 // TODO: This is the same snippet used at the top. Good or bad?
 
 ------
+games = LOAD '/data/gold/sports/baseball/games_lite.tsv' AS (
+  game_id:chararray,      year_id:int,
+  away_team_id:chararray, home_team_id:chararray,
+  away_runs_ct:int,       home_runs_ct:int
+);
+
 games_a = FOREACH games GENERATE
   year_id, home_team_id AS team,
   home_runs_ct AS runs_for, away_runs_ct AS runs_against, 1 AS is_home:int;
@@ -715,6 +721,8 @@ games_b = FOREACH games GENERATE
   away_runs_ct AS runs_for, home_runs_ct AS runs_against, 0 AS is_home:int;
 
 team_scores = UNION games_a, games_b;
+
+STORE team_scores INTO 'team_scores';
 
 DESCRIBE team_scores;
 --   team_scores: {team: chararray,year_id: int,runs_for: int,runs_against: int,is_home: int}
@@ -726,4 +734,6 @@ NOTE: The UNION operator is easy to over-use. For one example, in the next chapt
 
 === Outro
 
-The operations in this chapter (except where noted) do not require a reduce on their own, which makes them very efficient. The really interesting applications, however, come when we put data into context, which is the subject of the next chapter.
+The operations in this chapter do not require a reduce on their own, which makes them very efficient. These operations can be chained one after the other without causing a reduce to occur. Although we call them 'map-only' operations, they can be executed during either the map or at the tail of the reduce phase. The ability to chain map-only operations really helps map/reduce scale during complex operations. 
+
+The really interesting applications, however, come when we put data into context by grouping similar records. This is the subject of the next chapter.
