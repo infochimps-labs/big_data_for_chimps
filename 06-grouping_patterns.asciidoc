@@ -2,12 +2,18 @@
 
 === Introduction
 
+Grouping operations are at the heart of map/reduce - they make use of and define the 'reduce' operation of map/reduce, in which records with the same reduce key are grouped on a single reducer in sorted order. Thus is is possible to define a single map/reduce job that performs any number of map-only operations, followed by a grouping operation, followed by more map-only operations after the reduce. This simple pattern enables map/reduce to perform a wide array of operations, implementing a wide array of algorithms.
+
+In this chapter, we will cover grouping operations in Pig, which are 'one-liners' or one line of Pig code to perform.
+
 === Grouping Records into a Bag by Key
 
 // AEJ: why is it at the heart of every structural operation?
 
 The GROUP BY operation is at the heart of every structural operation. It's a one-liner in Pig to collect all the stadiums a team has played for in its history:
 
+[source,sql]
+.GROUPing Data (ch_05/park_teams.pig)
 ------
 park_teams_g = GROUP park_teams BY team_id;
 ------
@@ -16,50 +22,91 @@ The result of a `GROUP BY` operation is always a field called 'group', followed 
 
 Each of the following fields is a bag, holding tuples whose schema matches the corresponding table. Notice that the name we used to refer to the _table_ is now also the name for a _field_. This will confuse you at first, but soon become natural, especially if you use `DESCRIBE` liberally:
 
+[source,sql]
+.DESCRIBing data (ch_05/park_teams.pig)
 ------
 DESCRIBE park_teams_g;
--- park_teams_g: {
---    group: chararray,
---    park_teams: {
---        ( park_id: chararray, team_id: chararray, year_id: long,
---          beg_date: chararray, end_date: chararray, n_games: long ) } }
+
+/*
+
+park_teams_g: {
+    group: chararray,
+    park_team_years: {
+        (
+            park_id: chararray,
+            team_id: chararray,
+            year_id: long,
+            beg_date: chararray,
+            end_date: chararray,
+            n_games: long
+        )
+    }
+}
+
+*/
 ------
 
 Notice that the _full record_ is kept, even including the keys:
 
+[source,sql]
 ------
 (ALT,{(ALT01,ALT,1884,1884-04-30,1884-05-31,18)})
 (ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
 ------
 
-To eliminate the redundant data, you'll almost always immediately project using a FOREACH. Pig allows you to put the `GROUP` statement inline:
+To eliminate the redundant data, you'll almost always immediately project using a `FOREACH`. This lets you trim the fields in the group to those you are interested in. Pig allows you to put the `GROUP` statement inline within a`FOREACH`:
 
+[source,sql]
 ------
-team_pkyr_pairs = FOREACH (GROUP park_teams BY team_id) GENERATE
-  group AS team_id, park_teams.(park_id, year_id);
+team_pkyr_pairs = FOREACH (GROUP park_team_years BY team_id) GENERATE
+    group AS team_id, 
+    park_team_years.(park_id, year_id) AS park_team_years;
 -- (ALT,{(ALT01,1884)})
 -- (ANA,{(ANA01,2001),(ANA01,2010),(ANA01,2002),...})
 ------
+Notice that we used an AS clause within our `FOREACH`/`GENERATE` call, to give an explicit name, `park_team_years`, to `park_team_years.(park_id, year_id)`. It is easier to give explicit names as a part of managing our schemas, so that a field can be explicitly referred to later on.
 
-Notice the `park_teams.(park_id,year_id)` form, which gives us a bag of (park_id,year_id) pairs. Using `park_teams.park_id, park_teams.year_id` instead gives two bags, one with park_id tuples and one with year_id tuples:
+Notice the `park_team_years.(park_id, year_id)` form, which gives us a bag of `(park_id, year_id)` pairs. Using `park_teams.park_id, park_teams.year_id` instead gives two bags, one with park_id tuples and one with year_id tuples:
 
 ------
-team_pkyr_bags = FOREACH (GROUP park_teams BY team_id) GENERATE
-  group AS team_id, park_teams.park_id, park_teams.year_id;
+team_pkyr_bags = FOREACH (GROUP park_team_years BY team_id) GENERATE
+    group AS team_id, 
+    park_team_years.park_id AS park_ids, 
+    park_team_years.year_id AS park_years;
+
 -- (ALT, {(ALT01)}, {(1884)})
 -- (ANA, {(ANA01),(ANA01),(ANA01),...}, {(2001),(2010),(2002),...})
 
 DESCRIBE team_pkyr_pairs;
--- team_parks: { team_id: chararray, { (park_id: chararray, year_id: long) } }
+
+/*
+team_pkyr_pairs: {
+    team_id: chararray,
+    park_team_years: {
+        (park_id: chararray,year_id: long)
+    }
+}
+*/
 
 DESCRIBE team_pkyr_bags;
--- team_parks: { team_id: chararray, { (park_id: chararray) }, { (year_id: long) } }
+
+/*
+team_pkyr_bags: {
+    team_id: chararray,
+    park_ids: {
+        (park_id: chararray)
+    },
+    park_years: {
+        (year_id: long)
+    }
+}
+*/
 ------
 
 You can group on multiple fields.  For each team and year, we can find the park(s) that team called home:
 
 ------
-team_yr_parks_g = GROUP park_teams BY (year_id, team_id);
+team_yr_parks_g = GROUP park_team_years BY (year_id, team_id);
 ------
 
 The first field is still called 'group', but it's now a tuple.
@@ -83,6 +130,8 @@ team_yr_parks = FOREACH(GROUP park_teams BY (year_id, team_id)) GENERATE
 --   (CL1,{(CIN01),(CLE01)})
 --   (FW1,{(FOR01)})
 ------
+
+If you want all of the group keys back, you can flatten tuple tuple as in `FLATTEN(group) AS (year_id, team_id)`.
 
 ===== Pattern in Use
 
