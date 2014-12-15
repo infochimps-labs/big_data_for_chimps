@@ -705,6 +705,8 @@ A common use of the UNION statement comes in 'symmetrizing' a relationship. For 
 
 // TODO: This is the same snippet used at the top. Good or bad?
 
+[source,sql]
+.Symmetrizing a  Relationship (ch_04/split_union.pig)
 ------
 games = LOAD '/data/gold/sports/baseball/games_lite.tsv' AS (
   game_id:chararray,      year_id:int,
