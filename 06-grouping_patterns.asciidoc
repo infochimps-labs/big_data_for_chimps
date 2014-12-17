@@ -284,6 +284,8 @@ Since the park ids are formed from the first characters of the city name, we can
 
 Instead of serializing the simple list of park ids we had before, we'd now like to prepare and serialize the collection of (park id, number of games) pairs. We can handle this by using two delimiters: one for separating list elements and one for delimiting its contents. (This is also how you would handle an object with simple attribute-value pairs such as a hash map.)
 
+[source,sql]
+.Representing Complex Data Structures (ch_05/park_teams.pig)
 --------
 team_year_w_pkgms = FOREACH (GROUP park_team_years BY (team_id, year_id)) {
     /* Create 'park ID'/'game count' field */
@@ -293,39 +295,56 @@ team_year_w_pkgms = FOREACH (GROUP park_team_years BY (team_id, year_id)) {
         
     /* Generate team/year, number of parks and list of parks/games played */
     GENERATE group.team_id, group.year_id,
-        COUNT_STAR(park_teams) AS n_parks,
+        COUNT_STAR(park_team_years) AS n_parks,
         BagToString(pk_ng_pairs,'|') AS pk_ngs;
     };
+
+top_team_parks = ORDER team_year_w_pkgms BY n_parks DESC;
+top_20 = LIMIT top_team_parks 20; 
+-- DUMP @;
+STORE top_20 INTO 'park_teams_report';
 --------
 
-Whoa, a few new things going on here. We've snuck the `ORDER BY` statement into a few previous examples even though it won't be covered until later in the chapter (REF), but always as a full-table operator. Here we're using it within the body of a `FOREACH` to sort each bag locally, rather than as a total sort of the whole table. One nice thing about this `ORDER BY`: it's essentially free, as Pig just instructs Hadoop to do a secondary-sort on the data as it lands on the reducer. So there's no reason not to make the data easier to read.
+Which results in:
+
+----
+(CL4,1898,7,CLE05:40|PHI09:9|STL05:2|CLL01:2|ROC02:2|CHI08:1|ROC03:1)
+(CLE,1902,5,CLE05:60|FOR03:2|COL03:1|CAN01:1|DAY01:1)
+(WS3,1871,4,WAS01:11|BAL01:1|NYC01:1|CIN01:1)
+(CL3,1888,3,CLE03:56|GEA01:3|NEW03:1)
+(CL4,1890,3,CLE03:63|IND06:6|DET01:1)
+(BFN,1885,3,BUF02:50|ELM01:2|MIL02:1)
+(WS6,1875,3,WAS01:8|RIC01:2|BAL02:2)
+(BS1,1875,3,BOS01:35|SPR01:1|PRO01:1)
+(MID,1872,3,MID01:7|HRT02:3|SPR01:1)
+(CHU,1884,3,CHI05:35|PIT03:5|BAL04:1)
+...
+----
+
+There are a few new things going on here. We've snuck the `ORDER BY` statement into a few previous examples even though it won't be covered until later in the chapter (REF), but always as a full-table operator. Here we're using it within the body of a `FOREACH` to sort each bag locally, rather than as a total sort of the whole table. One nice thing about this `ORDER BY`: it's essentially free, as Pig just instructs Hadoop to do a secondary-sort on the data as it lands on the reducer. So there's no reason not to make the data easier to read.
 
 After the `ORDER BY` statement, we use a _nested_ `FOREACH` to staple each park onto the number of games at that park, delimited with a colon. (Along the way you'll see we also typecast the `n_games` value, since the `CONCAT` method expects a `chararray`.) The final `GENERATE` line creates records naming the team, the count of parks, and the list of park-usages pairs:
 
+[source,bash]
 ------
-ALT  1   ALT01:18
-ANA  1   ANA01:82
+hadoop fs -cat park_teams_report/*
+
+CL4	1898	7	CLE05:40|PHI09:9|STL05:2|CLL01:2|ROC02:2|CHI08:1|ROC03:1
+CLE	1902	5	CLE05:60|FOR03:2|COL03:1|CAN01:1|DAY01:1
+WS3	1871	4	WAS01:11|BAL01:1|NYC01:1|CIN01:1
+CL3	1888	3	CLE03:56|GEA01:3|NEW03:1
+CL4	1890	3	CLE03:63|IND06:6|DET01:1
+BFN	1885	3	BUF02:50|ELM01:2|MIL02:1
+WS6	1875	3	WAS01:8|RIC01:2|BAL02:2
+BS1	1875	3	BOS01:35|SPR01:1|PRO01:1
+MID	1872	3	MID01:7|HRT02:3|SPR01:1
+CHU	1884	3	CHI05:35|PIT03:5|BAL04:1
 ...
-CL4  7   CLE05:40|PHI09:9|STL05:2|ROC02:2|CLL01:2|CHI08:1|ROC03:1
 ------
 
 Out of http://www.baseball-reference.com/teams/CLV/1898.shtml[156 games] that season, the Spiders played only 42 in Cleveland. Between the 15 "home" games in other cities, and their _ninety-nine_ away games, they spent nearly three-quarters of their season on the road.
 
-The http://www.baseballlibrary.com/chronology/byyear.php?year=1898[Baseball
-Library Chronology] sheds some light. It turns out that labor problems
-prevented play at their home or any other stadium in Cleveland for a stretch
-of time, and so they relocated to Philadelphia while that went on. What's
-more, on June 19th police _arrested the entire team_ during a home game footnote:[The
-Baseball Library Chronology does note that "not so coincidentally‚ the
-Spiders had just scored to go ahead 4-3‚ so the arrests assured Cleveland of
-a victory."  Sounds like the officers, not devoid of hometown pride, might
-have enjoyed a few innings of the game first.] for violating the
-Sunday "blue laws" footnote:[As late as 1967, selling cookery on Sunday in Ohio was still
-http://www.leagle.com/decision/19675410OhioApp2d44_148[enough to get you convicted]]. Little wonder the Spiders
-decided to take their talents away from Cleveland! The following year
-they played 50 straight on the road, won fewer than 13% of their games
-overall (20-134, the worst single-season record ever) and immediately
-disbanded at season's end.
+The http://www.baseballlibrary.com/chronology/byyear.php?year=1898[Baseball Library Chronology] sheds some light. It turns out that labor problems prevented play at their home or any other stadium in Cleveland for a stretch of time, and so they relocated to Philadelphia while that went on. What's more, on June 19th police _arrested the entire team_ during a home game footnote:[The Baseball Library Chronology does note that "not so coincidentally‚ the Spiders had just scored to go ahead 4-3‚ so the arrests assured Cleveland of a victory."  Sounds like the officers, not devoid of hometown pride, might have enjoyed a few innings of the game first.] for violating the Sunday "blue laws" footnote:[As late as 1967, selling cookery on Sunday in Ohio was still http://www.leagle.com/decision/19675410OhioApp2d44_148[enough to get you convicted]]. Little wonder the Spiders decided to take their talents away from Cleveland! The following year they played 50 straight on the road, won fewer than 13% of their games overall (20-134, the worst single-season record ever) and immediately disbanded at season's end.
 
 ===== Pattern in Use
 
@@ -335,82 +354,100 @@ See Previous.
 
 So the result for the Spiders isn't a mistake. Is the team a sole anomalous outlier, or are there other cases, less extreme but similar? The Spiders' season stands out for at least these three reasons: an unusual number of alternate parks; "home" games played in other cities; and a pre-modern (1898) setting. So let's include a field for the city (we'll take the first three characters of the park id to represent the city name) and not throw away the field for year.
 
+[source,sql]
+.Representing a Complex Data Structure using JSON (ch_05/park_teams.pig)
 ------
 -- Prepare the city field
-pktm_city     = FOREACH park_teams GENERATE
-  team_id, year_id, park_id, n_games,
-  SUBSTRING(park_id, 0,3) AS city;
+pktm_city = FOREACH park_team_years GENERATE
+    team_id, 
+    year_id, 
+    park_id, 
+    n_games,
+    SUBSTRING(park_id, 0,3) AS city;
 
 -- First grouping: stats about each city of residence
 pktm_stats = FOREACH (GROUP pktm_city BY (team_id, year_id, city)) {
-  pty_ordered   = ORDER   pktm_city BY n_games DESC;
-  pk_ct_pairs   = FOREACH pty_ordered GENERATE CONCAT(park_id, ':', (chararray)n_games);
-  GENERATE
-    group.team_id,
-    group.year_id,
-    group.city                   AS city,
-    COUNT_STAR(pktm_city)        AS n_parks,
-    SUM(pktm_city.n_games)       AS n_city_games,
-    MAX(pktm_city.n_games)       AS max_in_city,
-    BagToString(pk_ct_pairs,'|') AS parks
-    ;
+    pty_ordered   = ORDER   pktm_city BY n_games DESC;
+    pk_ct_pairs   = FOREACH pty_ordered GENERATE StringConcat(park_id, ':', (chararray)n_games);
+    GENERATE
+        group.team_id,
+        group.year_id,
+        group.city                   AS city,
+        COUNT_STAR(pktm_city)        AS n_parks,
+        SUM(pktm_city.n_games)       AS n_city_games,
+        MAX(pktm_city.n_games)       AS max_in_city,
+        BagToString(pk_ct_pairs,'|') AS parks
+        ;
 };
-
+top_parks = ORDER pktm_stats BY n_parks DESC; DUMP @;
 ------
 
-The records we're forming are significantly more complex this time. With
-fields of numbers or constrained categorical values, stapling together
-delimited values is a fine approach. But when fields become this complex, or
-when there's any danger of stray delimiters sneaking into the record, if
-you're going to stick with TSV you are better off using JSON encoding to
-serialize the field. It's a bit more heavyweight but nearly as portable, and
-it happily bundles complex structures and special characters to hide within TSV
-files. footnote:[And if nether JSON nor simple-delimiter is appropriate, use
-Parquet or Trevni, big-data optimized formats that support complex data
-structures. As we'll explain in chapter (REF), those are your three choices:
-TSV with delimited fields; TSV with JSON fields or JSON lines on their own;
-or Parquet/Trevni. We don't recommend anything further.]
+`DUMP` shows us:
+
+----
+(BR3,1889,NYC,3,71,49,NYC08:49|NYC18:14|NYC05:8)
+(BSN,1894,BOS,3,63,32,BOS05:32|BOS04:27|BOS03:4)
+(PHI,1894,PHI,3,71,43,PHI06:43|PHI14:22|PHI08:6)
+(NY1,1911,NYC,3,75,45,NYC14:45|NYC13:28|NYC10:2)
+(PHI,1927,PHI,2,78,66,PHI09:66|PHI11:12)
+(LS3,1893,LOU,2,53,52,LOU03:52|LOU02:1)
+(NY4,1884,NYC,2,55,33,NYC06:33|NYC03:22)
+(CLE,1946,CLE,2,77,41,CLE07:41|CLE06:36)
+(CLE,1945,CLE,2,77,46,CLE07:46|CLE06:31)
+...
+----
+
+The records we're forming are significantly more complex this time. With fields of numbers or constrained categorical values, stapling together delimited values is a fine approach. But when fields become this complex, or when there's any danger of stray delimiters sneaking into the record, if you're going to stick with TSV you are better off using JSON encoding to serialize the field. It's a bit more heavyweight but nearly as portable, and it happily bundles complex structures and special characters to hide within TSV files. footnote:[And if nether JSON nor simple-delimiter is appropriate, use Parquet or Trevni, big-data optimized formats that support complex data structures. As we'll explain in chapter (REF), those are your three choices: TSV with delimited fields; TSV with JSON fields or JSON lines on their own; or Parquet/Trevni. We don't recommend anything further.]
 
 // TODO: Actually use the JSON function (I'll need to write it first). Also maybe make the record a bit less byzantine
 
 ------
 -- Next, assemble full picture:
 farhome_gms = FOREACH (GROUP pktm_stats BY (team_id, year_id)) {
-  pty_ordered   = ORDER   pktm_stats BY n_city_games DESC;
-  city_pairs    = FOREACH pty_ordered GENERATE CONCAT(city, ':', (chararray)n_city_games);
-  n_home_gms    = SUM(pktm_stats.n_city_games);
-  n_main_city   = MAX(pktm_stats.n_city_games);
-  n_main_park   = MAX(pktm_stats.max_in_city);
-  -- a nice trick: a string vs a blank makes it easy to scan the data for patterns:
-  is_modern     = (group.year_id >= 1905 ? 'mod' : NULL);
-  --
-  GENERATE group.team_id, group.year_id,
-    is_modern                      AS is_modern,
-    n_home_gms                     AS n_home_gms,
-    n_home_gms - n_main_city       AS n_farhome_gms,
-    n_home_gms - n_main_park       AS n_althome_games,
-    COUNT_STAR(pktm_stats)         AS n_cities,
-    BagToString(city_pairs,'|')    AS cities,
-    BagToString(pktm_stats.parks,'|')    AS parks
-    ;
+    pty_ordered   = ORDER   pktm_stats BY n_city_games DESC;
+    city_pairs    = FOREACH pty_ordered GENERATE CONCAT(city, ':', (chararray)n_city_games);
+    n_home_gms    = SUM(pktm_stats.n_city_games);
+    n_main_city   = MAX(pktm_stats.n_city_games);
+    n_main_park   = MAX(pktm_stats.max_in_city);
+    -- a nice trick: a string vs a blank makes it easy to scan the data for patterns:
+    is_modern     = (group.year_id >= 1905 ? 'mod' : NULL);
+    --
+    GENERATE group.team_id, group.year_id,
+        is_modern                      AS is_modern,
+        n_home_gms                     AS n_home_gms,
+        n_home_gms - n_main_city       AS n_farhome_gms,
+        n_home_gms - n_main_park       AS n_althome_games,
+        COUNT_STAR(pktm_stats)         AS n_cities,
+        BagToString(city_pairs,'|')    AS cities,
+        BagToString(pktm_stats.parks,'|')    AS parks
+        ;
 };
 farhome_gms = ORDER farhome_gms BY n_cities DESC, n_farhome_gms DESC;
-
+STORE farhome_gms INTO 'json_test' USING JsonStorage();
 ------
 
 Here's a sample of the output:
 
+[source,json]
 .JSON-formatted Values
 ------
-CL4  1898     	57  17	17  6	CLE:40|PHI:9|ROC:3|STL:2|CLL:2|CHI:1	CLE05:40|PHI09:9|ROC02:2...
-CLE  1902     	65  5 	5   5	CLE:60|FOR:2|COL:1|CAN:1|DAY:1          CLE05:60|FOR03:2|COL03:1...
+{ 
+	"team_id":"BSN",
+	"year_id":1894,
+	"city":"BOS",
+	"n_parks":3,
+	"n_city_games":63,
+	"max_in_city":32,
+	"parks":"BOS05:32|BOS04:27|BOS03:4"
+}
+{"team_id":"PHI","year_id":1894,"city":"PHI","n_parks":3,"n_city_games":71,"max_in_city":43,"parks":"PHI06:43|PHI14:22|PHI08:6"}
+{"team_id":"NY1","year_id":1911,"city":"NYC","n_parks":3,"n_city_games":75,"max_in_city":45,"parks":"NYC14:45|NYC13:28|NYC10:2"}
+{"team_id":"PHI","year_id":1927,"city":"PHI","n_parks":2,"n_city_games":78,"max_in_city":66,"parks":"PHI09:66|PHI11:12"}
+{"team_id":"LS3","year_id":1893,"city":"LOU","n_parks":2,"n_city_games":53,"max_in_city":52,"parks":"LOU03:52|LOU02:1"}
+{"team_id":"NY4","year_id":1884,"city":"NYC","n_parks":2,"n_city_games":55,"max_in_city":33,"parks":"NYC06:33|NYC03:22"}
+{"team_id":"CLE","year_id":1946,"city":"CLE","n_parks":2,"n_city_games":77,"max_in_city":41,"parks":"CLE07:41|CLE06:36"}
+{"team_id":"CLE","year_id":1945,"city":"CLE","n_parks":2,"n_city_games":77,"max_in_city":46,"parks":"CLE07:46|CLE06:31"}
 ...
-MON  2003  mod	81  22	22  2	MON:59|SJU:22                       	MON02:59|SJU01:22
-MON  2004  mod	80  21	21  2	MON:59|SJU:21                       	MON02:59|SJU01:21
-...
-CHA  1969  mod	81  11	11  2	CHI:70|MIL:11                       	CHI10:70|MIL05:11
-CHA  1968  mod	81  9 	9   2	CHI:72|MIL:9                        	CHI10:72|MIL05:9
-BRO  1957  mod	77  8 	8   2	NYC:69|JER:8                        	NYC15:69|JER02:8
 ------
 
 ===== Pattern in Use
@@ -425,39 +462,13 @@ BRO  1957  mod	77  8 	8   2	NYC:69|JER:8                        	NYC15:69|JER02:
 
 Probably. But are the Spiders a particularly anomalous exhibition? No. Considered against the teams of their era, they look much more normal. In the early days baseball was still literally getting its act together and teams hopped around frequently. Since 1905, no team has seen home bases in three cities, and the three cases where a team spent any significant time in an alternate city each tell a notable story.
 
-In 2003 and 2004, les pauvres Montreal Expos were sentenced to play 22 "home" games in San Juan (Puerto Rico) and only 59 back in Montreal. The rudderless franchise had been sold back to the league itself and was being shopped
-around in preparation for a move to Washington, DC. With no real stars, no
-home-town enthusiasm, and no future in Montreal, MLB took the opportunity to
-build its burgeoning fanbase in Latin America and so deployed the team to
-Puerto Rico part-time. The 1968-1969 Chicago White Sox (CHA) were similarly
-nation-building in Milwaukee; the owner of the 1956-1957 Brooklyn Dodgers
-slipped them away for a stint in New Jersey in order to pressure Brooklyn for
-a new stadium.
+In 2003 and 2004, les pauvres Montreal Expos were sentenced to play 22 "home" games in San Juan (Puerto Rico) and only 59 back in Montreal. The rudderless franchise had been sold back to the league itself and was being shopped around in preparation for a move to Washington, DC. With no real stars, no home-town enthusiasm, and no future in Montreal, MLB took the opportunity to build its burgeoning fanbase in Latin America and so deployed the team to Puerto Rico part-time. The 1968-1969 Chicago White Sox (CHA) were similarly team-building in Milwaukee; the owner of the 1956-1957 Brooklyn Dodgers slipped them away for a stint in New Jersey in order to pressure Brooklyn for a new stadium.
 
-You won't always want to read a second story to the end as we have here, but
-it's important to at least identify unusual features of your data set -- they
-may turn out to explain more than you'd think.
+You won't always want to read a second story to the end as we have here, but it's important to at least identify unusual features of your data set -- they may turn out to explain more than you'd think.
 
-NOTE: In traditional analysis with sampled data, edge cases undermine the
-data, presenting the spectre of a non-representative sample or biased
-result. In big data analysis on comprehensive data, the edge cases _prove_
-the data. Here's what we mean. Since 1904, only a very few teams have
-multiple home stadiums, and no team has had more than two home stadiums in a
-season. Home-field advantage gives a significant edge: the home team plays
-the deciding half of the final inning, their roster is constructed to take
-advantage of the ballpark's layout, and players get to eat home-cooked meals,
-enjoy the cheers of encouraging fans, and spend a stretch of time in one
-location. The Spiders and Les Expos and a few others enjoyed only part of
-those advantages. XX % of our dataset is pre-modern and Y% had six or more
-home games in multiple cities.
+NOTE: In traditional analysis with sampled data, edge cases undermine the data, presenting the spectre of a non-representative sample or biased result. In big data analysis on comprehensive data, the edge cases _prove_ the data. Here's what we mean. Since 1904, only a very few teams have multiple home stadiums, and no team has had more than two home stadiums in a season. Home-field advantage gives a significant edge: the home team plays the deciding half of the final inning, their roster is constructed to take advantage of the ballpark's layout, and players get to eat home-cooked meals, enjoy the cheers of encouraging fans, and spend a stretch of time in one location. The Spiders and Les Expos and a few others enjoyed only part of those advantages. XX % of our dataset is pre-modern and Y% had six or more home games in multiple cities.
 
-With a data set this small there's no good way to control for these unusual
-circumstances, and so they represent outliers that taint our results. With a
-large and comprehensive data set those small fractions would represent
-analyzable populations of their own. With millions of seasons, we could
-conceivably baseline the jet-powered computer-optimized schedules of the
-present against the night-train wanderjahr of Cleveland Spiders and other
-early teams.
+With a data set this small there's no good way to control for these unusual circumstances, and so they represent outliers that taint our results. With a large and comprehensive data set those small fractions would represent analyzable populations of their own. With millions of seasons, we could conceivably baseline the jet-powered computer-optimized schedules of the present against the night-train wanderjahr of Cleveland Spiders and other early teams.
 
 === Group and Aggregate
 
