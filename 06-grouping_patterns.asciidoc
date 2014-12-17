@@ -401,6 +401,8 @@ The records we're forming are significantly more complex this time. With fields 
 
 // TODO: Actually use the JSON function (I'll need to write it first). Also maybe make the record a bit less byzantine
 
+[source,sql]
+.Storing complex data as JSON (ch_05/park_teams.pig)
 ------
 -- Next, assemble full picture:
 farhome_gms = FOREACH (GROUP pktm_stats BY (team_id, year_id)) {
@@ -453,9 +455,9 @@ Here's a sample of the output:
 ===== Pattern in Use
 
 * _Where You'll Use It_ -- Creating the POST body for a json batch request. Hiding a complex value you don't always want to deserialize. Writing a table in a format that will work everywhere. Creating a string free of non-keyboard characters.
-* _Standard Snippet_	  -- `FOREACH (GROUP recs BY key) GENERATE group AS mykey, Jsonify(recs) AS recs_json;`
-* _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
-* _Records_		  -- Output is `mykey, recs_json:chararray`
+* _Standard Snippet_	  -- `STORE my_relation INTO 'my_relation' USING JsonStorage();`
+* _Output Count_	  -- As many records as the relation contains
+* _Records_		  -- Output is one json object per line
 * _Data Flow_		  -- Map & Reduce; mild data expansion as JSON repeats the sub-field names on each row.
 
 ===== Does God Hate Cleveland?
@@ -478,33 +480,36 @@ Some of the happiest moments you can have analyzing a massive data set come when
 
 In the previous chapter, we used each player's seasonal counting stats -- hits, home runs, and so forth -- to estimate seasonal rate stats -- how well they get on base (OPS), how well they clear the bases (SLG) and an overall estimate of offensive performance (OBP). But since we were focused on pipeline operations, we only did so on a season-by-season basis. The group-and-aggregate pattern lets us combine those seasonal stats in order to characterize each player's career.
 
-.Aggregate Statistics of a Group
+[source,sql]
+.Aggregate Statistics of a Group (ch_05/bat_seasons.pig)
 ------
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
-  totG   = SUM(bat_seasons.G);
-  totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
-  totHBP = SUM(bat_seasons.HBP); totSH  = SUM(bat_seasons.SH);
-  totBB  = SUM(bat_seasons.BB);  totH   = SUM(bat_seasons.H);
-  toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B);
-  toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR);
-  totR   = SUM(bat_seasons.R);   totRBI = SUM(bat_seasons.RBI);
-  OBP    = 1.0*(totH + totBB + totHBP) / totPA;
-  SLG    = 1.0*(toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
-  team_ids = DISTINCT bat_seasons.team_id;
-  GENERATE
-    group                          AS player_id,
-    COUNT_STAR(bat_seasons)        AS n_seasons,
-    COUNT_STAR(team_ids)           AS card_teams,
-    MIN(bat_seasons.year_id)	   AS beg_year,
-    MAX(bat_seasons.year_id)       AS end_year,
-    totG   AS G,
-    totPA  AS PA,  totAB  AS AB,  totHBP AS HBP,    --  $6 -  $8
-    totSH  AS SH,  totBB  AS BB,  totH   AS H,      --  $9 - $11
-    toth1B AS h1B, toth2B AS h2B, toth3B AS h3B,    -- $12 - $14
-    totHR AS HR,   totR   AS R,   totRBI AS RBI,    -- $15 - $17
-    OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS      -- $18 - $20
+    totG   = SUM(bat_seasons.G);
+    totPA  = SUM(bat_seasons.PA);  totAB  = SUM(bat_seasons.AB);
+    totHBP = SUM(bat_seasons.HBP); totSH  = SUM(bat_seasons.SH);
+    totBB  = SUM(bat_seasons.BB);  totH   = SUM(bat_seasons.H);
+    toth1B = SUM(bat_seasons.h1B); toth2B = SUM(bat_seasons.h2B);
+    toth3B = SUM(bat_seasons.h3B); totHR  = SUM(bat_seasons.HR);
+    totR   = SUM(bat_seasons.R);   totRBI = SUM(bat_seasons.RBI);
+    OBP    = 1.0*(totH + totBB + totHBP) / totPA;
+    SLG    = 1.0*(toth1B + 2*toth2B + 3*toth3B + 4*totHR) / totAB;
+    team_ids = DISTINCT bat_seasons.team_id;
+    GENERATE
+        group                          AS player_id,
+        COUNT_STAR(bat_seasons)        AS n_seasons,
+        COUNT_STAR(team_ids)           AS card_teams,
+        MIN(bat_seasons.year_id)	   AS beg_year,
+        MAX(bat_seasons.year_id)       AS end_year,
+        totG   AS G,
+        totPA  AS PA,  totAB  AS AB,  totHBP AS HBP,    --  $6 -  $8
+        totSH  AS SH,  totBB  AS BB,  totH   AS H,      --  $9 - $11
+        toth1B AS h1B, toth2B AS h2B, toth3B AS h3B,    -- $12 - $14
+        totHR AS HR,   totR   AS R,   totRBI AS RBI,    -- $15 - $17
+        OBP AS OBP, SLG AS SLG, (OBP + SLG) AS OPS      -- $18 - $20
     ;
 };
+
+STORE bat_careers INTO 'bat_careers';
 ------
 
 We first gather together all seasons by a player by grouping on `player_id`, then throw a barrage of `SUM`, `COUNT_STAR`, `MIN` and `MAX` functions at the accumulated fields to find the career totals. Using the nested `FOREACH` form means we can use intermediate values such as `totPA` in both the calculation of `OBP` and as a field in the new table directly.
@@ -523,8 +528,6 @@ See the Pattern in Use for the next section too (REF).
 * _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values. Big decrease in output size from turning bags into scalars
 * _Records_		  -- Something like `mykey, aggregated_value, aggregated_value, ...`
 * _Data Flow_		  -- Map, Combiner & Reduce; combiners quite effective unless cardinality is very high.
-
-
 
 
 // === How a group works
@@ -569,15 +572,7 @@ See the Pattern in Use for the next section too (REF).
 ==== Completely Summarizing a Field
 
 
-In the preceding case, the aggregate functions were used to create an output
-table with similar structure to the input table, but at a coarser-grained
-relational level: career rather than season. The result was a new table to
-analyze, not a conceptual report.
-
-Statistical aggregations also let you summarize groups and tables with
-well-understood descriptive statistics. By sketching their essential
-characteristics at dramatically smaller size, we make the data easier to work
-with but more importantly we make it possible to comprehend.
+In the preceding case, the aggregate functions were used to create an output table with similar structure to the input table, but at a coarser-grained relational level: career rather than season. The result was a new table to analyze, not a conceptual report. Statistical aggregations also let you summarize groups and tables with well-understood descriptive statistics. By sketching their essential characteristics at dramatically smaller size, we make the data easier to work with but more importantly we make it possible to comprehend.
 
 The following functions are built in to Pig:
 
@@ -587,18 +582,7 @@ The following functions are built in to Pig:
 * Sum of non-`null` values: `SUM(bag)`
 * Average of non-`null` values: `AVG(bag)`
 
-There are a few additional summary functions that aren't native features of Pig, but are offered by
-Linkedin's might-as-well-be-native DataFu package. footnote:[If you've forgotten/never quite learned
-what those functions mean, hang on for just a bit and we'll demonstrate them in context. If that
-still doesn't do it, set a copy of http://www.amazon.com/dp/039334777X[Naked Statistics] or
-http://www.amazon.com/Head-First-Statistics-Dawn-Griffiths/dp/0596527586[Head First Statistics] next
-to this book. Both do a good job of efficiently imparting what these functions mean and how to use
-them without assuming prior expertise or interest in mathematics. This is important material
-though. Every painter of landscapes must know how to convey the essence of a
-https://www.youtube.com/watch?v=YLO7tCdBVrA[happy little tree] using a few deft strokes and not the
-prickly minutae of its 500 branches; the above functions are your brushes footnote:[Artist/Educator
-Bob Ross: "Anyone can paint, all you need is a dream in your heart and a little bit of practice" --
-hopefully you're feeling the same way about Big Data analysis.].
+There are a few additional summary functions that aren't native features of Pig, but are offered by Linkedin's might-as-well-be-native DataFu package. footnote:[If you've forgotten/never quite learned what those functions mean, hang on for just a bit and we'll demonstrate them in context. If that still doesn't do it, set a copy of http://www.amazon.com/dp/039334777X[Naked Statistics] or http://www.amazon.com/Head-First-Statistics-Dawn-Griffiths/dp/0596527586[Head First Statistics] next to this book. Both do a good job of efficiently imparting what these functions mean and how to use them without assuming prior expertise or interest in mathematics. This is important material though. Every painter of landscapes must know how to convey the essence of a https://www.youtube.com/watch?v=YLO7tCdBVrA[happy little tree] using a few deft strokes and not the prickly minutae of its 500 branches; the above functions are your brushes footnote:[Artist/Educator Bob Ross: "Anyone can paint, all you need is a dream in your heart and a little bit of practice" -- hopefully you're feeling the same way about Big Data analysis.].
 
 * Cardinality (i.e. the count of distinct values): combine the `DISTINCT` operation and the `COUNT_STAR` function as demonstrated below, or use the DataFu `HyperLogLogPlusPlus` UDF
 * Variance of non-`null` values: `VAR(bag)`, using the `datafu.pig.stats.VAR` UDF
@@ -606,14 +590,10 @@ hopefully you're feeling the same way about Big Data analysis.].
 * Quantiles: `Quantile(bag)` or `StreamingQuantile(bag)`
 * Median (50th Percentile Value) of a Bag: `Median(bag)` or `StreamingMedian(bag)`
 
-The previous chapter (REF) has details on how to use UDFs, and so we're going to leave the details
-of that to the sample code. You'll also notice we list two functions for quantile and for median.
-Finding the exact median or other quantiles (as the Median/Quantile UDFs do) is costly at large
-scale, and so a good approximate algorithm (StreamingMedian/StreamingQuantile) is well
-appreciated. Since the point of this stanza is to characterize the values for our own sense-making,
-the approximate algorithms are appropriate. We'll have much more to say about why finding quantiles
-is costly, why finding averages isn't, and what to do about it in the Statistics chapter (REF).
+The previous chapter (REF) has details on how to use UDFs, and so we're going to leave the details of that to the sample code. You'll also notice we list two functions for quantile and for median. Finding the exact median or other quantiles (as the Median/Quantile UDFs do) is costly at large scale, and so a good approximate algorithm (StreamingMedian/StreamingQuantile) is well appreciated. Since the point of this stanza is to characterize the values for our own sense-making, the approximate algorithms are appropriate. We'll have much more to say about why finding quantiles is costly, why finding averages isn't, and what to do about it in the Statistics chapter (REF).
 
+[source,sql]
+.Completely Summarizing a Field (ch_05/bat_seasons.pig)
 ------
 weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
   dist         = DISTINCT bat_seasons.weight;
@@ -658,29 +638,31 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 
 To summarize the statistics of a full table, we use a `GROUP ALL` statement. That is, instead of `GROUP [table] BY [key]`, write `GROUP [table] ALL`. Everything else is as usual:
 
-.Summary of Weight Field
+[source,sql]
+.Summary of Weight Field (ch_05/bat_seasons.pig)
 ------
-weight_summary = FOREACH (GROUP bat_seasons ALL) {
-  dist         = DISTINCT bat_seasons.weight;
-  sorted_a     = FILTER   bat_seasons.weight BY weight IS NOT NULL;
-  sorted       = ORDER    sorted_a BY weight;
-  some         = LIMIT    dist.weight 5;
-  n_recs       = COUNT_STAR(bat_seasons);
-  n_notnulls   = COUNT(bat_seasons.weight);
-  GENERATE
-    group,
-    AVG(bat_seasons.weight)             AS avg_val,
-    SQRT(VAR(bat_seasons.weight))       AS stddev_val,
-    MIN(bat_seasons.weight)             AS min_val,
-    FLATTEN(ApproxEdgeile(sorted))  AS (p01, p05, p50, p95, p99),
-    MAX(bat_seasons.weight)             AS max_val,
-    n_recs                          AS n_recs,
-    n_recs - n_notnulls             AS n_nulls,
-    COUNT_STAR(dist)                AS cardinality,
-    SUM(bat_seasons.weight)         AS sum_val,
-    BagToString(some, '^')          AS some_vals
+weight_summary = FOREACH (GROUP people ALL) {
+    dist         = DISTINCT people.weight_lb;
+    sorted_a     = FILTER   people.weight_lb BY weight_lb IS NOT NULL;
+    sorted       = ORDER    sorted_a BY weight_lb;
+    some         = LIMIT    dist.weight_lb 5;
+    n_recs       = COUNT_STAR(people);
+    n_notnulls   = COUNT(people.weight_lb);
+    GENERATE
+        group,
+        AVG(people.weight_lb)             AS avg_val,
+        SQRT(VAR(people.weight_lb))       AS stddev_val,
+        MIN(people.weight_lb)             AS min_val,
+        FLATTEN(ApproxEdgeile(sorted))  AS (p01, p05, p50, p95, p99),
+        MAX(people.weight_lb)           AS max_val,
+        n_recs                          AS n_recs,
+        n_recs - n_notnulls             AS n_nulls,
+        COUNT_STAR(dist)                AS cardinality,
+        SUM(people.weight_lb)           AS sum_val,
+        BagToString(some, '^')          AS some_vals
     ;
 };
+
 ------
 
 As we hope you readily recognize, using the `GROUP ALL` operation can be
