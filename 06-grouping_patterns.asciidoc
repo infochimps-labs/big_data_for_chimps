@@ -639,8 +639,15 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 To summarize the statistics of a full table, we use a `GROUP ALL` statement. That is, instead of `GROUP [table] BY [key]`, write `GROUP [table] ALL`. Everything else is as usual:
 
 [source,sql]
-.Summary of Weight Field (ch_05/bat_seasons.pig)
+.Summary of Weight Field (ch_05/people.pig)
 ------
+REGISTER /usr/lib/pig/datafu.jar 
+
+DEFINE VAR datafu.pig.stats.VAR();
+DEFINE ApproxEdgeile datafu.pig.stats.StreamingQuantile( '0.01','0.05', '0.50', '0.95', '0.99');
+
+...
+
 weight_summary = FOREACH (GROUP people ALL) {
     dist         = DISTINCT people.weight_lb;
     sorted_a     = FILTER   people.weight_lb BY weight_lb IS NOT NULL;
@@ -662,22 +669,11 @@ weight_summary = FOREACH (GROUP people ALL) {
         BagToString(some, '^')          AS some_vals
     ;
 };
-
 ------
 
-As we hope you readily recognize, using the `GROUP ALL` operation can be
-dangerous, as it requires bringing all the data onto a single reducer.
+As we hope you readily recognize, using the `GROUP ALL` operation can be dangerous, as it requires bringing all the data onto a single reducer.
 
-We're safe here, even on larger datasets, because all but one of the
-functions we supplied above are efficiently 'algebraic': they can be
-significantly performed in the map phase and combiner'ed. This eliminates
-most of the data before the reducer. The cardinality calculation, done here
-with a nested `DISTINCT` operation, is the only real contributor to
-reducer-side data size. For this dataset its size is manageable, and if it
-weren't there is a good approximate cardinality function. We'll explain the
-why and the how of algebraic functions and these approximate methods in the
-Statistics chapter.  But you'll get a good feel for what is and isn't
-efficient through the examples in this chapter.)
+We're safe here, even on larger datasets, because all but one of the functions we supplied above are efficiently 'algebraic': they can be significantly performed in the map phase and combiner'ed. This eliminates most of the data before the reducer. The cardinality calculation, done here with a nested `DISTINCT` operation, is the only real contributor to reducer-side data size. For this dataset its size is manageable, and if it weren't there is a good approximate cardinality function. We'll explain the why and the how of algebraic functions and these approximate methods in the Statistics chapter.  But you'll get a good feel for what is and isn't efficient through the examples in this chapter.)
 
 ===== Pattern in Use
 
@@ -697,11 +693,10 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 
 ==== Summarizing a String Field
 
-We showed how to examine the constituents of a string field in the preceding
-chapter, under "Tokenizing a String" (REF). But for forensic purposes similar
-to the prior example, it's useful to summarize their length distribution.
+We showed how to examine the constituents of a string field in the preceding chapter, under "Tokenizing a String" (REF). But for forensic purposes similar to the prior example, it's useful to summarize their length distribution.
 
-.Summary of a String Field
+[source,sql]
+.Summary of a String Field (ch_05/bat_seasons.pig)
 ------
 name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
   dist       = DISTINCT bat_seasons.name_first;
@@ -711,7 +706,8 @@ name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
   n_notnulls = COUNT(bat_seasons.name_first);
   --
   examples   = LIMIT    dist.name_first 5;
-  snippets   = FOREACH  examples GENERATE (SIZE(name_first) > 15 ? CONCAT(SUBSTRING(name_first, 0, 15),'…') : name_first) AS val;
+  snippets   = FOREACH  examples GENERATE 
+		(SIZE(name_first) > 15 ? CONCAT(SUBSTRING(name_first, 0, 15),'…') : name_first) AS val;
   GENERATE
     group,
     'name_first'                   AS var:chararray,
