@@ -15,7 +15,7 @@ The GROUP BY operation is at the heart of every structural operation. It's a one
 [source,sql]
 .GROUPing Data (ch_05/park_teams.pig)
 ------
-park_teams_g = GROUP park_teams BY team_id;
+park_teams_g = GROUP park_team_years BY team_id;
 ------
 
 The result of a `GROUP BY` operation is always a field called 'group', followed by one field per grouped table, each named for the table it came from.  The shape of the `group` field depends on whether you specified one or many group keys. If you specified a single key, the new `group` field is a scalar with the same schema. If you specified multiple keys, the new `group` field is a tuple whose schema corresponds to those keys. In this example, we grouped on the `team_id` chararray, and so the `group` field is a scalar chararray as well. In a moment we'll group on `year_id` and `team_id`, and so the `group` field would have schema `group:tuple(year_id:int, team_id:chararray)`.
@@ -68,6 +68,7 @@ Notice that we used an AS clause within our `FOREACH`/`GENERATE` call, to give a
 
 Notice the `park_team_years.(park_id, year_id)` form, which gives us a bag of `(park_id, year_id)` pairs. Using `park_teams.park_id, park_teams.year_id` instead gives two bags, one with park_id tuples and one with year_id tuples:
 
+[source,sql]
 ------
 team_pkyr_bags = FOREACH (GROUP park_team_years BY team_id) GENERATE
     group AS team_id, 
@@ -105,33 +106,66 @@ team_pkyr_bags: {
 
 You can group on multiple fields.  For each team and year, we can find the park(s) that team called home:
 
+[source,sql]
 ------
 team_yr_parks_g = GROUP park_team_years BY (year_id, team_id);
 ------
 
 The first field is still called 'group', but it's now a tuple.
 
+[source,sql]
 ------
 DESCRIBE team_yr_parks_g;
---   team_yr_parks_g: {
---     group: (year_id: long,team_id: chararray),
---     park_teams: {(park_id: chararray, team_id: chararray, year_id: long, ...)}}
+
+/*
+team_yr_parks_g: {
+	group: 
+		(
+			year_id: long,
+			team_id: chararray
+		),
+	park_team_years: {
+		(
+			park_id: chararray,
+			team_id: chararray,
+			year_id: long,
+			beg_date: chararray,
+			end_date: chararray,
+			n_games: long
+		)
+	}
+}
+*/
 ------
 
 Our `FOREACH` statement now looks a bit different:
 
+[source,sql]
 ------
-team_yr_parks = FOREACH(GROUP park_teams BY (year_id, team_id)) GENERATE
-  group.team_id, park_teams.park_id;
---
-=> LIMIT team_yr_parks 4; DUMP @;
+team_yr_parks = FOREACH(GROUP park_team_years BY (year_id, team_id)) GENERATE
+	group.team_id, park_team_years.park_id AS park_ids;
+
+just_4 = LIMIT team_yr_parks 4; DUMP @;
+
 --   (BS1,{(BOS01),(NYC01)})
 --   (CH1,{(NYC01),(CHI01)})
 --   (CL1,{(CIN01),(CLE01)})
 --   (FW1,{(FOR01)})
 ------
 
-If you want all of the group keys back, you can flatten tuple tuple as in `FLATTEN(group) AS (year_id, team_id)`.
+If you have multiple group keys, and want all of the group keys back, you can flatten the group tuple and cast it, as in: 
+
+[source,sql]
+----
+year_team = FOREACH (GROUP park_team_years BY (year_id, team_id)) GENERATE FLATTEN(group) AS (year_id, team_id);
+
+DESCRIBE year_team;
+
+year_team: {
+	year_id: long,
+	team_id: chararray
+}
+----
 
 ===== Pattern in Use
 
@@ -151,9 +185,22 @@ The typical reason to group records is to operate on the bag of values it forms,
 
 You'll notice from the result of the last query that sometimes a team has more than one "home" stadium in a season. That's a bit unexpected, but on consideration teams occasionally face stadium repairs or late-season makeups for cancelled games. But cases where there were even three home parks should be quite rare. Let's confirm our feel for the data using `COUNT_STAR`, which counts all elements of a bag:
 
+[source,sql]
+.Counting Occurrences of a Key (ch_05/park_teams.pig)
 ------
-team_n_parks = FOREACH (GROUP park_teams BY (team_id,year_id)) GENERATE
-  group.team_id, COUNT_STAR(park_teams) AS n_parks;
+team_n_parks = FOREACH (GROUP park_team_years BY (team_id,year_id)) GENERATE
+    group.team_id, 
+    COUNT_STAR(park_team_years) AS n_parks;
+
+DESCRIBE team_n_parks;
+
+/*
+team_n_parks: {
+    team_id: chararray,
+    n_parks: long
+}
+*/
+
 vagabonds = FILTER team_n_parks BY n_parks >= 3;
 
 DUMP vagabonds;
@@ -181,39 +228,47 @@ Our script is reporting that CL4 (the Cleveland Spiders) called seven (!) differ
 
 ==== Representing a Collection of Values with a Delimited String
 
-Let's keep the count of parks, but also list the parks themselves for inspection.  We could keep dumping the values in Pig's oddball output format, but this is a good opportunity to introduce a very useful pattern: denormalizing a collection of values into a single delimited field.
+Let's keep the count of parks, but also list the parks themselves for inspection.  We could keep dumping the values in Pig's oddball output format, but this is a good opportunity to introduce a very useful pattern: de-normalizing a collection of values into a single delimited field.
 
 The format Pig uses to dump bags and tuples to disk wastes characters and is not safe to use in general: any string containing a comma or bracket will cause its record to be mis-interpreted. For simple data structures such as a list, we are better off concatenating the values together using a delimiter: a character with no other meaning that does not appear in any of the values. This preserves the rows-and-columns representation of the table that Pig handles best. It also lets us keep using the oh-so-simple TSV format for interchange with Excel, `cut` and other commandline tools, and later runs of Pig itself. Storing data this way means we do have to pack and unpack the value ourselves, which is an added burden when we need access to the array members. But if accessing the list contents is less frequent this can act as a positive feature: we can move the field around as a simple string and only pay the cost of constructing the full data structure when necessary.
 
-The BagToString function will serialize a bag of values into a single
-delimited field as follows:
+The BagToString function will serialize a bag of values into a single delimited field as follows:
 
+[source,sql]
+.Representing Collections as Delimited Strings (ch_05/park_teams.pig)
 ------
 team_year_w_parks = FOREACH (GROUP park_teams BY (team_id, year_id)) GENERATE
   group.team_id,
   COUNT_STAR(park_teams) AS n_parks,
   BagToString(park_teams.park_id, '^') AS park_ids;
--- (ALT,1,ALT01)
--- (ANA,1,ANA01)
--- ...
--- (CL4,7,CHI08^CLE05^CLL01^PHI09^ROC02^ROC03^STL05)
+
+DESCRIBE team_year_w_parks;
+
+/* 
+team_year_w_parks: {
+	team_id: chararray,
+	n_parks: long,
+	park_ids: chararray
+}
+/*
+
+top_team_year_w_parks = ORDER team_year_w_parks BY n_parks DESC;
+top_20 = LIMIT top_team_year_w_parks 20; DUMP @;
+
+/*
+(CL4,7,CHI08^CLL01^CLE05^PHI09^ROC03^STL05^ROC02)
+(CLE,5,CLE05^DAY01^FOR03^CAN01^COL03)
+(WS3,4,BAL01^WAS01^NYC01^CIN01)
+(CL3,3,GEA01^NEW03^CLE03)
+(CL4,3,IND06^CLE03^DET01)
+(BFN,3,ELM01^MIL02^BUF02)
+(WS6,3,BAL02^WAS01^RIC01)
+*/
 ------
 
-This script ouputs four fields -- park_id, year, count of stadiums, and the
-names of the stadiums used separated by a `^` caret delimiter. Like colon
-':', comma `,`, and slash '/', it doesn't need to be escaped at the
-commandline; like those and semicolon `;`, pipe `|`, and bang `!`, it is
-visually lightweight and can be avoided within a value.  Don't use the wrong
-delimiter for addresses ("Fargo, ND"), dates ("2014-08-08T12:34:56+00:00"),
-paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`). If you are considering the use of quoting or escaping to make your strings delimiter safe, you're getting carried away. Stop, step away from the delimiter, and see "Representing a Complex Data Structure as a JSON-encoded String" (REF) below.
+This script ouputs four fields -- park_id, year, count of stadiums, and the names of the stadiums used separated by a `^` caret delimiter. Like colon ':', comma `,`, and slash '/', it doesn't need to be escaped at the commandline; like those and semicolon `;`, pipe `|`, and bang `!`, it is visually lightweight and can be avoided within a value.  Don't use the wrong delimiter for addresses ("Fargo, ND"), dates ("2014-08-08T12:34:56+00:00"), paths (`/tmp/foo`) or unsanitized free text (`It's a girl! ^_^ \m/ |:-)`). If you are considering the use of quoting or escaping to make your strings delimiter safe, you're getting carried away. Stop, step away from the delimiter, and see "Representing a Complex Data Structure as a JSON-encoded String" (REF) below.
 
-Since the park ids are formed from the first characters of the city name, we
-can recognize that the Spiders' home fields include two stadiums in Cleveland
-plus "home" stadiums in Philadelphia, Rochester, St. Louis, and Chicago.
-These aren't close enough to be alternatives in case of repairs, and 1898
-baseball did not call for publicity tours. Were they rotating among these
-fields, or just spending a day or so at each? Let's see how many were played
-at each stadium.
+Since the park ids are formed from the first characters of the city name, we can recognize that the Spiders' home fields include two stadiums in Cleveland plus "home" stadiums in Philadelphia, Rochester, St. Louis, and Chicago. These aren't close enough to be alternatives in case of repairs, and 1898 baseball did not call for publicity tours. Were they rotating among these fields, or just spending a day or so at each? Let's see how many were played at each stadium.
 
 ===== Pattern in Use
 
@@ -230,14 +285,17 @@ at each stadium.
 Instead of serializing the simple list of park ids we had before, we'd now like to prepare and serialize the collection of (park id, number of games) pairs. We can handle this by using two delimiters: one for separating list elements and one for delimiting its contents. (This is also how you would handle an object with simple attribute-value pairs such as a hash map.)
 
 --------
-team_year_w_pkgms = FOREACH (GROUP park_teams BY (team_id,year_id)) {
-  pty_ordered     = ORDER park_teams BY n_games DESC;
-  pk_ng_pairs     = FOREACH pty_ordered GENERATE
-    CONCAT(park_id, ':', (chararray)n_games) AS pk_ng_pair;
-  GENERATE group.team_id, group.year_id,
-    COUNT_STAR(park_teams) AS n_parks,
-    BagToString(pk_ng_pairs,'|') AS pk_ngs;
-  };
+team_year_w_pkgms = FOREACH (GROUP park_team_years BY (team_id, year_id)) {
+    /* Create 'park ID'/'game count' field */
+    pty_ordered     = ORDER park_team_years BY n_games DESC;
+    pk_ng_pairs     = FOREACH pty_ordered GENERATE
+        CONCAT(park_id, ':', (chararray)n_games) AS pk_ng_pair;
+        
+    /* Generate team/year, number of parks and list of parks/games played */
+    GENERATE group.team_id, group.year_id,
+        COUNT_STAR(park_teams) AS n_parks,
+        BagToString(pk_ng_pairs,'|') AS pk_ngs;
+    };
 --------
 
 Whoa, a few new things going on here. We've snuck the `ORDER BY` statement into a few previous examples even though it won't be covered until later in the chapter (REF), but always as a full-table operator. Here we're using it within the body of a `FOREACH` to sort each bag locally, rather than as a total sort of the whole table. One nice thing about this `ORDER BY`: it's essentially free, as Pig just instructs Hadoop to do a secondary-sort on the data as it lands on the reducer. So there's no reason not to make the data easier to read.
