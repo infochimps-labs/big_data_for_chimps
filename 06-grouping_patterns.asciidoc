@@ -818,25 +818,45 @@ Generating a histogram for games just as above produces mostly-useless output. T
 
 ------
 -- Meaningless
-G_vals = FOREACH bat_seasons GENERATE G AS val;
+G_vals = FOREACH bat_careers GENERATE G AS val;
 G_hist = FOREACH (GROUP G_vals BY val) GENERATE
 	group AS val, 
 	SUM(G_vals) AS ct;
+
+DUMP G_hist;
+
+/*
+(1,658)
+(2,946)
+(3,1164)
+...
+(3298,3298)
+(3308,3308)
+(3562,3562)
+*/
 ------
 
 Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's total of 3,562 games played becomes the only occupant of bin `3550`.
 
 ------
 -- Binning makes it sensible
-G_vals = FOREACH bat_seasons GENERATE 50*FLOOR(G/50) AS val;
+G_vals = FOREACH bat_careers GENERATE 50*FLOOR(G/50) AS val;
 G_hist = FOREACH (GROUP G_vals BY val) GENERATE
 	group AS val, 
 	COUNT_STAR(G_vals) AS ct;
-------
 
-// One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth.
-//
-// In mathematical syntax, we would say we're breaking the number of hits into 50-unit categorical ranges: [0,50] , (50,100] , (100,150] , and so on.
+DUMP G_hist;
+
+/*
+(0.0,6638)
+(50.0,1916)
+(100.0,1176)	
+...
+(3250.0,1)
+(3300.0,1)
+(3550.0,1)
+*/
+------
 
 ===== Histogram of Career Games Played
 
@@ -860,13 +880,13 @@ The bin size of 2 is too fine -- the counts are small, there are many trivial ga
 
 image::images/06-histograms-career_G-binsize_2.png[]
 
-===== Binsize too small
+===== Binsize just right
 
 The bin size we chose, 50 games, works well. It's a meaningful number (50 games represents about 1/3 of a season), it gives meaty counts per bin even when the population starts to become sparse, and yet preserves the gaps that demonstrate the epic scope of Pete Rose and our other outliers' careers.
 
-image::images/06-histograms-career_G-binsize_2.png[]
+image::images/06-histograms-career_G-linear.png[Histogram of Career Games (linear axes)]
 
-// The takeaway is that this is where your skill as a storyteller
+This is where your skill as a storyteller comes through.
 
 ==== Interpreting Histograms and Quantiles
 
@@ -876,7 +896,7 @@ Different underlying mechanics will give different distributions.
 
 The histogram of career games shows that most players see only one game their whole career, and the counts drop off continuously at higher and higher career totals. You can't play 30 games unless you were good enough to make it in to 29 games; you can't play 100 games unless you continued to be good, didn't get injured, didn't get old, didn't go to war between the thirtieth and ninety-ninth game, and so on.
 
-images::images/06-histograms-career_G-linear.png[Histogram of Career Games, Linear Axis]
+image::images/06-histograms-career_G-linear.png[Histogram of Career Games, Linear Axis]
 
 ===== Games Played -- Log-Log plot
 
@@ -884,7 +904,7 @@ Distributions, such as this one, that span many orders of magnitude in value and
 
 Though the career games data shows a very sharp dropoff, it is _not_ a long-tail distribution, as you can see by comparing a power-law fit (which is always a straight line on a log-log graph) to the actual histogram.
 
-images::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-Log plot]
+image::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-Log plot]
 
 ==== Binning Data into Exponentially Sized Buckets
 
@@ -901,7 +921,7 @@ hist_wp_view = FOREACH (GROUP view_vals BY bin) GENERATE
   group AS bin, COUNT_STAR(view_vals) AS ct;
 ------
 
-images::06-histograms-pageviews-loglog.png[Histogram of Wikipedia Hourly Pageviews, Log-Log plot]
+image::images/06-histograms-pageviews-loglog.png[Histogram of Wikipedia Hourly Pageviews, Log-Log plot]
 
 The  result indeed is a nice sharp line on the log-log plot, and the logarithmic bins did a nice job of accumulating robust counts while preserving detail. Logarithmic bins are generally a better choice any time you're using a logarithmic x-axis because it means that the span of each bin is visually the same size, aiding interpretation.
 
