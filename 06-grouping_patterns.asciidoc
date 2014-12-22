@@ -680,7 +680,6 @@ We're safe here, even on larger datasets, because all but one of the functions w
 Everything we said for "Completely Summarizing a Group" (REF), plus
 
 * _Where You'll Use It_  -- Getting to know your data. Computing relative statistics or normalizing values. Topline totals and summaries.
-* _Standard Snippet_	 -- See the `summarizer_bot_9000.pig` macro
 * _Hello, SQL Users_     -- Aggregate functions _without_ a `GROUP BY`
 * _Important to Know_
   - You're sending all the data to one reducer, so make sure the aggregate functions are highly reductive
@@ -699,44 +698,44 @@ We showed how to examine the constituents of a string field in the preceding cha
 .Summary of a String Field (ch_05/bat_seasons.pig)
 ------
 name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
-  dist       = DISTINCT bat_seasons.name_first;
-  lens       = FOREACH  bat_seasons GENERATE SIZE(name_first) AS len;
-  --
-  n_recs     = COUNT_STAR(bat_seasons);
-  n_notnulls = COUNT(bat_seasons.name_first);
-  --
-  examples   = LIMIT    dist.name_first 5;
-  snippets   = FOREACH  examples GENERATE 
-		(SIZE(name_first) > 15 ? CONCAT(SUBSTRING(name_first, 0, 15),'…') : name_first) AS val;
-  GENERATE
-    group,
-    'name_first'                   AS var:chararray,
-    MIN(lens.len)                  AS minlen,
-    MAX(lens.len)                  AS maxlen,
+    dist       = DISTINCT bat_seasons.name_first;
+    lens       = FOREACH  bat_seasons GENERATE SIZE(name_first) AS len;
     --
-    AVG(lens.len)                  AS avglen,
-    SQRT(VAR(lens.len))            AS stdvlen,
-    SUM(lens.len)                  AS sumlen,
+    n_recs     = COUNT_STAR(bat_seasons);
+    n_notnulls = COUNT(bat_seasons.name_first);
     --
-    n_recs                         AS n_recs,
-    n_recs - n_notnulls            AS n_nulls,
-    COUNT_STAR(dist)               AS cardinality,
-    MIN(bat_seasons.name_first)    AS minval,
-    MAX(bat_seasons.name_first)    AS maxval,
-    BagToString(snippets, '^')     AS examples,
-    lens  AS lens
+    examples   = LIMIT    dist.name_first 5;
+    snippets   = FOREACH  examples GENERATE 
+        (SIZE(name_first) > 15 ? CONCAT(SUBSTRING(name_first, 0, 15),'…') : name_first) AS val;
+    GENERATE
+        group,
+        'name_first'                   AS var:chararray,
+        MIN(lens.len)                  AS minlen,
+        MAX(lens.len)                  AS maxlen,
+        --
+        AVG(lens.len)                  AS avglen,
+        SQRT(VAR(lens.len))            AS stdvlen,
+        SUM(lens.len)                  AS sumlen,
+        --
+        n_recs                         AS n_recs,
+        n_recs - n_notnulls            AS n_nulls,
+        COUNT_STAR(dist)               AS cardinality,
+        MIN(bat_seasons.name_first)    AS minval,
+        MAX(bat_seasons.name_first)    AS maxval,
+        BagToString(snippets, '^')     AS examples,
+        lens  AS lens
     ;
 };
 
 name_first_summary = FOREACH name_first_summary_0 {
-  sortlens   = ORDER lens  BY len;
-  pctiles    = ApproxEdgeile(sortlens);
-  GENERATE
-    var,
-    minlen, FLATTEN(pctiles) AS (p01, p05, p10, p50, p90, p95, p99), maxlen,
-    avglen, stdvlen, sumlen,
-    n_recs, n_nulls, cardinality,
-    minval, maxval, examples
+    sortlens   = ORDER lens BY len;
+    pctiles    = ApproxEdgeile(sortlens);
+    GENERATE
+        var,
+        minlen, FLATTEN(pctiles) AS (p01, p05, p10, p50, p90, p95, p99), maxlen,
+        avglen, stdvlen, sumlen,
+        n_recs, n_nulls, cardinality,
+        minval, maxval, examples
     ;
 };
 ------
@@ -746,7 +745,6 @@ name_first_summary = FOREACH name_first_summary_0 {
 Everything we said for "Completely Summarizing a Group" (REF), plus
 
 * _Where You'll Use It_  -- Getting to know your data. Sizing string lengths for creating a database schema. Making sure there's nothing ill-formed or outrageously huge. Making sure all values for a categorical field or string key is correct.
-* _Standard Snippet_	 -- See the `summarizer_bot_9000.pig` macro
 * _Hello, SQL Users_     -- Corresponding functions _without_ a `GROUP BY`
 * _Important to Know_
   - You're sending all the data to one reducer, so make sure the aggregate functions are highly reductive
@@ -756,24 +754,48 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 
 === Calculating the Distribution of Numeric Values with a Histogram
 
-One of the most common uses of a group-and-aggregate is to create a histogram
-showing how often each value (or range of values) of a field occur. This
-calculates the distribution of seasons played -- that is, it counts the
-number of players whose career lasted only a single season; who played for
-two seasons; and so forth.
+One of the most common uses of a group-and-aggregate is to create a histogram showing how often each value (or range of values) of a field occur. This calculates the distribution of seasons played -- that is, it counts the number of players whose career lasted only a single season; who played for two seasons; and so forth.
 
-.Histogram of Number of Seasons
+.Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
 seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
-  group AS bin, COUNT_STAR(vals) AS ct;
+    group AS bin, COUNT_STAR(vals) AS ct;
 
+DUMP vals;
+
+/*
+(1,4781)
+(2,2461)
+(3,1583)
+(4,1162)
+...
+(23,13)
+(24,5)
+(25,3)
+(26,1)
+(27,1)
+*/
+------
+
+Referring back to the `bat_seasons` relation, we can compute a histogram with example data:
+
+------
 vals = FOREACH (GROUP bat_seasons BY (player_id, name_first, name_last)) GENERATE
-  COUNT_STAR(bat_seasons) AS bin, flatten(group);
+    COUNT_STAR(bat_seasons) AS bin, flatten(group);
 seasons_hist = FOREACH (GROUP vals BY bin) {
-  some_vals = LIMIT vals 3;
-  GENERATE group AS bin, COUNT_STAR(vals) AS ct, BagToString(some_vals, '|');
+    some_vals = LIMIT vals 3;
+    GENERATE group AS bin, COUNT_STAR(vals) AS ct, BagToString(some_vals, '|');
 };
+
+DUMP seasons_hist
+
+/*
+(1,4781,1|zay01|William|Zay|1|zoccope01|Pete|Zoccolillo|1|zimmero01|Roy|Zimmerman)
+(2,2461,2|moranbi01|Bill|Moran|2|moranal01|Al|Moran|2|stewasc01|Scott|Stewart)
+(3,1583,3|wilshwh01|Whitey|Wilshere|3|drisktr01|Travis|Driskill|3|dellwh01|Wheezer|Dell)
+(4,1162,4|mahonji01|Jim|Mahoney|4|deanwa01|Wayland|Dean|4|ceccaar01|Art|Ceccarelli)
+*/
 ------
 
 So the pattern here is to:
@@ -785,7 +807,7 @@ So the pattern here is to:
 ===== Pattern in Use
 
 * _Where You'll Use It_  -- Anywhere you need a more detailed sketch of your data than average/standard deviation or simple quantiles can provide
-* _Standard Snippet_	 -- `vals = FOREACH recs GENERATE myfield AS bin; hist = FOREACH (GROUP vals BY bin) GENERATE group AS bin, COUNT_STAR(vals) AS ct;`. Or see `summarizer_bot_9000.pig` for a macro (REF).
+* _Standard Snippet_	 -- `vals = FOREACH recs GENERATE myfield AS bin; hist = FOREACH (GROUP vals BY bin) GENERATE group AS bin, COUNT_STAR(vals) AS ct;`.
 * _Output Count_	  -- As many records as the cardinality of its key, i.e. the number of distinct values
 * _Records_		  -- Output is `bin, ct:long`. You've turned records-with-values into values-with-counts
 * _Data Flow_		  -- Map, Combiner & Reduce; combiners very effective unless cardinality extremely high
@@ -798,7 +820,8 @@ Generating a histogram for games just as above produces mostly-useless output. T
 -- Meaningless
 G_vals = FOREACH bat_seasons GENERATE G AS val;
 G_hist = FOREACH (GROUP G_vals BY val) GENERATE
-  group AS val, COUNT_STAR(G_vals) AS ct;
+	group AS val, 
+	SUM(G_vals) AS ct;
 ------
 
 Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's total of 3,562 games played becomes the only occupant of bin `3550`.
@@ -807,7 +830,8 @@ Instead, we will bin the data: divide by the bin size (50 in this case), and the
 -- Binning makes it sensible
 G_vals = FOREACH bat_seasons GENERATE 50*FLOOR(G/50) AS val;
 G_hist = FOREACH (GROUP G_vals BY val) GENERATE
-  group AS val, COUNT_STAR(G_vals) AS ct;
+	group AS val, 
+	COUNT_STAR(G_vals) AS ct;
 ------
 
 // One common task is to prepare a categorical field -- one with a small number of potential values -- from non-categorical fields such as ranges of numbers or strings. As an example, let's find out how common it is to reach various milestones for number of hits -- 50, 100, and so forth.
@@ -1067,7 +1091,7 @@ Typecasting the projected field as if you were simply converting the schema of a
 See Pattern in Use for "Histograms", above (REF), and "Re-injecting Global Values", following (REF).
 
 * _Where You'll Use It_  -- Histograms on sampled populations. Whenever you want frequencies rather than counts, i.e. proportions rather than absolute values.
-* _Standard Snippet_	 -- Same as for a histogram, but with `COUNT_STAR(vals)/((long)recs_info.ct) AS freq`. See `summarizer_bot_9000.pig` for a macro (REF).
+* _Standard Snippet_	 -- Same as for a histogram, but with `COUNT_STAR(vals)/((long)recs_info.ct) AS freq`.
 
 ==== Re-injecting Global Values
 
@@ -1274,7 +1298,7 @@ We'll need to draw graphs to get any nuanced insight, but the long-term trends i
 * _Standard Snippet_	 -- A mashup of the Format with a Template, Represent Complex Data Structures, and Group-and-Aggregate patterns
 * _Important to Know_	 -- This is more valuable, and more used by experts, than you might think. You'll see.
 * _Records_		 -- Up to you; enough for your brain, not too much for your eyes.
-* _Exercises for you_: Create a macro to generate such a table. It should accept parameters for sprintf template, filter limits and sort key. Consult the `summarizer_bot_9000.pig` file in the example code repository for other examples of macros.
+* _Exercises for you_: Create a macro to generate such a table. It should accept parameters for sprintf template, filter limits and sort key. 
 
 
 === The Summing Trick
