@@ -886,7 +886,7 @@ The bin size we chose, 50 games, works well. It's a meaningful number (50 games 
 
 image::images/06-histograms-career_G-linear.png[Histogram of Career Games (linear axes)]
 
-This is where your skill as a storyteller comes through.
+Bin sizing is where your skill as a storyteller comes through.
 
 ==== Interpreting Histograms and Quantiles
 
@@ -908,17 +908,24 @@ image::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-L
 
 ==== Binning Data into Exponentially Sized Buckets
 
-In contrast, webpage views known to be are one of many phenomena that obey the "long-tail" distribution, as we can see by generating a histogram of hourly pageview counts for each Wikipedia page footnote:[For 11pm UTC on Oct 2nd, 2008, because that was what was nearby]. Since the data is so sharply exponential, we are better off binning it _logarithmically_. To do so we take the log of the value, chunk it (using the multiply-floor-undo method again), and then take the exponential to restore a representative value for the bin. (You'll notice we avoid trouble taking the logarithm of zero by feeding it an insignificantly small number instead. This lets zero be included in the processing without materially altering the result)
+In contrast, webpage views known to be are one of many phenomena that obey the "long-tail" distribution, as we can see by generating a histogram of hourly pageview counts for each Wikipedia page footnote:[For 11pm UTC on November 26th, 2014, because that was what was nearby]. Since the data is so sharply exponential, we are better off binning it _logarithmically_. To do so we take the log of the value, chunk it (using the multiply-floor-undo method again), and then take the exponential to restore a representative value for the bin. (You'll notice we avoid trouble taking the logarithm of zero by feeding it an insignificantly small number instead. This lets zero be included in the processing without materially altering the result)
 
 ------
-pagecount_views = LOAD '/data/out/wikipedia/pagecount-views.tsv' AS (val:long);
-SET eps 0.001
-;
+pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.gz' USING PigStorage(' ') AS (
+   project_name:chararray, 
+   page_title:chararray, 
+   requests:long, 
+   bytes:long
+);
 
-view_vals = FOREACH pagecount_views GENERATE
-  (long)EXP( FLOOR(LOG((val == 0 ? $eps : val)) * 10)/10.0 ) AS bin;
+SET eps 0.001;
+
+view_vals = FOREACH pageviews GENERATE
+    (long)EXP( FLOOR(LOG((requests == 0 ? $eps : requests)) * 10)/10.0 ) AS bin;
+
 hist_wp_view = FOREACH (GROUP view_vals BY bin) GENERATE
-  group AS bin, COUNT_STAR(view_vals) AS ct;
+    group AS bin, 
+    COUNT_STAR(view_vals) AS ct;
 ------
 
 image::images/06-histograms-pageviews-loglog.png[Histogram of Wikipedia Hourly Pageviews, Log-Log plot]
