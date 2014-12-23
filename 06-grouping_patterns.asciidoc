@@ -756,6 +756,7 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 
 One of the most common uses of a group-and-aggregate is to create a histogram showing how often each value (or range of values) of a field occur. This calculates the distribution of seasons played -- that is, it counts the number of players whose career lasted only a single season; who played for two seasons; and so forth.
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
@@ -780,6 +781,7 @@ DUMP vals;
 
 Referring back to the `bat_seasons` relation, we can compute a histogram with example data:
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 vals = FOREACH (GROUP bat_seasons BY (player_id, name_first, name_last)) GENERATE
@@ -817,6 +819,7 @@ So the pattern here is to:
 
 Generating a histogram for games just as above produces mostly-useless output. There's no material difference between a career of 2000 games and one of 2001 games, but each value receives its own count -- making it hard to distinguish the density of 1-, 2-, and 3-count bins near 1000 games from the 1-, 2-, and 3-count bins near 1500 games.
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 -- Meaningless
@@ -840,6 +843,7 @@ DUMP G_hist;
 
 Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's total of 3,562 games played becomes the only occupant of bin `3550`.
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 -- Binning makes it sensible
@@ -913,6 +917,7 @@ image::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-L
 
 In contrast, webpage views known to be are one of many phenomena that obey the "long-tail" distribution, as we can see by generating a histogram of hourly pageview counts for each Wikipedia page footnote:[For 11pm UTC on November 26th, 2014, because that was what was nearby]. Since the data is so sharply exponential, we are better off binning it _logarithmically_. To do so we take the log of the value, chunk it (using the multiply-floor-undo method again), and then take the exponential to restore a representative value for the bin. (You'll notice we avoid trouble taking the logarithm of zero by feeding it an insignificantly small number instead. This lets zero be included in the processing without materially altering the result)
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/wikipedia.pig)
 ------
 pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.gz' USING PigStorage(' ') AS (
@@ -950,6 +955,7 @@ See Pattern in Use for Histograms, above (REF)
 
 Rather than continuing to write the histogram recipe over and over, let's take a moment and generalize. Pig allows you to create macros that parameterize multiple statements:
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 DEFINE histogram(table, key) RETURNS dist {
@@ -977,6 +983,7 @@ You'll notice we load a relation called `numbers`. This is a trick to fill in em
 
 Call the histogram macro on the batting career data as follows:
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 career_G_hist	    = binned_histogram(bat_careers, 'G', 50, 3600);
@@ -986,6 +993,7 @@ career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 
 And on the people data as follows:
 
+[source,sql]
 .Histogram of Number of Seasons (ch_05/people.pig)
 ------
 height_hist	  = binned_histogram(people, 'height_in', 40, 80);
@@ -1019,6 +1027,7 @@ Surely at least baseball players are born and die like the rest of us, though?
 
 With a little Pig action, we can generate some histograms to answer that question:
 
+[source,sql]
 .Vital Stats Part 1 (ch_05/people.pig)
 ------
 vitals = FOREACH people GENERATE
@@ -1061,6 +1070,7 @@ So whenever you are examining populations of outliers, you cannot depend on thei
 
 The histograms we've calculated have results in terms of counts. The results do a better general job of enforcing comparisons if express them as relative frequencies: as fractions of the total count. You know how to find the total:
 
+[source,sql]
 .Vital Stats Part 1 (ch_05/cat_career.pig)
 ------
 HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n_players;
@@ -1068,6 +1078,7 @@ HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n
 
 The problem is that HR_stats is a single-row table, and so not something we can use directly in a `FOREACH` expression. Pig gives you a piece of syntactic sugar for this specific case of a one-row table footnote:[called 'scalar projection' in Pig terminology]: project the value as tablename.field as if it were an inner bag, but slap the field's type (in parentheses) in front of it like a typecast expression:
 
+[source,sql]
 ------
 HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS ct;
 HR_hist  = FOREACH (GROUP bat_careers BY HR) {
@@ -1096,10 +1107,12 @@ In the case of global counts, it would be so much faster if we could sum the gro
 
 If the global statistic is relatively static, there are occasions where we prefer to cheat. Write the portion of the script that finds the global count and stores it, then comment that part out and inject the values statically -- the sample code shows you how to do it using the `cat` Grunt shell statement. 
 
+[source,sql]
 .Re-injecting Global Values (ch_05/bat_career.pig)
 ------
 -- cheat mode:
 -- HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n_total;
+-- STORE HR_stats INTO 'HR_stats';
 SET HR_stats_n_total=`cat HR_stats`;
 
 HR_hist  = FOREACH (GROUP bat_careers BY HR) {
@@ -1116,69 +1129,77 @@ As we said, this is a cheat-to-win scenario: using it to knock three minutes off
 
 ==== Calculating a Histogram Within a Group
 
-As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization...
+As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. 
 
-http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
+For reference, see http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
 
-You'll see the
-
+[source,sql]
+.Calculating a Histogram within a Group (ch_05/bat_career.pig)
 ------
+sig_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND (lg_id == 'NL' OR lg_id == 'AL') AND (PA >= 450));
+
+REGISTER /usr/lib/pig/datafu.jar 
 DEFINE CountVals datafu.pig.bags.CountEach('flatten');
+
 binned = FOREACH sig_seasons GENERATE
-  ( 5 * ROUND(year_id/ 5.0f)) AS year_bin,
-  (20 * ROUND(H      /20.0f)) AS H_bin;
+    ( 5 * ROUND(year_id/ 5.0f)) AS year_bin,
+    (20 * ROUND(H      /20.0f)) AS H_bin;
 
 hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
-H_hist_cts = CountVals(binned.H_bin);
-GENERATE group AS year_bin, H_hist_cts AS H_hist_cts;
+    H_hist_cts = CountVals(binned.H_bin);
+    GENERATE 
+        group AS year_bin, 
+        H_hist_cts AS H_hist_cts;
 };
 ------
 
-We want to normalize this to be a relative-fraction histogram, so that we can
-make comparisons across eras even as the number of active players grows.
-Finding the total count to divide by is a straightforward COUNT_STAR on the
-group, but a peccadillo of Pig's syntax makes using it a bit frustrating.
-Annoyingly, a nested `FOREACH` can only "see" values from the bag it's
-operating on, so there's no natural way to reference the calculated total
-from the `FOREACH` statement.
+We want to normalize this to be a relative-fraction histogram, so that we can make comparisons across eras even as the number of active players grows. Finding the total count to divide by is a straightforward COUNT_STAR on the group, but a peccadillo of Pig's syntax makes using it a bit frustrating. Annoyingly, a nested `FOREACH` can only "see" values from the bag it's operating on, so there's no natural way to reference the calculated total from the `FOREACH` statement.
 
+[source,sql]
 ------
 -- Won't work:
 hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
-H_hist_cts = CountVals(binned.H_bin);
-tot        = 1.0f*COUNT_STAR(binned);
-H_hist_rel = FOREACH H_hist_cts GENERATE H_bin, (float)count/tot;
-GENERATE group AS year_bin, H_hist_cts AS H_hist_cts, tot AS tot;
+	H_hist_cts = CountVals(binned.H_bin);
+	tot        = 1.0f*COUNT_STAR(binned);
+	H_hist_rel = FOREACH H_hist_cts GENERATE 
+		H_bin, 
+		(float)count/tot;
+	GENERATE 
+	    group AS year_bin, 
+	    H_hist_cts AS H_hist_cts, 
+	    tot AS tot;
 };
 ------
 
-The best current workaround is to generate the whole-group total in the form of a bag having just
-that one value. Then we use the CROSS operator to graft it onto each (bin,count) tuple, giving us a
-bag with (bin,count,total) tuples -- yes, every tuple in the bag will have the same group-wide
-value. Finally, iterate across the tuples to find the relative frequency.
+The best current workaround is to generate the whole-group total in the form of a bag having just that one value. Then we use the CROSS operator to graft it onto each (bin,count) tuple, giving us a bag with (bin,count,total) tuples -- yes, every tuple in the bag will have the same group-wide value. Finally, iterate across the tuples to find the relative frequency.
 
-It's more verbose than we'd like, but the performance hit is limited to the
-CPU and GC overhead of creating three bags (`{(result,count)}`,
-`{(result,count,total)}`, `{(result,count,freq)}`) in quick order.
+It's more verbose than we'd like, but the performance hit is limited to the CPU and GC overhead of creating three bags (`{(result,count)}`, `{(result,count,total)}`, `{(result,count,freq)}`) in quick order.
 
-.Histogram within a Group
+[source,sql]
+.Histogram within a Group - Works (ch_05/bat_career.pig)
 ------
 hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
-  H_hist_cts = CountVals(binned.H_bin);
-  tot        = COUNT_STAR(binned);
-  GENERATE
-    group      AS year_bin,
-    H_hist_cts AS H_hist,
-    {(tot)}    AS info:bag{(tot:long)}; -- single-tuple bag we can feed to CROSS
+    H_hist_cts = CountVals(binned.H_bin);
+    tot        = COUNT_STAR(binned);
+    GENERATE
+        group      AS year_bin,
+        H_hist_cts AS H_hist,
+        {(tot)}    AS info:bag{(tot:long)}; -- single-tuple bag we can feed to CROSS
 };
+
 hist_by_year = FOREACH hist_by_year_bags {
-  -- Combines H_hist bag {(100,93),(120,198)...} and dummy tot bag {(882.0)}
-  -- to make new (bin,count,total) bag: {(100,93,882.0),(120,198,882.0)...}
-  H_hist_with_tot = CROSS   H_hist, info;
-  -- Then turn the (bin,count,total) bag into the (bin,count,freq) bag we want
-  H_hist_rel      = FOREACH H_hist_with_tot
-    GENERATE H_bin, count AS ct, count/((float)tot) AS freq;
-  GENERATE year_bin, H_hist_rel;
+    -- Combines H_hist bag {(100,93),(120,198)...} and dummy tot bag {(882.0)}
+    -- to make new (bin,count,total) bag: {(100,93,882.0),(120,198,882.0)...}
+    H_hist_with_tot = CROSS H_hist, info;
+    -- Then turn the (bin,count,total) bag into the (bin,count,freq) bag we want
+    H_hist_rel = FOREACH H_hist_with_tot GENERATE 
+        H_bin, 
+        count AS ct, 
+        count/((float)tot) AS freq;
+        
+    GENERATE 
+        year_bin, 
+        H_hist_rel;
 };
 ------
 
@@ -1195,30 +1216,24 @@ hist_by_year = FOREACH hist_by_year_bags {
 
 We are of course terribly anxious to find out the results, so much so that having to switch over to R to graph our totals is more delay than we can bear. It's also often nice to have production jobs dump a visual summary of the results that an operator can easily scan and sanity-check. And so let's apply the "Formatting a String According to a Template" (REF) pattern to dump a readable summary of our results to the screen.
 
+.Dumping Readable Results (ch_05/bat_career.pig)
 ------
-year_hists_HH = FOREACH year_hists {
-  HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
-  HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
-  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE
-    SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
-  GENERATE year_bin, BagToString(HH_hist_vis, '  ');
-  };
-------
+year_hists_H = FOREACH year_hists {
+		-- put all bins in regular order
+    H_hist_rel_o = ORDER H_hist_rel BY bin ASC;
+		
+		-- The PA threshold makes the lower bins ragged, exclude them
+    H_hist_rel_x = FILTER H_hist_rel_o BY (bin >= 90);
 
-TODO-reviewers: previous version without comments, or following? In practice I would write it without comments.
-
-------
-year_hists_HH = FOREACH year_hists {
-  -- put all bins in regular order
-  HH_hist_rel_o = ORDER HH_hist_rel BY bin ASC;
-  -- The PA threshold makes the lower bins ragged, exclude them
-  HH_hist_rel_x = FILTER HH_hist_rel_o BY (bin >= 90);
-  -- Format each bin/freq into a readable string
-  HH_hist_vis   = FOREACH HH_hist_rel_x GENERATE
-    SPRINTF('%1$3d: %3$4.0f', bin, ct, ROUND_TO(100*freq, 1));
-  -- Combine those strings into readable table
-  GENERATE year_bin, BagToString(HH_hist_vis, '  ');
-  };
+		-- Format each bin/freq into a readable string
+    H_hist_vis   = FOREACH H_hist_rel_x GENERATE
+        SPRINTF('%1$3d: %3$4.0f', bin, ct, (double)ROUND(100*freq));
+    
+		-- Combine those strings into readable table
+    GENERATE 
+        year_bin, 
+        BagToString(H_hist_vis, '  ');
+};
 ------
 
 In this snippet, we first put all bins in regular order and exclude the lower bins (the minimum-plate appearances threshold makes them ragged). Next, we transform each bin-count-frequency triple into a readable string using `SPRINTF`. Since we used positional specifiers (the `1$` part of `%1$3d`), it's easy to insert or remove fields in the display depending on what question you're asking. Here, we've omitted the count as it wasn't helpful for the main question we have: "What are the long-term trends in offensive production?". Finally, we use `BagToString` to format the row. We first met that combination of formatting-elements-formatting-bag in "Representing a Complex Data Structure with a Delimited String" (REF) above. (We hope you're starting to feel like Daniel-san in Karate Kid when all his work polishing cars comes together as deadly martial arts moves.)
@@ -1295,32 +1310,15 @@ We'll need to draw graphs to get any nuanced insight, but the long-term trends i
 
 === The Summing Trick
 
-There's a pattern-of-patterns we like to call the "Summing trick", a frequently useful way to act on
-subsets of a group without having to perform multiple `GROUP BY` or `FILTER` operations. Call it to mind
-every time you find yourself thinking "gosh, this sure seems like a lot of reduce steps on the same
-key". Before we describe its generic nature, it will help to see an example
+There's a pattern-of-patterns we like to call the "Summing trick", a frequently useful way to act on subsets of a group without having to perform multiple `GROUP BY` or `FILTER` operations. Call it to mind every time you find yourself thinking "gosh, this sure seems like a lot of reduce steps on the same key". Before we describe its generic nature, it will help to see an example.
 
 ==== Counting Conditional Subsets of a Group -- The Summing Trick
 
-Whenever you are exploring a dataset, you should determine figures of merit
-for each of the key statistics -- easy-to-remember values that separate
-qualitatively distinct behaviors. You probably have a feel for the way that
-30 C / 85 deg F reasonably divides a "warm" day from a "hot" one; and if I
-tell you that a sub-three-hour marathon distinguishes "really impress your
-friends" from "really impress other runners", you are equipped to recognize
-how ludicrously fast a 2:15 (the pace of a world-class runner) marathon is.
+Whenever you are exploring a dataset, you should determine figures of merit for each of the key statistics -- easy-to-remember values that separate qualitatively distinct behaviors. You probably have a feel for the way that 30 C / 85 deg F reasonably divides a "warm" day from a "hot" one; and if I tell you that a sub-three-hour marathon distinguishes "really impress your friends" from "really impress other runners", you are equipped to recognize how ludicrously fast a 2:15 (the pace of a world-class runner) marathon is.
 
-For our purposes, we can adopt 180 hits (H), 30 home runs (HR), 100 runs
-batted in (RBI), a 0.400 on-base percentage (OBP) and a 0.500 slugging
-percentage (SLG) each as the dividing line between a good and a great
-performance.
+For our purposes, we can adopt 180 hits (H), 30 home runs (HR), 100 runs batted in (RBI), a 0.400 on-base percentage (OBP) and a 0.500 slugging percentage (SLG) each as the dividing line between a good and a great performance.
 
-One reasonable way to define a great career is to ask how many great seasons
-a player had. We can answer that by counting how often a player's season
-totals exceeded each figure of merit. The obvious tactic would seem to
-involve filtering and counting each bag of seasonal stats for a player's
-career; that is cumbersome to write, brings most of the data down to the
-reducer, and exerts GC pressure materializing multiple bags.
+One reasonable way to define a great career is to ask how many great seasons a player had. We can answer that by counting how often a player's season totals exceeded each figure of merit. The obvious tactic would seem to involve filtering and counting each bag of seasonal stats for a player's career; that is cumbersome to write, brings most of the data down to the reducer, and exerts GC pressure materializing multiple bags.
 
 ------
 -- Create indicator fields on each figure of merit for the season
