@@ -780,6 +780,7 @@ DUMP vals;
 
 Referring back to the `bat_seasons` relation, we can compute a histogram with example data:
 
+.Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 vals = FOREACH (GROUP bat_seasons BY (player_id, name_first, name_last)) GENERATE
     COUNT_STAR(bat_seasons) AS bin, flatten(group);
@@ -816,6 +817,7 @@ So the pattern here is to:
 
 Generating a histogram for games just as above produces mostly-useless output. There's no material difference between a career of 2000 games and one of 2001 games, but each value receives its own count -- making it hard to distinguish the density of 1-, 2-, and 3-count bins near 1000 games from the 1-, 2-, and 3-count bins near 1500 games.
 
+.Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 -- Meaningless
 G_vals = FOREACH bat_careers GENERATE G AS val;
@@ -838,6 +840,7 @@ DUMP G_hist;
 
 Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's total of 3,562 games played becomes the only occupant of bin `3550`.
 
+.Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 -- Binning makes it sensible
 G_vals = FOREACH bat_careers GENERATE 50*FLOOR(G/50) AS val;
@@ -910,6 +913,7 @@ image::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-L
 
 In contrast, webpage views known to be are one of many phenomena that obey the "long-tail" distribution, as we can see by generating a histogram of hourly pageview counts for each Wikipedia page footnote:[For 11pm UTC on November 26th, 2014, because that was what was nearby]. Since the data is so sharply exponential, we are better off binning it _logarithmically_. To do so we take the log of the value, chunk it (using the multiply-floor-undo method again), and then take the exponential to restore a representative value for the bin. (You'll notice we avoid trouble taking the logarithm of zero by feeding it an insignificantly small number instead. This lets zero be included in the processing without materially altering the result)
 
+.Histogram of Number of Seasons (ch_05/wikipedia.pig)
 ------
 pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.gz' USING PigStorage(' ') AS (
    project_name:chararray, 
@@ -946,49 +950,56 @@ See Pattern in Use for Histograms, above (REF)
 
 Rather than continuing to write the histogram recipe over and over, let's take a moment and generalize. Pig allows you to create macros that parameterize multiple statements:
 
+.Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
 DEFINE histogram(table, key) RETURNS dist {
-  vals = FOREACH $table GENERATE $key;
-  $dist = FOREACH (GROUP vals BY $key) GENERATE
-    group AS val, COUNT_STAR(vals) AS ct;
+    vals = FOREACH $table GENERATE $key;
+    $dist = FOREACH (GROUP vals BY $key) GENERATE
+        group AS val, 
+        COUNT_STAR(vals) AS ct;
 };
 
 DEFINE binned_histogram(table, key, binsize, maxval) RETURNS dist {
-  numbers = load_numbers_10k();
-  vals = FOREACH $table GENERATE (long)(FLOOR($key / $binsize) * $binsize) AS bin;
-  all_bins = FOREACH numbers GENERATE (num0 * $binsize) AS bin;
-  all_bins = FILTER  all_bins BY (bin <= $maxval);
-  $dist = FOREACH (COGROUP vals BY bin, all_bins BY bin) GENERATE
-    group AS bin, (COUNT_STAR(vals) == 0L ? null : COUNT_STAR(vals)) AS ct;
+    -- A list of numbers from 0-9999
+    numbers = LOAD '/data/gold/numbers10k.txt' AS (number:int);
+    vals = FOREACH $table GENERATE (long)(FLOOR($key / $binsize) * $binsize) AS bin;
+    all_bins = FOREACH numbers GENERATE (number * $binsize) AS bin;
+    all_bins = FILTER  all_bins BY (bin <= $maxval);
+    $dist = FOREACH (COGROUP vals BY bin, all_bins BY bin) GENERATE
+        group AS bin, 
+        (COUNT_STAR(vals) == 0L ? 0L : COUNT_STAR(vals)) AS ct;
 };
 ------
 
+You'll notice we load a relation called `numbers`. This is a trick to fill in empty bins in the histogram with 0. If you can't follow this, don't worry - we'll cover `COGROUP` in the next chapter.
+
 ==== Distribution of Games Played
 
-Call the histogram macro as follows:
+Call the histogram macro on the batting career data as follows:
 
+.Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
-career_G_hist	  = binned_histogram(bat_careers, 'G', 50, 3600);
+career_G_hist	    = binned_histogram(bat_careers, 'G', 50, 3600);
 career_G_hist_2   = binned_histogram(bat_careers, 'G', 2, 3600);
 career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
+------
 
+And on the people data as follows:
+
+.Histogram of Number of Seasons (ch_05/people.pig)
+------
 height_hist	  = binned_histogram(people, 'height_in', 40, 80);
 weight_hist	  = binned_histogram(people, 'weight_lb', 10, 300);
 
-birthmo_hist	  = histogram(people, 'birth_month');
-deathmo_hist	  = histogram(people, 'death_month');
+birthmo_hist = histogram(people, 'birth_month');
+deathmo_hist = histogram(people, 'death_month');
 ------
 
 Now that finding a histogram is effortless, let's examine more shapes of distributions.
 
 ==== Extreme Populations and Confounding Factors
 
-To reach the major leagues, a player must possess multiple extreme
-attributes: ones that are easy to measure, like being tall or being born in a
-country where baseball is popular; and ones that are not, like field vision,
-clutch performance, the drive to put in outlandishly many hours practicing
-skills. Any time you are working with extremes as we are, you must be very
-careful to assume their characteristics resemble the overall population's.
+To reach the major leagues, a player must possess multiple extreme attributes: ones that are easy to measure, like being tall or being born in a country where baseball is popular; and ones that are not, like field vision, clutch performance, the drive to put in outlandishly many hours practicing skills. Any time you are working with extremes as we are, you must be very careful to assume their characteristics resemble the overall population's.
 
 ===== Height
 
@@ -998,18 +1009,9 @@ image::images/06-baseball_height_histogram.png[histogram]
 
 image::images/06-baseball_weight_histogram.png[histogram]
 
-Here again are the graphs for players' height and weight, but now graphed
-against (in light blue) the distribution of height/weight for US males aged
-20-29 footnote:[US Census Department, Statistical Abstract of the United States.
-Tables 206 and 209, Cumulative Percent Distribution of Population by
-(Weight/Height) and Sex, 2007-2008; uses data from the U.S. National Center
-for Health Statistics].
+Here again are the graphs for players' height and weight, but now graphed against (in light blue) the distribution of height/weight for US males aged 20-29 footnote:[US Census Department, Statistical Abstract of the United States. Tables 206 and 209, Cumulative Percent Distribution of Population by (Weight/Height) and Sex, 2007-2008; uses data from the U.S. National Center for Health Statistics].
 
-The overall-population distribution is shown with light blue bars, overlaid
-with a normal distribution curve for illustrative purposes. The population of
-baseball players deviates predictably from the overall population: it's an
-advantage to The distribution of player weights, meanwhile, is shifted
-somewhat but with a dramatically smaller spread.
+The overall-population distribution is shown with light blue bars, overlaid with a normal distribution curve for illustrative purposes. The population of baseball players deviates predictably from the overall population: it's an advantage to The distribution of player weights, meanwhile, is shifted somewhat but with a dramatically smaller spread.
 
 ===== Distribution of Birth and Death day of year
 
