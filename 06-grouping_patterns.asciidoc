@@ -1019,35 +1019,18 @@ Surely at least baseball players are born and die like the rest of us, though?
 
 With a little Pig action, we can generate some histograms to answer that question:
 
-.Vital Stats pt 1
+.Vital Stats Part 1 (ch_05/people.pig)
 ------
-vitals = FOREACH peeps GENERATE
-  height_in,
-  10*CEIL(weight_lb/10.0) AS weight_lb,
-  birth_month,
-  death_month;
+vitals = FOREACH people GENERATE
+    height_in,
+    10*CEIL(weight_lb/10.0) AS weight_lb,
+    birth_month,
+    death_month;
 
 birth_month_hist = histogram(vitals, 'birth_month');
 death_month_hist = histogram(vitals, 'death_month');
 height_hist = histogram(vitals, 'height_in');
 weight_hist = histogram(vitals, 'weight_lb');
-------
-
-.Vital Stats pt 2
-------
-peep_stats = FOREACH (GROUP attr_vals_nn ALL) GENERATE
-  BagToMap(CountVals(attr_vals_nn.attr)) AS cts:map[long];
-peep_hist = FOREACH (GROUP attr_vals BY (attr, val)) {
-  ct = COUNT_STAR(attr_vals);
-  GENERATE
-    FLATTEN(group) AS (attr, val),
-    ct             AS ct
-    -- , (float)ct / ((float)peep_stats.ct) AS freq
-    ;
-};
-peep_hist = ORDER peep_hist BY attr, val;
-one = LOAD '$data_dir/stats/numbers/one.tsv' AS (num:int);
-ht = FOREACH one GENERATE peep_stats.cts#'height';
 ------
 
 ===== Deaths
@@ -1064,53 +1047,36 @@ image::images/06-DeathsByMonth-Baseball_vs_US.png[histogram]
 
 That is not true for the birth data! The format of the graph is the same as above, and again we see a seasonal distribution -- with a peak nine months after the cold winter temperatures induce people to stay home and find alternative recreations. But the baseball data does _not_ match the background distribution at all. The sharp spike in August following the nadir in May and June appears nowhere in the background data, and its phase (where it crosses the centerline) is shifted later by several months. In this data set, a player born in August is about 25% more likely to make the major leagues than a player born in June; restricting it to players from the United States born after 1950 makes august babies _50%_ more likely to earn a baseball card than June babies.
 
-// DROP TEMPORARY TABLE IF EXISTS birth_pop;
-// CREATE TEMPORARY TABLE birth_pop (SELECT birth_month FROM people WHERE player_id IS NOT NULL AND birth_country = "USA" AND birth_year > 1940 AND birth_month IS NOT NULL);
-// SET @june_ct := (SELECT COUNT(*) FROM birth_pop WHERE birth_month = 6);
-//
-// SELECT birth_month, COUNT(*) AS ct, ROUND(100*COUNT(*)/@june_ct) AS rel_to_june
-//   FROM birth_pop
-//  GROUP BY birth_month
-// ;
-
 image::images/06-BirthsByMonth-Baseball_vs_US.png[histogram]
 
 The reason is that since the 1940s, American youth leagues have used July 31st as an age cutoff. If Augusta were born on August 1st, then four calendar years and 364 days later she would still technically be four years old. Julien, who showed up the day before her and thus has spent five years and no days orbiting the Sun, is permitted to join the league as a five-year-old. The Augustas may be initially disappointed, but when they do finally join the league as five-year-and-364-day-old kids, they have nearly an extra year of growth compared to the Juliens who sign up with them, which on the whole provides a huge advantage at young ages. This earns the Augustas extra attention from their coaches, extra validation of their skill, and extra investement of "I'm good at Baseball!" in their identity.
 
 ==== Don't Trust Distributions at the Tails
 
-A lot of big data analyses explore population extremes: manufacturing
-defects, security threats, disease carriers, peak performers.  Elements
-arrive into these extremes exactly because multiple causative features drive
-them there (such as an advantageous height or birth month); and a host of
-other conflated features follow from those deviations (such as those stemming
-from the level of fitness athletes maintain).
+A lot of big data analyses explore population extremes: manufacturing defects, security threats, disease carriers, peak performers.  Elements arrive into these extremes exactly because multiple causative features drive them there (such as an advantageous height or birth month); and a host of other conflated features follow from those deviations (such as those stemming from the level of fitness athletes maintain).
 
-So whenever you are examining populations of outliers, you cannot depend on
-their behavior resembling the universal population. Normal distributions may
-not remain normal and may not even retain a central tendency; independent
-features in the general population may become tightly coupled in the outlier
-group; and a host of other easy assumptions become invalid. Stay alert.
-
+So whenever you are examining populations of outliers, you cannot depend on their behavior resembling the universal population. Normal distributions may not remain normal and may not even retain a central tendency; independent features in the general population may become tightly coupled in the outlier group; and a host of other easy assumptions become invalid. Stay alert.
 
 ==== Calculating a Relative Distribution Histogram
 
 The histograms we've calculated have results in terms of counts. The results do a better general job of enforcing comparisons if express them as relative frequencies: as fractions of the total count. You know how to find the total:
 
+.Vital Stats Part 1 (ch_05/cat_career.pig)
 ------
-HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS n_players;
+HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n_players;
 ------
 
 The problem is that HR_stats is a single-row table, and so not something we can use directly in a `FOREACH` expression. Pig gives you a piece of syntactic sugar for this specific case of a one-row table footnote:[called 'scalar projection' in Pig terminology]: project the value as tablename.field as if it were an inner bag, but slap the field's type (in parentheses) in front of it like a typecast expression:
 
 ------
-HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS ct;
-HR_hist  = FOREACH (GROUP bats BY HR) {
-  ct = COUNT_STAR(bats);
-  GENERATE HR as val,
-    ct/( (long)HR_stats.ct ) AS freq,
-    ct;
+HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS ct;
+HR_hist  = FOREACH (GROUP bat_careers BY HR) {
+    ct = COUNT_STAR(bat_careers);
+    GENERATE group as val,
+        ct/( (double)HR_stats.ct ) AS freq,
+        ct;
 };
+STORE HR_stats INTO 'HR_stats';
 ------
 
 Typecasting the projected field as if you were simply converting the schema of a field from one scalar type to another acts as a promise to Pig  that what looks like column of possibly many values will turn out to have only row. In return, Pig will understand that you want a sort of über-typecast of the projected column into what is effectively its literal value.
@@ -1128,39 +1094,36 @@ Sometimes things are more complicated, and what you'd like to do is perform ligh
 
 In the case of global counts, it would be so much faster if we could sum the group counts to get the global totals; but that would mean a job to get the counts, a job to get the totals, and a job to get the relative frequencies. Ugh.
 
-If the global statistic is relatively static, there are occasions where we prefer to cheat. Write the portion of the script that finds the global count and stores it, then comment that part out and inject the values statically -- the sample code shows you how to do it with with a templating runner, as runtime parameters, by copy/pasting, or using the `cat` Grunt shell statement. Then, to ensure your time-traveling shenanigans remain valid, add an `ASSERT` statement comparing the memoized values to the actual totals. Pig will not only run the little checkup stage in parallel if possible, it will realize that the data size is small enough to run as a local mode job -- cutting the turnaround time of a tiny job like that in half or better.
+If the global statistic is relatively static, there are occasions where we prefer to cheat. Write the portion of the script that finds the global count and stores it, then comment that part out and inject the values statically -- the sample code shows you how to do it using the `cat` Grunt shell statement. 
 
+.Re-injecting Global Values (ch_05/bat_career.pig)
 ------
 -- cheat mode:
--- HR_stats = FOREACH (GROUP bats BY ALL) GENERATE COUNT_STAR(bats) AS n_total;
-SET HR_stats_n_total = `cat $out_dir/HR_stats_n_total`;
+-- HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n_total;
+SET HR_stats_n_total=`cat HR_stats`;
 
-HR_hist  = FOREACH (GROUP bats BY HR) {
-ct = COUNT_STAR(bats);
-GENERATE HR as val, ct AS ct,
--- ct/( (long)HR_stats.n_total ) AS freq,
-ct/( (long)HR_stats_n_total) AS freq,
-ct;
+HR_hist  = FOREACH (GROUP bat_careers BY HR) {
+    ct = COUNT_STAR(bat_careers);
+    GENERATE 
+        HR as val, 
+        ct AS ct,
+        ct/( (double)HR_stats_n_total) AS freq,
+        ct;
 };
--- the much-much-smaller histogram is used to find the total after the fact
---
-ASSERT (GROUP HR_hist ALL)
-IsEqualish( SUM(freq), 1.0 ),
-(HR_stats_n_total == SUM(ct);
 ------
 
 As we said, this is a cheat-to-win scenario: using it to knock three minutes off an eight minute job is canny when used to make better use of a human data scientist's time, foolish when applied as a production performance optimization.
 
 ==== Calculating a Histogram Within a Group
 
-As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization
+As long as the groups in question do not rival the available memory, counting how often each value occurs within a group is easily done using the DataFu `CountEach` UDF. There's been a trend over baseball's history for increased specialization...
 
 http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
 
 You'll see the
 
 ------
-DEFINE CountVals              datafu.pig.bags.CountEach('flatten');
+DEFINE CountVals datafu.pig.bags.CountEach('flatten');
 binned = FOREACH sig_seasons GENERATE
   ( 5 * ROUND(year_id/ 5.0f)) AS year_bin,
   (20 * ROUND(H      /20.0f)) AS H_bin;
