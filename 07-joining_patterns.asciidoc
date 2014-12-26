@@ -14,119 +14,112 @@ An _inner join_ drops records that don't have matching keys in both tables.  Thi
 
 There is a stereotypical picture in baseball of a "slugger": a big fat man who comes to plate challenging your notion of what an athlete looks like, and challenging the pitcher to prevent him from knocking the ball for multiple bases (or at least far enough away to lumber up to first base). To examine the correspondence from body type to ability to hit for power (i.e. high SLG), we will need to join the `people` table (listing height and weight) with their hitting stats.
 
+[source,sql]
+.Preparing the Relations to Join (ch_06/fat_hits.pig)
 ------
-fatness = FOREACH peeps GENERATE
-  player_id, name_first, name_last,
-  height_in, weight_lb;
--- only players w/ statistically significant careers (about two regular-player-season's worth)
+fatness = FOREACH people GENERATE
+    player_id, name_first, name_last,
+    height_in, weight_lb;
+
 slugging_stats = FOREACH (FILTER bat_careers BY (PA > 1000))
-  GENERATE player_id, SLG;
+    GENERATE 
+        player_id, 
+        SLG;
 ------
 
 The syntax of the join statement itself shouldn't be much of a surprise:
 
+[source,sql]
+.An Inner Join (ch_06/fat_hits.pig)
 ------
 slugging_fatness_join = JOIN
-  fatness        BY player_id,
-  slugging_stats BY player_id;
+    fatness        BY player_id,
+    slugging_stats BY player_id;
 
-LIMIT slugging_fatness_join 20; DUMP @;
-...
+just_20 = LIMIT slugging_fatness_join 20; DUMP @;
+
+DESCRIBE just_20
+
+/*
+{
+    fatness::player_id: chararray,
+    fatness::name_first: chararray,
+    fatness::name_last: chararray,
+    fatness::height_in: int,
+    fatness::weight_lb: int,
+    slugging_stats::player_id: chararray,
+    slugging_stats::SLG: double
+}
+*/
 ------
 
-// Each output record from a `JOIN` simply consists of all the fields from the first table, in their original order, followed by the fields from a matching record in the second table, all in their original order. If you held up a piece of paper covering the right part of your screen you'd think you were looking at the original table.
-// (This is in contrast to the records from a `COGROUP`: records from each table become elements in a corresponding bag, and so we would use `parks.park_name` to get the values of the park_name field from the parks bag.)
-//
-// TODO: not sure where this was going?
-//
-// one thing you'll notice in the snippet is the notation `bat_careers::player_id`.
-//
-// ------
-// DESCRIBE slugging_fatness_join;
-// {...}
-// ------
-//
 ===== Disambiguating Field Names With `::`
 
 As a consequence of flattening records from the fatness table next to records from the slugging_stats table, the two tables each contribute a field named `player_id`. Although _we_ privately know that both fields have the same value, Pig is right to insist on an unambiguous reference. The schema helpfully prefixes the field names with a slug, separated by `::`, to make it unambiguous.
-You'll need to run a `FOREACH` across the joined data, specifying the qualified names of the fields you want to keep.
-// TODO finish thought -- caution about  x.y vs x::y
 
-// Datasets are commonly stored as tables in 'normalized' form -- that is, having tables structured to minimize redundancy and dependency.
-//
-// (Replace with the 'people' table)
-//
-// The global hourly weather dataset has one table giving the metadata for every weather station: identifiers, geocoordinates, elevation, country and so on. The giant tables listing the hourly observations from each weather station are normalized to not repeat the station metadata on each line, only the weather station id. However, later in the book (REF) we'll do geographic analysis of the weather data -- and one of the first tasks will be to denormalize the geocoordinates of each weather station with its observations, letting us group nearby observations.
-//
-// hang weight, height and BMI off of their OPS (overall hitting); ISO ("isolated power");
-// and number of stolen bases per time on base (loosely tied to speed)
-//
-// ------
-// SELECT bat.player_id, peep.nameCommon, begYear,
-//     peep.weight, peep.height,
-//     703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
-//     PA, OPS, ISO
-//   FROM bat_career bat
-//   JOIN people peep ON bat.player_id = peep.player_id
-//   WHERE PA > 500 AND begYear > 1910
-//   ORDER BY BMI DESC
-//   ;
-// ------
-
+You'll need to run a `FOREACH` across the joined data, specifying the qualified names of the fields you want to keep. One thing to keep in mind is that it is easy to get confused as to whether you should reference a field via `x::y` or `x.y`. Try to remember: `x::y` is used to disambiguate joined records, and `x.y` is used to reference values in bags when calling aggregate functions.
 
 ===== Body Type vs Slugging Average
 
 So having done the join, we finish by preparing the output:
 
 ------
-FOREACH(JOIN fatness BY player_id, slugging_stats BY player_id) {
-  BMI = ROUND_TO(703.0*weight_lb/(height_in*height_in),1) AS BMI;
-  GENERATE bat_careers::player_id, name_first, name_last,
-    SLG, height_in, weight_lb, BMI;
+bmis = FOREACH (JOIN fatness BY player_id, slugging_stats BY player_id) {
+
+    BMI = 703.0*weight_lb/(double)(height_in*height_in);
+
+    GENERATE 
+        fatness::player_id, 
+        name_first, 
+        name_last,
+        SLG, 
+        height_in, 
+        weight_lb, 
+        BMI;
 };
 ------
 
 We added a field for BMI (Body Mass Index), a simple measure of body type. It is found by diving a person's weight by their height squared, and, since we're stuck with english units, multiplying by 703 to convert to metric.
+
 Though BMI can't distinguish between 180 pounds of muscle and 180 pounds of flab, it reasonably controls for weight-due-to-tallness vs weight-due-to-bulkiness: beanpole Randy Johnson (6'10"/2.1m, 225lb/102kg) and pocket rocket Tim Raines (5'8"/1.7m, 160lb/73kb) both have a low BMI of 23; Babe Ruth (who in his later days was 6'2"/1.88m 260lb/118kb) and Cecil Fielder (of whom Bill James wrote "...his reported weight of 261 leaves unanswered the question of what he might weigh if he put his other foot on the scale") both have high BMIs well above 30 footnote:[The dataset we're using unfortunately only records players' weights at the start of their career, so you will see different values listed for Mr. Fielder and Mr. Ruth.]
 
+=== How a Join Works
+
+So that you can effectively reason about the behavior of a JOIN, it's important that you have the following two-and-a-half ways to think about its operation: (a) as the equivalent of a COGROUP-and-FLATTEN; and (b) as the underlying map-reduce job it produces.
+
+==== A Join is a COGROUP+FLATTEN
+
+Applying the `COGROUP` operation with a `FLATTEN` in place of the JOIN gives us the equivalent command:
+
 ------
-SELECT bat.player_id, peep.nameCommon, begYear,
-    peep.weight, peep.height,
-    703*peep.weight/(peep.height*peep.height) AS BMI, -- measure of body type
-    PA, OPS, ISO
-  FROM bat_career bat
-  JOIN people peep ON bat.player_id = peep.player_id
-  WHERE PA > 500 AND begYear > 1910
-  ORDER BY BMI DESC
-  ;
+-- Original JOIN
+slugging_fatness_join = JOIN fatness BY player_id, slugging_stats BY player_id;
+
+-- Equivalent COGROUP/FLATTEN
+slugging_fatness_join = FOREACH 
+	(COGROUP fatness BY player_id, slugging_stats BY player_id)
+	GENERATE 
+		FLATTEN(fatness), 
+		FLATTEN(slugging_stats);
+		
+DESCRIBE slugging_fatness_join;
+
+slugging_fatness_join: {
+	fatness::player_id: chararray,
+	fatness::name_first: chararray,
+	fatness::name_last: chararray,
+	fatness::height_in: int,
+	fatness::weight_lb: int,
+	slugging_stats::player_id: chararray,
+	slugging_stats::SLG: double
+}
 ------
 
-// === How a Join Works
-//
-// So that you can effectively reason about the behavior of a JOIN, it's important that you have the following two-and-a-half ways to think about its operation: (a) as the equivalent of a COGROUP-and-FLATTEN; and (b) as the underlying map-reduce job it produces.
-//
-// ==== A Join is a COGROUP+FLATTEN
-//
-// Applying the `COGROUP` operation in place of the JOIN gives us
-//
-// ------
-// slugging_fatness_join = COGROUP
-//   fatness        BY player_id,
-//   slugging_stats BY player_id;
-// ------
-//
-// As you now know,
-//
-// ------
-// Key   Baga   BagB
-// ------
-//
-// TODO argh we need to introduce a one-to-many or many-to-many example, because this is boring when all bags have exactly one element. This example should stay, and with a comment about vertical partitioning and a one-to-one join
-
+In this sense, a `JOIN` is just a convenience - shorthand for a `COGROUP`/`FLATTEN`.
 
 ==== A Join is a Map/Reduce Job with a secondary sort on the Table Name
 
-The way to perform a join in map-reduce is similarly a particular application of the COGROUP we stepped through above. Even still, we'll walk through it mostly on its own. The mapper receives its set of input splits either from the bat_careers table or from the peep table and makes the appropriate transformations. Just as above (REF), the mapper knows which file it is receiving via either framework metadata or environment variable in Hadoop Streaming. The records it emits follow the COGROUP pattern: the join fields, anointed as the partition fields; then the index labeling the origin file, anointed as the secondary sort fields; then the remainder of the fields. So far this is just a transform (FOREACH) inlined into a cogroup.
+The way to perform a join in map-reduce is similarly a particular application of the `COGROUP` we stepped through above. Even still, we'll walk through it mostly on its own. The mapper receives its set of input splits either from the bat_careers table or from the people table and makes the appropriate transformations. Just as above, the mapper knows which file it is receiving via either framework metadata or environment variable in Hadoop Streaming. The records it emits follow the `COGROUP` pattern: the join fields, anointed as the partition fields; then the index labeling the origin file, anointed as the secondary sort fields; then the remainder of the fields. So far this is just a transform (`FOREACH`) inlined into a `COGROUP`.
 
 ------
 mapper do
@@ -344,7 +337,7 @@ stats_and_fatness = FOREACH (JOIN fatness BY player_id, stats BY player_id)
 
 ===== Pattern in Use
 
-* _Exercise_ -- Explore the correspondence of weight, height and BMI to SLG using a medium-data tool such as R, Pandas or Excel. Spoiler alert: the stereotypes of the big fat slugger is quire true.
+* _Exercise_ -- Explore the correspondence of weight, height and BMI to SLG using a medium-data tool such as R, Pandas or Excel. Spoiler alert: the stereotypes of the big fat slugger is quite true.
 
 ==== Handling Nulls and Non-matches in Joins and Groups
 
@@ -359,7 +352,7 @@ It's important to understand how Null keys are handled in Join and Group operati
 When we say 'null key', we mean that if the group or join key is a scalar expression, that it has a null result; and if the key is a tuple, that all elements of the tuple are null. So
 
 * these are null keys: `Null`, `(Null,Null,Null)`, `("hi",Null,"howareyou")` (even one non-null field)
-* these are not: `""` (empty string), `0` (zero); An empty bag `{}` and a bag with a tuple holding null `{()}` are bot not-null, but a bag cannot be used as a join or group key.
+* these are not: `""` (empty string), `0` (zero); An empty bag `{}` and a bag with a tuple holding null `{()}` are both not-null, but a bag cannot be used as a join or group key.
 
 In the base Hadoop infrastructure, there's not much to understand: a key is a key, and Hadoop doesn't treat nulls specially in any way. Anything different is up to your program, and Pig does in fact supply something different.
 
