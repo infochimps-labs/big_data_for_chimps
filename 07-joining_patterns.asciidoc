@@ -365,6 +365,7 @@ A `COGROUP` statement with multiple tables also treats Nulls as keys (so get rid
 
 What do you do if you want null keys treated like any other tuple? Add an indicator field saying whether the value is null, and coalesce the actual key to non-null value. So instead of `JOIN aa BY has_nulls, bb BY has_nulls`, write
 
+[source,sql]
 .Join on NULL Fields
 ------
 JOIN
@@ -399,31 +400,52 @@ Even if there are records whose value is -999, they will have `'Y'` for the indi
 
 === Enumerating a Many-to-Many Relationship
 
-In the previous examples there's been a direct pairing of each line in the
-main table with the unique line from the other table that decorates it.
-Therefore, there output had exactly the same number of rows as the larger
-input table. When there are multiple records per key, however, the the output
-will have one row for each _pairing_ of records from each table. A key with
-two records from the left table and 3 records from the right table yields six
-output records.
+In the previous examples there's been a direct pairing of each line in the main table with the unique line from the other table that decorates it. Therefore, there output had exactly the same number of rows as the larger input table. When there are multiple records per key, however, the the output will have one row for each _pairing_ of records from each table. A key with two records from the left table and 3 records from the right table yields six output records.
 
+Using the `GROUP ALL` trick we learned last chapter, we can count the total records before and after a many-to-many JOIN:
+
+[source,sql]
+.Many-to-Many Join (ch_06/many_to_many.pig)
 ------
+-- Count the number of bat_seasons records
+total_bat_seasons = FOREACH (GROUP bat_seasons ALL) GENERATE 
+    'bat_seasons' AS label,
+    COUNT_STAR(bat_seasons) AS total;
+
+-- Count the number of park_team_years
+total_park_team_years = FOREACH (GROUP park_team_years ALL) GENERATE
+    'park_team_years' AS label,
+    COUNT_STAR(park_team_years) AS total;
+
+-- Always trim the fields we don't need
 player_team_years = FOREACH bat_seasons GENERATE year_id, team_id, player_id;
-park_team_years   = FOREACH park_teams  GENERATE year_id, team_id, park_id;
+park_team_years   = FOREACH park_team_years GENERATE year_id, team_id, park_id;
 
 player_stadia = FOREACH (JOIN
-  player_team_years BY (year_id, team_id),
-  park_team_years   BY (year_id, team_id)
-  ) GENERATE
-  player_team_years::year_id AS year_id, player_team_years::team_id AS team_id,
-  player_id,  park_id;
+    player_team_years BY (year_id, team_id),
+    park_team_years   BY (year_id, team_id)
+    ) GENERATE
+        player_team_years::year_id AS year_id, 
+        player_team_years::team_id AS team_id,
+        player_id,
+        park_id;
+total_player_stadia = FOREACH (GROUP player_stadia ALL) GENERATE
+    'player_stadium' AS label,
+    COUNT_STAR(player_stadia) AS total;
+
+-- Finally, UNION our label/totals and dump them together
+answer = UNION total_bat_seasons, total_park_team_years, total_player_stadia; DUMP @;
 ------
 
-By consulting the Jobtracker counters (map input records vs reduce output
-records) or by explicitly using Pig to count records, you'll see that the
-77939 batting_seasons became 80565 home stadium-player pairings. The
-cross-product behavior didn't cause a big explosion in counts -- as opposed
-to our next example, which will generate much more data.
+Which results in:
+
+----
+(park_team_years,2911)
+(bat_seasons,77939)
+(player_stadio,80565)
+----
+
+You'll see that the 77939 batting_seasons became 80565 home stadium-player pairings. The cross-product behavior didn't cause a big explosion in counts -- as opposed to our next example, which will generate much more data.
 
 === Joining a Table with Itself (self-join)
 
