@@ -449,17 +449,16 @@ You'll see that the 77939 batting_seasons became 80565 home stadium-player pairi
 
 === Joining a Table with Itself (self-join)
 
-Joining a table with itself is very common when you are analyzing relationships of elements within the table (when analyzing graphs or working with datasets represented as attribute-value lists it becomes predominant.) Our example here will be to identify all teammates pairs: players listed as having played for the same team in the same year. The only annoying part about doing a self-join in Pig is that you can't, at least not directly. Pig won't let you list the same table in multiple slots of a JOIN statement, and also won't let you just write something like `"mytable_dup = mytable;"` to assign a new alias footnote:[If it didn't cause such a surprisingly hairy set of internal complications, it would have long ago been fixed]. Instead you have to use a FOREACH or somesuch to create a duplicate representative. If you don't have any other excuse, use a project-star expression: `p2 = FOREACH p1 GENERATE *;`. In this case, we already need to do a projection; we feel the most readable choice is to repeat the statement twice.
+Joining a table with itself is very common when you are analyzing relationships of elements within the table (when analyzing graphs or working with datasets represented as attribute-value lists it becomes predominant.) Our example here will be to identify all teammates pairs: players listed as having played for the same team in the same year. The only annoying part about doing a self-join in Pig is that you can't, at least not directly. Pig won't let you list the same table in multiple slots of a JOIN statement, and also won't let you just write something like `"mytable_dup = mytable;"` to assign a new alias footnote:[If it didn't cause such a surprisingly hairy set of internal complications, it would have long ago been fixed]. Instead you have to use a FOREACH to create a duplicate representative. If you don't have any other excuse, use a project-star expression: `p2 = FOREACH p1 GENERATE *;`. In this case, we already need to do a projection; we feel the most readable choice is to repeat the statement twice.
 
 ------
 -- Pig disallows self-joins so this won't work:
 wont_work = JOIN bat_seasons BY (team_id, year_id), bat_seasons BY (team_id, year_id);
+
 "ERROR ... Pig does not accept same alias as input for JOIN operation : bat_seasons"
 ------
 
-That's OK, we didn't want all those stupid fields anyway; we'll just make two copies and then join
-the table copies to find all teammate pairs. We're going to say a player isn't their their own
-teammate, and so we also reject the self-pairs.
+That's OK, we didn't want all those stupid fields anyway; we'll just make two copies and then join the table copies to find all teammate pairs. We're going to say a player isn't their their own teammate, and so we also reject the self-pairs.
 
 ------
 p1 = FOREACH bat_seasons GENERATE player_id, team_id, year_id;
@@ -471,49 +470,89 @@ teammate_pairs = FOREACH (JOIN
   ) GENERATE
     p1::player_id AS pl1,
     p2::player_id AS pl2;
-teammate_pairs = FILTER teammate_pairs BY NOT (pl1 == pl2);
+
+teammate_pairs = FILTER teammate_pairs BY (pl1 != pl2);
 ------
 
-As opposed to the slight many-to-many expansion of the previous section, there are on average ZZZ players per roster to be paired. The result set here is explosively larger: YYY pairings from the original XXX player seasons, an expansion of QQQ footnote:[See the example code for details]. Now you might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "QQQ average players per team, so QQQ times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum.
+Lets get to know our data a little better, before we proceed. How big is a baseball team, anyway?
 
-The 78,000 player seasons we joined onto the team-parks-years table In
-contrast, a similar `JOIN` expression turned 78,000 seasons into 2,292,658
-player-player pairs, an expansion of nearly thirty times
+----
+-- Get the total players per team per year
+players_per_team = FOREACH (
+    GROUP bat_seasons BY (team_id, year_id)) 
+    GENERATE 
+        FLATTEN(group) AS (team_id, year_id), 
+        COUNT_STAR(bat_seasons) AS total_players;
+
+-- Then get the average of that total
+avg_players = FOREACH (GROUP players_per_team ALL) GENERATE 
+    ROUND(AVG(players_per_team.total_players)) AS avg_players;
+
+DUMP @;
+
+(29)
+----
+
+As opposed to the slight many-to-many expansion of the previous section, there are on average about 29 players per roster to be paired. 
+
+----
+-- Finally: how big is our join?
+total_teammate_pairs = FOREACH (group teammate_pairs ALL) GENERATE 
+	COUNT_STAR(teammate_pairs) AS total;
+DUMP @;
+
+(2292658)
+----
+
+The result set here is explosively larger: 2,292,658 pairings from the original 77,939 player seasons, an expansion of almost 30x. You might have reasonably expected the expansion factor to be very close to the average number of players per team, thinking "29 average players per team, so 29 times as many pairings as players." But a join creates as many rows as the product of the records in each tables' bag -- the square of the roster size in this case -- and the sum of the squares necessarily exceeds the direct sum.
 
 (A simplification was made) footnote:[(or, what started as a footnote but should probably become a sidebar or section in the timeseries chapter -- QEM advice please) Our bat_seasons table ignores mid-season trades and only lists a single team the player played the most games for, so in infrequent cases this will identify some teammate pairs that didn't actually overlap. There's no simple option that lets you join on players' intervals of service on a team: joins must be based on testing key equality, and we would need an "overlaps" test. In the time-series chapter you'll meet tools for handling such cases, but it's a big jump in complexity for a small number of renegades. You'd be better off handling it by first listing every stint on a team for each player in a season, with separate fields for the year and for the start/end dates. Doing the self-join on the season (just as we have here) would then give you every _possible_ teammate pair, with some fraction of false pairings. Lastly, use a FILTER to reject the cases where they don't overlap. Any time you're looking at a situation where 5% of records are causing 150% of complexity, look to see whether this approach of "handle the regular case, then fix up the edge cases" can apply.]
 
-// SELECT DISTINCT b1.player_id, b2.player_id
-//   FROM bat_season b1, bat_season b2
-//   WHERE b1.team_id = b2.team_id          -- same team
-//     AND b1.year_id = b2.year_id          -- same season
-//     AND b1.player_id != b2.player_id     -- reject self-teammates
-//   GROUP BY b1.player_id
-//   ;
+Its worth noting that the equivalent SQL would be:
+
+----
+SELECT DISTINCT b1.player_id, b2.player_id
+	FROM bat_season b1, bat_season b2
+	WHERE b1.team_id = b2.team_id          -- same team
+		AND b1.year_id = b2.year_id          -- same season
+		AND b1.player_id != b2.player_id     -- reject self-teammates
+	GROUP BY b1.player_id
+;
+----
 
 === Joining Records Without Discarding Non-Matches (Outer Join)
 
 The Baseball Hall of Fame is meant to honor the very best in the game, and each year a very small number of players are added to its rolls. It's a significantly subjective indicator, which is its cardinal virtue and its cardinal flaw -- it represents the consensus judgement of experts, but colored to some small extent by emotion, nostalgia, and imperfect quantitative measures. But as you'll see over and over again, the best basis for decisions is the judgement of human experts backed by data-driven analysis. What we're assembling as we go along this tour of analytic patterns isn't a mathematical answer to who the highest performers are, it's a basis for centering discussion around the right mixture of objective measures based on evidence and human judgement where the data is imperfect.
 
-So we'd like to augment the career stats table we assembled earlier with columns showing, for hall-of-famers, the year they were admitted, and a `Null` value for the rest. (This allows that column to also serve as a boolean indicator of whether the players were inducted). If you tried to use the JOIN operator in the form we have been, you'll find that it doesn't work. A plain JOIN operation keeps only rows that have a match in all tables, and so all of the non-hall-of-famers will be excluded from the result. (This differs from COGROUP, which retains rows even when some of its inputs lack a match for a key). The answer is to use an 'outer join'
+So we'd like to augment the career stats table we assembled earlier with columns showing, for hall-of-famers, the year they were admitted, and a `Null` value for the rest. (This allows that column to also serve as a boolean indicator of whether the players were inducted). If you tried to use the JOIN operator in the form we have been, you'll find that it doesn't work. A plain `JOIN` operation keeps only rows that have a match in all tables, and so all of the non-hall-of-famers will be excluded from the result. (This differs from `COGROUP`, which retains rows even when some of its inputs lack a match for a key). The answer is to use an 'outer join'
 
 ------
-career_stats = FOREACH (
-  JOIN
+career_stats = FOREACH (JOIN
     bat_careers BY player_id LEFT OUTER,
-    batting_hof BY player_id) GENERATE
-  bat_careers::player_id..bat_careers::OPS, allstars::year_id AS hof_year;
+    hof_bat BY player_id) GENERATE
+        bat_careers::player_id, 
+        bat_careers::n_seasons,
+        hof_bat::year_inducted AS hof_year;
+
+DUMP @;
 ------
 
 Since the batting_hof table has exactly one row per player, the output has exactly as many rows as the career stats table, and exactly as many non-null rows as the hall of fame table.
 
-footnote:[Please note that the `batting_hof` table excludes players admitted to the Hall of Fame based on their pitching record. With the exception of Babe Ruth -- who would likely have made the Hall of Fame as a pitcher if he hadn't been the most dominant hitter of all time -- most pitchers have very poor offensive skills and so are relegated back with the rest of the crowd]
+footnote:[Please note that the `hof_bat` table excludes players admitted to the Hall of Fame based on their pitching record. With the exception of Babe Ruth -- who would likely have made the Hall of Fame as a pitcher if he hadn't been the most dominant hitter of all time -- most pitchers have very poor offensive skills and so are relegated back with the rest of the crowd]
 
 ------
--- (sample data)
--- (Hank Aaron)... Year
+...
+(foxja01,1,)
+(foxja02,4,)
+(foxjo01,4,)
+(foxne01,19,1997)
+...
 ------
 
-In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" `JOIN` instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
+Lets look at another example: ball parks and locations.
+
+In this example, there will be some players that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" `JOIN` instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
 
 In a Pig `JOIN` it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
 
