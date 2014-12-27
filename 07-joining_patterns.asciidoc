@@ -724,7 +724,7 @@ histogram = FOREACH (GROUP player_hits BY bin) GENERATE
     COUNT_STAR(player_hits) AS total;
 
 -- Calculate the complete set of histogram bins up to our limit
-histogram_bins = FOREACH (FILTER numbers BY number <= max_hits.max_bin) GENERATE 100 * ROUND(number/100.0) AS bin;
+histogram_bins = FOREACH (FILTER numbers BY 100 * number <= max_hits.max_bin) GENERATE 100 * number AS bin;
 
 -- Finally, join the histogram bins with the histogram data to get our gap-less histogram
 filled_histogram = FOREACH (JOIN histogram_bins BY bin LEFT OUTER, histogram BY bin) GENERATE
@@ -738,7 +738,6 @@ DUMP @;
 ===== Pattern in Use
 
 * _Where You'll Use It_  -- Whenever you know the values you want (whether they're integers, model numbers, dates, etc) and always want a corresponding row in the output table
-
 
 === Selecting Only Records That Lack a Match in Another Table (anti-join)
 
