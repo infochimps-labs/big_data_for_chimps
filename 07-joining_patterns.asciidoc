@@ -676,8 +676,9 @@ In some cases you want to ensure that there is an output row for each potential 
 
 To fill the gaps, generate a list of all the potential keys, then generate your (possibly hole-y) result table, and do a join of the keys list (LEFT OUTER) with results. In some cases, this requires one job to enumerate the keys and a separate job to calculate the results. For our purposes here, we can simply use the integer table. (We told you it was surprisingly useful!)
 
-If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, do an outer join on the integer table. (See, we told you the integers table was surprisingly useful.)
+If we prepare a histogram of career hits, similar to the one above for seasons, you'll find that Pete Rose (4256 hits) and Ty Cobb (4189 hits) have so many more hits than the third-most player (Hank Aaron, 3771 hits) there are gaps in the output bins. To make it so that every bin has an entry, do an outer join on the integer table. 
 
+[source,sql]
 ------
 -- SQL Equivalent:
 SET @H_binsize = 10;
@@ -690,28 +691,49 @@ SELECT bin, H, IFNULL(n_H,0)
 ;
 ------
 
-Regular old histogram of career hits, bin size 100
+Regular old histogram of career hits, bin size 100:
 
+[source,sql]
+.Hits Histogram without Gaps Filled In (ch_06/filled_histogram.pig)
 ------
-H_vals = FOREACH (GROUP bat_seasons BY player_id) GENERATE
-  100*ROUND(SUM(bat_seasons.H)/100.0) AS bin;
-H_hist_0 = FOREACH (GROUP H_vals BY bin) GENERATE
-  group AS bin, COUNT_STAR(H_vals) AS ct;
+player_hits = FOREACH (GROUP bat_seasons BY player_id) GENERATE
+    100 * ROUND(SUM(bat_seasons.H)/100.0) AS bin;
+histogram = FOREACH (GROUP player_hits BY bin) GENERATE
+    group AS bin, 
+    COUNT_STAR(player_hits) AS total;
 ------
 
-Generate a list of all the bins we want to keep, then perform a LEFT `JOIN` of bins with histogram
-counts. Missing rows will have a null `ct` value, which we can convert to zero.
+Generate a list of all the bins we want to keep, then perform a LEFT `JOIN` of bins with histogram counts. Missing rows will have a null `ct` value, which we can convert to zero.
 
+[source,sql]
+.Hits Histogram With Gaps Filled In (ch_06/filled_histogram.pig)
 ------
-H_bins = FOREACH (FILTER numbers_10k BY num0 <= 43) GENERATE 100*num0  AS bin;
+-- Numbers, from 0 to 9999
+numbers = LOAD '/data/gold/numbers10k.txt' AS (number:int);
 
-H_hist = FOREACH (JOIN H_bins BY bin LEFT OUTER, H_hist_0 BY bin) GENERATE
-  H_bins::bin,
-  ct,                    -- leaves missing values as null
-  (ct IS NULL ? 0 : ct)  -- converts missing values to zero
+-- Get a count of hits per player, across all player seasons
+player_hits = FOREACH (GROUP bat_seasons BY player_id) GENERATE
+    100 * ROUND(SUM(bat_seasons.H)/100.0) AS bin;
+
+-- Get the maximum player hits bin to filter the numbers relation
+max_hits = FOREACH (GROUP player_hits ALL) GENERATE MAX(player_hits.bin) AS max_bin;
+
+-- Count the number of occurrences for each bin
+histogram = FOREACH (GROUP player_hits BY bin) GENERATE
+    group AS bin, 
+    COUNT_STAR(player_hits) AS total;
+
+-- Calculate the complete set of histogram bins up to our limit
+histogram_bins = FOREACH (FILTER numbers BY number <= max_hits.max_bin) GENERATE 100 * ROUND(number/100.0) AS bin;
+
+-- Finally, join the histogram bins with the histogram data to get our gap-less histogram
+filled_histogram = FOREACH (JOIN histogram_bins BY bin LEFT OUTER, histogram BY bin) GENERATE
+    histogram_bins::bin,
+    (total IS NULL ? 0 : total)
 ;
-------
 
+DUMP @;
+------
 
 ===== Pattern in Use
 
