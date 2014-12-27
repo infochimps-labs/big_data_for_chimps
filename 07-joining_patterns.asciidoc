@@ -550,13 +550,31 @@ footnote:[Please note that the `hof_bat` table excludes players admitted to the 
 ...
 ------
 
-Lets look at another example: ball parks and locations.
+Lets look at another example: lets `JOIN` ball park/team locations and generic geographic data from http://geonames.org[GeoNames]. 
 
-In this example, there will be some players that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" `JOIN` instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
+----
+geonames = FILTER geonames BY feature_code == 'STDM';
+
+parks_geonames = JOIN parks BY (park_name, state, country) LEFT OUTER, geonames BY (name, admin1_code, country_code); 
+DUMP @;
+----
+
+Which gets us some records with matched place names, and some without:
+
+----
+(STP01,Tropicana Field,1998-03-31,2013-09-23,1,1286,-82.65,27.77,St. Petersburg,FL,US,4175752,Tropicana Field,Tropicana Field,Tropikana-fild,teulopikana pildeu,Тропикана-филд,トロピカーナ・フィールド,트로피카나 필드,27.76781,-82.6526,S,STDM,US,,FL,103,,,0,8,27,America/New_York,2013-01-09)
+(CHI02,23rd Street Park,1872-05-29,1877-10-06,0,129,-87.63,41.85,Chicago,IL,US,,,,,,,,,,,,,,,,,,,)
+(KAN02,Association Park,1886-04-30,1888-09-29,0,114,-94.56,39.11,Kansas City,MO,US,,,,,,,,,,,,,,,,,,,)
+(CLE04,Brotherhood Park,1890-04-30,1890-10-04,0,62,-81.65,41.48,Cleveland,OH,US,,,,,,,,,,,,,,,,,,,)
+(STL09,Busch Stadium II,1966-05-12,2005-10-02,0,3174,-90.19,38.62,St. Louis,MO,US,,,,,,,,,,,,,,,,,,,)
+(SFO02,Candlestick Park,1960-04-12,1999-09-30,0,3173,-122.39,37.71,San Francisco,CA,US,7521373,Candlestick Park,Candlestick Park,kaendeulseutig pakeu,kaindalastika parka,ملعب كانديلستيك بارك,कैन्डलस्टिक पार्क,キャンドルスティック・パーク,캔들스틱 파크,37.7135,-122.38443,S,STDM,US,,CA,075,,,0,,4,America/Los_Angeles,2010-08-16)
+----
+
+In this example, there will be some parks that have no direct match to location names and, of course, there will be many, many places that do not match a park. The first two JOINs we did were "inner" JOINs -- the output contains only rows that found a match. In this case, we want to keep all the parks, even if no places matched but we do not want to keep any places that lack a park. Since all rows from the left (first most dataset) will be retained, this is called a "left outer" JOIN. If, instead, we were trying to annotate all places with such parks as could be matched -- producing exactly one output row per place -- we would use a "right outer" `JOIN` instead. If we wanted to do the latter but (somewhat inefficiently) flag parks that failed to find a match, you would use a "full outer" JOIN. (Full JOINs are pretty rare.)
 
 In a Pig `JOIN` it is important to order the tables by size -- putting the smallest table first and the largest table last. (You'll learn why in the "Map/Reduce Patterns" (REF) chapter.) So while a right join is not terribly common in traditional SQL, it's quite valuable in Pig. If you look back at the previous examples, you will see we took care to always put the smaller table first. For small tables or tables of similar size, it is not a big deal -- but in some cases, it can have a huge impact, so get in the habit of always following this best practice.
 
-NOTE: A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that  although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
+NOTE: A Pig join is outwardly similar to the join portion of a SQL SELECT statement, but notice that although you can place simple expressions in the join expression, you can make no further manipulations to the data whatsoever in that statement. Pig's design philosophy is that each statement corresponds to a specific data transformation, making it very easy to reason about how the script will run; this makes the typical Pig script more long-winded than corresponding SQL statements but clearer for both human and robot to understand.
 
 ===== Pattern in Use
 
@@ -570,14 +588,11 @@ NOTE: A Pig join is outwardly similar to the join portion of a SQL SELECT statem
 
 ==== Joining Tables that do not have a Foreign-Key Relationship
 
-All of the joins we've done so far have been on nice clean values designed in advance to match records among tables. In SQL parlance, the career_stats and batting_hof tables both had player_id as a primary key (a column of unique, non-null values tied to each record's identity). The team_id field in the bat_seasons and park_team_years tables points into the teams table as a foreign key: an indexable column whose only values are primary keys in another table, and which may have nulls or duplicates. But sometimes you must match records among tables that do not have a polished mapping of values. In that case, it can be useful to use an outer join as the first pass to unify what records you can before you bring out the brass knuckles or big guns for what remains.
+With the exception of the last one, all of the joins we've done so far have been on nice clean values designed in advance to match records among tables. In SQL parlance, the career_stats and batting_hof tables both had player_id as a primary key (a column of unique, non-null values tied to each record's identity). The team_id field in the bat_seasons and park_team_years tables points into the teams table as a foreign key: an indexable column whose only values are primary keys in another table, and which may have nulls or duplicates. But sometimes you must match records among tables that do not have a polished mapping of values. In that case, it can be useful to use an outer join as the first pass to unify what records you can before you bring out the brass knuckles or big guns for what remains.
 
 Suppose we wanted to plot where each major-league player grew up -- perhaps as an answer in itself as a browsable map, or to allocate territories for talent scouts, or to see whether the quiet wide spaces of country living or the fast competition of growing up in the city better fosters the future career of a high performer. While the people table lists the city, state and country of birth for most players, we must geolocate those place names -- determine their longitude and latitude -- in order to plot or analyze them.
 
 There are geolocation services on the web, but they are imperfect, rate-limited and costly for commercial use footnote:[Put another way, "Accurate, cheap, fast: choose any two]. Meanwhile the freely-available geonames database gives geo-coordinates and other information on more than seven million points of interest across the globe, so for informal work it can make a lot of sense to opportunistically decorate whatever records match and then decide what to do with the rest.
-
-// TODO: rework this to instead attack the 'birth_ctry' and 'death_ctry' fields in the people table.
-// On the other hand, that allows it to accurately describe Ed Porray's birthplace as "A Ship on Atlantic Ocean". The joys of community-generated data!
 
 ------
 geolocated_somewhat = JOIN
