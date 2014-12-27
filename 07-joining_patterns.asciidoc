@@ -552,10 +552,13 @@ footnote:[Please note that the `hof_bat` table excludes players admitted to the 
 
 Lets look at another example: lets `JOIN` ball park/team locations and generic geographic data from http://geonames.org[GeoNames]. 
 
+[source,sql]
+.LEFT OUTER JOIN (ch_06/park_locations.pig)
 ----
 geonames = FILTER geonames BY feature_code == 'STDM';
 
-parks_geonames = JOIN parks BY (park_name, state, country) LEFT OUTER, geonames BY (name, admin1_code, country_code); 
+parks_geonames = JOIN parks BY (park_name, state, country) LEFT OUTER, geonames BY (name, admin1_code, country_code);
+
 DUMP @;
 ----
 
@@ -594,19 +597,72 @@ Suppose we wanted to plot where each major-league player grew up -- perhaps as a
 
 There are geolocation services on the web, but they are imperfect, rate-limited and costly for commercial use footnote:[Put another way, "Accurate, cheap, fast: choose any two]. Meanwhile the freely-available geonames database gives geo-coordinates and other information on more than seven million points of interest across the globe, so for informal work it can make a lot of sense to opportunistically decorate whatever records match and then decide what to do with the rest.
 
+[source,sql]
+.Geolocation JOIN without Foreign-Key Relationship (ch_06/people_locations.pig)
 ------
-geolocated_somewhat = JOIN
-  people BY (birth_city, birth_state, birth_country),
-  places BY (city, admin_1, country_id)
+-- Filter to only populated places in the US, see http://www.geonames.org/export/codes.html
+geonames = FILTER geonames BY feature_code matches 'PPL.*' AND country_code == 'US';
+geonames = FOREACH geonames GENERATE geonameid, latitude, longitude, name, admin1_code;
+
+-- Trim extra fields from players, and limit to those born in the USA
+players = FILTER players BY birth_country == 'USA';
+players = FOREACH players GENERATE player_id, name_first, name_last, birth_city, birth_state, birth_country;
+
+-- Now make our 'approximate' JOIN
+geolocated_somewhat = JOIN LEFT OUTER
+    players BY (birth_city, birth_state),
+    geonames BY (name, admin1_code)
+;
+
+DESCRIBE geolocated_somewhat;
+
+/*
+geolocated_somewhat: {
+    players::player_id: chararray,
+    players::name_first: chararray,
+    players::name_last: chararray,
+    players::birth_city: chararray,
+    players::birth_state: chararray,
+    players::birth_country: chararray,
+    geonames::geonameid: chararray,
+    geonames::latitude: float,
+    geonames::longitude: float,
+    geonames::name: chararray,
+    geonames::admin1_code: chararray}
+*/
+
+geolocated_trimmed = FOREACH geolocated_somewhat GENERATE player_id, name_first, name_last, latitude, longitude;
+
+DUMP @;
+
 ------
 
-In the important sense, this worked quite well: XXX% of records found a match.
-(Question do we talk about the problems of multiple matches on name here, or do we quietly handle it?)
+Lets take a look at a metric behind the `JOIN`:
 
-Experienced database hands might now suggest doing a join using some sort of fuzzy-match
-or some sort of other fuzzy equality. However, in map-reduce the only kind of join you can do is an "equi-join" -- one that uses key equality to match records. Unless an operation is 'transitive' -- that is, unless `a joinsto b` and `b joinsto c` guarantees `a joinsto c`, a plain join won't work, which rules out approximate string matches; joins on range criteria (where keys are related through inequalities (x < y)); graph distance; geographic nearness; and edit distance. You also can't use a plain join on an 'OR' condition: "match stadiums and places if the placename and state are equal or the city and state are equal", "match records if the postal code from table A matches any of the component zip codes of place B". Much of the middle part of this book centers on what to do when there _is_ a clear way to group related records in context, but which is more complicated than key equality.
+[source,sql]
+----
+total = FOREACH (GROUP geolocated_trimmed ALL) GENERATE 'total' AS label, COUNT_STAR(geolocated_trimmed) AS total;
 
-Exercise: are either city dwellers or country folk over-represented among major leaguers? Selecting only places with very high or very low population in the geonames table might serve as a sufficient measure of urban-ness; or you could use census data and the methods we cover in the geographic data analysis chapter to form a more nuanced indicator. The hard part will be to baseline the data for population: the question is how the urban vs rural proportion of ballplayers compares to the proportion of the general populace, but that distribution has changed dramatically over our period of interest. The US has seen a steady increase from a rural majority pre-1920 to a four-fifths majority of city dwellers today.
+with_lat = FILTER geolocated_trimmed BY latitude IS NOT NULL;
+with_lat_total = FOREACH (GROUP with_lat ALL) GENERATE 'with_lat' AS label, COUNT_STAR(with_lat) AS total;
+
+without_lat = FILTER geolocated_trimmed BY latitude IS NULL;
+without_lat_total = FOREACH (GROUP without_lat ALL) GENERATE 'without_lat' AS label, COUNT_STAR(without_lat) AS total;
+
+report = UNION total, with_lat_total, without_lat_total;
+
+DUMP @;
+----
+
+In the important sense, this `JOIN` worked quite well: 76.7% of records found a match:
+
+----
+(without_lat,3893)
+(with_lat,12868)
+(total,16761)
+----
+
+Experienced database hands might now suggest doing a join using some sort of fuzzy-match or some sort of other fuzzy equality. However, in map-reduce the only kind of join you can do is an "equi-join" -- one that uses key equality to match records. Unless an operation is 'transitive' -- that is, unless `a joinsto b` and `b joinsto c` guarantees `a joinsto c`, a plain join won't work, which rules out approximate string matches; joins on range criteria (where keys are related through inequalities (x < y)); graph distance; geographic nearness; and edit distance. You also can't use a plain join on an 'OR' condition: "match stadiums and places if the placename and state are equal or the city and state are equal", "match records if the postal code from table A matches any of the component zip codes of place B". Much of the latter part of this book centers on what to do when there _is_ a clear way to group related records in context, but which is more complicated than key equality.
 
 ===== Pattern in Use
 
