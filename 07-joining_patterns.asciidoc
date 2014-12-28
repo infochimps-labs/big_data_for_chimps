@@ -735,68 +735,72 @@ filled_histogram = FOREACH (JOIN histogram_bins BY bin LEFT OUTER, histogram BY 
 DUMP @;
 ------
 
+You can see Pete Rose, Ty Cobb and Hank Aaron:
+
+----
+...
+(3800,1)
+(3900,0)
+(4000,0)
+(4100,0)
+(4200,1)
+(4300,1)
+----
+
 ===== Pattern in Use
 
 * _Where You'll Use It_  -- Whenever you know the values you want (whether they're integers, model numbers, dates, etc) and always want a corresponding row in the output table
 
 === Selecting Only Records That Lack a Match in Another Table (anti-join)
 
-A common use of a `JOIN` is to perform an effective filter on a large number of values -- the big brother of the pattern in section (REF). In this case (known as an 'anti-join'), we don't want to keep the selection table around afterwards
+In the case of an anti-join (known as an 'anti-join'), we want to remove records from one table that do have a match in the other table. We can achieve this with an `OUTER JOIN` followed by a `FILTER` on those records lacking the 'required' fields from the join.
 
 ------
--- Project just the fields we need
-allstars_p  = FOREACH allstars GENERATE player_id, year_id;
+-- Always trim fields we don't need
+all_stars_p  = FOREACH all_stars GENERATE player_id, year_id;
 
 -- An outer join of the two will leave both matches and non-matches.
-scrub_seasons_jn = JOIN
-  bat_seasons BY (player_id, year_id) LEFT OUTER,
-  allstars_p  BY (player_id, year_id);
+scrub_seasons_join = JOIN
+    bat_seasons BY (player_id, year_id) LEFT OUTER,
+    all_stars_p BY (player_id, year_id);
 
--- ...and the non-matches will have Nulls in all the allstars slots
-scrub_seasons_jn_f = FILTER scrub_seasons_jn
-  BY allstars_p::player_id IS NULL;
+-- ...and the non-matches will have Nulls in all the all-stars slots
+anti_join = FILTER scrub_seasons_join
+    BY all_stars_p::player_id IS NULL;
 ------
 
-Once the matches have been eliminated, pick off the first table's fields. The double-colon in 'bat_seasons::' makes clear which table's field we mean. The fieldname-ellipsis 'bat_seasons::player_id..bat_seasons::RBI' selects all the fields in bat_seasons from player_id to RBI, which is to say all of them.
-
-------
-scrub_seasons_jn   = FOREACH scrub_seasons_jn_f
-  GENERATE bat_seasons::player_id..bat_seasons::RBI;
-------
-
-// This is a good use of the fieldname-ellipsis syntax: to the reader it says "all fields of bat_seasons, the exact members of which are of no concern". (It would be even better if we could write `bat_seasons::*`, but that's not supported in Pig <= 0.12.0.) In a context where we did go on to care about the actual fields, that syntax becomes an unstated assumption about not just what fields exist at this stage, but what _order_ they occur in. We can try to justify why you wouldn't use it with a sad story: Suppose you wrote `bat_seasons::PA..bat_seasons::HR` to mean the counting stats (PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR). In that case, an upstream rearrangement of the schema could cause fields to be added or removed in a way that would be hard to identify. Now, that failure scenario almost certainly won't happen, and if it did it probably wouldn't lead to real problems, and if there were they most likely wouldn't be that hard to track down. The true point is that it's lazy and unhelpful to the reader. If you mean "PA, AB, HBP, SH, BB, H, h1B, h2B, h3b, HR", then that's what you should say.
+Once the matches have been eliminated, pick off the first table's fields. The double-colon in 'all_stars_p::' makes clear which table's field we mean.
 
 === Selecting Only Records That Posess a Match in Another Table (semi-join)
 
-A semi-join is the counterpart to  an anti-join: you want to find records that _do_ have a match in another table, but not keep the fields from that table around.
+A semi-join is the counterpart to an anti-join: you want to find records that _do_ have a match in another table, but not keep the fields from that table around.
 
-Let's use the same example -- player seasons where they made the all-star team -- but only look for seasons that _were_ all-stars.
-You might think you could do this with a join:
+Let's use the same example -- player seasons where they made the all-star team -- but only look for seasons that _were_ all-stars. You might think you could do this with a join:
 
 ------
 -- Don't do this... produces duplicates!
-bats_g    = JOIN allstar BY (player_id, year_id), bats BY (player_id, year_id);
-badness   = FOREACH bats_g GENERATE bats::player_id .. bats::HR;
+bats_g  = JOIN all_stars BY (player_id, year_id), bat_seasons BY (player_id, year_id);
+badness = FOREACH bats_g GENERATE bat_seasons::player_id .. bat_seasons::HR;
 ------
 
 The result is wrong, and even a diligent spot-check will probably fail to notice. You see, from 1959-1962 there were multiple All-Star games (!), and so players who appeared in both have two rows in the All-Star table. In turn, each singular row in the `bat_season` table became two rows in the result for players in those years. We've broken the contract of leaving the original table unchanged.
 
-This is the biggest thing people coming from a SQL background need to change about their thinking. In SQL, the JOIN rules all. In Pig, GROUP and COGROUP rule the land, and nearly every other structural operation is some piece of syntactic sugar on top of those. So when going gets rough with a JOIN, remember that it's just a convenience and ask yourself whether a COGROUP would work better. In this case it does:
+This is the biggest thing people coming from a SQL background need to change about their thinking. In SQL, the `JOIN` rules all. In Pig, `GROUP` and `COGROUP` rule the land, and nearly every other structural operation is some piece of syntactic sugar on top of those. So when going gets rough with a `JOIN`, remember that it's just a convenience and ask yourself whether a `COGROUP` would work better. In this case it does:
 
 ------
 -- Players with no entry in the allstars_p table have an empty allstars_p bag
 allstar_seasons_cg = COGROUP
-  bat_seasons BY (player_id, year_id),
-  allstars_p  BY (player_id, year_id);
+    bat_seasons BY (player_id, year_id),
+    allstars_p  BY (player_id, year_id);
 ------
 
 Now select all cogrouped rows where there was an all-star record, and project just the records from the original table.
 
 ------
 -- One row in the batting table => One row in the result
-allstar_seasons = FOREACH 
-  (FILTER allstar_seasons_cg BY (COUNT_STAR(allstars_p) > 0L))
-  GENERATE FLATTEN(bat_seasons);
+all_star_seasons = FOREACH 
+    (FILTER all_star_seasons_cg BY (COUNT_STAR(all_stars_p) > 0L))
+    GENERATE FLATTEN(bat_seasons);
 ------
 
 The `JOIN` version was equivent to flattening both bags (`GENERATE FLATTEN(bat_seasons), FLATTEN(allstars_p)`) and then removing the fields we had just flattened. In the `COGROUP` version, neither the incorrect duplicate rows nor the unnecessary columns are created.
@@ -809,27 +813,27 @@ As a lesson on the virtues of JOINs and COGROUPs, let's examine an alternate ver
 ------
 -- Players with no entry in the allstars_p table have an empty allstars_p bag
 bats_ast_cg = COGROUP
-  bat_seasons BY (player_id, year_id),
-  allstars_p BY (player_id, year_id);
+    bat_seasons BY (player_id, year_id),
+    all_stars_p BY (player_id, year_id);
 ------
 
 Select all cogrouped rows where there were no all-star records, and project the batting table fields.
 
 ------
-scrub_seasons_cg = FOREACH
-  (FILTER bats_ast_cg BY (COUNT_STAR(allstars_p) == 0L))
-  GENERATE FLATTEN(bat_seasons);
+anti_join = FOREACH
+    (FILTER bats_ast_cg BY (COUNT_STAR(all_stars_p) == 0L))
+    GENERATE FLATTEN(bat_seasons);
 ------
 
 // IMPROVEME: take another look to see whether the JOIN materializes more data than the COGROUP
 
 There are three opportunities for optimization here. Though these tables are far to small to warrant optimization, it's a good teachable moment for when to (not) optimize.
 
-* You'll notice that we projected off the extraneous fields from the allstars table before the map. Pig is sometimes smart enough to eliminate fields we   don't need early. There's two ways to see if it did so. The surest way is to consult the tree that EXPLAIN produces. If you make the program use `allstars` and not `allstars_p`, you'll see that the extra fields are   present. The other way is to look at how much data comes to the reducer with and without the projection. If there is less data using `allstars_p` than `allstars`, the explicit projection is required.
+* You'll notice that we projected off the extraneous fields from the allstars table before the map. Pig is sometimes smart enough to eliminate fields we don't need early. There's two ways to see if it did so. The surest way is to consult the tree that EXPLAIN produces. If you make the program use `all_stars` and not `all_stars_p`, you'll see that the extra fields are present. The other way is to look at how much data comes to the reducer with and without the projection. If there is less data using `all_stars_p` than `all_stars`, the explicit projection is required.
 
 * The EXPLAIN output also shows that co-group version has a simpler map-reduce plan, raising the question of whether it's more performant.
 
-* Usually we put the smaller table (allstars) on the right in a join or cogroup. However, although the allstars table is smaller, it has larger cardinality (barely): `(player_id, team_id)` is a primary key for the bat_seasons table. So the order is likely to be irrelevant.
+* Usually we put the smaller table (all_stars) on the right in a join or cogroup. However, although the allstars table is smaller, it has larger cardinality (barely): `(player_id, team_id)` is a primary key for the bat_seasons table. So the order is likely to be irrelevant.
 
 But "more performant" or "possibly more performant" doesn't mean "use it instead".
 
@@ -837,9 +841,6 @@ Eliminating extra fields is almost always worth it, but the explicit projection 
 
 In contrast, any SQL user will immediately recognize the join formulation of this as an anti-join. Introducing a RIGHT OUTER join or choosing the cogroup version disrupts that familiarity. Choose the version you find most readable, and then find out if you care whether it's more performant; the simpler explain graph or the smaller left-hand join table _do not_ necessarily imply a faster dataflow. For this particular shape of data, even at much larger scale we'd be surprised to learn that either of the latter two optimizations mattered.
 
+=== Outro
 
-// // ==== Shooting Yourself in the Foot with `COGROUP`-and-`FLATTEN`
-// //
-// // Discuss general problem of cross product
-// //
-// // Discuss common error of flattening on two fields and not on one tuple
+In this chapter we've learned how to `JOIN` and `COGROUP`. In the next chapter we'll learn about sorting, or ordering data.
