@@ -282,48 +282,52 @@ Use the `ORDER` operator before a `LIMIT` to guarantee this "top _K_" ordering. 
 
 Let's say you wanted to select the top 20 seasons by number of hits:
 
+[source,sql]
+.Top 20 Player Seasons by Hits (ch_07/bat_seasons.pig)
 ------
-TODO: Pig code
+sorted_seasons = ORDER (FILTER bat_seasons BY PA > 60 AND year_id > 1900) BY H DESC;
+top_20_seasons = LIMIT sorted_seasons 20;
 ------
 
 In SQL, this would be:
 
+[source,sql]
 ------
-SELECT H FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H  DESC LIMIT 10
+SELECT * FROM bat_season WHERE PA > 60 AND year_id > 1900 ORDER BY H DESC LIMIT 20;
 ------
-
-// TODO: not sure what is the second optimization here?
-// TODO: remove the term "N" if it is not used elsewhere in this section.
-
 
 There are two useful optimizations to make when the number of records you will keep (_K_) is much smaller than the number of records in the table (_N_). The first one, which Pig does for you, is to only retain the top K records at each Mapper; this is a great demonstration of where a Combiner is useful:  After each intermediate merge/sort on the Map side and the Reduce side, the Combiner discards all but the top K records.
 
-NOTE: We've cheated on the theme of this chapter (pipeline-only operations) -- sharp eyes will note that `ORDER … LIMIT` will in fact trigger a reduce operation.  We still feel that top-_K_ belongs with the other data elimination pattern, though, so we've included it here.
+==== Top K Within a Group
 
-// ==== Top K Within a Group
-// 
-// There is a situation where the heap-based top K algorithm is appropriate:  finding the top K elements for a group. Pig's 'top' function accepts a bag and returns a bag with its top K elements.
-// 
-// TODO: needs code example. (Old example used World Cup data; let's find one that fits the baseball dataset)
+Pig's 'top' function accepts a bag and returns a bag with its top K elements.
 
-// ==== Numbering Records by Sorted Rank
-// 
-// * ORDER by multiple fields: sort on OPS to three places then use games then playerid
-// * note value of stabilizing list
-// * (how do `null`s sort?)
-// * ASC / DESC: fewest strikeouts per plate appearance
+[source,sql]
+.Top 5 players per season by RBIs (ch_07/bat_seasons.pig)
+----
+top_5_per_season = FOREACH (GROUP bat_seasons BY year_id) GENERATE 
+    group AS year_id, 
+    TOP(5,19,bat_seasons); -- 19th column is RBIs (start at 0)
+----
+
+You could achieve the same output with the more cumbersome:
+
+----
+top_5_per_season = FOREACH (GROUP bat_seasons BY year_id) {
+    sorted = ORDER bat_seasons BY RBI DESC;
+    top_5 = LIMIT sorted 5;
+    ascending = ORDER top_5 BY RBI;
+    GENERATE 
+        group AS year_id,
+        ascending AS top_5;
+};
+----
 
 === Numbering Records in Rank Order
 
 If you supply only the name of the table, RANK acts as a pipeline operation, introducing no extra map/reduce stage. Each split is numbered as a unit: the third line of chunk `part-00000` gets rank 2, the third line of chunk `part-00001` gets rank 2, and so on.
 
-When you give rank a field to act on, it
-
-It's important to know that in current versions of Pig, the RANK operator sets parallelism one,
-forcing all data to a single reducer. If your data is unacceptably large for this, you can use the
-method used in (REF) "Assigning a unique identifier to each line" to get a unique compound index
-that matches the total ordering, which might meet your needs. Otherwise, we can offer you no good
-workaround -- frankly your best option may be to pay someone to fix this
+It's important to know that in current versions of Pig, the RANK operator sets parallelism one, forcing all data to a single reducer. If your data is unacceptably large for this, you can use the method used in (REF) "Assigning a unique identifier to each line" to get a unique compound index that matches the total ordering, which might meet your needs. Otherwise, we can offer you no good workaround.
 
 ------
 gift_id gift      RANK   RANK gift_id  RANK gift DENSE
