@@ -312,6 +312,7 @@ top_5_per_season = FOREACH (GROUP bat_seasons BY year_id) GENERATE
 
 You could achieve the same output with the more cumbersome:
 
+[source,sql]
 ----
 top_5_per_season = FOREACH (GROUP bat_seasons BY year_id) {
     sorted = ORDER bat_seasons BY RBI DESC;
@@ -325,9 +326,21 @@ top_5_per_season = FOREACH (GROUP bat_seasons BY year_id) {
 
 === Numbering Records in Rank Order
 
+The `RANK` command prepends a ranked label for each record in a relation. You can `RANK` an entire record, or one of more fields in a record.
+
+----
+ranked_seasons = RANK bat_seasons; 
+ranked_rbi_seasons = RANK bat_seasons BY 
+    RBI DESC, 
+    H DESC, 
+    player_id;
+ranked_hit_dense = RANK bat_seasons BY
+    H DESC DENSE;
+----
+
 If you supply only the name of the table, RANK acts as a pipeline operation, introducing no extra map/reduce stage. Each split is numbered as a unit: the third line of chunk `part-00000` gets rank 2, the third line of chunk `part-00001` gets rank 2, and so on.
 
-It's important to know that in current versions of Pig, the RANK operator sets parallelism one, forcing all data to a single reducer. If your data is unacceptably large for this, you can use the method used in (REF) "Assigning a unique identifier to each line" to get a unique compound index that matches the total ordering, which might meet your needs. Otherwise, we can offer you no good workaround.
+It's important to know that in current versions of Pig, the RANK operator sets parallelism one, forcing all data to a single reducer.
 
 ------
 gift_id gift      RANK   RANK gift_id  RANK gift DENSE
@@ -344,51 +357,31 @@ gift_id gift      RANK   RANK gift_id  RANK gift DENSE
 4c calling birds    11       4            7
 ------
 
-// ==== Rank records in a group using Stitch/Over
-// 
-// 
-// ### ???
-// 
-// * Over / Stitch
-//   - Calculating Successive-Record Differences
-//   - Generating a Running Total (over and stitch)
-//   - Finding Cumulative Sums and Running Averages
-//   - age vs y-o-y performance change
-
-
 ==== Finding Records Associated with Maximum Values
 
-For each player, find their best significant season by OPS:
+Sometimes we want to find the record with the maximum value and preserve it. In Pig, we can do this with a nested `ORDER BY`/`LIMIT` inside a `FOREACH`. For example, for each player, find their best season by RBI:
 
 ------
-  -- For each season by a player, select the team they played the most games for.
-  -- In SQL, this is fairly clumsy (involving a self-join and then elimination of
-  -- ties) In Pig, we can ORDER BY within a foreach and then pluck the first
-  -- element of the bag.
+-- For each season by a player, select the team they played the most games for.
+-- In SQL, this is fairly clumsy (involving a self-join and then elimination of
+-- ties) In Pig, we can ORDER BY within a foreach and then pluck the first
+-- element of the bag.
 
-SELECT bat.player_id, bat.year_id, bat.team_id, MAX(batmax.Gmax), MAX(batmax.stints), MAX(team_ids), MAX(Gs)
-  FROM       batting bat
-  INNER JOIN (SELECT player_id, year_id, COUNT(*) AS stints, MAX(G) AS Gmax, GROUP_CONCAT(team_id) AS team_ids, GROUP_CONCAT(G) AS Gs FROM batting bat GROUP BY player_id, year_id) batmax
-  ON bat.player_id = batmax.player_id AND bat.year_id = batmax.year_id AND bat.G = batmax.Gmax
-  GROUP BY player_id, year_id
-  -- WHERE stints > 1
-  ;
+top_stint_per_player_year = FOREACH (GROUP bat_seasons BY (player_id, year_id)) {
+    sorted = ORDER bat_seasons BY RBI DESC;
+    top_stint = LIMIT sorted 1;
+		stints = COUNT_STAR(bat_seasons);
+    GENERATE 
+        group.player_id, 
+        group.year_id, 
+				stints,
+        FLATTEN(top_stint.(team_id, RBI)) AS (team_id, RBI);
+};
 
-  -- About 7% of seasons have more than one stint; only about 2% of seasons have
-  -- more than one stint and more than a half-season's worth of games
-SELECT COUNT(*), SUM(mt1stint), SUM(mt1stint)/COUNT(*) FROM (SELECT player_id, year_id, IF(COUNT(*) > 1 AND SUM(G) > 77, 1, 0) AS mt1stint FROM batting GROUP BY player_id, year_id) bat
+DUMP @;
 ------
 
-TOP(topN, sort_column_idx, bag_of_tuples)
-must have an explicit field -- can't use an expression
-
-Leaderboard By Season-and-league
-
-GROUP BY year_id, lg_id
-
-There is no good way to find the tuples associated with the minimum value.
-EXERCISE: make a "BTM" UDF, having the same signature as the "TOP" operation,
-to return the lowest-n tuples from a bag.
+It turns out this dataset has no stints, only the most significant stint is listed in the data.
 
 ==== Top K Records within a table using ORDER..LIMIT
 
