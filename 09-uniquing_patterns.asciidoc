@@ -1,36 +1,51 @@
 == Analytic Patterns: Duplicate and Unique Records
 
+This chapter will cover duplicate and unique records. We often find ourselves dealing with multiple records for a given concept or entity. We'll introduce the operations `UNION`, `DISTINCT` and various DataFu UDFs (User Defined Functions).
+
 === Handling Duplicates
+
+It is often the case that you want to determine the unique set of values in a table or relation - that is, you want to remove duplicate values and retain only unique records. The `DISTINCT` operator performs this operation.
 
 ==== Eliminating Duplicate Records from a Table
 
-The park_teams table has a row for every season. To find every distinct pair of team and home ballpark, use the DISTINCT operator. This is equivalent to the SQL statement `SELECT DISTINCT player_id, team_id from batting;`.
+The park_team_years table has a row for every team for every season and every park in which the team played. To find every distinct pair of team and home ballpark, use the `DISTINCT` operator. This is equivalent to the SQL statement `SELECT DISTINCT player_id, team_id from batting;`.
 
+[source,sql]
+.Eliminating Duplicates (ch_08/park_teams.pig)
 ------
-tm_pk_pairs_many = FOREACH park_teams GENERATE team_id, park_id;
-tm_pk_pairs = DISTINCT tm_pk_pairs_many;
--- -- ALT     ALT01
--- -- ANA     ANA01
--- -- ARI     PHO01
--- -- ATL     ATL01
--- -- ATL     ATL02
+many_team_park_pairs = FOREACH park_team_years GENERATE 
+    team_id, 
+    park_id;
+team_park_pairs = DISTINCT many_team_park_pairs;
+
+DUMP @;
+
+...
+(WS8,WAS05)
+(WS8,WOR02)
+(WS9,WAS06)
+(WSN,WAS06)
+(WSU,WAS03)
 ------
 
-Don't fall in the trap of using a GROUP statement to find distinct values:
+Don't fall in the trap of using a `GROUP` statement to find distinct values:
 
+[source,sql]
 ------
-dont_do_this = FOREACH (GROUP tm_pk_pairs_many BY (team_id, park_id)) GENERATE
-  group.team_id, group.park_id;
+dont_do_this = FOREACH (GROUP park_team_years BY (team_id, park_id)) GENERATE
+    group.team_id, 
+    group.park_id;
 ------
 
-The DISTINCT operation is able to use a combiner, eliminating duplicates at the mapper before shipping them to the reducer. This is a big win when there are frequent duplicates, especially if duplicates are likely to occur near each other. For example, duplicates in web logs (from refreshes, callbacks, etc) will be sparse globally, but found often in the same log file.
+The `DISTINCT` operation is able to use a combiner, eliminating duplicates at the mapper before shipping them to the reducer. This is a big win when there are frequent duplicates, especially if duplicates are likely to occur near each other. For example, duplicates in web logs (from refreshes, callbacks, etc.) will be sparse globally, but found often in the same log file.
 
-The combiner may impose a minor penalty when there are very few or very sparse duplicates. In that case, you should still use DISTINCT, but disable combiners with the `pig.exec.nocombiner=true` setting.
+The combiner may impose a minor penalty when there are very few or very sparse duplicates. In that case, you should still use `DISTINCT`, but disable combiners with the `pig.exec.nocombiner=true` setting.
 
 ==== Eliminating Duplicate Records from a Group
 
 Eliminate duplicates from a group with the DISTINCT operator inside a nested foreach. Instead of finding every distinct (team, home ballpark) pair as we just did, let's find the list of distinct home ballparks for each team:
 
+[source,sql]
 ------
 team_parkslist = FOREACH (GROUP park_teams BY team_id) {
   parks = DISTINCT park_teams.park_id;
