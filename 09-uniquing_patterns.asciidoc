@@ -43,57 +43,79 @@ The combiner may impose a minor penalty when there are very few or very sparse d
 
 ==== Eliminating Duplicate Records from a Group
 
-Eliminate duplicates from a group with the DISTINCT operator inside a nested foreach. Instead of finding every distinct (team, home ballpark) pair as we just did, let's find the list of distinct home ballparks for each team:
+We've seen how to eliminate duplicate records in relations - but what about within groups? This can be done with the `DISTINCT` operator inside a nested `FOREACH`. Instead of finding every distinct team/home ballpark pair as we just did, let's find the list of distinct home ballparks for each team:
 
 [source,sql]
+.Eliminating Duplicate Records from a Group (ch_08/park_teams.pig)
 ------
-team_parkslist = FOREACH (GROUP park_teams BY team_id) {
-  parks = DISTINCT park_teams.park_id;
-  GENERATE group AS team_id, BagToString(parks, '|');
+-- Eliminating Duplicate Records from a Group
+team_park_list = FOREACH (GROUP park_team_years BY team_id) {
+    parks = DISTINCT park_team_years.park_id;
+    GENERATE 
+        group AS team_id, 
+        BagToString(parks, '|');
 };
 
-EXPLAIN team_parkslist;
+DUMP @;
 
--- -- CL1     CHI02|CIN01|CLE01
--- -- CL2     CLE02
--- -- CL3     CLE03|CLE09|GEA01|NEW03
--- -- CL4     CHI08|CLE03|CLE05|CLL01|DET01|IND06|PHI09|ROC02|ROC03|STL05
+...
+(SLN,KAN03|STL03|STL05|STL07|STL09|STL10)
+(SLU,STL04)
+(SR1,SYR01)
+(SR2,SYR02|SYR03|THR01)
+(TBA,LBV01|STP01|TOK01)
 ------
+
+You may be familiar with the equivalent SQL:
 
 ------
 SELECT team_id, GROUP_CONCAT(DISTINCT park_id ORDER BY park_id) AS park_ids
   FROM park_team_years
   GROUP BY team_id
   ORDER BY team_id, park_id DESC
-  ;
+;
 ------
 
 ==== Eliminating All But One Duplicate Based on a Key
 
-The DataFu `DistinctBy` UDF selects a single record for each key in a bag.
+The DataFu `DistinctBy` UDF selects a single record for each key in a bag; the first record of each key it encounters.
 
 It has the nice feature of being order-preserving: only the first record for a key is output, and all records that make it to the output follow the same relative ordering they had in the input bag,
 
 This gives us a clean way to retrieve the distinct teams a player served in, along with the first and last year of their tenure:define DistinctBy
 
 ------
-DEFINE DistinctByYear datafu.pig.bags.DistinctBy('0');
+-- Find distinct tuples based on the 0th (first) key
+DEFINE DistinctByYear datafu.pig.bags.DistinctBy('1');
 
-pltmyrs = FOREACH bat_seasons GENERATE player_id, year_id, team_id;
-player_teams = FOREACH (GROUP pltmyrs BY player_id) {
-  -- TODO does this use secondary sort, or cause a POSort?
-  pltmyrs_o = ORDER pltmyrs.(team_id, year_id) BY team_id;
-  pltmyrs = DistinctByYear(pltmyrs);
-  GENERATE player_id, BagToString(pltmyrs, '|');
+bat_seasons = FOREACH bat_seasons GENERATE 
+    player_id, 
+    year_id, 
+    team_id;
+
+player_teams = FOREACH (GROUP bat_seasons BY player_id) {
+    sorted = ORDER bat_seasons.(team_id, year_id) BY year_id;
+    distinct_by_year = DistinctByYear(sorted);
+    GENERATE 
+        group AS player_id, 
+        BagToString(distinct_by_year, '|');
 };
+
+dump @;
+
+...
+(zupcibo01,BOS|1991|BOS|1992|BOS|1993|CHA|1994)
+(zuvelpa01,ATL|1982|ATL|1983|ATL|1984|ATL|1985|NYA|1986|NYA|1987|CLE|1988|CLE|1989)
+(zuverge01,DET|1954|BAL|1955|BAL|1956|BAL|1957|BAL|1958)
+(zwilldu01,CHA|1910|CHF|1914|CHF|1915|CHN|1916)
 ------
 
 The key is specified with a string argument in the DEFINE statement, naming the positional index(es) of the key's fields as a comma-separated list.
 
 ==== Selecting Records with Unique (or with Duplicate) Values for a Key
 
-The DISTINCT operation is useful when you want to eliminate duplicates based on the whole record. But to instead find only rows having a unique
-record for its key, or to find only rows having multiple records for its key, do a GROUP BY and then filter on the size of the resulting bag.
+The `DISTINCT` operation is useful when you want to eliminate duplicates based on the whole record. But to instead find only rows having a unique
+record for its key, or to find only rows having multiple records for its key, do a `GROUP BY` and then filter on the size of the resulting bag.
 
 On a broadcast a couple years ago, announcer Tim McCarver paused from his regular delivery of the obvious and the officious to note that second baseman Asdrubal Cabrera "is the only player in the majors with that first name". This raises the question: how many other people in the history of baseball similarly are uniquely yclept footnote:[yclept /iˈklept/: by the name of; called.]? Let's create a table for the biography site awarding players the "Asdrubal" badge if they are the only one in possession of their first name.
 
