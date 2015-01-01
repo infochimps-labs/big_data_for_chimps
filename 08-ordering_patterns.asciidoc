@@ -384,8 +384,30 @@ DUMP @;
 
 It turns out this dataset has no stints, only the most significant stint is listed in the `bat_seasons` data.
 
+==== Shuffle a Set of Records
+
+One common use of Hadoop is to run simulations at scale. When doing this, it is often handy to prepare multiple unique sorts of a single dataset. In other words, multiple 'shuffles' of the same data. To shuffle a set of records, we’re going to apply the Assign a unique ID pattern to generate an arbitrary key (one that is decoupled from the records' content), and then use that to order the records.
+
+[source,sql]
+-----
+DEFINE Hasher datafu.pig.hash.Hasher('sip24', 'rand');
+
+people_hashed = FOREACH people GENERATE Hasher(player_id) AS hash, *;
+
+people_ranked = RANK people_hashed;
+
+-- Back to the original records by skipping the first, hash field
+people_shuffled = FOREACH people_ranked GENERATE $2..;
+
+STORE people_shuffled INTO 'people_shuffled/1/';
+-----
+
+You can run this script multiple times with different output paths to get different shuffles of the same data.
+
+We use a randomized hash function UDF for each record; then number each line within the split. The important difference here is that the hash function we generated accepts a seed that we can mix in to each record. If you supply a constant to the constructor (see the documentation) then the records will be put into an effectively random order, but the same random order each time. By supplying the string `'rand'` as the argument, the UDF will use a different seed on each run. What's nice about this approach is that although the ordering is different from run to run, it does not exhibit the anti-pattern of changing from task attempt to task attempt. The seed is generated once and then used everywhere. Rather than creating a new random number for each row, you use the hash to define an effectively random ordering, and the seed to choose which random ordering to apply.
+
 === Outro
 
-In this chapter, we've learned to sort, rank and order data. In the next chapter, we'll learn about creating unique datasets.
+In this chapter, we've learned to sort, rank and order data. In the next chapter, we'll learn about creating unique values and relations, and working with sets.
 
 
