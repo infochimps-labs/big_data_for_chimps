@@ -115,60 +115,36 @@ The key is specified with a string argument in the DEFINE statement, naming the 
 ==== Selecting Records with Unique (or with Duplicate) Values for a Key
 
 The `DISTINCT` operation is useful when you want to eliminate duplicates based on the whole record. But to instead find only rows having a unique
-record for its key, or to find only rows having multiple records for its key, do a `GROUP BY` and then filter on the size of the resulting bag.
+record for its key, or to find only rows having multiple records for its key, do a `GROUP BY` and then filter on the size of the resulting bag using `COUNT_STAR()`.
 
 On a broadcast a couple years ago, announcer Tim McCarver paused from his regular delivery of the obvious and the officious to note that second baseman Asdrubal Cabrera "is the only player in the majors with that first name". This raises the question: how many other people in the history of baseball similarly are uniquely yclept footnote:[yclept /iˈklept/: by the name of; called.]? Let's create a table for the biography site awarding players the "Asdrubal" badge if they are the only one in possession of their first name.
 
+[source,sql]
+.Selecting Records with Unique Fields (ch_08/people.pig)
 ------
-uniquely_yclept_g = GROUP   people BY name_first;
-uniquely_yclept_f = FILTER  uniquely_yclept_g BY COUNT_STAR(people) == 1;
-uniquely_yclept   = FOREACH uniquely_yclept_f GENERATE
-  group AS name_first,
-  FLATTEN(people.(name_last, player_id, beg_date, end_date));
+people = FOREACH people GENERATE name_first, name_last, player_id, beg_date, end_date;
+
+by_first_name      = GROUP   people BY name_first;
+unique_first_names = FILTER  by_first_name BY COUNT_STAR(people) == 1;
+unique_players     = FOREACH unique_first_names GENERATE
+    group AS name_first,
+    FLATTEN(people.(name_last, player_id, beg_date, end_date));
 ------
 
-This approach should be getting familiar. We group on the key (name_first) and eliminate all rows posessing more than one record for the key. Since there is only one element in the bag, the `FLATTEN` statement just acts to push the bag's fields up into the record itself.
+Which results in some interesting names:
 
-There are some amazing names in this list. You might be familiar with Honus Wagner, Eppa Rixey, Boog Powell or Yogi Berra, some of the more famous in the list. But have you heard recounted the diamond exploits of Firpo Mayberry, Zoilo Versalles, Pi Schwert or Bevo LeBourveau? Mul Holland, Sixto Lezcano, Welcome Gaston and Mox McQuery are names that really should come attached to a film noir detective; the villains
-could choose among Mysterious Walker, The Only Nolan, or Phenomenal Smith for their name. For a good night's sleep on the couch, tell your spouse that your next child must be named for Urban Shocker, Twink Twining, Pussy Tebeau, Bris Lord, Boob Fowler, Crazy Schmit, Creepy Crespi, Cuddles Marshall, Vinegar Bend Mizell, or Buttercup Dickerson.
+----
+...
+(Kristopher,Negron,negrokr01,2012-06-07,\N)
+(La Schelle,Tarver,tarvela01,1986-07-12,1986-10-05)
+(Mysterious,Walker,walkemy01,1910-06-28,1915-09-29)
+(Peek-A-Boo,Veach,veachpe01,1884-08-24,1890-07-25)
+(Phenomenal,Smith,smithph01,1884-04-18,1891-06-15)
+----
 
-// .SQL Equivalent for "Selecting Records with Unique Values for a Key"
-// ------
-// SELECT nameFirst, nameLast, COUNT(*) AS n_usages
-//   FROM people
-//   WHERE    nameFirst IS NOT NULL
-//   GROUP BY nameFirst
-//   HAVING   n_usages = 1
-//   ORDER BY nameFirst
-//   ;
-// ------
+Our approach should be getting familiar. We group on the key (name_first) and eliminate all rows possessing more than one record for the key. Since there is only one element in the bag, the `FLATTEN` statement just acts to push the bag's fields up into the record itself.
 
-// ==== Identifying duplicated records for a key
-// 
-// Once again, what starts out looking like one of the high-level operations turns into a GROUP BY.
-// 
-// Up above, the allstar table almost led us astray due to the little-known fact that some years featured multiple All-Star games. We can pull out the rows matching those fields:
-// 
-// ------
-//   -- Teams who played in more than one stadium in a year
-// SELECT COUNT(*) AS n_parks, pty.*
-//   FROM park_team_years pty
-//   GROUP BY team_id, year_id
-//   HAVING n_parks > 1
-// ------
-// 
-// ==== Eliminating rows that have a duplicated value
-// 
-// (ie the whole row isn't distinct, just the field you're distinct-ing on.)
-// Note: this chooses an arbitrary value from each group
-// 
-// ------
-// SELECT COUNT(*) AS n_asg, ast.*
-//   FROM allstarfull ast
-//   GROUP BY year_id, player_id
-//   HAVING n_asg > 1
-//   ;
-// ------
+There are some amazing names in this list. You might be familiar with Honus Wagner, Eppa Rixey, Boog Powell or Yogi Berra, some of the more famous in the list. But have you heard recounted the diamond exploits of Firpo Mayberry, Zoilo Versalles, Pi Schwert or Bevo LeBourveau? Mul Holland, Sixto Lezcano, Welcome Gaston and Mox McQuery are names that really should come attached to a film noir detective; the villains could choose among Mysterious Walker, The Only Nolan, or Phenomenal Smith for their name. For a good night's sleep on the couch, tell your spouse that your next child must be named for Urban Shocker, Twink Twining, Pussy Tebeau, Bris Lord, Boob Fowler, Crazy Schmit, Creepy Crespi, Cuddles Marshall, Vinegar Bend Mizell, or Buttercup Dickerson.
 
 === Set Operations
 
