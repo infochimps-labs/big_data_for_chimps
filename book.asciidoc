@@ -18,7 +18,7 @@ include::07-joining_patterns.asciidoc[]
 
 include::08-ordering_patterns.asciidoc[]
 
-include::09-uniquing-patterns.asciidoc[]
+include::09-uniquing_patterns.asciidoc[]
 
 include::12---part_three-applications.asciidoc[]
 
