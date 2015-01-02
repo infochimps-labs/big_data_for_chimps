@@ -180,14 +180,18 @@ The mechanics of working with sets depends on whether the set elements are repre
 To demonstrate full-table set operations, we can relate the set of major US cities footnote:[We'll take "major city" to mean one of the top 60 incorporated places in the United States or Puerto Rico; see the "Overview of Datasets" (REF) for source information]
 with the set of US cities that have hosted a significant number (more than 50) of major-league games. To prove a point about set operations with duplicates, we will leave in the duplicates from the team cities (the Mets and Yankees both claim NY).
 
-.Preparation for Set Operations on Full Tables
+.Preparation for Set Operations on Full Tables (ch_08/parks.pig)
 ------
-parks        = load_parks();
-main_parks   = FILTER parks BY n_games >=  50 AND country_id == 'US';
-major_cities = load_us_city_pops();
---
+main_parks = FILTER parks BY n_games >= 50 AND country_id == 'US';
+
+major_cities = FILTER geonames BY 
+    (feature_class == 'P') AND 
+    (feature_code matches 'PPL.*') AND 
+    (country_code == 'US') AND
+    (population > 10000);
+
 bball_city_names = FOREACH main_parks   GENERATE city;
-major_city_names = FOREACH major_cities GENERATE city;
+major_city_names = FOREACH major_cities GENERATE name;
 ------
 
 ==== Distinct Union
@@ -196,7 +200,7 @@ If the only contents of the tables are the set membership keys, finding the
 distinct union is done how it sounds: apply union, then distinct.
 
 ------
-major_or_bball    = DISTINCT (UNION bball_city_names, major_city_names);
+major_or_baseball = DISTINCT (UNION bball_city_names, major_city_names);
 ------
 
 ==== Distinct Union (alternative method)
@@ -208,6 +212,7 @@ For all the other set operations, or when the elements are keys within a record 
 // than the full record) let's keep around the state, population, and all
 // park_ids from the city.
 
+.Alternative Distinct Union (ch_08/parks.pig)
 ------
 combined     = COGROUP major_cities BY city, main_parks BY city;
 
@@ -219,46 +224,63 @@ major_or_parks    = FOREACH combined GENERATE
 
 The DataFu `FirstTupleFromBag` UDF is immensely simplifying. Since the city value is a unique key for the `major_cities` table, we know that the `major_cities` bag has only a single element. Applying `FirstTupleFromBag` turns the bag-of-one-tuple into a tuple-of-two-fields, and applying `FLATTEN` lifts the tuple-of-two-fields into top-level fields for state and for population. When the `city` key has no match in the `major_cities` table, the second argument to FirstTupleFromBag forces those fields to have `NULL` values.
 
+Our output looks like this:
+
+----
+...
+(Seaford,Seaford,15294,{})
+(Seaside,Seaside,33025,{})
+(Seattle,Seattle,608660,{(SEA03),(SEA01),(SEA02)})
+...
+----
+
 As we mentioned, there are potentially many park records for each city, and so the main_parks bag can have zero, one or many records. Above, we keep the list of parks around as a single field.
 
 ==== Set Intersection
 
-Records lie in the set intersection when neither bag is empty.
+Having used `COGROUP` on the two datasets, set intersections means that records lie in the set intersection when neither bag is empty.
 
+.Set Intersection (ch_08/parks.pig)
 ------
+combined = COGROUP major_cities BY name, main_parks BY city;
+
 major_and_parks_f = FILTER combined BY
-  (COUNT_STAR(major_cities) > 0L) AND (COUNT_STAR(main_parks) > 0L);
-major_and_parks   = FOREACH major_and_parks_f GENERATE
-  group AS city,
-  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
-  main_parks.park_id AS park_ids;
+    (COUNT_STAR(major_cities) > 0L) AND 
+    (COUNT_STAR(main_parks) > 0L);
+
+major_and_parks = FOREACH major_and_parks_f GENERATE
+    group AS city,
+    FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
+    main_parks.park_id AS park_ids;
 ------
 
 Two notes. First, we test against `COUNT_STAR(bag)`, and not `SIZE(bag)` or `IsEmpty(bag)`. Those latter two require actually materializing the bag -- all the data is sent to the reducer, and no combiners can be used. Second, since COUNT_STAR returns a value of type long, it's best to do the comparison against `0L` (a long) and not `0` (an int).
 
 ==== Set Difference
 
-Records lie in A minus B when the second bag is empty, and they lie in B minus A when the first bag is empty.
+Having used `COGROUP` on the two datasets, set difference means that records lie in A minus B when the second bag is empty, and they lie in B minus A when the first bag is empty.
 
 ------
+combined = COGROUP major_cities BY name, main_parks BY city;
+
 major_minus_parks_f = FILTER combined BY (COUNT_STAR(main_parks) == 0L);
 major_minus_parks   = FOREACH major_minus_parks_f GENERATE
-  group AS city,
-  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
-  main_parks.park_id AS park_ids;
+    group AS city,
+    FLATTEN(FirstTupleFromBag(major_cities.(name, population), ((chararray)NULL,(int)NULL))),
+    main_parks.park_id AS park_ids;
 
 parks_minus_major_f = FILTER combined BY (COUNT_STAR(major_cities) == 0L);
 parks_minus_major   = FOREACH parks_minus_major_f GENERATE
-  group AS city,
-  FLATTEN(FirstTupleFromBag(major_cities.(state, pop_2011), ((chararray)NULL,(int)NULL))),
-  main_parks.park_id AS park_ids;
+    group AS city,
+    FLATTEN(FirstTupleFromBag(major_cities.(name, population), ((chararray)NULL,(int)NULL))),
+    main_parks.park_id AS park_ids;
+
+difference = UNION major_minus_parks, parks_minus_major;
 ------
 
 ==== Symmetric Set Difference: (A-B)+(B-A)
 
-Records lie in the symmetric difference when one or the other bag is
-empty. (We don't have to test for them both being empty -- there wouldn't be
-a row if that were the case.)
+Records lie in the symmetric difference when one or the other bag is empty. (We don't have to test for them both being empty -- there wouldn't be a row if that were the case.)
 
 ------
 major_xor_parks_f   = FILTER combined BY
