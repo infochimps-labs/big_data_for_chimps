@@ -378,6 +378,7 @@ rosters = FOREACH year_to_year_players GENERATE
 
 -- The first and last years of existence don't have anything interesting to compare, so reject them.
 rosters = FILTER rosters BY (COUNT_STAR(pl1) == 0L OR COUNT_STAR(pl2) == 0L);-----
+-----
 
 ==== Set Operations Within a Group
 
