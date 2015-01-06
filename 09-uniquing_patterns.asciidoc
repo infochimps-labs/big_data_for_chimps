@@ -379,8 +379,8 @@ rosters = FOREACH year_to_year_players GENERATE
     y2.player_id  AS pl2
 ;
 
--- The first and last years of existence don't have anything interesting to compare, so reject them.
-rosters = FILTER rosters BY (COUNT_STAR(pl1) == 0L OR COUNT_STAR(pl2) == 0L);-----
+-- The first and last years of existence don't have anything interesting to compare
+rosters = FILTER rosters BY (COUNT_STAR(pl1) == 0L OR COUNT_STAR(pl2) == 0L);
 -----
 
 ==== Set Operations Within a Group
