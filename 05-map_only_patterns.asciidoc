@@ -1,3 +1,7 @@
+////
+*Comment* Aj OK to edit.
+////
+
 == Analytic Patterns: Map-only Operations
 
 This chapter focuses exclusively on what we'll call 'Map-only operations'. A map-only operation is one that can handle each record in isolation, like the translator chimps from Chimpanzee & Elephant Corp's first job. That property makes those operations trivially parallelizable: they require no reduce phase of their own. 

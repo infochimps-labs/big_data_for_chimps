@@ -6,7 +6,7 @@ Fixing a map of this ecosystem to print would be nearly foolish; predictions of 
 
 === Core Platform: Batch Processing
 
-Hadoop is the one easy choice to make; Doug Cutting calls it the “kernel of the big data operating system” and we agree.  It can’t be just that easy, though; you further have to decide which distribution to adopt.  Almost everyone should either choose Cloudera’s distribution (CDH) or Hortonworks' (HDP).  Both come in a complete, well-tested open source version as well as a commercial version backed by enterprise features and vendor support.  Both employ significant numbers of core contributors,  have unshakable expertise and open-source credibility.
+Hadoop is the one easy choice to make; Doug Cutting calls it the “kernel of the big data operating system” and we agree.  It can’t be just that easy, though; you further have to decide which distribution to adopt.  Almost everyone should either choose Cloudera’s distribution (CDH) or Hortonworks' (HDP). Both come in a complete, well-tested open source version as well as a commercial version backed by enterprise features and vendor support.  Both employ significant numbers of core contributors,  have unshakable expertise and open-source credibility.
 
 Cloudera started in 2009 with an all-star list of founders including Doug Cutting, the originator of the Hadoop project.  It was the first to offer a packaged distribution and the first to offer commercial support; its offerings soon came to dominate the ecosystem.
 

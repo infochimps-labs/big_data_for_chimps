@@ -1,3 +1,7 @@
+////
+*Comment* Aj OK to edit.
+////
+
 == Analytic Patterns: Ordering Operations
 
 A big part of telling stories with data is coming up with examples that prove a point. This means diving into the data to produce the most exceptional records. When data is big, this invariably means you need to sort the data to pick up the highest or lowest value(s) of some metric. 

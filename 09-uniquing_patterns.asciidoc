@@ -1,3 +1,7 @@
+////
+*Comment* Aj OK to edit.
+////
+
 == Analytic Patterns: Duplicate and Unique Records
 
 This chapter will cover duplicate and unique records. We often find ourselves dealing with multiple records for a given concept or entity. We'll introduce the operations `UNION`, `DISTINCT` and various DataFu UDFs (User Defined Functions).

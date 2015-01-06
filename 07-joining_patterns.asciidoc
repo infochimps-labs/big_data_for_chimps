@@ -1,3 +1,7 @@
+////
+*Comment* Aj OK to edit.
+////
+
 == Analytic Patterns: Joining Tables
 
 In database terminology, a _join_ combines the rows of two or more tables based on some matching information, known as a _key_.  For example, you could join a table of names and a table of mailing addresses, so long as both tables had a common field for the user ID.  You could also join a table of prices to a table of items, given an item ID column in both tables.  Joins are useful because they permit people to _normalize_ data -- that is to say, eliminate redundant content between multiple tables -- yet still bring several tables' content to a single view on-the-fly.
@@ -206,6 +210,8 @@ Our output is as expected for an inner join. The key is the join key, and the va
 The output this join has one record for each discrete combination of the keys in A (countries) and B (customers). As you will notice in our Python/MrJob version of the join, the secondary sort ensures that for each key the reducer receives all the records for table A strictly followed by all records for table B. We gather all the A records in to an array, then on each B record emit the A records stapled to the B records. All the A records have to be held in memory at the same time, while all the B records simply flutter by; this means that if you have two datasets of wildly different sizes or distribution, it is worth ensuring the Reducer receives the smaller group first. In map/reduce, the table with the largest number of records per key should be assigned the last-occurring field group label; in Pig, that table should be named last in the `JOIN` statement.
 
 Note that there is no requirement we store relation A in memory in an array. We could, if there were too many records for one key in both sides of a join, write it to disk and then stream it through for every record in relation B. Storing it in RAM is much more convenient whenever possible.
+
+For more on MapReduce algorithms, http://lintool.github.io/MapReduceAlgorithms/[Data-Intensive Text Processing with MapReduce] by Jimmy Lin and Chris Dyer, is an excellent read and helped a great deal in crafting this example.
 
 ===== Pattern in Use
 
