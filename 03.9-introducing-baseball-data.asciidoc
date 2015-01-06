@@ -6,7 +6,7 @@ For readers who are not avid baseball fans, we provide a simple -- some might sa
 
 === The Data
 
-Out baseball statistics come in tables at multiple levels of detail.
+Our baseball statistics come in tables at multiple levels of detail.
 
 Putting people first as we like to do, the `people` table lists each player's name and personal stats such as height and weight, birth year, and so forth. It has a primary key, the `player_id`, formed from the first five letters of their last name, first two letters of their first name, and a two digit disambiguation slug. There are also primary tables for ballparks (`parks`) listing information on every stadium that has ever hosted a game and for teams (`teams`) giving every major-league team back to the birth of the game.
 
@@ -16,7 +16,7 @@ There are some demonstrations where we need data with some real heft -- not so m
 
 We denormalized the names of players, parks and teams into some of the non-prime tables to make their records more recognizeable. In many cases you'll see us carry along the name of a player, ballpark or team to make the final results more readable, even where they add extra heft to the job. We always try to show you sample code that represents the code we'd write professionally, and while we'd strip these fields from the script before it hit production, you're seeing just what we'd do in development. "Know your Data".
 
-=== Acronyms and terminology
+=== Acronyms and Terminology
 
 We use the following acronyms (and, coincidentally, field names) in our baseball dataset:
 
