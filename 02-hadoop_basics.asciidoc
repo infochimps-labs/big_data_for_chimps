@@ -8,16 +8,18 @@
 === Introduction
 
 ++++
-<remark>Please make sure the Chimpanzee and Elephant Start a Business big does NOT appear before this Introduction</remark>
+<remark>Please make sure the Chimpanzee and Elephant Start a Business big does NOT appear before this Introduction.</remark>
 ++++
+
+Hadoop is a large and complex beast. It can be bewildering to even begin to use the system, and so in this chapter we're going to purposefully charge through the least you need to know to launch jobs and manage data. In this book, we will try to keep things as simple as possible. For every one of its many modes options and configurations that is essential, there are many more that are distracting or even dangerous. The most important optimizations you can make come from designing efficient workflows, and even more so from knowing when to spend highly valuable programmer time to reduce compute time.
 
 In this chapter, we will equip you with two things: the necessary mechanics of working with Hadoop, and a physical intuition for how data and computation move around the cluster during a job. 
 
-Hadoop is a large and complex beast. It can be bewildering to even begin to use the system, and so in this chapter we're going to purposefully charge through the least you need to know to launch jobs and manage data. If you hit trouble, anything past that is well-covered in Hadoop's excellent and detailed documentation or online. But don't go looking for trouble! For every one of its many modes options and configurations that is essential, there are many more that are distracting or even dangerous. The most important optimizations you can make come from designing efficient workflows, and even more so from knowing when to spend highly valuable programmer time to reduce compute time.
+The key to mastering Hadoop is an intuitive, physical understanding of how data moves around a Hadoop cluster. Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly, and in the vast majority of cases dominates the cost of your job. We'll describe at a high level how Hadoop organizes data and assigns tasks across compute nodes so that as little data as possible is set in motion with both a story featuring a physical analogy and by following an example job through its full lifecycle. More importantly, we'll show you how to read a job's Hadoop dashboard to understand how much it cost and why. Your goal for this chapter is to take away a basic understanding of how Hadoop distributes tasks and data, and the ability to run a job and see what's going on with it. As you run more and more jobs through the remaining course of the book, it is the latter ability that will cement your intuition.
 
-The key to doing so is an intuitive, physical understanding of how data moves around a Hadoop cluster. Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly, and in the vast majority of cases dominates the cost of your job. We'll describe at a high level how Hadoop organizes data and assigns tasks across compute nodes so that as little data as possible is set in motion with both a physical analogy and by following an example job through its full lifecycle. More importantly, we'll show you how to read a job's Hadoop dashboard to understand how much it cost and why. You'll be using a docker simulation of a real Hadoop cluster on your machine. Your goal for this chapter is to take away a basic understanding of how Hadoop distributes tasks and data, and the ability to run a job and see what's going on with it. As you run more and more jobs through the remaining course of the book, it is the latter ability that will cement your intuition.
+What does Hadoop do, and why should we learn about it? Hadoop enables the storage and processing of large amounts of data. Indeed, it is Apache Hadoop that stands at the middle of the 'Big Data' trend. The Hadoop Distributed Filesystem (HDFS) is the platform that enabled cheap storage of vast amounts of data (up to petabytes and beyond) cheaply using affordable, commodity machines. Before Hadoop, there simply wasn't a place to store terabytes and petabytes of data in a way that it could be easily accessed for processing. Hadoop changed everything.
 
-Let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
+In this book we will teach you the mechanics of operating Hadoop, but first you need to understand the basics of how the Hadoop filesystem and MapReduce work together to create a computing platform. Along these lines, let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
 
 .Chimpanzee and Elephant Start a Business
 ******
@@ -45,9 +47,17 @@ The fact that each chimpanzee's work is independent of any other's -- no interof
 
 As you'd guess, the way Chimpanzee and Elephant organize their files and workflow corresponds directly with how Hadoop handles data and computation under the hood. We can now use it to walk you through an example in detail.
 
-The bags on trees scheme represents transactional relational database systems. Nanette is the Hadoop http://wiki.apache.org/hadoop/NameNode[NameNode]. The NameNode stores the directory tree structure (card catalog), and references to the data nodes for each file (librarians). JT is the http://wiki.apache.org/hadoop/JobTracker[JobTracker]. He coordinates the work of individual MapReduce tasks into a cohesive whole system. To illustrate how Hadoop works, lets dive into some code with the simplest example possible.
+The bags on trees scheme represents transactional relational database systems. These are often the systems that Hadoop data processing can augment or replace. The "NoSQL" movement (Not Only SQL) of which Hadoop is a part is about going beyond the relational database as a one-size-fits-all tool, and using different distributed systems that better suit a given problem.
 
-We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
+Nanette is the Hadoop http://wiki.apache.org/hadoop/NameNode[NameNode]. The NameNode manages the Hadoop Distributed Filesystem (HDFS). It stores the directory tree structure of the filesystem (the card catalog), and references to the data nodes for each file (the librarians). You'll note that Nanette worked with data stored in triplicate. Data on Hadoop's Distributed Filesystem is duplicated three times to ensure reliability. In a large enough system (thousands of nodes in a petabyte Hadoop cluster), individual nodes fail every day. In that case, HDFS automatically creates a new duplicate for all the files that were on the failed node.
+
+JT is the http://wiki.apache.org/hadoop/JobTracker[JobTracker]. He coordinates the work of individual MapReduce tasks into a cohesive whole system. The jobtracker is responsible for launching and monitoring the individual tasks of a mapreduce job, which run on the nodes that contain the data a particular job reads. MapReduce jobs are divided into a map phase in which data is read, and a reduce phase, in which data is aggregated by key and processed again. For now we'll cover map-only jobs. In the next chapter we'll introduce reduce.
+
+Note that in YARN (Hadoop 2.0), the terminology changed. The JobTracker is called the Resource Manager, and nodes are managed by Node Managers. They run arbitrary apps via containers. In YARN, MapReduce is just one kind of computing framework. Hadoop has become an application platform. Confused? So are we. YARN's terminology is something of a disaster, so we'll stick with Hadoop 1.0 terminology.
+
+=== Pig Latin Map-Only Job ===
+
+To illustrate how Hadoop works, lets dive into some code with the simplest example possible. We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
 
 * If the word begins with a consonant-sounding letter or letters, move them to the end of the word adding "ay": "happy" becomes "appy-hay", "chimp" becomes "imp-chay" and "yes" becomes "es-yay".
 * In words that begin with a vowel, just append the syllable "way": "another" becomes "another-way", "elephant" becomes "elephant-way".
@@ -124,10 +134,13 @@ That's what it looks like when run locally. Let's run it on a real Hadoop cluste
 
 NOTE: There are even more reasons why it's best to begin developing jobs locally on a subset of data than just faster and cheaper. What's more, though, extracting a meaningful subset of tables also forces you to get to know your data and its relationships. And since all the data is local, you're forced into the good practice of first addressing "what would I like to do with this data" and only then considering "how shall I do so efficiently". Beginners often want to believe the opposite, but experience has taught us that it's nearly always worth the upfront investment to prepare a subset, and not to think about efficiency from the beginning.
 
-=== Data on the cluster
+=== Setting up a Docker Hadoop Cluster ===
 
-If you've skimmed Hadoop's documentation already, you've probably seen the terms _fully-distributed,_ _pseudo-distributed,_ and _local_ bandied about. Those describe different ways to setup your Hadoop cluster, and they're relevant to how you'll run the examples in this chapter.
-We've setup a virtual Hadoop environment for you using Docker, and you can develop and test Hadoop jobs using your laptop, just like having a real cluster. Your jobs will run in fully-distributed mode, making use of the cluster's filesystem called HDFS (Hadoop Distributed File System).
+PLACEHOLDER FOR DOCKER CLUSTER SETUP INSTRUCTIONS.
+
+=== Data on the Cluster ===
+
+Now that we've setup a virtual Hadoop environment for you using Docker, you can develop and test Hadoop jobs using your laptop, just like having a real cluster. Your jobs will run in fully-distributed mode, making use of the cluster's HDFS.
 
 Run the following commands to check out what lies on HDFS:
 
@@ -135,7 +148,7 @@ Run the following commands to check out what lies on HDFS:
 hadoop fs -ls .
 ------
 
-The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-get`, `-put` and `-tail` also work. Now check out /data:
+The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-get`, `-put`, `-du` and `-tail` also work. Now check out /data:
 
 ------
 hadoop fs -ls /data/gold
@@ -231,6 +244,8 @@ packageJobJar: [./examples/ch_01/pig_latin.py] [/usr/lib/hadoop-mapreduce/hadoop
 14/11/20 06:04:10 INFO streaming.StreamJob: Output directory: ./translation.out
 ------
 
+This is the output of the Hadoop streaming jar as it transmits your files to HDFS and runs them on the cluster.
+
 .The Job Browser
 ********
 While the script outputs a bunch of happy robot-ese to your screen, open up the job browser at http://$CLUSTER_IP:9001/jobbrowser/ in your browser window. You'll need to login with chimpy/chimpy. The job should appear on the job browser window within a few seconds.
@@ -272,5 +287,5 @@ hadoop fs -tail ./translation.out/*
 
 === Outro
 
-In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm. Let's start by joining JT and Nannette with their next client.
+In this chapter, we've covered the mechanics of HDFS and the map-only portion of MapReduce, and we've setup a virtual Hadoop cluster and run a single job on it. We're in good shape to learn more about Hadoop. In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm. Let's start by joining JT and Nannette with their next client.
 
