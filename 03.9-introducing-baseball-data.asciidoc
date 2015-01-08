@@ -107,3 +107,7 @@ The above are all "counting stats", and generally the more games the more hits a
 'On-base-plus-slugging' (`OPS`) combines on-base and slugging percentages to give a simple and useful estimate of overall offensive contribution. It's found by simply adding the figures: (`OBP + SLG`). Anything above 0.900 is very good.
 
 Just as a professional mechanic has an assortment of specialized and powerful tools, modern baseball analysis uses statistics significantly more nuanced than these. But when it comes time to hang a picture, they use the same hammer as the rest of us. You might think that using the on-base, slugging, and OPS figures to estimate overall performance is a simplification we made for you. In fact, these are quite actionable metrics that analysts will reach for when they want to hang a sketch that anyone can interpret.
+
+=== Outro
+
+You now have enough information about baseball and its metrics to work through the examples in this book. If you're a baseball fan, feel free to filter the examples to tell stories about your favorite team. In the next section of the book, we'll use baseball examples to teach analytic patterns - those operations which enable most kinds of analysis.
