@@ -3,7 +3,10 @@
 ////
 
 [[map_reduce]]
+
 == Map/Reduce
+
+In this chapter we're going to build upon what we learned last chapter about HDFS and the map-only portion of map/reduce and introduce a full map/reduce job. This time we'll include the shuffle/sort phase, and the reduce phase. Once again, we begin with a physical metaphor in the form of a story. After that we'll walk you through building our first full-blown map/reduce job in Python. At the end of this chapter, you should have an intuitive understanding of how map/reduce works in its map, shuffle/sort and reduce phases.
 
 .Chimpanzee and Elephant Save Christmas
 ******
@@ -71,57 +74,46 @@ FRANK
 #   coal  | type="anthracite" recipient="Frank" reason="doesn't like to read"
 ------
 
+The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms. The third one yields a toyform directing Santa to put coal in Frank's stocking.
+
 image::images/chimps_and_elves/bchm_0203.png[Chimps read each letter]
 image::images/chimps_and_elves/bchm_0204.png[Letters become toyforms]
 
-The first note, from a very good girl who is thoughtful for her brother, creates two toyforms: one for Joe's robot and one for Julia's doll. The second note is spam, so it creates no toyforms. The third one yields a toyform directing Santa to put coal in Frank's stocking.
+Processing letters in this way represents the map phase of a map/reduce job. The work performed in a map phase could be anything: translation, letter processing, or any other operation. For each record read in the map phase, a mapper can produce zero, one or more records. In this case each letter produces one or more toy forms. This elf-driven letter operation turns unstructured data (a letter) into a structured record (toy form).
+
+Next we move on to the shuffle/sort phase, which uses the letters as input.
 
 [float]
 === Pygmy Elephants Carry Each Toy-form to the Appropriate Workbench
 
 Here's the new wrinkle on top of the system used in the translation project. Next to every desk now stood a line of pygmy elephants, dressed in capes listing the types of toy it would deliver. Each desk had a pygmy elephant for Archery Kits and Dolls, another one for Xylophones and Yo-Yos, and so forth -- matching the different specialties of toymaker elves.
 
-As the chimpanzees would work through a mail bag, they'd place each toy-form into the basket on the back of the pygmy elephant that matched its type. At the completion of a bag, the current line of elephants would march off to the workbenches, and behind them a new line of elephants would trundle into place. What fun!
+As the chimpanzees would work through a mail bag, they'd place each toy-form into the basket on the back of the pygmy elephant that matched its type. At the completion of a bag (a map phase), the current line of elephants would 'shuffle' off to the workbenches, and behind them a new line of elephants would trundle into place. What fun!
 
 image::images/chimps_and_elves/bchm_0206.png[toyforms go off in batches]
 
-Finally, the pygmy elephants would march through the now-quiet hallways to the toy shop floor, each reporting to the workbench that matched its toy types. So the Archery Kit/Doll workbench had a line of pygmy elephants, one for every Chimpanzee & Elephant desk; similarly the Xylophone/Yo-Yo workbench, and all the rest.
+Finally, the pygmy elephants would march through the now-quiet hallways to the toy shop floor, each reporting to the workbench that matched its toy types. So the Archery Kit/Doll workbench had a line of pygmy elephants, one for every Chimpanzee & Elephant desk; similarly the Xylophone/Yo-Yo workbench, and all the rest. 
 
-Toymaker elves now began producing a steady stream of toys, no longer constrained by the overhead of walking the hallway and waiting for Big-Tree retrieval on every toy.
+This activity by the Pygmy Elephants represents the shuffle/sort phase of a map/reduce job, in which records produced by mappers are grouped by their key (the toy type) and delivered to a reducer for that key (an elf!).
+
+Now the reduce phase begins: Toymaker elves begin producing a steady stream of toys, no longer constrained by the overhead of walking the hallway and waiting for Big-Tree retrieval on every toy.
 
 image::images/chimps_and_elves/bchm_0205.png[Each toy at a unique station]
+
+Our map/reduce job is complete, and toy-making is back on track!
 
 ******
 // end of C&E save xmas
 
 === Introduction
 
-//
-// Make this less "in the previous chapter" and be "now we're learning (building on...)
-// add **more** philosophy
-// how **I** think about how to think about it
-// get into the mind a bit
-//
-// a cookbook: this chapter "OK let's talk about leavening agents... "When I think about leavening agents, I think""
+Having previously introduced 'map only Hadoop' in our first story, in this story, we introduced the shuffle/sort and reduce operations of Hadoop MapReduce. The toymaker elves are the reducers - they receive all the mapped records (toy forms) corresponding to one or more group keys - the type of toy. The act of toy-making is the reduce operation. The pygmy elephants with are the shuffle/sort - the movement of data from mappers to reducers. That is how the MapReduce paradigm works! This simple abstraction powers Hadoop MapReduce programs. It is the simplicity of the scheme that makes it so powerful.
 
-Having previously introduced 'map only Hadoop' in our first story, in this story, we introduced the shuffle and reduce operations of Hadoop MapReduce. The toymaker elves are the reducers - they receive all the mapped records (toy forms) corresponding to one or more group keys - the type of toy. The act of toy-making is the reduce operation. The pygmy elephants are the shuffle - the movement of data from mappers to reducers. That is how the MapReduce paradigm works! This simple abstraction powers Hadoop MapReduce programs. It is the simplicity of the scheme that makes it so powerful.
+In the previous chapter, you worked with the simple-as-possible Python script, which let you learn the mechanics of running Hadoop jobs, and understand the essentials of the HDFS. Document translation is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files. This was a 'map-only' job, an operation we'll discuss more in section two.
 
-In the previous chapter, you worked with the simple-as-possible Python script, which let you learn the mechanics of running Hadoop jobs, and understand the essentials of the HDFS. Document translation is an example of an "embarrassingly parallel" problem: each record could be processed individually, just as they were organized in the source files.
+Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. Every map/reduce job is a program with the same three phases: map, shuffle/sort, and reduce. In the map phase, your program processes its input in any way you see fit, emitting labelled output records. Between map and reduce is the Hadoop shuffle/sort. In the shuffle/sort phase, Hadoop groups and sorts the mapped records according to their labels. Finally, in the reduce phase, your program processes each sorted, labeled group and Hadoop stores its output on HDFS. That shuffle, or 'grouping-by-label' part is where the magic lies: it ensures that no matter where the relevant records started, they arrive at the same place at a reducer in a predictable manner, ready to be synthesized.
 
-Hadoop's real power comes from the ability to process data in context, using what's known as the Map/Reduce paradigm. Every map/reduce job is a program with the same three phases: map, combine, and reduce. In the map phase, your program processes its input in any way you see fit, emitting labelled output records. In the optional combine phase, map-side aggregation occurs. Between map and reduce (or between combine and reduce) is the Hadoop shuffle. In the shuffle phase, Hadoop groups and sorts those records according to their labels. Finally, in the reduce phase, your program processes each sorted group and Hadoop stores its output. That shuffle, or 'grouping-by-label' part is where the magic lies: it ensures that no matter where the relevant records started, they arrive at the same place in a predictable manner, ready to be synthesized.
-
-// footnote:[Some may argue that it should be called "MapShuffleReduce," but it's too late to go back and change that.]
-// (Hadoop is but one of many Map/Reduce implementations.  Any discussion thereof will necessarily be a mix of the higher-level, generic, Map/Reduce concepts, and Hadoop-specific implementation details.)
-
-If Map/Reduce is the core of Hadoop's operation, then getting to _think_ in Map/Reduce terms is the key to effectively using Hadoop.  In turn, thinking in Map/Reduce requires that you develop an innate, physical sense of how Hadoop moves data around. You can't understand the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth -- without knowing the basics.
-
-It can take some time to wrap one's head around Map/Reduce, though, so we're going to move slowly in this chapter. We'll open with a straightforward example map/reduce program: aggregating records from a dataset of Unidentified Flying Object sightings to find out when UFOs are most likely to appear. Next, we'll revisit our friends at Elephant and Chimpanzee, Inc, to explore how a Map/Reduce dataflow works. We'll round out the chapter with a deeper, more technical look into map/reduce from a Hadoop perspective.
-
-The one thing we won't be doing too much of yet is actually writing lots of Hadoop programs. That will come in later -- map/reduce patterns are difficult to master without a grounding in this chapter's material. But if you're the type of reader who learns best by seeing multiple examples in practice and then seeing its internal mechanics, skip ahead and then come back.
-
-=== Simulation 
-
-Santa Corp does not want any future logistical surprises, and so along with their new streamlined manufacturing workflow they would like to perform scenario planning. Mrs Claus, the CIO of Santa Corp, has heard about this new "map/reduce." C&E company are brought in as consultants.
+If Map/Reduce is the core of Hadoop's operation, then getting to _think_ in Map/Reduce terms is the key to effectively using Hadoop.  In turn, thinking in Map/Reduce requires that you develop an innate, physical sense of how Hadoop moves data around. You can't understand the fundamental patterns of data analysis in Hadoop -- grouping, filtering, joining records, and so forth -- without knowing the basics. Having read the Christmas story and explanation, you should now have an intuitive understanding of how Hadoop and map/reduce work. If you're still confused, re-read the beginning of this chapter again until you master the material on an intuitive level.
 
 === Example: Reindeer Games
 
@@ -131,7 +123,7 @@ Sixty thousand sightings is much higher than a reindeer can count (only four hoo
 
 ==== UFO Data
 
-For starters, lets check out our input data:
+The UFO data is located on the docker HDFS we setup last chapter. Lets begin by checking our input data. SSH into the gateway node and run this command to see the top 5 lines of the ufo sightings sample:
 
 ------
 cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv|head -5
@@ -152,22 +144,22 @@ The UFO data is in 'TSV' format - Tab Separated Values.
 In the Chimpanzee & Elephant world, a chimp had the following role:
 
 1. Read and understand each letter
-2. Create a new intermediate item having a label (the type of toy) and information about the toy (the work order)
+2. Create a new intermediate item having a label (the type of toy, a key) and information about the toy (the work order, a value)
 3. Hand it to the elephant which delivers to that toy's workbench
 
 We're going to write a Hadoop _mapper_ which performs a similar purpose:
 
 1. Reads the raw data and parses it into a structured record
-2. Creates a new intermediate item having a label (the number of days delay before reporting a UFO) and a count (one sighting for each input record).
-3. Hands it to Hadoop for delivery to that group's reducer
+2. Creates a new intermediate item having a label (the number of days delay before reporting a UFO, a key) and a count (one sighting for each input record, a value).
+3. Hands it to Hadoop for delivery to that label/group's reducer 
 
 ==== Mapper
 
-In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted, from the time the UFO was reported. As above, this occurs in the map phase of our map/reduce job. The mapper emits the time delay in days, and a counter - that is always one.
+In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted from the time the UFO was reported. As above, this occurs in the map phase of our map/reduce job. The mapper emits the time delay in days, and a counter - that is always one.
 
 The mapper code in Python looks like this:
 
-.UFO Mapper (ch_02/ufo_mapper.py)
+.UFO Histogram Mapper (ch_02/ufo_mapper.py)
 ------
 #!/usr/bin/python
 # Example MapReduce job: count ufo sightings by location.
@@ -192,10 +184,7 @@ for line in sys.stdin:
     continue
   # Emit the number of days and one
   print "\t".join((str(diff.days), "1"))
-
 ------
-
-Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each record to the _reducer_, the second stage of our job.
 
 You can test the mapper like this:
 
@@ -206,32 +195,29 @@ cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv | python examples/ch_0
 The intermediate output looks like this:
 
 ------
-74	1
-0	1
-5	1
-6	1
-0	1
-0	1
-4	1
-15	1
-2	1
+0	    1
+889	  1
+346	  1
+1294  1
+12	  1
+14689	1
+12	  1
+...
 ------
 
-These are the records our reducer will receive as input.
+These are the records our reducer will receive as input. Just as the pygmy elephants transported work orders to elves' workbenches, Hadoop delivers each mapped record to the _reducer_, the second stage of our job.
 
 ==== Reducer
 
-In our previous example, the elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type.
+In our previous example, the elf at each workbench saw a series of work orders, with the guarantee that a) work orders for each toy type are delivered together and in order; and b) this was the only workbench to receive work orders for that toy type. Similarly, in this job the reducer receives a series of records (UFO reports, values), grouped by label (the number of days delay, a key), with a guarantee that it is the unique processor for such records.
 
-Similarly, in this job the reducer receives a series of records, grouped by label (the number of hours delay), with a guarantee that it is the unique processor for such records.
+Our reducer is tasked with creating a histogram. The reducer is thus concerned with grouping like time delays together. The reduce key in this case is the number of days delay - for instance 0, 1, 10 or 35 days. In the reducer, we're keeping count; the count for each element of the reduce key/group is incremented by the count (1) as each record is processed. Because Hadoop guarantees that all reduce keys of one value go to one reducer, we can extrapolate that if the reduce key changes - then we are done with the previous group and reduce key. Being done with the previous group, it is time to emit our record about that group: in this case the reduce key itself and the sum of counts of values for that reduce key. And so our histogram is populated with 'reduced' values.
 
-The reducer is thus concerned with grouping like time delays together. The reduce key in this case is the number of hours delay - for instance 1, 10 or 35 days. In the reducer, the count for each element of the reduce key/group is incremented by the count (1) as each record is processed. Because Hadoop guarantees that all reduce keys of one value go to one reducer, we can extrapolate that if the reduce key changes - then we are done with the previous group and reduce key. Being done with the previous group, it is time to emit our record about that group: in this case the reduce key itself and the sum of counts of values for that reduce key.
+Note that in this example, *to sort is to group*. Take a moment and re-read the last paragraph, if necessary. This is the magic of map/reduce: when you perform a sort on a set of values, you are implicitly grouping like records together. MapReduce algorithms take advantage of this implicit grouping, making it explicit via APIs.
 
-Note that in this example, to sort is to group. This is the magic of map/reduce.
+Moving on, our reducer looks like this:
 
-The reducer looks like this:
-
-.UFO Reducer (ch_02/ufo_reducer.py)
+.UFO Histogram Reducer (ch_02/ufo_reducer.py)
 ------
 #!/usr/bin/python
 """Example MapReduce job: count ufo sightings by hour. Based on example at http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
@@ -242,7 +228,7 @@ current_days = None
 curreent_count = 0
 days = None
 
-# Loop tbrough each line from standard input
+# Loop through each line from standard input
 for line in sys.stdin:
   # split the line into two values, using the tab character
   days, count = line.rstrip("\n").split("\t", 1)
@@ -275,7 +261,7 @@ if current_days == days:
 Always test locally on a sample of data, if at all possible:
 
 ------
-cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv |python examples/ch_02/ufo_mapper.py|sort|python examples/ch_02/ufo_reducer.py|sort -n
+cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv | python examples/ch_02/ufo_mapper.py | sort | python examples/ch_02/ufo_reducer.py|sort -n
 ------
 
 Note that we've added a `sort -n` to the end of the commands - to show the lowest values first. On Hadoop, this would take another map/reduce job.
@@ -307,14 +293,14 @@ This command demonstrates an execution pattern for testing map/reduce code, and 
 cat /path/to/data/file | mapper | sort | reducer
 ------
 
-Being able to test map/reduce code locally is important because Hadoop is a batch system. In other words, Hadoop is 'slow.' Thats a relative term - because a large Hadoop cluster is blazingly fast at processing terabytes and even petabytes of data. However, the shortest Hadoop job takes a few minutes, which can make debugging a slow and cumbersome process. The ability to bypass this several minute wait by running locally on a sample of data is essential to being productive as a Hadoop developer or analyst.
+Being able to test map/reduce code locally is important because Hadoop is a batch system. In other words, Hadoop is 'slow.' Thats a relative term - because a large Hadoop cluster is blazingly fast at processing terabytes and even petabytes of data. However, the shortest Hadoop job on a loaded cluster can take a few minutes, which can make debugging a slow and cumbersome process. The ability to bypass this several-minute wait by running locally on a sample of data is essential to being productive as a Hadoop developer or analyst.
 
 Now that we've tested locally, we're ready to execute our map/reduce job on Hadoop using Hadoop Streaming. http://wiki.apache.org/hadoop/HadoopStreaming[Hadoop Streaming] is a utility which lets users run jobs with any executable program as the mapper and/or the reducer. You can use Python scripts, or even simple shell commands like `wc` or others. If you're writing a Python, Ruby, Perl or other dynamic language script as a mapper or reducer, be sure to make the script executable, or the hadoop job will fail.
 
 The streaming command to run our Python mapper and reducer looks like this:
 
 ------
-hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files examples/ch_02/ufo_mapper.py,examples/ch_02/ufo_reducer.py -mapper examples/ch_02/ufo_mapper.py -reducer examples/ch_02/ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files examples/ch_02/ufo_mapper.py,examples/ch_02/ufo_reducer.py -mapper ufo_mapper.py -reducer ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
 ------
 
 You'll see output similar to that you saw in the last chapter. When the job is complete, view the results:
@@ -344,7 +330,7 @@ The results should be identical to the output of the local execution:
 203	1
 ------
 
-The difference being that the Hadoop execution on a large cluster could scale to petabytes of UFO sightings! Note that there are some negative values - imperfections in our data that we'll need to filter out before visualizing our results.
+While the results are identical, the potentials vary. The difference between the local and Hadoop runs being that the Hadoop execution on a large cluster could scale to petabytes of UFO sightings! Note that there are some negative values - imperfections in our data that we may need to filter out before visualizing our results. 'Big Data' often contains such surprises.
 
 ===== Plot the Data
 
@@ -352,7 +338,9 @@ When people (or Reindeer) work with data, their end goal is to uncover some answ
 
 That's because the human eye often gets a rough idea of a pattern faster than people can write code to divine the proper mathematical result. A few lines of Python can create a histogram to present to our Reindeer pals, to give a gestalt sense of UFO reporting delays.
 
-.Python Histogram (ch_02/histogram.py)
+To create a histogram chart, we'll run a Python script on our docker gateway:
+
+.Python Histogram Chart (ch_02/histogram.py)
 ------
 #!/usr/bin/python
 # Example histogram: UFO reporting delay by day
@@ -375,7 +363,7 @@ plt.bar(day_labels, counts)
 plt.savefig("UFO_Reporting_Delays.png")
 ------
 
-Get the image back on your local machine and open it using:
+To view the chart, we need to get the image back on your local machine, and then open it:
 
 ------
 scp -i insecure_key.pem -P 9022 chimpy@$DOCKER_IP:UFO_Reporting_Delays.png . # Enter password 'chimpy'
@@ -386,7 +374,13 @@ The chart looks like this:
 
 image::images/02_ufo_reporting_delays.png["UFO Reporting Delays, by Day"]
 
+===== Conclusion
+
+We've now taken a Python Streaming Hadoop job from map, through shuffle/sort and into reduce. What is more, we have then converted this 'reduced' output into a histogram chart. This workflow is typical, as we'll see throughout the book.
+
 === Hadoop vs Traditional Databases
+
+While we've covered the basic operation of Hadoop MapReduce jobs on a Hadoop cluster, it is worth taking a moment to reflect on how operating Hadoop differs from operating a traditional relational database. *Hadoop is not a database.*
 
 Fundamentally, the storage engine at the heart of a traditional relational database does two things: it holds all the records, and it maintains a set of indexes for lookups and other operations (the crane arm in Santa's legacy system). To retrieve a record, it must consult the appropriate index to find the location of the record, then load it from the disk. This is very fast for record-by-record retrieval, but becomes cripplingly inefficient for general high-throughput access. If the records are stored by location and arrival time (as the mailbags were on the Big Tree), then there is no "locality of access" for records retrieved by, say, type of toy -- records for Lego will be spread all across the disk. With traditional drives, the disk's read head has to physically swing back and forth in a frenzy across the drive platter, and though the newer flash drives have smaller retrieval latency it's still far too high for bulk operations.
 
@@ -405,7 +399,7 @@ data flutters by
   context yields insight
 ____________________________________________________________________
 
-More prosaically,
+More prosaically, we might explain map/reduce in three phases:
 
 [options="header"]
 |======
@@ -419,25 +413,25 @@ The trick lies in the shuffle or 'group-sort' phase: assigning the same label to
 
 The records in stage 1 ('label') are out of context. The mappers see each record exactly once, but with no promises as to order, and no promises as to which mapper sees which record. We've 'moved the compute to the data', allowing each process to work quietly on the data in its work space. Over at C&E Corp, letters and translation passages aren't pre-organized and they don't have to be; J.T. and Nanette care about keeping all the chimps working steadily and keeping the hallways clear of inter-office document requests.
 
-Once the map attempt finishes, each 'partition' (the collection of records destined for a common reducer) is dispatched to the corresponding machine, and the mapper is free to start a new task. If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of an exhausted crane arm, we now have a dignified elephant parade, conducted in concert with the efforts of our diligent workers.
+Once the map attempt finishes, each 'partition' (the collection of records destined for a common reducer, with a common label, or key) is dispatched to the corresponding machine, and the mapper is free to start a new task. If you notice, the only time data moves from one machine to another is when the intermediate piles of data get shipped. Instead of an exhausted crane arm, we now have a dignified elephant parade, conducted in concert with the efforts of our diligent workers.
 
 ==== Map Phase, in Light Detail
 
-Digging a little deeper into the mechanics of it all, a mapper receives one record at a time.  By default, Hadoop works on text files, and a record is one line of text.  (Hadoop supports other file formats and other types of storage beside files, but for the most part the examples in this book will focus on processing files on disk in a readable text format.) The whole point of the mapper is to "label" the record so that the group-sort phase can track records with the same label.
+Digging a little deeper into the mechanics of it all, a mapper receives one record at a time.  By default, Hadoop works on text files, and a record is one line of text. Caveat - Hadoop actually supports other file formats and other types of storage beside files, but for the most part the examples in this book will focus on processing files on disk in a readable text format. The whole point of the mapper is to "label" the record so that the group-sort phase can track records with the same label.
 
-Hadoop feeds the mapper that one record, and in turn, the mapper spits out one or more _labelled records._  Usually the values in each record fields are some combination of the values in the input record and simple transformation of those values. But the output is allowed to be anything -- the entire record, some subset of fields, the phase of the moon, the contents of a web page, nothing, ... -- and at times we'll solve important problems by pushing that point. The mapper can output those records in any order, at any time in its lifecycle, each with any label.
+Hadoop feeds the mapper that one record, and in turn, the mapper spits out one or more _labelled records._  Usually the values in each record's fields are some combination of the values in the input record and a simple transformation of those values. But the output is allowed to be anything -- the entire record, some subset of fields, the phase of the moon, the contents of a web page, nothing, ... -- and at times we'll solve important problems by pushing that point. The mapper can output those records in any order, at any time in its lifecycle, each with any label.
 
 // TODO: would be cool to have an image here, showing a record entering a box, which outputs a key and value
 
 ==== Shuffle or 'Group-Sort' Phase, in Light Detail
 
-In the group-sort phase, Hadoop transfers all the map output records in a partition to the corresponding reducer. That reducer merges the records it receives from all mappers, so that each group contains all records for its label regardless of what machine it came from. What's nice about the group-sort phase is that you don't have to do anything for it. Hadoop takes care of moving the data around for you. What's less nice about the group-sort phase is that it is typically the performance bottleneck. We'll learn how to take care of Hadoop so that it can move the data around smartly.
+In the shuffle/group-sort phase, Hadoop transfers all the map output records in a partition to the corresponding reducer. That reducer merges the records it receives from all mappers, so that each group contains all records for its label regardless of what machine it came from. What's nice about the group-sort phase is that you don't have to do anything for it. Hadoop takes care of moving the data around for you. What's less nice about the group-sort phase is that it is typically the performance bottleneck. Later, we'll learn how to take care of Hadoop so that it can move the data around smartly.
 
 // TODO: neato diagram
 
 ==== Reducers, in Light Detail
 
-Whereas the mapper sees single records in isolation, a reducer receives one key (the label) and _all_ records that match that key.  In other words, a reducer operates on a group of related records. Just as with the mapper, as long as it keeps eating records and doesn't fail the reducer can do anything with those records it pleases and emit anything it wants. It can nothing, it can contact a remote database, it can emit nothing until the very end and then emit one or a zillion records. The output can be text, it can be video files, it can be angry letters to the President. They don't have to be labelled, and they don't have to make sense. Having said all that, usually what a reducer emits are nice well-formed records resulting from sensible transformations of its input, like the count of records, the largest or smallest value from a field, or full records paired with other records. And though there's no explicit notion of a label attached to a reducer output record, it's pretty common that within the record's fields are values that future mappers will use to form labels.
+Whereas the mapper sees single records in isolation, a reducer receives one key (the label) and _all_ records that match that key. In other words, a reducer operates on a group of related records. Just as with the mapper, as long as it keeps eating records and doesn't fail the reducer can do anything with those records it pleases and emit anything it wants. It can emit nothing, it can contact a remote database, it can emit nothing until the very end and then emit one or a zillion records. The output can be text, it can be video files, it can be angry letters to the President. They don't have to be labelled, and they don't have to make sense. Having said all that, usually what a reducer emits are nice well-formed records resulting from sensible transformations of its input, like the count of records, the largest or smallest value from a field, or full records paired with other records. And though there's no explicit notion of a label attached to a reducer output record, it's pretty common that within the record's fields are values that future mappers will use to form labels.
 
 Once you understand the label-group-process data flow we've just introduced, you understand enough about map/reduce to reason about the large-scale motion of data and thus your job's performance.
 
@@ -445,4 +439,8 @@ Once you understand the label-group-process data flow we've just introduced, you
 
 === Outro
 
-You've just seen how records move through a map/reduce workflow. Next, we'll introduce Apache Pig, a high level language which will generate MapReduce for you.
+You've just seen how records move through a map/reduce workflow. It is normal to have to re-read this chapter until you get it straight. 
+
+You now have an intuitive sense of the mechanics behind map/reduce. Remember and come back to this chapter as you read the rest of the book. This will aide you in acquiring a deep understanding of the operations that make up the strategies and tactics of the analytics toolkit. 
+
+Next, we'll introduce Apache Pig, a high level language which will generate MapReduce for you. 
