@@ -443,4 +443,4 @@ You've just seen how records move through a map/reduce workflow. It is normal to
 
 You now have an intuitive sense of the mechanics behind map/reduce. Remember and come back to this chapter as you read the rest of the book. This will aide you in acquiring a deep understanding of the operations that make up the strategies and tactics of the analytics toolkit. 
 
-Next, we'll introduce Apache Pig, a high level language which will generate MapReduce for you. 
+Next, we'll introduce you to the dataset we'll be working on: baseball! Then we'll introduce Apache Pig, a high level language and tool which will generate MapReduce jobs for you. 
