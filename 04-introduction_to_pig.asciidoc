@@ -67,9 +67,10 @@ Let’s dive in with an example using the UFO dataset to estimate whether aliens
 .UFO Sightings by Month (ch_03/ufos_by_month.pig)
 ------
 sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv'  AS (
-    sighted_at: chararray,   reported_at: chararray,    location_str: chararray, shape: chararray,
-    duration_str: chararray, description: chararray,    lng: float,              lat: float,
-    city: chararray,         county: chararray,         state: chararray,        country: chararray );
+    sighted_at: chararray,   reported_at: chararray,    location_str: chararray,
+		shape: chararray,        duration_str: chararray,   description: chararray,
+		lng: float,              lat: float,                city: chararray,
+		county: chararray,       state: chararray,          country: chararray );
 
 -- Take the 6th and 7th character from the original string, as in '2010-06-25T05:00:00Z', take '06'
 month_count = FOREACH sightings GENERATE SUBSTRING(sighted_at, 5, 7) AS month;
@@ -77,6 +78,7 @@ month_count = FOREACH sightings GENERATE SUBSTRING(sighted_at, 5, 7) AS month;
 -- Group by year_month, and then count the size of the 'bag' this creates to get a total
 ufos_by_month    = FOREACH (GROUP month_count BY month) GENERATE
   group AS month, COUNT_STAR(month_count) AS total;
+
 STORE ufos_by_month INTO './ufos_by_month.out';
 ------
 
@@ -130,20 +132,23 @@ Let’s put Pig to a sterner test. Here’s the script above, modified to run on
    the third column is the number of requests, and the fourth column is the size of the content returned. */
    
 -- LOAD the data, which is space-delimited
-pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.gz' USING PigStorage(' ') AS (
-   project_name:chararray, 
-   page_title:chararray, 
-   requests:long, 
-   bytes:long
+pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.gz' 
+    USING PigStorage(' ') AS (
+        project_name:chararray, 
+        page_title:chararray, 
+        requests:long, 
+        bytes:long
 );
 
--- Group the data by project name, and then get counts of total pageviews and bytes sent for each project
+-- Group the data by project name, then count total pageviews & bytes sent per project
 per_project_counts = FOREACH (GROUP pageviews BY project_name) GENERATE
-  group AS project_name, 
-  SUM(pageviews.requests) AS total_pageviews, 
-  SUM(pageviews.bytes) AS total_bytes;
+    group AS project_name, 
+    SUM(pageviews.requests) AS total_pageviews, 
+    SUM(pageviews.bytes) AS total_bytes;
+
 -- Order the output by the total pageviews, in descending order
 sorted_per_project_counts = ORDER per_project_counts BY total_pageviews DESC;
+
 -- Store the data in our home directory
 STORE sorted_per_project_counts INTO 'sorted_per_project_counts.out';
 
@@ -226,7 +231,7 @@ these are typically accomplished with specific combinations of the above, but in
 
 // ... Composed to advanced patterns: Set Operations, Graph operations, ...
 
-That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps. For example, a GROUP followed by a FOREACH and a FILTER will only require one map phase and one reduce phase. In that case, the FOREACH and FILTER will be done in the reduce step -- and in the right circumstances, pig will "push" part of the `FOREACH` and `FILTER` _before_ the `JOIN`, potentially eliminating a great deal of processing.
+That's everything you can do with Pig -- and everything you need to do with data. Each of those operations leads to a predictable set of map and reduce steps, so it's very straightforward to reason about your job's performance. Pig is very clever about chaining and optimizing these steps.
 
 Pig is an extremely sparse language. By having very few Operators and very uniform syntax footnote:[Something SQL users but non-enthusiasts like your authors appreciate.], the language makes it easy for the robots to optimize the dataflow and for humans to predict and reason about its performance.
 
@@ -234,10 +239,9 @@ We will not explore every nook and cranny of its syntax, only illustrate its pat
 
 In the remainder of this chapter, we'll illustrate the mechanics of using Pig and the essential of its control flow operations by demonstrating them in actual use. In the following several chapters (REF), we'll cover patterns of pipelinable and of structural operations. In each case the goal is not only to understand its use, but to understand how to implement the corresponding patterns in a plain map-reduce approach -- and therefore how to reason about their performance. Finally, the chapter on Advanced Pig (TODO ref) will cover some deeper-level topics, such as a few important optimized variants of the JOIN statement and how to extend Pig with new functions and loaders.
 
-
 === `LOAD` Locates and Describes Your Data
 
-Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
+In order to analyze data, we need data to analyze. In this case, we'll start by looking at a record of the outcome of baseball games using the `LOAD` statement in Pig. Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
 
 [source,sql]
 .LOADing, FILTERing and STORing Data (ch_03/load_filter_store.pig)
@@ -249,6 +253,7 @@ games = LOAD '/data/gold/sports/baseball/games_lite.tsv' AS (
 );
 
 home_wins = FILTER games BY home_runs_ct > away_runs_ct;
+
 STORE home_wins INTO './home_wins.tsv';
 ------
 
@@ -311,8 +316,10 @@ A `bag` is an arbitrary-length collection of tuples, all of which are expected t
 [source,sql]
 .Create, STORE and LOAD a Bag (ch_03/create_store_load_bag.pig)
 ------
-park_team_years = LOAD '/data/gold/sports/baseball/park_team_years.tsv' USING PigStorage('\t') AS (
-    park_id:chararray, team_id:chararray, year:long, beg_date:chararray, end_date:chararray, n_games:long
+park_team_years = LOAD '/data/gold/sports/baseball/park_team_years.tsv' 
+    USING PigStorage('\t') AS (
+        park_id:chararray, team_id:chararray, year:long, 
+        beg_date:chararray, end_date:chararray, n_games:long
 );
 team_park_seasons = FOREACH (GROUP park_team_years BY team_id) GENERATE 
 	group AS team_id, 
@@ -340,10 +347,10 @@ team_park_seasons: {team_id: chararray,park_years: {(year: long,park_id: chararr
 A few lines of the relation `team_park_seasons` look like this:
 
 ------
-(BFN,{(1884,BUF02),(1882,BUF01),(1883,BUF01),(1879,BUF01),(1885,MIL02),(1885,ELM01),(1880,BUF01),(1881,BUF01),(1885,BUF02)})
+(BFN,{(1884,BUF02),(1882,BUF01),(1883,BUF01),(1879,BUF01),(1885,MIL02),(1885,ELM01),...})
 (BFP,{(1890,BUF03)})
 (BL1,{(1872,BAL02),(1873,BAL02),(1874,BAL02)})
-(BL2,{(1887,BAL03),(1883,BAL03),(1889,BAL06),(1885,BAL03),(1888,BAL03),(1886,BAL03),(1884,BAL03),(1882,BAL02)})
+(BL2,{(1887,BAL03),(1883,BAL03),(1889,BAL06),(1885,BAL03),(1888,BAL03),(1886,BAL03),...})
 (BL3,{(1891,BAL06),(1891,BAL07),(1890,BAL06)})
 ------
 
@@ -419,7 +426,7 @@ DUMP limited
 
 ==== `ILLUSTRATE` magically simulates your script's actions, except when it fails to work
 
-The `ILLUSTRATE` directive is one of our best-loved, and most-hated, Pig operations.
+The `ILLUSTRATE` directive is one of our best-loved, and most-hated, Pig operations. When it works, it is amazing. Unfortunately, it is often unreliable.
 
 Even if you only want to see an example line or two of your output, using a `DUMP` or a `STORE` requires passing the full dataset through the processing pipeline. You might think, "OK, so just choose a few rows at random and run on that" -- but if your job has steps that try to match two datasets using a `JOIN`, it's exceptionally unlikely that any matches will survive the limiting. (For example, the players in the first few rows of the baseball players table belonged to teams that are not in the first few rows from the baseball teams table.)  `ILLUSTRATE` walks your execution graph to intelligently mock up records at each processing stage. If the sample rows would fail to join, Pig uses them to generate fake records that will find matches. It solves the problem of running on ad-hoc subsets, and that's why we love it.
 
@@ -496,4 +503,4 @@ b = FOREACH a GENERATE COALESCE(field1, field2) AS coalesced;
 
 === Moving right along …
 
-This chapter was a gentle introduction to Pig and its basic operations.  In the next two chapters, we'll see Pig in action.
+This chapter was a gentle introduction to Pig and its basic operations. You can now write and run basic Pig scripts. In the next two chapters, we'll see Pig in action as we do more with the tool.
