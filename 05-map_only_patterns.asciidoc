@@ -1,5 +1,5 @@
 ////
-*Comment* Aj now reviewing.
+*Comment* Amy has read, comments sent.
 ////
 
 == Analytic Patterns: Map-only Operations
@@ -562,7 +562,9 @@ In the fourth stanza, the constant was given as a double. However, this time the
 
 ==== Ints and Floats and Rounding, Oh My!
 
-Another occasion for type conversion comes when you are trying to round or truncate a fractional number. The first four fields of the following statement turn the full-precision result of calculating OBP (`0.31827113`) into a result with three fractional digits (`0.318`), as OBP is usually represented.
+Another occasion for type conversion comes when you are trying to round or truncate a fractional number. 
+
+The first four fields of the following statement turn the full-precision result of calculating OBP (`0.31827113`) into a result with three fractional digits (`0.318`), as OBP is usually represented.
 
 [source,sql]
 .Rounding (ch_04/types.pig)
