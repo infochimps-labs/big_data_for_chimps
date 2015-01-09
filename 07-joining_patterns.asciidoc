@@ -2,6 +2,8 @@
 *Comment* Amy now reviewing.
 ////
 
+In this chapter...
+
 == Analytic Patterns: Joining Tables
 
 In database terminology, a _join_ combines the rows of two or more tables based on some matching information, known as a _key_.  For example, you could join a table of names and a table of mailing addresses, so long as both tables had a common field for the user ID.  You could also join a table of prices to a table of items, given an item ID column in both tables.  Joins are useful because they permit people to _normalize_ data -- that is to say, eliminate redundant content between multiple tables -- yet still bring several tables' content to a single view on-the-fly.
