@@ -1,5 +1,5 @@
 ////
-*Comment* Amy now reviewing.
+*Comment* Amy has read, comments sent.  
 ////
 
 In this chapter...
@@ -280,7 +280,7 @@ Even if there are records whose value is -999, they will have `'Y'` for the indi
 
 === Enumerating a Many-to-Many Relationship
 
-In the previous examples there's been a direct pairing of each line in the main table with the unique line from the other table that decorates it. Therefore, there output had exactly the same number of rows as the larger input table. When there are multiple records per key, however, the the output will have one row for each _pairing_ of records from each table. A key with two records from the left table and 3 records from the right table yields six output records.
+In the previous examples there has been a direct pairing of each line in the main table with the unique line from the other table that decorates it. Therefore, there output had exactly the same number of rows as the larger input table. When there are multiple records per key, however, the the output will have one row for each _pairing_ of records from each table. A key with two records from the left table and 3 records from the right table yields six output records.
 
 Using the `GROUP ALL` trick we learned last chapter, we can count the total records before and after a many-to-many JOIN:
 
