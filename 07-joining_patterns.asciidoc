@@ -2,7 +2,9 @@
 *Comment* Amy has read, comments sent.  
 ////
 
-In this chapter...
+In this chapter we'll cover `JOIN` operations in Pig. A join is used to 'join' multiple datasets or relations into a single relation based on the presence of a common key or keys. Pig supports several types of `JOIN` operations, including `INNER`, `OUTER` and `FULL` joins. We'll be learning how to perform different kinds of joins in Pig, and we'll also walk through how a join works at a low level, in Python/MrJob. By the end of the chapter, you'll understand how to join like a pro.
+
+To understand this chapter, it helps if you're familiar with joining data from a SQL or related background. If you're new to joins, a more thorough introduction will help. Check out the post http://blog.codinghorror.com/a-visual-explanation-of-sql-joins/['A Visual Explanation of SQL Joins'] by Jeff Atwood.
 
 == Analytic Patterns: Joining Tables
 
@@ -14,7 +16,9 @@ Pig's `JOIN` operator provides the syntactical ease of a SQL query.  While Pig w
 
 === Matching Records Between Tables (Inner Join)
 
-An _inner join_ drops records that don't have matching keys in both tables.  This means that the result of an inner join may have fewer rows than either of the original tables.
+_Inner joins_ are used to find the set of records having matching join keys in _both_ tables. If a record's join key in table A doesn't have a match in any record's join key in table B, it will be filtered from the output. If there is a match, the records with matched keys will be crossed to produce as many records as the number of records in table A times the number of records in table B, for that join key.
+
+In other words, an _inner join_ drops records that don't have matching keys in both tables. This means that the result of an inner join may have fewer rows than either of the original tables, or it may have more records than either of the original tables - up to an upper limit of A * B.
 
 ==== Joining Records in a Table with Directly Matching Records from Another Table (Direct Inner Join)
 
@@ -91,15 +95,16 @@ Though BMI can't distinguish between 180 pounds of muscle and 180 pounds of flab
 
 === How a Join Works
 
-So that you can effectively reason about the behavior of a JOIN, it's important that you have the following two-and-a-half ways to think aboutits operation: (a) as the equivalent of a COGROUP-and-FLATTEN; and (b) as the underlying map-reduce job it produces.
+So that you can effectively reason about the behavior of a JOIN, it's important that you have the following two ways to think about its operation: (a) as the equivalent of a COGROUP-and-FLATTEN; and (b) as the underlying map-reduce job it produces. Understanding how a join works in map/reduce goes a long way to understanding map/reduce itself. 
 
 ==== A Join is a COGROUP+FLATTEN
 
-Applying the `COGROUP` operation with a `FLATTEN` in place of the JOIN gives us the equivalent command:
+A `JOIN` in Pig is just shorthand for the equivalent `COGROUP` operation. Applying the `COGROUP` operation with a `FLATTEN` in place of the JOIN gives us the equivalent command:
 
 ------
 -- Original JOIN
-slugging_fatness_join = JOIN fatness BY player_id, slugging_stats BY player_id;
+slugging_fatness_join = JOIN fatness BY player_id, 
+														 slugging_stats BY player_id;
 
 -- Equivalent COGROUP/FLATTEN
 slugging_fatness_join = FOREACH 
@@ -121,11 +126,11 @@ slugging_fatness_join: {
 }
 ------
 
-In this sense, a `JOIN` is just a convenience - shorthand for a `COGROUP`/`FLATTEN`.
+In this sense, a `JOIN` is just a convenience - shorthand for a `COGROUP`/`FLATTEN`. We haven't introduced `COGROUP` before, but it is a fundamental operation in Pig. A `COGROUP` is direct shorthand for a _reduce_ operation on more than one table. Used on one table, it is equivalent to `GROUP BY`. Used on two tables, it causes a joint reduce on the join keys between the tables.
 
 ==== A Join is a Map/Reduce Job with a Secondary Sort on the Table Name
 
-The way to perform a join in map-reduce is similarly a particular application of the `COGROUP` we stepped through above. In the next example, we'll walk through it on its own. We'll be joining an example customers table (created by Joe Stein):
+The way to perform a join in map-reduce is similarly a particular application of the `COGROUP` we stepped through above. In the next example, we'll walk through it on its own in Python/MrJob. We'll be joining an example customers table (created by Joe Stein):
 
 .Customers (ch_06/customers.dat)
 ----
@@ -604,7 +609,8 @@ histogram = FOREACH (GROUP player_hits BY bin) GENERATE
     COUNT_STAR(player_hits) AS total;
 
 -- Calculate the complete set of histogram bins up to our limit
-histogram_bins = FOREACH (FILTER numbers BY 100 * number <= max_hits.max_bin) GENERATE 100 * number AS bin;
+histogram_bins = FOREACH (FILTER numbers BY 100 * number <= max_hits.max_bin) GENERATE 
+	  100 * number AS bin;
 
 -- Finally, join the histogram bins with the histogram data to get our gap-less histogram
 filled_histogram = FOREACH (JOIN histogram_bins BY bin LEFT OUTER, histogram BY bin) GENERATE
@@ -723,4 +729,6 @@ In contrast, any SQL user will immediately recognize the join formulation of thi
 
 === Outro
 
-In this chapter we've learned how to `JOIN` and `COGROUP`. In the next chapter we'll learn about sorting, or ordering data.
+In this chapter we've learned how to `JOIN` and `COGROUP`. These operations allow us to bring additional data-sources into our analysis. The INNER `JOIN` lets us combine records from multiple datasets with common join keys. The OUTER `JOIN` or semi-join decorates one relation with matches from another relation. An anti-join filters records with a match in another table, leaving only those that don't match. The self-join showed us how to explore groupings within a given relation. Taken together, these techniques constitute a powerful toolset for working with one or more sources of data.
+
+In the next chapter we'll learn about sorting, or ordering data.
