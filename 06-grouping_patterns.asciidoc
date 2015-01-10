@@ -426,7 +426,9 @@ farhome_gms = FOREACH (GROUP pktm_stats BY (team_id, year_id)) {
         BagToString(pktm_stats.parks,'|')    AS parks
         ;
 };
+
 farhome_gms = ORDER farhome_gms BY n_cities DESC, n_farhome_gms DESC;
+
 STORE farhome_gms INTO 'json_test' USING JsonStorage();
 ------
 
