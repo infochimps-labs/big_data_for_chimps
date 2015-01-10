@@ -2,7 +2,7 @@
 *Comment* Amy to read again once after revised to include more guidance for readers.  
 ////
 
-In this chapter, we will cover grouping operations in Pig, which are 'one-liners' or one line of Pig code to perform. 
+The `GROUP BY` operation is fundamental to data-processing - both in map/reduce and in the world of SQL. In this chapter, we will cover grouping operations in Pig, which are 'one-liners' or one line of Pig code to perform. This is part of Pig's power. We'll learn how grouping operations relate to the reduce phase of map/reduce and how to combine map-only operations with `GROUP BY` operations to perform arbitrary operations on data relations.
 
 == Analytic Patterns: Grouping Operations
 
@@ -12,7 +12,7 @@ Grouping operations are at the heart of map/reduce - they make use of and define
 
 // AEJ: why is it at the heart of every structural operation?
 
-The GROUP BY operation is at the heart of every structural operation. It's a one-liner in Pig to collect all the stadiums a team has played for in its history:
+The `GROUP BY` operation is at the heart of every structural operation. `GROUP BY` is responsible for collecting records for other operations to occur on them as they are grouped together. It's a one-liner in Pig to collect all the stadiums a team has played for in its history:
 
 [source,sql]
 .GROUPing Data (ch_05/park_teams.pig)
@@ -20,7 +20,7 @@ The GROUP BY operation is at the heart of every structural operation. It's a one
 park_teams_g = GROUP park_team_years BY team_id;
 ------
 
-The result of a `GROUP BY` operation is always a field called 'group', followed by one field per grouped table, each named for the table it came from.  The shape of the `group` field depends on whether you specified one or many group keys. If you specified a single key, the new `group` field is a scalar with the same schema. If you specified multiple keys, the new `group` field is a tuple whose schema corresponds to those keys. In this example, we grouped on the `team_id` chararray, and so the `group` field is a scalar chararray as well. In a moment we'll group on `year_id` and `team_id`, and so the `group` field would have schema `group:tuple(year_id:int, team_id:chararray)`.
+The result of a `GROUP BY` operation is always a field called 'group', followed by one field per grouped table, each named for the table it came from. The shape of the `group` field depends on whether you specified one or many group keys. If you specified a single key, the new `group` field is a scalar with the same schema. If you specified multiple keys, the new `group` field is a tuple whose schema corresponds to those keys. In this example, we grouped on the `team_id` chararray, and so the `group` field is a scalar chararray as well. In a moment we'll group on `year_id` and `team_id`, and so the `group` field would have schema `group:tuple(year_id:int, team_id:chararray)`.
 
 Each of the following fields is a bag, holding tuples whose schema matches the corresponding table. Notice that the name we used to refer to the _table_ is now also the name for a _field_. This will confuse you at first, but soon become natural, especially if you use `DESCRIBE` liberally:
 
@@ -572,7 +572,6 @@ See the Pattern in Use for the next section too (REF).
 // TODO add diagram showing inner bag like the ThinkBig demo (and reference it)
 
 ==== Completely Summarizing a Field
-
 
 In the preceding case, the aggregate functions were used to create an output table with similar structure to the input table, but at a coarser-grained relational level: career rather than season. The result was a new table to analyze, not a conceptual report. Statistical aggregations also let you summarize groups and tables with well-understood descriptive statistics. By sketching their essential characteristics at dramatically smaller size, we make the data easier to work with but more importantly we make it possible to comprehend.
 
