@@ -13,7 +13,9 @@ Grouping operations are at the heart of map/reduce - they make use of and define
 
 // AEJ: why is it at the heart of every structural operation?
 
-The `GROUP BY` operation is at the heart of every structural operation. `GROUP BY` is responsible for collecting records for other operations to occur on them as they are grouped together. It's a one-liner in Pig to collect all the stadiums a team has played for in its history:
+The `GROUP BY` operation is at the heart of every structural operation. `GROUP BY` is responsible for collecting records for other operations to occur on them as they are grouped together. 
+
+Lets dive right in. Grouping data in Pig is easy: it's a one-liner in Pig to collect all the stadiums a team has played for in its history:
 
 [source,sql]
 .GROUPing Data (ch_05/park_teams.pig)
@@ -54,7 +56,8 @@ Notice that the _full record_ is kept, even including the keys:
 [source,sql]
 ------
 (ALT,{(ALT01,ALT,1884,1884-04-30,1884-05-31,18)})
-(ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),(ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
+(ANA,{(ANA01,ANA,2001,2001-04-10,2001-10-07,81),
+		  (ANA01,ANA,2010,2010-04-05,2010-09-29,81),...})
 ------
 
 To eliminate the redundant data, you'll almost always immediately project using a `FOREACH`. This lets you trim the fields in the group to those you are interested in. Pig allows you to put the `GROUP` statement inline within a`FOREACH`:
@@ -107,7 +110,7 @@ team_pkyr_bags: {
 */
 ------
 
-You can group on multiple fields.  For each team and year, we can find the park(s) that team called home:
+You can group on multiple fields. For each team and year, we can find the park(s) that team called home:
 
 [source,sql]
 ------
@@ -160,7 +163,8 @@ If you have multiple group keys, and want all of the group keys back, you can fl
 
 [source,sql]
 ----
-year_team = FOREACH (GROUP park_team_years BY (year_id, team_id)) GENERATE FLATTEN(group) AS (year_id, team_id);
+year_team = FOREACH (GROUP park_team_years BY (year_id, team_id)) GENERATE 
+	FLATTEN(group) AS (year_id, team_id);
 
 DESCRIBE year_team;
 
