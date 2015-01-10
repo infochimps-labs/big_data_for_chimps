@@ -1145,7 +1145,9 @@ For reference, see http://datafu.incubator.apache.org/docs/datafu/guide/bag-oper
 [source,sql]
 .Calculating a Histogram within a Group (ch_05/bat_career.pig)
 ------
-sig_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND (lg_id == 'NL' OR lg_id == 'AL') AND (PA >= 450));
+sig_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND 
+																		 (lg_id == 'NL' OR lg_id == 'AL') AND 
+																		 (PA >= 450));
 
 REGISTER /usr/lib/pig/datafu.jar 
 DEFINE CountVals datafu.pig.bags.CountEach('flatten');
@@ -1351,6 +1353,7 @@ standards = FOREACH mod_seasons {
 
 Next, count the seasons that pass the threshold by summing the indicator value
 
+[source,sql]
 ------
 career_standards = FOREACH (GROUP standards BY player_id) GENERATE
     group AS player_id,
@@ -1406,6 +1409,7 @@ age_seasons = FOREACH mod_seasons {
 
 After the group, we can sum across all the records to find the plate-appearances-in-prime-seasons even though only some of the records belong to the prime-seasons subset. The irrelevant seasons show a zero value in the projected field and so don't contribute to the total.
 
+[source,sql]
 .Career Epochs
 ------
 career_epochs = FOREACH (GROUP age_seasons BY player_id) {
