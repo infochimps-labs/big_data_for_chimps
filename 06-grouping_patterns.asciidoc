@@ -2,9 +2,9 @@
 *Comment* Amy to read again once after revised to include more guidance for readers.  
 ////
 
-The `GROUP BY` operation is fundamental to data-processing - both in map/reduce and in the world of SQL. In this chapter, we will cover grouping operations in Pig, which are 'one-liners' or one line of Pig code to perform. This is part of Pig's power. We'll learn how grouping operations relate to the reduce phase of map/reduce and how to combine map-only operations with `GROUP BY` operations to perform arbitrary operations on data relations.
-
 == Analytic Patterns: Grouping Operations
+
+The `GROUP BY` operation is fundamental to data-processing - both in map/reduce and in the world of SQL. In this chapter, we will cover grouping operations in Pig, which are 'one-liners' or one line of Pig code to perform. This is part of Pig's power. We'll learn how grouping operations relate to the reduce phase of map/reduce and how to combine map-only operations with `GROUP BY` operations to perform arbitrary operations on data relations.
 
 Grouping operations are at the heart of map/reduce - they make use of and define the 'reduce' operation of map/reduce, in which records with the same reduce key are grouped on a single reducer in sorted order. Thus is is possible to define a single map/reduce job that performs any number of map-only operations, followed by a grouping operation, followed by more map-only operations after the reduce. This simple pattern enables map/reduce to perform a wide array of operations, implementing a wide array of algorithms.
 
