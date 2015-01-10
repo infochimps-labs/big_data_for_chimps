@@ -375,7 +375,8 @@ pktm_city = FOREACH park_team_years GENERATE
 -- First grouping: stats about each city of residence
 pktm_stats = FOREACH (GROUP pktm_city BY (team_id, year_id, city)) {
     pty_ordered   = ORDER   pktm_city BY n_games DESC;
-    pk_ct_pairs   = FOREACH pty_ordered GENERATE StringConcat(park_id, ':', (chararray)n_games);
+    pk_ct_pairs   = FOREACH pty_ordered GENERATE 
+			  StringConcat(park_id, ':', (chararray)n_games);
     GENERATE
         group.team_id,
         group.year_id,
@@ -451,13 +452,13 @@ Here's a sample of the output:
 	"max_in_city":32,
 	"parks":"BOS05:32|BOS04:27|BOS03:4"
 }
-{"team_id":"PHI","year_id":1894,"city":"PHI","n_parks":3,"n_city_games":71,"max_in_city":43,"parks":"PHI06:43|PHI14:22|PHI08:6"}
-{"team_id":"NY1","year_id":1911,"city":"NYC","n_parks":3,"n_city_games":75,"max_in_city":45,"parks":"NYC14:45|NYC13:28|NYC10:2"}
-{"team_id":"PHI","year_id":1927,"city":"PHI","n_parks":2,"n_city_games":78,"max_in_city":66,"parks":"PHI09:66|PHI11:12"}
-{"team_id":"LS3","year_id":1893,"city":"LOU","n_parks":2,"n_city_games":53,"max_in_city":52,"parks":"LOU03:52|LOU02:1"}
-{"team_id":"NY4","year_id":1884,"city":"NYC","n_parks":2,"n_city_games":55,"max_in_city":33,"parks":"NYC06:33|NYC03:22"}
-{"team_id":"CLE","year_id":1946,"city":"CLE","n_parks":2,"n_city_games":77,"max_in_city":41,"parks":"CLE07:41|CLE06:36"}
-{"team_id":"CLE","year_id":1945,"city":"CLE","n_parks":2,"n_city_games":77,"max_in_city":46,"parks":"CLE07:46|CLE06:31"}
+{"team_id":"PHI","year_id":1894,"city":"PHI","n_parks":3,"n_city_games":71,"max_in_city...
+{"team_id":"NY1","year_id":1911,"city":"NYC","n_parks":3,"n_city_games":75,"max_in_city...
+{"team_id":"PHI","year_id":1927,"city":"PHI","n_parks":2,"n_city_games":78,"max_in_city...
+{"team_id":"LS3","year_id":1893,"city":"LOU","n_parks":2,"n_city_games":53,"max_in_city...
+{"team_id":"NY4","year_id":1884,"city":"NYC","n_parks":2,"n_city_games":55,"max_in_city...
+{"team_id":"CLE","year_id":1946,"city":"CLE","n_parks":2,"n_city_games":77,"max_in_city...
+{"team_id":"CLE","year_id":1945,"city":"CLE","n_parks":2,"n_city_games":77,"max_in_city...
 ...
 ------
 
@@ -994,7 +995,7 @@ Call the histogram macro on the batting career data as follows:
 [source,sql]
 .Histogram of Number of Seasons (ch_05/bat_career.pig)
 ------
-career_G_hist	    = binned_histogram(bat_careers, 'G', 50, 3600);
+career_G_hist     = binned_histogram(bat_careers, 'G', 50, 3600);
 career_G_hist_2   = binned_histogram(bat_careers, 'G', 2, 3600);
 career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 ------
