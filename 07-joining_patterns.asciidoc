@@ -2,11 +2,11 @@
 *Comment* Amy has read, comments sent.  
 ////
 
+== Analytic Patterns: Joining Tables
+
 In this chapter we'll cover `JOIN` operations in Pig. A join is used to 'join' multiple datasets or relations into a single relation based on the presence of a common key or keys. Pig supports several types of `JOIN` operations, including `INNER`, `OUTER` and `FULL` joins. We'll be learning how to perform different kinds of joins in Pig, and we'll also walk through how a join works at a low level, in Python/MrJob. By the end of the chapter, you'll understand how to join like a pro.
 
 To understand this chapter, it helps if you're familiar with joining data from a SQL or related background. If you're new to joins, a more thorough introduction will help. Check out the post http://blog.codinghorror.com/a-visual-explanation-of-sql-joins/['A Visual Explanation of SQL Joins'] by Jeff Atwood.
-
-== Analytic Patterns: Joining Tables
 
 In database terminology, a _join_ combines the rows of two or more tables based on some matching information, known as a _key_.  For example, you could join a table of names and a table of mailing addresses, so long as both tables had a common field for the user ID.  You could also join a table of prices to a table of items, given an item ID column in both tables.  Joins are useful because they permit people to _normalize_ data -- that is to say, eliminate redundant content between multiple tables -- yet still bring several tables' content to a single view on-the-fly.
 
