@@ -2,6 +2,7 @@
 *Comment* Amy done, comments sent.
 ////
 
+[[quick_look_at_baseball]]
 == A Quick Look into Baseball
 
 Nate Silver calls Baseball the "perfect data set".  There are not many human-centered systems for which this comprehensive degree of detail is available, and no richer set of tables for truly demonstrating the full range of analytic patterns.

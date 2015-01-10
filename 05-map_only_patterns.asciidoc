@@ -2,13 +2,34 @@
 *Comment* Amy has read, comments sent.
 ////
 
+[[map_only_patterns]]
+
+This chapter begins the 'Analytic Patterns' section of the book. In this chapter (and those beyond) we will walk you through a series of analytic patterns, an example of each and a summary of information about when and where you might use them. As we go you will learn and accumulate new abilities in your analytic tool chest.
+
 == Analytic Patterns: Map-only Operations
 
 This chapter focuses exclusively on what we'll call 'Map-only operations'. A map-only operation is one that can handle each record in isolation, like the translator chimps from Chimpanzee & Elephant Corp's first job. That property makes those operations trivially parallelizable: they require no reduce phase of their own. 
 
-Technically, these operations can be run in the map or reduce phase of map/reduce. When a script has only map-only operations, they give rise to one mapper-only job which executes the composed pipeline stages. When map-only operations are combined with the structural operations you'll meet in the next chapter, they are composed with the stages of the mapper or reducer (depending on whether they come before or after the structural operation).
+Technically, these operations can be run in the map or reduce phase of map/reduce. When a script has only map-only operations, they give rise to one mapper-only job which executes the composed pipeline stages. 
 
 All of these are listed first and together for two reasons. One, they are largely fundamental; it's hard to get much done without `FILTER` or `FOREACH`. Two, the way you reason about the performance impact of these operations is largely the same. Since these operations are trivially paralellizable, they scale efficiently and the computation cost rarely impedes throughput. And when pipelined, their performance cost can be summarized as "kids eat free with purchase of adult meal". For datasets of any material size, it's very rare that the cost of preliminary or follow-on processing rivals the cost of the reduce phase. Finally, since these operations handle records in isolation, their memory impact is modest. So learn to think of these together.
+
+===== Pattern in Use
+
+Blocks like the following will show up after each of the patterns or groups of patterns we cover. Not every field will be present every time, since there's not always anything interesting to say.
+
+* _Where You'll Use It_  -- (_The business or programming context._) Everywhere. Like the f-stop on your camera, composing a photo begins and ends with throttling its illumination.
+* _Standard Snippet_	 -- (_Just enough of the code to remind you how it's spelled._) `somerecords = FILTER myrecords BY (criteria AND criteria ...);`
+* _Hello, SQL Users_     -- (_A sketch of the corresponding SQL command, and important caveats for peopl coming from a SQL background._) `SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;`
+* _Important to Know_	 -- (_Caveats about its use. Things that you won't understand / won't buy into the first time through the book but will probably like to know later._)
+  - Filter early, filter often. The best thing you can do with a large data set is make it smaller.
+  - SQL users take note: `==`, `!=` -- not `=` or anything else.
+  - Programmers take note: `AND`, `OR` -- not `&&`, `||`.
+* _Output Count_	 -- (_How many records in the output: fewer, same, more, explosively more?_) Zero to 100% of the input record count. Data size will decrease accordingly
+* _Records_		 -- (_A sketch of what the records coming out of this operation look like_) Identical to input
+* _Data Flow_		 -- (_The Hadoop jobs this operation gives rise to. In this chapter, all the lines will look like this one; in the next chapters that will change_) Map-Only: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
+* _Exercises for You_    -- (_A mission to carry forward, if you choose. Don't go looking for an answer section -- we haven't done any of them. In many cases you'll be the first to find the answer._) Play around with `null`s and the conditional operators until you have a good sense of its quirks.
+* _See Also_             -- (_Besides the patterns in its section of the book, what other topics might apply if you're considering this one? Sometimes this is another section in the book, sometimes it's a pointer elsewhere_) The Distinct operations, some Set operations, and some Joins are also used to eliminate records according to some criteria. See especially the Semi-Join and Anti-Join (REF), which select or reject matches against a large list of keys.
 
 === Eliminating Data
 
@@ -67,23 +88,6 @@ borned = FILTER people BY (birth_year IS NOT NULL) AND (birth_place IS NOT NULL)
 ------
 
 For those coming from a SQL background, Pig's handling of `null` values will be fairly familiar. For the rest of us, good luck. Null values generally disappear without notice from operations, and generally compare as `null` (which signifies neither `false` nor `true`). And so `null` is not less than 5.0, it is not greater than 5.0, and it is not equal to 5.0. A null value is not equal to `null`, and is not _unequal_ to `null`. You can see why for programmers it can be hard to track all this. All the fiddly collection of rules are well detailed in the Pig manual, so we won't go deep into them here -- we've found the best way to learn what you need is to just see lots of examples, which we endeavor to supply in abundance.
-
-===== Pattern in Use
-
-Blocks like the following will show up after each of the patterns or groups of patterns we cover. Not every field will be present every time, since there's not always anything interesting to say.
-
-* _Where You'll Use It_  -- (_The business or programming context._) Everywhere. Like the f-stop on your camera, composing a photo begins and ends with throttling its illumination.
-* _Standard Snippet_	 -- (_Just enough of the code to remind you how it's spelled._) `somerecords = FILTER myrecords BY (criteria AND criteria ...);`
-* _Hello, SQL Users_     -- (_A sketch of the corresponding SQL command, and important caveats for peopl coming from a SQL background._) `SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;`
-* _Important to Know_	 -- (_Caveats about its use. Things that you won't understand / won't buy into the first time through the book but will probably like to know later._)
-  - Filter early, filter often. The best thing you can do with a large data set is make it smaller.
-  - SQL users take note: `==`, `!=` -- not `=` or anything else.
-  - Programmers take note: `AND`, `OR` -- not `&&`, `||`.
-* _Output Count_	 -- (_How many records in the output: fewer, same, more, explosively more?_) Zero to 100% of the input record count. Data size will decrease accordingly
-* _Records_		 -- (_A sketch of what the records coming out of this operation look like_) Identical to input
-* _Data Flow_		 -- (_The Hadoop jobs this operation gives rise to. In this chapter, all the lines will look like this one; in the next chapters that will change_) Map-Only: it's composed onto the end of the preceding map or reduce, and if it stands alone becomes a map-only job.
-* _Exercises for You_    -- (_A mission to carry forward, if you choose. Don't go looking for an answer section -- we haven't done any of them. In many cases you'll be the first to find the answer._) Play around with `null`s and the conditional operators until you have a good sense of its quirks.
-* _See Also_             -- (_Besides the patterns in its section of the book, what other topics might apply if you're considering this one? Sometimes this is another section in the book, sometimes it's a pointer elsewhere_) The Distinct operations, some Set operations, and some Joins are also used to eliminate records according to some criteria. See especially the Semi-Join and Anti-Join (REF), which select or reject matches against a large list of keys.
 
 ==== Selecting Records that Match a Regular Expression (`MATCHES`)
 
@@ -468,6 +472,8 @@ NOTE: Apart from subtracting one epoch milliseconds from another to get a durati
 
 ===== Assembling a Bag
 
+Sometimes it can be useful to create complex objects to be referenced and processed later. While we try to keep schemas as simple as possible, sometimes you want a bag.
+
 We can take things further and assemble truly complex records of bags of tuples, and nested tuples.
 
 [source,sql]
@@ -623,6 +629,8 @@ some_seasons  = FOREACH (
 
 === Operations that Break One Table Into Many
 
+Pig Latin is a language defined by the manipulation of dataflows. In Pig, we often load an entire dataset at once and manipulate it in a stream. Streams needn't remain singular - they can split and merge like real rivers, flowing through different filters and operations before re-joining further on. It can help in writing Pig scripts to visualize your data as a dataflow. Now lets learn about `SPLIT` and `UNION`.
+
 ==== Directing Data Conditionally into Multiple Data Flows (`SPLIT`)
 
 The careers table gives the number of times each player was elected to the All-Star game (indicating extraordinary performance during a season) and whether they were elected to the Hall of Fame (indicating a truly exceptional career).
@@ -744,4 +752,4 @@ NOTE: The UNION operator is easy to over-use. For one example, in the next chapt
 
 The operations in this chapter do not require a reduce on their own, which makes them very efficient. These operations can be chained one after the other without causing a reduce to occur. Although we call them 'map-only' operations, they can be executed during either the map or at the tail of the reduce phase. The ability to chain map-only operations really helps map/reduce scale during complex operations. 
 
-The really interesting applications, however, come when we put data into context by grouping similar records. This is the subject of the next chapter.
+You can now `LOAD`, `STORE`, `FILTER`, `UNION`, `SPLIT`, `LIMIT` and `FOREACH`/`GENERATE`. This gives you a powerful tool chest with which to modify individual records. The really interesting applications, however, come when we put data into context by grouping similar records. This is the subject of the next chapter.
