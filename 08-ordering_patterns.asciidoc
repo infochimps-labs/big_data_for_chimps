@@ -4,9 +4,11 @@
 
 == Analytic Patterns: Ordering Operations
 
-A big part of telling stories with data is coming up with examples that prove a point. This means diving into the data to produce the most exceptional records. When data is big, this invariably means you need to sort the data to pick up the highest or lowest value(s) of some metric. 
+In this chapter we will cover ordering operations, or operations that sort data according to some criteria. Pig has two concepts of order - entire datasets can be sorted, as can the contents of a bag. We'll learn how to sort relations and bags, and also how to calculate the top records of a relation by combining `ORDER` with `LIMIT`. With these skills in hand, we'll be one step closer to being able to solve any arbitrary data processing task using the set of patterns we've learned.
 
-So far we've mostly limited ourselves to the ordering inherently provided by the map/reduce shuffle/sort operation, which does provide a sorted list on the reduce key for each file. If we're running a small job with a single reducer, that does provide a total sort. However, if we want an overall sort using multiple reducers, we must employ Pig's `ORDER` command. 
+Ordering operations are a fundamental part of storytelling. A big part of telling stories with data is coming up with examples that prove a point. This means diving into the data to produce the most exceptional records. When data is big, this invariably means you need to sort the data to pick up the highest or lowest value(s) of some metric. 
+
+So far we've mostly limited ourselves to the ordering inherently provided by the map/reduce shuffle/sort operation, which does provide a sorted list on the reduce key for each file. If we're running a small job with a single reducer, that does provide a total sort. However, if we want an overall sort using multiple reducers (as we must, if we're working with 'big data'), we must employ Pig's `ORDER` command. 
 
 === Preparing Career Epochs
 
