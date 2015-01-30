@@ -2,17 +2,25 @@
 *Comment* Amy has reviewed.
 ////
 
+Text places here won't show up.
+
 == Analytic Patterns: Duplicate and Unique Records
 
-This chapter will cover duplicate and unique records. We often find ourselves dealing with multiple records for a given concept or entity. We'll introduce the operations `UNION`, `DISTINCT` and various DataFu UDFs (User Defined Functions).
+This chapter will cover the data-processing of duplicate and unique records. We define duplicate records as those with the same value in the same field across two or more records. Unique records are those which, for the value of a given field, no other records have the same value. Note that in each case we must describe which field(s) we mean when we say 'unique' or 'duplicate.' Pig is no different: by default the `DISTINCT` command uses all fields, but we can trim fields from data relations to evaluate uniqueness in different ways, in terms of different fields.
+
+We often find ourselves dealing with multiple records for a given concept or entity. At those times we may want to reduce our data to just one, unique instance of each key. We'll introduce the operations `UNION`, `DISTINCT` and various DataFu UDFs (User Defined Functions) that achieve this operation.
+
+We'll also introduce set operations among relations using Pig, and set operations between data bags using DataFu UDFs.
 
 === Handling Duplicates
 
-It is often the case that you want to determine the unique set of values in a table or relation - that is, you want to remove duplicate values and retain only unique records. The `DISTINCT` operator performs this operation.
+It is often the case that you want to determine the unique set of values in a table or relation - that is, you want to remove duplicate values and retain only unique records. For instance, if you were creating a set of labels that describe items in an inventory - you would only want to see each label once in the final output, which you might use for a web page's autocomplete form. 
+
+The `DISTINCT` operator in Pig performs this operation.
 
 ==== Eliminating Duplicate Records from a Table
 
-The park_team_years table has a row for every team for every season and every park in which the team played. To find every distinct pair of team and home ballpark, use the `DISTINCT` operator. This is equivalent to the SQL statement `SELECT DISTINCT player_id, team_id from batting;`.
+Lets begin with a familiar example: the park_team_years table. It contains a row for every team for every season and every park in which the team played. Lets say we wanted to find what ballparks each team played in at least once. To find every distinct pair of team and home ballpark, we use Pig's `DISTINCT` operator:
 
 [source,sql]
 .Eliminating Duplicates (ch_08/park_teams.pig)
@@ -32,7 +40,7 @@ DUMP @;
 (WSU,WAS03)
 ------
 
-Don't fall in the trap of using a `GROUP` statement to find distinct values:
+This is equivalent to the SQL statement `SELECT DISTINCT player_id, team_id from batting;`. Don't fall in the trap of using a `GROUP` statement to find distinct values:
 
 [source,sql]
 ------
@@ -47,7 +55,9 @@ The combiner may impose a minor penalty when there are very few or very sparse d
 
 ==== Eliminating Duplicate Records from a Group
 
-We've seen how to eliminate duplicate records in relations - but what about within groups? This can be done with the `DISTINCT` operator inside a nested `FOREACH`. Instead of finding every distinct team/home ballpark pair as we just did, let's find the list of distinct home ballparks for each team:
+We've seen how to eliminate duplicate records in relations - but what about within groups? For instance, what if we want to find what parks a team played in each year as a single record?
+
+This can be done with the `DISTINCT` operator inside a nested `FOREACH`. Instead of finding every distinct team/home ballpark pair in a relation as we just did, let's find the list of distinct home ballparks for each team, having performed a `GROUP..BY` on team_id:
 
 [source,sql]
 .Eliminating Duplicate Records from a Group (ch_08/park_teams.pig)
@@ -87,7 +97,7 @@ The DataFu `DistinctBy` UDF selects a single record for each key in a bag; the f
 
 It has the nice feature of being order-preserving: only the first record for a key is output, and all records that make it to the output follow the same relative ordering they had in the input bag,
 
-This gives us a clean way to retrieve the distinct teams a player served in, along with the first and last year of their tenure:define DistinctBy
+What if we want to look at what teams a player played in, as well as where he began and ended his career? `DistinctBy` gives us a clean way to retrieve the distinct teams a player served in, along with the first and last year of their tenure:
 
 [source,sql]
 ------
@@ -483,5 +493,6 @@ is_equal = ( (COUNT_STAR(non_stayed) == 0L) ? 1 : 0);
 
 === Outro
 
-That wraps our chapter on Uniquing and Set Operations. In the next section of the book, we'll use what we've learned in this section to build real applications.
+That wraps our chapter on Uniquing and Set Operations. We've started with simple definitions of unique and distinct, showed you how to make relations and then groups unique, and finally took a tour of set operations for both relations and between groups.
 
+This completes our presentation of analytic patterns in Pig. By now you should have an able toolkit of techniques fit for attacking any data-processing problem you encounter.
