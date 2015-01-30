@@ -2,7 +2,7 @@
 *Comment* Amy has read. 
 ////
 
-It is literally impossible to have text appear before a header. This will not show up in the book.
+It is literally impossible to have text appear before a header. This will not show up in the book. If it does, please email me at russell.jurney@gmail.com and let me know.
 
 == Analytic Patterns: Ordering Operations
 
@@ -14,7 +14,7 @@ So far we've mostly limited ourselves to the ordering inherently provided by the
 
 === Preparing Career Epochs
 
-In order to demonstrated ordering records, we're going to prepare a dataset detailing the performance of players at three phases of their career: young, prime and older.
+In order to demonstrated ordering records, we're going to prepare a dataset detailing the performance of players at three phases of their career: young, prime and older. To do so, we'll be making use of familiar patterns. We use the map-only patterns of 'Selecting Records that Satisfy a Condition' and 'Selecting Records that Satisfy Multiple Conditions' with an initial `FILTER`, to include only seasons in the National or American leagues in our analysis. The map-only patterns 'Transform Records Individually using `FOREACH`' and 'A nested `FOREACH` Allows Intermediate Expressions' assist in calculating the properties of player seasons. Finally, we employ 'Summarizing Multiple Subsets of a Group Simultaneously' to compute career metrics across different age categories.
 
 [source,sql]
 .Career Epochs (ch_07/career_epochs.pig)
@@ -84,13 +84,21 @@ career_epochs = FOREACH (GROUP age_seasons BY player_id) {
     ;
 };
 
+STORE career_epochs INTO 'career_epochs';
 ----
 
-We'll be using this epoch data throughout the chapter to demonstrate different ordering techniques.
+We'll be using this epoch data throughout the chapter to demonstrate different ordering techniques, so don't delete the data in the `career_epochs` directory!
 
 === Sorting All Records in Total Order
 
-For this analysis, we're only going to look at players able to make solid contributions over several years. We'll define this as playing for five or more seasons and 2000 or more plate appearances (enough to show statistical significance), and a OPS of 0.650 (an acceptable-but-not-allstar level) or better.
+Anyone who has performed a SQL `ORDER BY` query has prepared a dataset and then sorted it for human consumption. Indeed, creating metrics and then sorting records based on them is at the heart of any data analysis. For this reason, `ORDER` is a one-line command in Pig:
+
+[source,sql]
+------
+sorted_records = ORDER records BY field1;
+------
+
+For this analysis, we're only going to look at players who were able to make solid contributions over several years. We'll define this as playing for five or more seasons and 2000 or more plate appearances (enough to show statistical significance), and a OPS of 0.650 (an acceptable-but-not-allstar level) or better. This means we must `FILTER`, and then `ORDER` and finally to `LIMIT` to a data size we, as humans (as opposed to Mentats), can read:
 
 [source,sql]
 .Career Epochs (ch_07/order.pig)
@@ -98,9 +106,14 @@ For this analysis, we're only going to look at players able to make solid contri
 career_epochs = FILTER career_epochs BY
     ((PA_all >= 2000) AND (n_seasons >= 5) AND (OPS_all >= 0.650));
 
-career_young = ORDER career_epochs BY OPS_young DESC; top_10_young = LIMIT career_young 10;
-career_prime = ORDER career_epochs BY OPS_prime DESC; top_10_prime = LIMIT career_prime 10;
-career_older = ORDER career_epochs BY OPS_older DESC; top_10_older = LIMIT career_older 10;
+career_young = ORDER career_epochs BY OPS_young DESC; 
+top_10_young = LIMIT career_young 10;
+
+career_prime = ORDER career_epochs BY OPS_prime DESC; 
+top_10_prime = LIMIT career_prime 10;
+
+career_older = ORDER career_epochs BY OPS_older DESC; 
+top_10_older = LIMIT career_older 10;
 ------
 
 You'll spot Ted Williams (willite01) as one of the top three young players, top three prime players, and top three old players. Ted Williams was pretty awesome.
@@ -112,18 +125,18 @@ You'll spot Ted Williams (willite01) as one of the top three young players, top 
 (troskha01,5749,732,4122,895,1933,1946,0.890712,0.9756794,0.919405,0.6866708,11,2,7,2)
 ----
 
-To put all records in a table in order, it's not sufficient to use the sorting that each reducer applies to its input. If you sorted names from a phonebook, file `part-00000` will have names that start with A, then B, up to Z; `part-00001` will also have names from A-Z; and so on. The collection has a _partial_ order, but we want the 'total order' that Pig's `ORDER BY` operation provides. In a total sort, each record in `part-00000` is in order and precedes every records in `part-00001`; records in `part-00001` are in order and precede every record in `part-00002`; and so forth. 
+To put all records in a table in order, it's not sufficient to use the sorting that each reducer applies to its input. If you sorted names from a phonebook, file `part-00000` will have names that start with A, then B, up to Z; `part-00001` will also have names from A-Z; and so on. The collection has a _partial_ order, but we want the 'total order' that Pig's `ORDER BY` operation provides. In a total sort, each record in `part-00000` is in order and precedes every records in `part-00001`; records in `part-00001` are in order and precede every record in `part-00002`; and so forth. For this reason, Pig's `ORDER` command is necessary whenever we have more than one reducer.
 
 ==== Sorting by Multiple Fields
 
-Sorting on Multiple fields is as easy as adding them in order with commas. For instance, to sort by number of older seasons, breaking ties by number of prime seasons:
+Sorting by one field is great, but sometimes our data is a little more complex than that. For instance, we might want to sort by one metric but use another as a tie-breaker. In Pig, sorting on multiple fields is as easy as adding them in order with commas. For instance, to sort by number of older seasons, breaking ties by number of prime seasons:
 
 ------
 career_older = ORDER career_epochs
 	BY n_older DESC, n_prime DESC;
 ------
 
-Wherever reasonable, "stabilize" your sorts by adding enough columns to make the ordering unique. This ensures the output will remain the same from run to run, a best practice for testing and maintainability.
+Wherever reasonable, "stabilize" your sorts by adding enough columns to make the ordering unique. This ensures the output will remain the same from run to run, a best practice for testing and maintainability that we introduced in the 'Map-Only Operations' chapter.
 
 ------
 career_older = ORDER career_epochs
@@ -152,10 +165,11 @@ If you browse through that table, you'll get a sense that current-era players se
 
 ==== Sorting Case-Insensitive Strings
 
-There's no intrinsic way to sort case-insensitive; instead, just force a lower-case field to sort on. We don't have an interesting table with mixed-case records in the baseball dataset, but most UNIX-based computers come with a dictionary in the `/usr/share` directory tree. Here's how to sort that ignoring case:
+Pig's `ORDER` command will sort capitalized words and lowercase words independently. There's no intrinsic way to sort case-insensitive; instead, just force a lower-case field to sort on. We don't have an interesting table with mixed-case records in the baseball dataset, but most UNIX-based computers come with a dictionary in the `/usr/share` directory tree. Here's how to sort that ignoring case:
 
 Note: you'll want to use Pig 'local mode' to run this next command: `pig -x local`
 
+[source,sql]
 .Case-insensitive Sort
 ------
 dict        = LOAD '/usr/share/dict/words' AS (word:chararray);
@@ -168,7 +182,9 @@ Note that we sorted on `l_word` _and_ `word`: this stabilizes the sort, ensuring
 
 ==== Dealing with Nulls When Sorting
 
-When the sort field has nulls, Pig sorts them as least-most by default: they will appear as the first rows for `DESC` order and as the last rows for `ASC` order. To float Nulls to the front or back, project a dummy field having the favoritism you want to impose, and name it first in the `ORDER..BY` clause.
+Real data has nulls (missing data), and to create sane, rational and consistent dataflows in Pig requires careful thought about how to handle them. The default behavior of Pig is thus: when the sort field has nulls, Pig sorts them as least-most by default. That is, they will appear as the first rows for `DESC` order and as the last rows for `ASC` order. If you want to alter that behavior, you can project a dummy field having the 'favoritism' or artificial sort order you want to impose. Name this column first in your `ORDER..BY` clause, and you can achieve whatever 'null behavior' you desire. We call this the 'dummy field trick.'
+
+For example, below we sort players' careers with nulls first, and then in another way with nulls last:
 
 .Handling Nulls When Sorting (ch_07/order.pig)
 ------
@@ -191,7 +207,7 @@ vals_then_nulls = FOREACH (ORDER nulls_sort_demo BY
 
 ==== Floating Values to the Top or Bottom of the Sort Order
 
-Use the dummy field trick any time you want to float records to the top or bottom of the sort order based on a criterion. This moves all players whose careers start in 1985 or later to the top, but otherwise sorts on number of older seasons:
+Use the 'dummy field trick' any time you want to float records to the top or bottom of the sort order based on a criterion. The example below moves all players whose careers start in 1985 or later to the top, but otherwise sorts on number of older seasons:
 
 .Floating Values to the Top of the Sort Order
 ------
@@ -206,6 +222,8 @@ post1985_vs_earlier = FOREACH (ORDER post1985_vs_earlier BY
         player_id..;
 ------
 
+Note that again we add a tie-breaker, player_id, to the sort. 
+
 ===== Pattern in Use
 
 * _Standard Snippet_	 -- `ORDER tbl BY mykey;`
@@ -219,10 +237,9 @@ post1985_vs_earlier = FOREACH (ORDER post1985_vs_earlier BY
 
 === Sorting Records within a Group
 
-This operation is straightforward enough and so useful we've been applying it all this chapter, but it's time to be properly introduced and clarify a
-couple points.
+Sorting an entire relation is powerful, but more often we want to sort data that has been partitioned by some key - as within a `GROUP..BY` operation. This operation is straightforward enough and so useful we've been applying it all this chapter, but it's time to be properly introduced and clarify a couple points.
 
-We can sort records within a group using `ORDER BY` within a nested `FOREACH`. Here's a snippet to list the top four players for each team-season, in decreasing order by plate appearances.
+We can sort records within a group using `ORDER BY` within a nested `FOREACH` (which we introduced in the Map-only Operations chapter). Rather than sorting all players, lets try sorting the players on each team in a given season. Here's a snippet to list the top four players for each team-season, in decreasing order by plate appearances:
 
 .Sorting Record within a Group (ch_07/bat_seasons.pig)
 ------
@@ -416,6 +433,10 @@ We use a randomized hash function UDF for each record; then number each line wit
 
 === Outro
 
-In this chapter, we've learned to sort, rank and order data. In the next chapter, we'll learn about creating unique values and relations, and working with sets.
+In this chapter, we've learned to sort, rank and order data. We learned how to sort entire relations by one or more fields. We learned how to deal with sorting nulls and mixed-case strings. We showed how to sort within a group with `TOP` and a nested `ORDER..BY`. Finally, we learned how to shuffle, or sort randomly using a Hash.
+
+Our bag-of-tricks is getting larger and larger. Soon there will be no data-processing problem you  face that you can't come up with a solution for using the patterns in this book.
+
+In the next chapter, we'll learn about creating unique values and relations, and working with sets.
 
 
