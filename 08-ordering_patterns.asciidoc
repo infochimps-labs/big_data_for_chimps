@@ -2,6 +2,8 @@
 *Comment* Amy has read. 
 ////
 
+It is literally impossible to have text appear before a header. This will not show up in the book.
+
 == Analytic Patterns: Ordering Operations
 
 In this chapter we will cover ordering operations, or operations that sort data according to some criteria. Pig has two concepts of order - entire datasets can be sorted, as can the contents of a bag. We'll learn how to sort relations and bags, and also how to calculate the top records of a relation by combining `ORDER` with `LIMIT`. With these skills in hand, we'll be one step closer to being able to solve any arbitrary data processing task using the set of patterns we've learned.
