@@ -1,0 +1,291 @@
+////
+*Comment* Amy done, comments sent.
+////
+
+[[hadoop_basics]]
+== Hadoop Basics
+
+=== Introduction
+
+++++
+<remark>Please make sure the Chimpanzee and Elephant Start a Business big does NOT appear before this Introduction.</remark>
+++++
+
+Hadoop is a large and complex beast. It can be bewildering to even begin to use the system, and so in this chapter we're going to purposefully charge through the least you need to know to launch jobs and manage data. In this book, we will try to keep things as simple as possible. For every one of its many modes options and configurations that is essential, there are many more that are distracting or even dangerous. The most important optimizations you can make come from designing efficient workflows, and even more so from knowing when to spend highly valuable programmer time to reduce compute time.
+
+In this chapter, we will equip you with two things: the necessary mechanics of working with Hadoop, and a physical intuition for how data and computation move around the cluster during a job. 
+
+The key to mastering Hadoop is an intuitive, physical understanding of how data moves around a Hadoop cluster. Shipping data from one machine to another -- even from one location on disk to another -- is outrageously costly, and in the vast majority of cases dominates the cost of your job. We'll describe at a high level how Hadoop organizes data and assigns tasks across compute nodes so that as little data as possible is set in motion with both a story featuring a physical analogy and by following an example job through its full lifecycle. More importantly, we'll show you how to read a job's Hadoop dashboard to understand how much it cost and why. Your goal for this chapter is to take away a basic understanding of how Hadoop distributes tasks and data, and the ability to run a job and see what's going on with it. As you run more and more jobs through the remaining course of the book, it is the latter ability that will cement your intuition.
+
+What does Hadoop do, and why should we learn about it? Hadoop enables the storage and processing of large amounts of data. Indeed, it is Apache Hadoop that stands at the middle of the 'Big Data' trend. The Hadoop Distributed Filesystem (HDFS) is the platform that enabled cheap storage of vast amounts of data (up to petabytes and beyond) cheaply using affordable, commodity machines. Before Hadoop, there simply wasn't a place to store terabytes and petabytes of data in a way that it could be easily accessed for processing. Hadoop changed everything.
+
+In this book we will teach you the mechanics of operating Hadoop, but first you need to understand the basics of how the Hadoop filesystem and MapReduce work together to create a computing platform. Along these lines, let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
+
+.Chimpanzee and Elephant Start a Business
+******
+
+++++
+<remark>Please make sure this DOES NOT appear at the start of the chapter, before the preceding introduction.</remark>
+++++
+
+A few years back, two friends -- JT, a gruff chimpanzee, and Nanette, a meticulous matriarch elephant -- decided to start a business. As you know, Chimpanzees love nothing more than sitting at keyboards processing and generating text. Elephants have a prodigious ability to store and recall information, and will carry huge amounts of cargo with great determination. This combination of skills impressed a local publishing company enough to earn their first contract, so Chimpanzee and Elephant, Incorporated (C&E for short) was born.
+
+The publishing firm’s project was to translate the works of Shakespeare into every language known to man, so JT and Nanette devised the following scheme. Their crew set up a large number of cubicles, each with one elephant-sized desk and several chimp-sized desks, and a command center where JT and Nanette can coordinate the action.
+
+As with any high-scale system, each member of the team has a single responsibility to perform. The task of each chimpanzee is simply to read a set of passages and type out the corresponding text in a new language. JT, their foreman, efficiently assigns passages to chimpanzees, deals with absentee workers and sick days, and reports progress back to the customer. The task of each librarian elephant is to maintain a neat set of scrolls, holding either a passage to translate or some passage's translated result. Nanette serves as chief librarian. She keeps a card catalog listing, for every book, the location and essential characteristics of the various scrolls that maintain its contents. 
+
+When workers clock in for the day, they check with JT, who hands off the day's translation manual and the name of a passage to translate. Throughout the day the chimps radio progress reports in to JT; if their assigned passage is complete, JT will specify the next passage to translate.
+
+If you were to walk by a cubicle mid-workday, you would see a highly-efficient interplay between chimpanzee and elephant, ensuring the expert translators rarely had a wasted moment. As soon as JT radios back what passage to translate next, the elephant hands it across. The chimpanzee types up the translation on a new scroll, hands it back to its librarian partner and radios for the next passage. The librarian runs the scroll through a fax machine to send it to two of its counterparts at other cubicles, producing the redundant, triplicate copies Nanette's scheme requires. 
+
+The librarians in turn notify Nanette which copies of which translations they hold, which helps Nanette maintain her card catalog. Whenever a customer comes calling for a translated passage, Nanette fetches all three copies and ensures they are consistent. This way, the work of each monkey can be compared to ensure its integrity, and documents can still be retrieved even if a cubicle radio fails.
+
+The fact that each chimpanzee's work is independent of any other's -- no interoffice memos, no meetings, no requests for documents from other departments -- made this the perfect first contract for the C&E crew. JT and Nanette, however, were cooking up a new way to put their million-chimp army to work, one that could radically streamline the processes of any modern paperful office footnote:[Some chimpanzee philosophers have put forth the fanciful conceit of a "paper-less" office, requiring impossibilities like a sea of electrons that do the work of a chimpanzee, and disks of magnetized iron that would serve as scrolls. These ideas are, of course, pure lunacy!]. JT and Nanette would soon have the chance of a lifetime to try it out for a customer in the far north with a big, big problem.
+******
+
+=== Map-only Jobs: Process Records Individually ===
+
+As you'd guess, the way Chimpanzee and Elephant organize their files and workflow corresponds directly with how Hadoop handles data and computation under the hood. We can now use it to walk you through an example in detail.
+
+The bags on trees scheme represents transactional relational database systems. These are often the systems that Hadoop data processing can augment or replace. The "NoSQL" movement (Not Only SQL) of which Hadoop is a part is about going beyond the relational database as a one-size-fits-all tool, and using different distributed systems that better suit a given problem.
+
+Nanette is the Hadoop http://wiki.apache.org/hadoop/NameNode[NameNode]. The NameNode manages the Hadoop Distributed Filesystem (HDFS). It stores the directory tree structure of the filesystem (the card catalog), and references to the data nodes for each file (the librarians). You'll note that Nanette worked with data stored in triplicate. Data on Hadoop's Distributed Filesystem is duplicated three times to ensure reliability. In a large enough system (thousands of nodes in a petabyte Hadoop cluster), individual nodes fail every day. In that case, HDFS automatically creates a new duplicate for all the files that were on the failed node.
+
+JT is the http://wiki.apache.org/hadoop/JobTracker[JobTracker]. He coordinates the work of individual MapReduce tasks into a cohesive whole system. The jobtracker is responsible for launching and monitoring the individual tasks of a mapreduce job, which run on the nodes that contain the data a particular job reads. MapReduce jobs are divided into a map phase in which data is read, and a reduce phase, in which data is aggregated by key and processed again. For now we'll cover map-only jobs. In the next chapter we'll introduce reduce.
+
+Note that in YARN (Hadoop 2.0), the terminology changed. The JobTracker is called the Resource Manager, and nodes are managed by Node Managers. They run arbitrary apps via containers. In YARN, MapReduce is just one kind of computing framework. Hadoop has become an application platform. Confused? So are we. YARN's terminology is something of a disaster, so we'll stick with Hadoop 1.0 terminology.
+
+=== Pig Latin Map-Only Job ===
+
+To illustrate how Hadoop works, lets dive into some code with the simplest example possible. We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
+
+* If the word begins with a consonant-sounding letter or letters, move them to the end of the word adding "ay": "happy" becomes "appy-hay", "chimp" becomes "imp-chay" and "yes" becomes "es-yay".
+* In words that begin with a vowel, just append the syllable "way": "another" becomes "another-way", "elephant" becomes "elephant-way".
+
+<<pig_latin_translator>>  is our first Hadoop job, a program that translates plain text files into Igpay Atinlay. This is a Hadoop job stripped to its barest minimum, one that does just enough to each record that you believe it happened but with no distractions. That makes it convenient to learn how to launch a job; how to follow its progress; and where Hadoop reports performance metrics such as run time and amount of data moved.  What's more, the very fact that it's trivial makes it one of the most important examples to run. For comparable input and output size, no regular Hadoop job can out-perform this one in practice, so it's a key reference point to carry in mind.
+
+We've written this example in Python, a language that has become the lingua franca of data science. You can run it over a text file from the command line -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
+
+[[pig_latin_translator]]
+.Igpay Atinlay translator (ch_01/pig_latin.rb)
+----
+#!/usr/bin/bash
+
+import sys, re
+
+WORD_RE = re.compile(r"\b([bcdfghjklmnpqrstvwxz]*)([\w\']+)")
+CAPITAL_RE = re.compile(r"[A-Z]")
+
+def mapper(line):
+  words = WORD_RE.findall(line)
+  pig_latin_words = []
+  for word in words:
+    original_word = ''.join(word)
+    head, tail = word
+    head = 'w' if not head else head
+    pig_latin_word = tail + head + 'ay'
+    pig_latin_word = pig_latin_word.lower().capitalize() if CAPITAL_RE.match(pig_latin_word) else pig_latin_word.lower()
+    pig_latin_words.append(pig_latin_word)
+  return " ".join(pig_latin_words)
+
+if __name__ == '__main__':
+  for line in sys.stdin:
+    print mapper(line)
+
+----
+
+[[pig_latin_translator]]
+.Igpay Atinlay translator, pseudocode
+----
+for each line,
+  recognize each word in the line
+  and change it as follows:
+    separate the head consonants (if any) from the tail of the word
+    if there were no initial consonants, use 'w' as the head
+    give the tail the same capitalization as the word
+    thus changing the word to "tail-head-ay"
+  end
+  having changed all the words, emit the latinized version of the line
+end
+----
+
+It's best to begin developing jobs locally on a subset of data, because they are faster and cheaper to run. To run the Python script locally, enter this into your terminal's command line:
+
+------
+cat /data/gold/text/gift_of_the_magi.txt|python examples/ch_01/pig_latin.py
+------
+
+The output should look like this:
+------
+Theway agimay asway youway owknay ereway iseway enmay onderfullyway iseway enmay owhay oughtbray
+iftsgay otay ethay Babeway inway ethay angermay Theyway inventedway ethay artway ofway ivinggay
+Christmasway esentspray Beingway iseway eirthay iftsgay ereway onay oubtday iseway onesway
+ossiblypay earingbay ethay ivilegepray ofway exchangeway inway asecay ofway uplicationday Andway
+erehay Iway avehay amelylay elatedray otay youway ethay uneventfulway oniclechray ofway otway
+oolishfay ildrenchay inway away atflay owhay ostmay unwiselyway acrificedsay orfay eachway otherway
+ethay eatestgray easurestray ofway eirthay ousehay Butway inway away astlay ordway otay ethay iseway
+ofway esethay aysday etlay itway ebay aidsay atthay ofway allway owhay ivegay iftsgay esethay otway ereway
+ethay isestway Ofway allway owhay ivegay andway eceiveray iftsgay uchsay asway eythay areway isestway
+Everywhereway eythay areway isestway Theyway areway ethay agimay
+
+------
+
+That's what it looks like when run locally. Let's run it on a real Hadoop cluster to see how it works when an elephant is in charge.
+
+NOTE: There are even more reasons why it's best to begin developing jobs locally on a subset of data than just faster and cheaper. What's more, though, extracting a meaningful subset of tables also forces you to get to know your data and its relationships. And since all the data is local, you're forced into the good practice of first addressing "what would I like to do with this data" and only then considering "how shall I do so efficiently". Beginners often want to believe the opposite, but experience has taught us that it's nearly always worth the upfront investment to prepare a subset, and not to think about efficiency from the beginning.
+
+=== Setting up a Docker Hadoop Cluster ===
+
+PLACEHOLDER FOR DOCKER CLUSTER SETUP INSTRUCTIONS.
+
+=== Data on the Cluster ===
+
+Now that we've setup a virtual Hadoop environment for you using Docker, you can develop and test Hadoop jobs using your laptop, just like having a real cluster. Your jobs will run in fully-distributed mode, making use of the cluster's HDFS.
+
+Run the following commands to check out what lies on HDFS:
+
+------
+hadoop fs -ls .
+------
+
+The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-get`, `-put`, `-du` and `-tail` also work. Now check out /data:
+
+------
+hadoop fs -ls /data/gold
+------
+
+You'll see some of the data we'll be using throughout the book.
+
+==== Run the Job ====
+
+First, let's test on the same tiny little file we used at the command-line. This command does not process any data but instead instructs _Hadoop_ to process the data, and so its output will contain information on how the job is progressing.
+
+// Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without Hadoop.
+
+------
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -file ./examples/ch_01/pig_latin.py -mapper ./examples/ch_01/pig_latin.py -input /data/gold/text/gift_of_the_magi.txt -output ./translation.out
+------
+
+You should see something like this:
+
+------
+14/11/20 06:03:51 WARN streaming.StreamJob: -file option is deprecated, please use generic option -files instead.
+packageJobJar: [./examples/ch_01/pig_latin.py] [/usr/lib/hadoop-mapreduce/hadoop-streaming-2.5.0-cdh5.2.0.jar] /tmp/streamjob829238017433781936.jar tmpDir=null
+14/11/20 06:03:52 INFO client.RMProxy: Connecting to ResourceManager at rm/172.17.0.11:8032
+14/11/20 06:03:52 INFO client.RMProxy: Connecting to ResourceManager at rm/172.17.0.11:8032
+14/11/20 06:03:53 INFO mapred.FileInputFormat: Total input paths to process : 1
+14/11/20 06:03:53 INFO mapreduce.JobSubmitter: number of splits:2
+14/11/20 06:03:53 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1416458740373_0004
+14/11/20 06:03:54 INFO impl.YarnClientImpl: Submitted application application_1416458740373_0004
+14/11/20 06:03:54 INFO mapreduce.Job: The url to track the job: http://rm:8088/proxy/application_1416458740373_0004/
+14/11/20 06:03:54 INFO mapreduce.Job: Running job: job_1416458740373_0004
+14/11/20 06:04:00 INFO mapreduce.Job: Job job_1416458740373_0004 running in uber mode : false
+14/11/20 06:04:00 INFO mapreduce.Job:  map 0% reduce 0%
+14/11/20 06:04:05 INFO mapreduce.Job:  map 50% reduce 0%
+14/11/20 06:04:05 INFO mapreduce.Job:  map 100% reduce 0%
+14/11/20 06:04:10 INFO mapreduce.Job:  map 100% reduce 100%
+14/11/20 06:04:10 INFO mapreduce.Job: Job job_1416458740373_0004 completed successfully
+14/11/20 06:04:10 INFO mapreduce.Job: Counters: 49
+	File System Counters
+		FILE: Number of bytes read=16495
+		FILE: Number of bytes written=349741
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		HDFS: Number of bytes read=14008
+		HDFS: Number of bytes written=16039
+		HDFS: Number of read operations=9
+		HDFS: Number of large read operations=0
+		HDFS: Number of write operations=2
+	Job Counters 
+		Launched map tasks=2
+		Launched reduce tasks=1
+		Data-local map tasks=2
+		Total time spent by all maps in occupied slots (ms)=6827
+		Total time spent by all reduces in occupied slots (ms)=3068
+		Total time spent by all map tasks (ms)=6827
+		Total time spent by all reduce tasks (ms)=3068
+		Total vcore-seconds taken by all map tasks=6827
+		Total vcore-seconds taken by all reduce tasks=3068
+		Total megabyte-seconds taken by all map tasks=6990848
+		Total megabyte-seconds taken by all reduce tasks=3141632
+	Map-Reduce Framework
+		Map input records=225
+		Map output records=225
+		Map output bytes=16039
+		Map output materialized bytes=16501
+		Input split bytes=204
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=180
+		Reduce shuffle bytes=16501
+		Reduce input records=225
+		Reduce output records=225
+		Spilled Records=450
+		Shuffled Maps =2
+		Failed Shuffles=0
+		Merged Map outputs=2
+		GC time elapsed (ms)=112
+		CPU time spent (ms)=1970
+		Physical memory (bytes) snapshot=685285376
+		Virtual memory (bytes) snapshot=2261647360
+		Total committed heap usage (bytes)=496500736
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=13804
+	File Output Format Counters 
+		Bytes Written=16039
+14/11/20 06:04:10 INFO streaming.StreamJob: Output directory: ./translation.out
+------
+
+This is the output of the Hadoop streaming jar as it transmits your files to HDFS and runs them on the cluster.
+
+.The Job Browser
+********
+While the script outputs a bunch of happy robot-ese to your screen, open up the job browser at http://$CLUSTER_IP:9001/jobbrowser/ in your browser window. You'll need to login with chimpy/chimpy. The job should appear on the job browser window within a few seconds.
+
+The job browser offers a built-in console for monitoring and diagnosing jobs. It is part of Hue, or "Hadoop User Experience" - a graphical interface for Hadoop.
+
+image:images/01_job_browser_1.png[Hue Job Browser Interface]
+
+You will notice a list of jobs, the only entry being the job you just executed. Columns called map and reduce denote the percentage of completeness for mappers and reducers. Clicking on the job's id will take you to a page summarizing that job. To the left of the page is a box summarizing the job: user, status, a link to logs, as well as a count of maps and reduces and the duration of the job. You can also view the logs of the job, which is helpful during debugging.
+
+image:images/01_job_browser_2.png[Hue Job Browser Interface - Job Page]
+
+******
+
+You can compare the job's output to the local execution we ran earlier by running:
+
+------
+hadoop fs -cat ./translation.out/*
+------
+
+That command, like the Unix ‘cat’ command, dumps the contents of a file to standard out, so you can pipe it into any other command line utility. It produces the full contents of the file, which is what you would like for use within scripts but if your file is hundreds of MB large, as HDFS files typically are, dumping its entire contents to your terminal screen is ill appreciated. We typically, instead, use the Unix ‘head’ or 'tail' command to limit its output (in this case, to the last ten lines).
+
+------
+hadoop fs -cat ./translation.out/* | tail -n 20
+------
+
+Since you wouldn't want to read a whole 10GB file just to see whether the right number of closing braces come at the end, there is also a `hadoop fs -tail` command that dumps the last one kilobyte of a file to the terminal.
+
+Here's what the head and tail of your output should contain:
+
+image:images/01_pig_latin_output_1.png[Pig Latin Job Output]
+
+Hadoop has its own 'head' and 'tail' commands:
+
+------
+hadoop fs -tail ./translation.out/*
+------
+
+
+=== Outro
+
+In this chapter, we've covered the mechanics of HDFS and the map-only portion of MapReduce, and we've setup a virtual Hadoop cluster and run a single job on it. We're in good shape to learn more about Hadoop. In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm. Let's start by joining JT and Nannette with their next client.
+
