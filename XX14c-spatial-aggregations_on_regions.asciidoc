@@ -1,0 +1,278 @@
+=== Spatial Aggregations on Regions
+
+While spatially aggregating pointwise data required nothing terribly sophisticated, doing the same for objects with spatial extent will motivate a couple new tricks. As an example, let's take agricultural production for each country footnote:[downloaded from the website of FAOSTAT, The Statistical Division of the Food and Agriculture Organization of the United Nations] and smooth it onto a uniform grid. (We'll find some interesting connections to this data in the final chapter).
+
+Fair warning: though the first version of this script we demonstrate for you is correct as it stands, it will be sub-optimal. But we want to demonstate the problem and then discuss its elegant solution.
+
+// X points    Y gridcells occupied    ~ 6000 grid cells (50 x 120)
+
+The key first step is to assemble a table giving the weight of each region's contribution to the tile.
+
+* Break up the geographic shapes onto tiles. Luxembourg breaks up into two tiles representing XXX% and 1-XXX% of its area. Russia breaks into XXX tiles (!).
+* Bring all fragments one each tile together. For example, the southern of the tiles holding Luxembourg also holds parts of Belgium, France, and Germany.
+* Find the area fraction of each segment on its tile along with the combined shapes. Our example four-country tile is covered by XXX% Luxembourg, XXX% Belgium, XXX% France, and XXX% Germany. Meanwhile, most of Russia's tiles lie 100% within its interior.
+
+------
+(... code ...)
+    quad_area_frac: fragment's pull / sum of fragments' pulls
+      (id) (name) (area on quad) (area of whole) (fraction of occupied area on quad) (shape)
+------
+
+With this table in hand, a simple join of the each region's statistics with the table of weights gives the aggregated fraction. For rate or aggregated statistics, such as commodity price index or proportion of imports to exports, we only need to weight the contribution by fraction-on-tile. The relative price index of eggs in Luxembourg in 2011 was 118, 135 in France
+  170 in Germany and 144 in Belgium, and so our four-country exemplar scale has an averaged
+  price index of XXX (EQUATION).
+
+For counting statistics such as "number of head of cattle", we need to first use the fraction-of-country figure to find the contributed count, and then use the
+Fraction-on-tile to generate the aggregate.
+It isn't fair to pit all of Germany's XXX head against Luxembourg's XXX on that tile; we should consider that Germany weighed in with a proportional XXX head (XXX%) against Luxembourg's XXX head (XXX%).
+
+NOTE: Yes, it's problematic that we are smearing all of each country's production uniformly throughout its interior. Florida grows far more cane sugar than Alaska. Your options?
+First, it might not matter. Predictive analytics algorithms are often quite happy to accept imperfect data if it means more signal. The audience for an "Every possible statistic about where I'm Standing" mobile app would have to accept that we don't quite have _everything_ yet; just be upfront about the data's imperfections.
+If that's not acceptable, you can try to find better data: through commercial vendors, or through each country's agricultural statistics website, if any. A big expense either way.
+Too often, people are reluctant to pursue the middle ground of supplementing the data with their own expertise.
+Torturing insufficient data into a misleading result is a mortal sin, but acting on only that which can be quantified will send you to perdition just the same. We all just agreed that there are no sugar cane farms in Alaska -- finding out what things Alaska, Greenland, Siberia and the Australian Outback _do_ produce, and excluding those regions from your analysis otherwise, would yield a large improvement at modest effort.
+Even if we don't know exactly how production is distributed within a country, we know that (a) this only matters for countries so large they span different ecologies; (b) the smaller countries give you a good sense of where those ecologies are.
+You could hold out the too-large countries from a first pass and use that background distribution to allocate
+This is only justifiable as a way to turn a bad estimate into a serviceable one, but sometimes that's enough.
+The best way to get good at this is to watch masters at work. Besides peer-reviewed articles in your field, one of the best things you can do to advance along your path is to regularly read the data-journalism articles on the FiveThirtyEight blog.
+Nate Silver and Emily Oster especially excel at supplementing what they can measure with what they know, without either muddying the plot or corrupting the outcome. footnote:[Some other recommendations include https://en.wikipedia.org/wiki/Steven_Levitt[Steven Levitt]'s journal articles and the Freakonomics blog; OKCupid's OKStats (REF); and http://analyticsmadeskeezy.com/[Analytics Made Skeezy] (REF).
+On the data visualization front, see Flowing Data (REF) and The Why Axis (REF)]
+
+Running the job will produce output like the graph at the right (REF). It should also produce a sense of frustration at the run time and output size.
+
+It's all those tiny trivial tiles from Russia, the US, and other countries with a large interior.
+As our approach stands right now,
+200-something countries produced XXX number of output tiles.
+Joining that to the 2.3 million rows of crop production data produces big data from small, which is just the opposite of what we like to do.
+//  2,359,750 lines 247,038,588 chars Production_Crops_E_All_Data.csv
+
+// If what follows doesn't set your heart singing, you might have chosen the wrong profession.
+
+// Our solution will follow the same logic as the solution JT learned from the friendly pianist.
+
+Instead of breaking down
+
+.Variable Level of Detail prevents Inefficient Tiny Tiles
+image::images/11-f-quad_decompositions/11-quaddecomp-world-mercator.png[Variable Level of Detail prevents Inefficient Tiny Tiles]
+
+The QuadDecompose UDF accepts an outer and an inner zoom level.
+Every region will be broken down to at least the coarser zoom level; you'll use this grid size as the partition key (in map/reduce) or group key (in Pig).
+No region will be broken into tiles smaller than the inner zoom level, which is important for both managing the data volume and for ensuring we don't group data into finer bins than it can support (see the section on "Choosing a Histogram Bin Size" (REF)).
+
+In the graphic (REF), you can see the result:
+the top two images, showing the tiles decomposed naively (on the left) and hierarchically (on the right), are identical. The lower row has the same data but with a light border around each tile in the heatmap. The large interior portions of Russia, China, the USA, Brazil and others are now represented by coarser zoom-level blocks. Even France and Argentina manage to line up their borders fortuitously for a zoom-level 6 (TODO check size) block. In all, we reduced the number of tiles from XXX down to XXX without impacting accuracy.
+// 
+TODO: move to join part below.
+
+Since every point on the map is covered by at most one region for the current data set, you'll find that every tile is either (a) wholly in the interior of a country, or (b) at the finest zoom level: there's no way for Russia to send data off to a huge zoom-level 5 tile while Latvia sends data to one of its zoom-level 7 children.
+The zoom-level chosen for each tile in the `FOREACH...QuadDecompose` pass was the correct granularity for the result.
+
+// TODO: reword
+
+=== Quadtree Decomposition and Numbering
+
+Let's look closer at the quadtree scheme.
+
+Our Reindeer friends, with their ample free time and bizarre sense of humor, sometimes vacation at a quaint vacation estate known as Spatial Manor. On the one hand, every once in a while somebody attacks a fellow guest with candlestick or rope or whatever's close at hand. On the other hand, though, most people _aren't_ killed and get to enjoy the rousing sport of solving a mystery!
+
+We can apply our spatial analysis tools to its simple geometry and help the investigators make a data-backed decision. Here is a map of the grounds.
+
+.Spatial Manor - Rooms (and underlying ZL-3 grid)
+image::images/11-f-quad_decompositions/spatial_manor-rooms_peeps_grid.png[Spatial Manor - Rooms (and underlying ZL-3 grid)]
+
+.Spatial Manor - Decomposed
+image::images/11-f-quad_decompositions/spatial_manor-quadkeys.png[Spatial Manor - Decomposed]
+
+
+
+// === Projections and Tiling Schemes
+// 
+// 
+// * Equal-area:
+//   - features uniformly distributed on the globe will be uniformly distributed among grid cells.
+// * Platte-Careé (Equirectangular)
+//   - Extremely simple to compute
+//   - Plot directly into screen coordinates with
+//   -
+
+==== Exporting data for Presentation by a Tileserver
+
+// The most commonly
+
+Features following a constant bearing in any direction -- Manhattan's Broadway, or the borderlines of Algeria or Nevada -- remain straight lines on the map. This is important for navigational purposes
+
+The locality properties of quadtiles indexing
+
+Typically you will store the shape clipped to the given quad-tile.
+ metadata about that region -- population, metric tons of bananas exported annually, an image of its flag, lyrics to its national anthem -- is stored under the same key but in independent columns footnote:[typically the regions are heavyweight, heavily requested and read-only, so they deserve their own table or at least their own column family.
+
+You don't have to break
+What we do is
+When tile 0231_1 is requested
+
+    0230_103 us (California
+    0230_11X us
+    0230_2XX pacific
+    0230_30*
+    0320_31*
+    0320_32X
+    0320_33*
+    0231_0XX  US
+    0231_1xx  US
+    0231_2**  Mexico, SW US, pacific
+    0231_3**  Mexico, SW US, Gulf of Mexico
+    0231_322     Monterey
+    0231_323     Tampico
+    0231_33      Caribbean east of Mexico
+    0232_3333 4  between Hawaii and Baka calif
+
+Querying on the ZL-5 tile 0231_0 (using key 0231_033), any of its four children (using keys 0231_003, 0231_013, 0231_023, or 0231_033) or any of the sixteen ZL-7 descendants 0231_000 through 0231_033 will retrieve a single tile. Querying on its parent 0231 will return tiles for 0231_0 and 0231_1, and a collection of zoom level 6 and 7 tiles covering the southwest US, Mexico and the Gulf of Mexico.
+
+TODO: screenshot.
+
+Our data is stored with no duplication, but
+
+Its easy to decompose or clip a super-tile to a requested (finer) zoom level. The longitude just divides normally along the tile: a hypothetical tile from 16 to 32 would have spatial coordinates 16, 18, 20, .... The latitude cut points do not subdivide directly, but only need to be calculated for one edge: if tile 0230_00 has bottom edge XX latitude, so does tile 0230_01, 0230_10, 0231_11, and others in its horizontal grid row.
+
+// NOTE:  The multiscale keys work very well in HBase too.  For the case where you are storing multiscale regions and querying on points, you will want to use a replacement character that is lexicographically after the digits, say, the letter "x."  To find the record for a given point, do a range request for one record on the interval starting with that point's quad key and extending to infinity (xxxxx…).  For a point with the finest-grain quad key of 012012, if the database had a record for 012012, that will turn up; if, instead, that region only required zoom level 4, the appropriate row (0120xx) would be correctly returned.
+
+==== The Quadtile Grid System ====
+
+// We'll start by adopting the simple, flat Mercator projection -- directly map longitude and latitude to (X,Y). This makes geographers cringe, because of its severe distortion at the poles, but its computational benefits are worth it. footnote:[Two guides for which map projection to choose: http://www.radicalcartography.net/?projectionref http://xkcd.com/977/ . As you proceed to finer and finer zoom levels the projection distortion becomes less and less relevant, so the simplicity of Mercator or Equirectangular are appealing.]
+
+The quadtile trick is to the world into four and make a Z pattern across them:
+
+Within each of those, make a <<z_path_of_quadtiles, Z again>>:
+
+[[z_path_of_quadtiles]]
+.Z-path of quadtiles
+image::images/quadkeys-nearby_points_are_nearby.png[Z-path of quadtiles]
+
+As you go along, index each tile, as shown in <<quadtile_numbering>>:
+
+[[quadtile_numbering]]
+.Quadtile Numbering
+image::images/quadkeys-numbering-zl0-zl1.png[quadtile numbering]
+
+This is a 1-d index into a 2-d space! What's more, nearby points in space are typically nearby in index value. By applying Hadoop's fundamental locality operation -- sorting -- geographic locality falls out of numerical locality.
+
+Note: you'll sometimes see people refer to quadtile coordinates as `X/Y/Z` or `Z/X/Y`; the 'Z' here refers to zoom level, not a traditional third coordinate.
+
+[[quadkey]]
+=== Quadtile Practicalities ===
+
+==== Converting points to quadkeys (quadtile indexes)
+
+Each grid cell is contained in its parent
+
+image::images/quadkeys-numbering-select_down.png[Tile index for central Texas]
+
+You can also think of it as a tree:
+
+image::images/quadkeys-3d-stack.png[Z-path of quad tiles]
+
+The quadkey is a string of 2-bit tile selectors for a quadtile
+
+@example
+  infochimps_hq = Geo::Place.receive("Infochimps HQ", -97.759003, 30.273884)
+  infochimps_hq.quadkey(8) # => "02313012"
+
+First, some preliminaries:
+
+    EARTH_RADIUS      =  6371000 # meters
+    MIN_LONGITUDE     = -180
+    MAX_LONGITUDE     =  180
+    MIN_LATITUDE      = -85.05112878
+    MAX_LATITUDE      =  85.05112878
+    ALLOWED_LONGITUDE = (MIN_LONGITUDE..MAX_LONGITUDE)
+    ALLOWED_LATITUDE  = (MIN_LATITUDE..MAX_LATITUDE)
+    TILE_PIXEL_SIZE   =  256
+
+    # Width or height in number of tiles
+    def map_tile_size(zl)
+      1 << zl
+    end
+
+The maximum latitude this projection covers is plus/minus `85.05112878` degrees. With apologies to the elves of chapter (TODO: ref), this is still well north of Alert, Canada, the northernmost populated place in the world (latitude 82.5 degrees, 817 km from the North Pole).
+
+It's straightforward to calculate tile_x indices from the longitude (because all the brutality is taken up in the Mercator projection's severe distortion).
+
+Finding the Y tile index requires a slightly more complicated formula:
+
+This makes each grid cell be an increasingly better locally-flat approximation to the earth's surface, palliating the geographers anger at our clumsy map projection.
+
+In code:
+
+    # Convert longitude, latitude in degrees to _floating-point_ tile x,y coordinates at given zoom level
+    def lat_zl_to_tile_yf(longitude, latitude, zl)
+      tile_size = map_tile_size(zl)
+      xx = (longitude.to_f + 180.0) / 360.0
+      sin_lat = Math.sin(latitude.to_radians)
+      yy = Math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * Math::PI)
+      #
+      [ (map_tile_size(zl) * xx).floor,
+        (map_tile_size(zl) * (0.5 - yy)).floor ]
+    end
+
+    # Convert from tile_x, tile_y, zoom level to longitude and latitude in
+    # degrees (slight loss of precision).
+    #
+    # Tile coordinates may be floats or integer; they must lie within map range.
+    def tile_xy_zl_to_lng_lat(tile_x, tile_y, zl)
+      tile_size = map_tile_size(zl)
+      raise ArgumentError, "tile index must be within bounds ((#{tile_x},#{tile_y}) vs #{tile_size})" unless ((0..(tile_size-1)).include?(tile_x)) && ((0..(tile_size-1)).include?(tile_x))
+      xx =       (tile_x.to_f / tile_size)
+      yy = 0.5 - (tile_y.to_f / tile_size)
+      lng = 360.0 * xx - 180.0
+      lat = 90 - 360 * Math.atan(Math.exp(-yy * 2 * Math::PI)) / Math::PI
+      [lng, lat]
+    end
+
+[NOTE]
+=========================
+Take care to put coordinates in the order "longitude, latitude", maintaining consistency with the (X, Y) convention for regular points. Natural english idiom switches their order, a pernicious source of error -- but the convention in http://www.geojson.org/geojson-spec.html#positions[geographic systems] is unambiguously to use `x, y, z` ordering. Also, don't abbreviate longitude as `long` -- it's a keyword in pig and other languages. We like `lng`.
+=========================
+
+==== Interesting quadtile properties ====
+
+* The quadkey's length is its zoom level.
+
+* To zoom out (lower zoom level, larger quadtile), just truncate the
+  quadkey: austin at ZL=8 has quadkey "02313012"; at ZL=3, "023"
+
+* Nearby points typically have "nearby" quadkeys: up to the smallest
+  tile that contains both, their quadkeys will have a common prefix.
+  If you sort your records by quadkey,
+  - Nearby points are nearby-ish on disk. (hello, HBase/Cassandra
+    database owners!) This allows efficient lookup and caching of
+    "popular" regions or repeated queries in an area.
+  - the tiles covering a region can be covered by a limited, enumerable
+    set of range scans. For map-reduce programmers, this leads to very
+    efficient reducers
+
+* The quadkey is the bit-interleaved combination of its tile ids:
+
+      tile_x      58  binary  0  0  1  1  1  0  1  0
+      tile_y      105 binary 0  1  1  0  1  0  0  1
+      interleaved     binary 00 10 11 01 11 00 01 10
+      quadkey                 0  2  3  1  3  0  1  2 #  "02313012"
+      packed                 11718
+
+* You can also form a "packed" quadkey -- the integer formed by interleaving the bits as shown above. At zoom level 15, the packed quadkey is a 30-bit unsigned integer -- meaning you can store it in a pig `int`; for languages with an `unsigned int` type, you can go to zoom level 16 before you have to use a less-efficient type. Zoom level 15 has a resolution of about one tile per kilometer (about 1.25 km/tile near the equator; 0.75 km/tile at London's latitude). It takes 1 billion tiles to tile the world at that scale.
+
+* a limited number of range scans suffice to cover any given area
+* each grid cell's parents are a 2-place bit shift of the grid index itself.
+
+A 64-bit quadkey -- corresponding to zoom level 32 -- has an accuracty of better than 1 cm over the entire globe. In some intensive database installs, rather than storing longitude and latitude separately as floating-point numbers, consider storing either the interleaved packed quadkey, or the individual 32-bit tile ids as your indexed value. The performance impact for Hadoop is probably not worth it, but for a database schema it may be.
+
+=== Quadtile Ready Reference ===
+
+image::images/quadkey_ref-zoom_levels.png[Quadtile properties and data storage sizes by zoom level]
+
+Though quadtile properties do vary, the variance is modest within most of the inhabited world:
+
+image::images/quadkey_ref-world_cities.png[Quadtile Properties for major world cities]
+
+The (ref table) gives the full coordinates at every zoom level for our exemplar set.
+
+image::images/quadkey_ref-full_props-by_zl.png[Coordinates at every zoom level for some exemplars]
