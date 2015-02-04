@@ -1,0 +1,137 @@
+// :author:        Philip (flip) Kromer
+// :doctype: 	book
+// :toc:
+// :icons:
+// :lang: 		en
+// :encoding: 	utf-8
+
+[[preface]]
+== Preface
+
+=== Mission Statement ===
+
+Big Data for Chimps will:
+
+1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop
+2.  Readers will also come away with a useful, conceptual idea of big data;  big data in its simplest form is a small cluster of well-tagged information that sits upon a central pivot, and can be manipulated through various shifts and rotations with the purpose of delivering insights ("Insight is data in context").  Key to understanding big data is scalability:  infinite amounts of data can rest upon infinite pivot points (Flip - is that accurate or would you say there's just one central pivot - like a Rubic's cube?)
+3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life.
+
+
+[[about]]
+=== About  ===
+
+[[about_coverage]]
+==== What this book covers ====
+
+'Big Data for Chimps' shows you how to solve important hard problems using simple, fun, elegant tools.
+
+Geographic analysis is an important hard problem. To understand a disease outbreak in Europe, you need to see the data from Zurich in the context of Paris, Milan, Frankfurt and Munich; but to understand the situation in Munich requires context from Zurich, Prague and Vienna; and so on. How do you understand the part when you can't hold the whole world in your hand?
+
+Finding patterns in massive event streams is an important hard problem. Most of the time, there aren't earthquakes -- but the patterns that will let you predict one in advance lie within the data from those quiet periods. How do you compare the trillions of subsequences in billions of events, each to each other, to find the very few that matter? Once you have those patterns, how do you react to them in real-time?
+
+We've chosen case studies anyone can understand that generalize to problems like those and the problems you're looking to solve. Our goal is to equip you with:
+
+* How to think at scale -- equipping you with a deep understanding of how to break a problem into efficient data transformations, and of how data must flow through the cluster to effect those transformations.
+* Detailed example programs applying Hadoop to interesting problems in context
+* Advice and best practices for efficient software development
+
+All of the examples use real data, and describe patterns found in many problem domains:
+
+* Statistical Summaries
+* Identify patterns and groups in the data
+* Searching, filtering and herding records in bulk
+* Advanced queries against spatial or time-series data sets.
+
+The emphasis on simplicity and fun should make this book especially appealing to beginners, but this is not an approach you'll outgrow. We've found it's the most powerful and valuable approach for creative analytics. One of our maxims is "Robots are cheap, Humans are important": write readable, scalable code now and find out later whether you want a smaller cluster. The code you see is adapted from programs we write at Infochimps to solve enterprise-scale business problems, and these simple high-level transformations (most of the book) plus the occasional Java extension (chapter XXX) meet our needs.
+
+Many of the chapters have exercises included. If you're a beginning user, I highly recommend you work out at least one exercise from each chapter. Deep learning will come less from having the book in front of you as you _read_ it than from having the book next to you while you *write* code inspired by it. There are sample solutions and result datasets on the book's website.
+
+Feel free to hop around among chapters; the application chapters don't have large dependencies on earlier chapters.
+
+[[about_is_for]]
+==== Who This Book Is For ====
+
+We'd like for you to be familiar with at least one programming language, but it doesn't have to be Ruby. Familiarity with SQL will help a bit, but isn't essential.
+
+Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a quick browse through the exercises. At least a few of them should have you jumping up and down with excitement to learn this stuff.
+
+[[about_is_not_for]]
+==== Who This Book Is Not For ====
+
+This is not "Hadoop the Definitive Guide" (that's been written, and well); this is more like "Hadoop: a Highly Opinionated Guide".  The only coverage of how to use the bare Hadoop API is to say "In most cases, don't". We recommend storing your data in one of several highly space-inefficient formats and in many other ways encourage you to willingly trade a small performance hit for a large increase in programmer joy. The book has a relentless emphasis on writing *scalable* code, but no content on writing *performant* code beyond the advice that the best path to a 2x speedup is to launch twice as many machines.
+
+That is because for almost everyone, the cost of the cluster is far less than the opportunity cost of the data scientists using it. If you have not just big data but huge data -- let's say somewhere north of 100 terabytes -- then you will need to make different tradeoffs for jobs that you expect to run repeatedly in production.
+
+The book does have some content on machine learning with Hadoop, on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
+
+=== Hello, Early Releasers ===
+
+Hello and thanks, courageous and farsighted early released-to'er! We want to make sure the book delivers value to you now, and rewards your early confidence by becoming a book you're proud to own.
+
+==== Chimpanzee and Elephant
+
+Starting with Chapter 2, you'll meet the zealous members of the Chimpanzee and Elephant Computing Company. Elephants have prodgious memories and move large heavy volumes with ease. They'll give you a physical analogue for using relationships to assemble data into context, and help you understand what's easy and what's hard in moving around massive amounts of data. Chimpanzees are clever but can only think about one thing at a time. They'll show you how to write simple transformations with a single concern and how to analyze a petabytes data with no more than megabytes of working space.
+
+Together, they'll equip you with a physical metaphor for how to work with data at scale.
+
+==== Hadoop ====
+
+In Doug Cutting's words, Hadoop is the "kernel of the big-data operating system". It's the dominant batch-processing solution, has both commercial enterprise support and a huge open source community, runs on every platform and cloud, and there are no signs any of that will change in the near term.
+
+The code in this book will run unmodified on your laptop computer and on an industrial-strength Hadoop cluster. (Of course you will need to use a reduced data set for the laptop). We'll provide you with a virtual Hadoop cluster of sorts that will run on your own laptop. 
+
+==== A Note on Ruby and Wukong ====
+
+We've chosen Ruby for two reasons. First, it's one of several high-level languages (along with Python, Scala, R and others) that have both excellent Hadoop frameworks and widespread support. More importantly, Ruby is a very readable language -- the closest thing to practical pseudocode we know. The code samples provided should map cleanly to those high-level languages, and the approach we recommend is available in any language.
+
+In particular, we've chosen the Ruby-language Wukong framework. We're the principal authors, but it's open-source and widely used. It's also the only framework I'm aware of that runs on both Hadoop and Storm+Trident.
+
+==== Helpful Reading ====
+
+* Hadoop the Definitive Guide by Tom White is a must-have. Don't try to absorb its whole -- the most powerful parts of Hadoop are its simplest parts -- but you'll refer to often it as your applications reach production.
+* Hadoop Operations by Eric Sammer -- hopefully you can hand this to someone else, but the person who runs your hadoop cluster will eventually need this guide to configuring and hardening a large production cluster.
+* Patterns of MapReduce
+
+==== What This Book Does Not Cover ====
+
+We are not currently planning to cover Hive.  The Pig scripts will translate naturally for folks who are already familiar with it.  There will be a brief section explaining why you might choose it over Pig, and why I chose it over Hive. If there's popular pressure I may add a "translation guide".
+
+This book picks up where the internet leaves off -- apart from cheatsheets at the end of the book, I'm not going to spend any real time on information well-covered by basic tutorials and core documentation. Other things we do not plan to include:
+
+* Installing or maintaining Hadoop
+* we will cover how to design HBase schema, but not how to use HBase as _database_
+* Other map-reduce-like platforms (disco, spark, etc), or other frameworks (MrJob, Scalding, Cascading)
+* At a few points we'll use Mahout, R, D3.js and Unix text utils (cut/wc/etc), but only as tools for an immediate purpose. I can't justify going deep into any of them; there are whole O'Reilly books on each.
+
+==== Feedback ====
+
+* The http://github.com/infochimps-labs/big_data_for_chimps-code[source code for the book] -- all the prose, images, the whole works -- is on github at `http://github.com/infochimps-labs/big_data_for_chimps-code`.
+* Contact us! If you have questions, comments or complaints, the http://github.com/infochimps-labs/big_data_for_chimps/issues[issue tracker] http://github.com/infochimps-labs/big_data_for_chimps/issues is the best forum for sharing those. If you'd like something more direct, please email meghan@oreilly.com (the ever-patient editor) and flip@infochimps.com (your eager author). Please include both of us.
+
+OK! On to the book. 
+
+[[about_how_written]]
+==== How this book is being written ====
+
+I plan to push chapters to the publicly-viewable http://github.com/infochimps-labs/big_data_for_chimps['Hadoop for Chimps' git repo] as they are written, and to post them periodically to the http://blog.infochimps.com[Infochimps blog] after minor cleanup.
+
+We really mean it about the git social-coding thing -- please https://github.com/blog/622-inline-commit-notes[comment] on the text, http://github.com/infochimps-labs/big_data_for_chimps/issues[file issues] and send pull requests. However! We might not use your feedback, no matter how dazzlingly cogent it is; and while we are soliciting comments from readers, we are not seeking content from collaborators.
+
+
+==== How to Contact Us ====
+
+Please address comments and questions concerning this book to the publisher:
+
+O'Reilly Media, Inc.
+1005 Gravenstein Highway North
+Sebastopol, CA 95472
+(707) 829-0515 (international or local)
+
+To comment or ask technial questions about this book, send email to bookquestions@oreilly.com
+
+To reach the authors:
+
+Flip Kromer is @mrflip on Twitter
+Russell Jurney is @rjurney on Twitter
+
+For comments or questions on the material, file a github issue at http://github.com/infochimps-labs/big_data_for_chimps/issues
