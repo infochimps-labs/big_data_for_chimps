@@ -1,0 +1,278 @@
+== Insight comes from Data in Context
+
+We could start by telling you how awesome and important Big Data is -- that we can now comprehensively measure
+Aspects ,
+That this lets us extract insight to essential but formerly unquantifiable qualities such as "audience engagement", "unexpected event", "..."
+But since you're already reading this paragraph,
+We'll instead
+(Later on there are sections on "how to Explain Big Data to your Boss" and "What is Big Data (besides \'A Really Good Marketing Device')?"
+
+Instead let's talk about robots and humans.
+
+In year x, Kasparov v deep blue.
+Then year y, deep blue wins
+So computers have bested humans. Hang it up and go home.
+The marketing hype is
+ Big data lets us
+Unprecedented power. And it's easy to make the mistake
+Of becoming thrall to it -- While we agree that "In God We Trust, All Others Bring Data", It is insufficient to draw on only what can be quantified with sufficient fidelity
+
+The power of the big data tools comes from taking away ability to
+
+.Garry Kasparov, "The Chess Master and the Computer", 2010
+________
+[In 1996] I narrowly defeated the supercomputer Deep Blue in a match. Then, in 1997, IBM redoubled its efforts—and doubled Deep Blue’s processing power—and I lost the rematch in an event that made headlines around the world. The result was met with astonishment and grief by those who took it as a symbol of mankind’s submission before the almighty computer. (“The Brain’s Last Stand” read the Newsweek headline.) Others shrugged their shoulders, surprised that humans could still compete at all against the enormous calculating power that, by 1997, sat on just about every desk in the first world. ... no one understood all the ramifications of having a super-grandmaster on your laptop, especially what this would mean for professional chess.
+
+There have been many unintended consequences, both positive and negative, of the rapid proliferation of powerful chess software. Kids love computers and take to them naturally, so it’s no surprise that the same is true of the combination of chess and computers. With the introduction of super-powerful software it became possible for a youngster to have a top- level opponent at home instead of needing a professional trainer from an early age. Countries with little by way of chess tradition and few available coaches can now produce prodigies. I am in fact coaching one of them this year, nineteen-year-old Magnus Carlsen, from Norway, where relatively little chess is played.
+
+The heavy use of computer analysis has pushed the game itself in new directions. The machine doesn’t care about style or patterns or hundreds of years of established theory. It counts up the values of the chess pieces, analyzes a few billion moves, and counts them up again. (A computer translates each piece and each positional factor into a value in order to reduce the game to numbers it can crunch.) It is entirely free of prejudice and doctrine and this has contributed to the development of players who are almost as free of dogma as the machines with which they train. Increasingly, a move isn’t good or bad because it looks that way or because it hasn’t been done that way before. It’s simply good if it works and bad if it doesn’t. Although we still require a strong measure of intuition and logic to play well, humans today are starting to play more like computers.
+
+The availability of millions of games at one’s fingertips in a database is also making the game’s best players younger and younger. Absorbing the thousands of essential patterns and opening moves used to take many years, a process indicative of Malcolm Gladwell’s “10,000 hours to become an expert” theory as expounded in his recent book Outliers. (Gladwell’s earlier book, Blink, rehashed, if more creatively, much of the cognitive psychology material that is re-rehashed in Chess Metaphors.) Today’s teens, and increasingly pre-teens, can accelerate this process by plugging into a digitized archive of chess information and making full use of the superiority of the young mind to retain it all. In the pre-computer era, teenage grandmasters were rarities and almost always destined to play for the world championship. Bobby Fischer’s 1958 record of attaining the grandmaster title at fifteen was broken only in 1991. It has been broken twenty times since then, with the current record holder, Ukrainian Sergey Karjakin, having claimed the highest title at the nearly absurd age of twelve in 2002. Now twenty, Karjakin is among the world’s best, but like most of his modern wunderkind peers he’s no Fischer, who stood out head and shoulders above his peers—and soon enough above the rest of the chess world as well.
+
+In what Rasskin-Gutman explains as Moravec’s Paradox, in chess, as in so many things, what computers are good at is where humans are weak, and vice versa. This gave me an idea for an experiment. What if instead of human versus machine we played as partners?
+
+Having a computer partner also meant never having to worry about making a tactical blunder. The computer could project the consequences of each move we considered, pointing out possible outcomes and countermoves we might otherwise have missed. With that taken care of for us, we could concentrate on strategic planning instead of spending so much time on calculations. Human creativity was even more paramount under these conditions. A month earlier I had defeated the Bulgarian in a match of “regular” rapid chess 4–0. Our advanced chess match ended in a 3–3 draw. My advantage in calculating tactics had been nullified by the machine.
+
+
+
+In 2005, the online chess-playing site Playchess.com hosted what it called a “freestyle” chess tournament in which anyone could compete in teams with other players or computers. ... Several groups of strong grandmasters working with several computers at the same time entered the competition. At first, the results seemed predictable. The teams of human plus machine dominated even the strongest computers. The [top chess machines] were no match for a strong human player using a relatively weak laptop. Human strategic guidance combined with the tactical acuity of a computer was overwhelming.
+
+The surprise came at the conclusion of the event. The winner was revealed to be not a grandmaster with a state-of-the-art PC but a pair of amateur American chess players using three computers at the same time. Their skill at manipulating and “coaching” their computers to look very deeply into positions effectively counteracted the superior chess understanding of their grandmaster opponents and the greater computational power of other participants. Weak human + machine + better process was superior to a strong computer alone and, more remarkably, superior to a strong human + machine + inferior process. http://www.nybooks.com/articles/archives/2010/feb/11/the-chess-master-and-the-computer/
+________
+
+The goal of this book is that you become just such an expert coach. You don't need to be a grandmaster in statistics, have
+What you do need is intuition about how to
+You don't need to be an expert programmer. We favor short, elegant readable scripts
+You don't need to have reached the third dan of dragon-lightning form in database
+
+What you need is intuition about how data moves around
+If you can predict the execution, you can know when to invest in improving it and when something funny is going on
+Strategic execution
+More importantly know how to turn the measurements you have into the data you need
+How to augment
+
+
+This book will show you how to coach
+ the computer, how to apply superior process.
+
+We have a principle "Robots are cheap, Humans are important,
+(Math about getting soda from the fridge, about running a computer in the cloud)
+
+We start by demonstrating the internal mechanics of Hadoop
+Exactly and only deep enough that you can understand how data moves around
+In a Big Data system, motion of data (not CPU) is nearly always the dominant cost of compute.
+Memory capacity is nearly always the fundamental constraint of computation.
+
+One nice thing about big data is that the performance estimation is brutally stark -- ...
+(The not-as-nice is that it when it is bad it is impossible)
+
+Once you have a physical intuition of what's happening, we move to tactics.
+We consulted the leading SQL cookbooks to find what patterns of use
+(And tricks of the trade) decades of practice have defined.
+Screw "NoSQL". Throwing out the old lore is always a bad plan.
+
+// four levels: explain, optimize, predict, control (operations research blog)
+
+
+
+Tracking every path your delivery tricks take
+Fleet improve fuel usage, safety for driver and the rest of us, operating efficiency and costs.
+
+
+
+
+
+// IMPROVEME: put in an interlude that is JT & Nanette meeting. (Told as a flashforward.)
+
+Data is worthless. Actually, it's worse than worthless: it requires money and effort to collect, store, transport and organize. Nobody wants data.
+
+What's valuable is _insight_ -- summaries, patterns and connections that lead to deeper understanding and better decisions. And insight comes from synthesizing data in context. We can predict air flight delays by placing commercial flight arrival times in context with hourly global weather data (as we do in Chapter (REF)). Take the mountain of events in a large website's log files, and regroup using context defined by the paths users take through the site, and you'll illuminate articles of similar interest (see Chapter (REF)). In Chapter (REF), we'll dismantle the text of every article on Wikipedia, then reassemble the words from each article about a physical place into context groups defined by the topic's location -- and produce insights into human language not otherwise quantifiable.
+
+Within each of those examples are two competing forces that move them out of the domain of traditional data analysis and into the topic of this book: "big data" analytics and simple analytics. Due to the volume of data, it is far too large to comfortably analyze on a single machine; and due to the comprehensiveness of the data, simple methods are able to extract patterns not visible in the small.
+
+=== Big Data: Tools to Solve the Crisis of Comprehensive Data
+
+Let's take an extremely basic analytic operation: counting. To count the votes for a bill in the state legislature, or for what type of pizza to order, we gather the relevant parties into the same room at a fixed time and take a census of opintions. The logistics here are straightforward.
+
+It is impossible, however, to count votes for the President of the United States this way. No conference hall is big enough to hold 300 million people; if there were, no roads are wide enough to get people to that conference hall; and even still the processing rate would not greatly exceed the rate at which voters come of age or die.
+
+Once the volume of data required for synthesis exceeds some key limit of available computation -- limited memory, limited network bandwith, limited time to prepare a relevant answer, or such -- you're forced to fundamentally rework how you synthesize insight from data.
+
+We conduct a presidential election by sending people to local polling places, distributed so that the participants to not need to travel far, and sized so that the logistics of voting remain straightforward. At the end of day the vote totals from each polling place are summed and sent to the state Elections Division. The folks in the Elections Division office add the results from each polling place to prepare the final result. This new approach doesn't completely discard the straightforward method (gathering people to the same physical location) that worked so well in the small. Instead, it applies another local method (summing a table of numbers). The orchestration of a gathering stage, an efficient data transfer stage, and a final tabulation stage arrives at a correct result, and the volume of people and data never exceeds what can be efficiently processed.
+
+So our first definition of Big Data is a response to a crisis: "A collection of practical data analysis tools and processes that continue to scale even as the volume of data for justified synthesis exceeds some limit of available computation".
+
+// In Chapter 6 (REF) we'll map out the riotous diversity of tools in the Big Data ecosystem,
+// Hadoop is the ubiquitous choice for processing batches of data at high
+// Hadoop is the tool to use when you want to understand how patterns in data from your manufacturing devices corresponds to defective merchandise returned months later, or how patterns in patients' postoperative medical records correspond to the likelihood they'll be re-admitted with complications.
+
+=== Big Data: Algorithms to Capitalize on the Opportunity of Comprehensive Data
+
+The excitement around Big Data is more than you could explain as "like databases, but bigger". Those tools don't just unlock a new region of scalability, they enable transformative new capabilities.
+
+The data that's powering this revolution isn't just comprehensive, it's _connected_. When your one-in-a-thousand events manifest in sample of ten thousand records, it's noise. When they manifest in ten million records, tiny coincidences reinforce each other to produce patterns. The website etsy.com (an open marketplace for handcrafted goods) has millions of records showing which handcrafted goods people browse and buy. And thanks to their Facebook app they have access to millions of people who have shown interest in those handcrafted goods. Thanks to Facebook's data, they have as well the overlapping interests of those potential customers: "surfing", "big data", "barbeque". Now work backwards. From each interest, find the customers, and from the customers find the purchases, and from the purchase find the categories. What comes forth are unmistakeable patterns such as "People who like the band Lynrd Skynrd are overwhelmingly more likely to purchase Taxidermy". Etsy can better connect people with the things they love, their sellers can better connect with a their fans, and southern-fried rockers can accessorize their living room with that elk's head they always wanted.
+
+Here's what's surprising and important: the algorithms to expose these patterns are not specific to e-commerce, and don't require coming in with guesses about the associations to draw. The work proceeds in three broad steps: (a) provide comprehensive data, identifying its features and connectivity; (b) apply generic methods that use only those features and connectivity (and not a domain-specific model), to expose patterns in the data; (c) interpret those patterns back into the original domain.
+
+This does _not_ follow the accepted path to truth, namely the Scientific Method. Roughly speaking, the scientific method has you (a) use a simplified model of the universe to make falsifiable predictions; (b) test those predictions in controlled circumstances; (c) use established truths to bound any discrepancies footnote:[plus (d) a secret dose of our sense of the model's elegance]. Under this paradigm, data is non-comprehensive: scientific practice demands you carefully control experimental conditions, and the whole point of the model is to strip out all but the reductionistically necessary parameter. A large part of the analytic machinery acts to account for discrepancies from sampling (too little comprehensiveness) or discrepancies from "extraneous" effects (too much comprehensiveness). If those discrepancies are modest, the model is judged to be valid.
+
+This new path to truth is what Peter Norvig (Google's Director of Research) calls "http://static.googleusercontent.com/media/research.google.com/en/us/pubs/archive/35179.pdf[The unreasonable effectiveness of data]". You don't have to start with a model and you don't necessarily end up with a model. There's no simplification of the universe down to a smaller explanation you can carry forward. Sure, we can apply domain knowledge and say that the correspondence of Lynrd Skynrd with Taxidermy means the robots have captured the notion of "Southern-ness". But for applying the result in practice, there's no reason to do so. The algorithms have replaced a uselessly complicated thing (the trillions of associations possible from interest to product category) with an _actionably_ complicated thing (a scoring of what categories to probabilistically present based on interest). You haven't confirmed a falsifiable hypothesis. But you can win at the track.
+
+The proposition that the Unreasonaly-Effective Method is a worthwhile rival to the Scientific Method is sure to cause barroom brawls at scientific conferences for years to come. This book will not go deeply into advanced algorithms, but we will repeatedly see examples of Unreasonable Effectiveness, as the data comes forth with patterns of its own.
+
+=== The Answer to the Crisis
+
+One solution to the big data crisis is high-performance supercomputing (HPC): push back the limits of computation with brute force. We could conduct our election by gathering supporters of one candidate on a set of cornfields in Iowa, supporters of the other on cornfields in Iowa, and using satellite imaging to tally the result. HPC solutions are exceptionally expensive, require the kind of technology seen only when military and industrial get complex, and though the traditional "all data is local" methods continue to work, they lose their essential straightforward flavor. A supercomputer is not one giant connected room, it's a series of largish rooms connected by very wide multidimensional hallways; HPC programmers have to constantly think about the motion of data among caches, processors, and backing store.
+
+The most important alternative to the HPC approach is the big data tool http://hadoop.apache.org[Hadoop]
+which effectively takes the opposite approach. Instead of full control over all aspects of computation and the illusion of data locality, Hadoop revokes almost all control over the motion of data.  Furthermore, unlike the HPC solutions of yore, Hadoop runs on commodity hardware and addresses a wide range of problem domains (finance, medicine, marketing; images, logfiles, mathmatical computation). This power comes at a cost, though. Hadoop understands only a limited vocabulary known as Map/Reduce, and you'll need to learn that vocabulary if Hadoop is to do any work for you.
+
+To get a taste of Map/Reduce, imagine a publisher that banned all literary forms except the haiku:
+
+[verse, The Map/Reduce Haiku]
+____________________________________________________________________
+data flutters by
+    elephants make sturdy piles
+  context yields insight
+____________________________________________________________________
+
+Our Map/Reduce haiku illustrates Hadoop's template:
+
+1. The Mapper portion of your script processes records, attaching a label to each.
+2. Hadoop assembles those records into context groups according to their label.
+3. The Reducer portion of your script processes those context groups and writes them to a data store or external system.
+
+While it would be unworkable to have every novel, critical essay, or sonnet be composed of haikus, map/reduce is surprisingly more powerful. From this single primitive, we can construct the familiar relational operations (such as GROUPs and ROLLUPs) of traditional databases, many machine-learning algorithms, matrix and graph transformations and the rest of the advanced data analytics toolkit.
+
+In the coming chapters, we'll walk you through Map/Reduce in its pure form.  We recognize that raw Map/Reduce can be intimidating and inefficient to develop, so we'll also spend a fair amount of time on Map/Reduce abstractions such as Wukong and Pig.
+
+Wukong is a thin layer atop Hadoop using the Ruby programming language. It's the most easily-readable way for us to demonstrate the patterns of data analysis, and you will be able to lift its content into the programming language of your choice footnote:[In the spirit of this book's open-source license, if an eager reader submits a "translation" of the example programs into the programming language of their choice we would love to fold it into in the example code repository and acknowledge the contribution in future printings.]. It's also a powerful tool you won't grow out of.
+
+The high-level Pig programming language has you describe the kind of full-table transformations familiar to database programmers (selecting filtered data, groups and aggregations, joining records from multiple tables). Pig carries out those transformations using efficient map/reduce scripts in Hadoop, based on optimized algorithms you'd otherwise have to reimplement or do without. To hit the sweet spot of "common things are simple, complex things remain possible", you can extend Pig with User-Defined Functions (UDFs), covered in chapter (REF).
+
+This book's code will be roughly 30% Wukong, 60% Pig, and 10% using Java to extend Pig.
+
+Let's take a quick look at some code to compare the two tools.
+
+First, here's a Wukong script.  Don't worry about understanding it in full; just try to get a feel for the flow.
+
+    # CODE validate script, column number, file naming
+    cat ufo_sightings.tsv		      | \
+      egrep "\w+\tUnited States of America\t" | \
+      cut -f 11				      | \
+      sort				      | \
+      uniq -c > /tmp/state_sightings_ct_sh.tsv
+
+    SELECT COUNT(*), `state`
+      FROM `ufo_sightings`.sightings ufos
+      WHERE (`country` = 'United States of America') AND (`state` != '')
+      GROUP BY `ufos`.`state`
+      INTO OUTFILE '/tmp/state_sightings_ct_sql.tsv';
+
+    outfile = File.open('/tmp/state_sightings_ct_rb.tsv', "w");
+    File.open('ufo_sightings.tsv').
+      select{|line| line =~ /\w+\tUnited States of America\t/ }.
+      map{|line| line.split("\t")[10] }.
+      sort.chunk(&:to_s).
+      map{|key,grp| [grp.count, key] }.
+      each{|ct,key| outfile << [ct, key].join("\t") << "\n" }
+    outfile.close
+
+We simply _load_ a table, _project_ one field from its contents, _sort_ the values (and in so doing, group each state name's occurrences in a contiguous run), _aggregate_ each group into value and count, and _store_ them into an output file.
+
+----
+    mapper(:tsv) do |_,_,_,_,_,_,_,_,_,state,country,*_|
+      yield state if country = "United States of America"
+    end
+
+    reducer do |state, grp|
+      yield [state, grp.count]
+    end
+----
+
+Here's a similar operation using Pig:
+
+----
+    sightings          = load_sightings();
+    sightings_us       = FILTER sightings BY (country == 'United States of America') AND (state != '');
+    states             = FOREACH sightings_us GENERATE state;
+    state_sightings_ct = FOREACH (GROUP states BY state)
+      GENERATE COUNT_STAR(states), group;
+    STORE state_sightings_ct INTO '$out_dir/state_sightings_ct_pig';
+----
+
+=== The triad: batch, stream, scale
+
+Earlier, we defined insight as deeper understanding and better decisions. Hadoop's ability to process data of arbitrary scale, combined with our increasing ability to comprehensively instrument every aspect of an enterprise, represent a fundamental improvement in how we expose patterns and the range of human endeavors available for pattern mining.
+
+But a funny thing happens as an organization's Hadoop investigations start to pay off: they realize they don't just want a deeper understanding of the patterns, they want to act on those patterns and make prompt decisions. The factory owner will want to stop the manufacturing line when signals predict later defects; the hospital will want to have a social worker follow up with patients unlikely to fill their postoperative medications. Just in time, a remarkable new capability has entered the core Big Data toolset: Streaming Analytics.
+
+Streaming Analytics gets you _fast relevant insight_ to go with Hadoop's _deep global insight_. Storm+Trident (the clear frontrunner toolkit) can process data with low latency and exceptional throughput (we've benchmarked it at half a million events per second); it can perform complex processing in Java, Ruby and more; it can hit remote APIs or databases with high concurrency.
+
+// It's an analytic platform that should be regarded as an essential counterpart to Hadoop and scalable data stores.
+// On way to think of Trident is as a tool to do your query on the way _in_ to the database. Rather than insisting every application use the same database and same data model,
+
+This triad -- Batch Analytics, Stream Analytics, and Scalable Datastores -- are the three legs of the Big Data toolset. Together they let you analyze data at terabytes and petabytes, data at milliseconds, and data from ponderously many sources.
+
+=== Grouping and Sorting: Analyzing UFO Sightings with Pig
+
+While those embarassingly parallel, Map-only jobs are useful, Hadoop also shines when it comes to filtering, grouping, and counting items in a dataset. We can apply these techniques to build a travel guide of UFO sightings across the continental US.
+
+Whereas our last example used the wukong framework, this time around we'll use another Hadoop abstraction, called Pig. footnote:[http://pig.apache.org]  Pig's claim to fame is that it gives you full Hadoop power, using a syntax that lets you think in terms of data flow instead of pure Map and Reduce operations.
+
+The example data included with the book includes a data set from the  http://www.infochimps.com/datasets/60000-documented-ufo-sightings-with-text-descriptions-and-metada[National UFO Reporting Center], containing more than 60,000 documented UFO sightings footnote:[For our purposes, although sixty thousand records are too small to justify Hadoop on their own, it's the perfect size to learn with.]. Now it's sad to say, but many of the sighting reports are likely to be bogus, and we'd like to eliminate them. How will we define bogus? As a first guess, let's reject descriptions that are fewer than 12 characters (too short), or contain the word 'lol' (by an internet troll).
+
+----
+sightings     = load_sightings();
+-- Significant sightings: >= 12 characters, no lulz
+sig_sightings = FILTER sightings BY
+  ((SIZE(description) >= 12) AND NOT (description MATCHES '(^|.*\W)lol(\W.*|$)'));
+----
+
+A key activity in a Big Data exploration is summarizing big datasets into a comprehensible smaller ones. Each sighting has a field giving the shape of the flying object: cigar, disk, etc. This script will tell us how many sightings there are for each craft type:
+
+----
+sightings = load_sightings();
+craft_sightings = GROUP sightings BY craft;
+craft_cts       = FOREACH cf_sightings GENERATE COUNT_STAR(sightings)
+STORE craft_cts INTO '$out_dir/craft_cts';
+----
+
+We can make a little travel guide for the sightings by amending each sighting with the Wikipedia article about its place. The JOIN operator matches records from different tables based on a common key:
+
+----
+DEFINE Wikipedify  pigsy.text.Wikipedify;
+articled_sightings = JOIN
+  articles  BY (wikipedia_id),
+  sightings BY (Wikipedify(CONCAT(city, ', ', state))
+  USING replicated;
+----
+
+Here's the part that was easy: searching through 4+ million articles to find matches. Here's the part that was hard: _preparing_ that common key. Pig doesn't have that capability built in, but it does let you extend its language with User-Defined Functions (UDFs). We have enabled such a UDF -- a function to prepare a string in Wikipedia's article id format -- using the `DEFINE` statement. On the fourth line, we combine the city and state into a single value and apply our `Wikipedify` function, giving a common basis for matching records. Here's the part that is clever: knowing when to attach `USING replicated`, and which order to place `articles` and `sightings` in the statement. The correct choice can mean a multiple times speedup in how fast this query executes. This book will equip you to trust the framework for the easy part, push past the hard part, and know when and why to attach the clever part.
+
+----
+TODO: sample output
+----
+
+This travel guide is a bit of a gimmick so far, but hey, we're only at the end of the first chapter. We can come up with all sorts of ways to improve it. For instance, a proper guide would hold not just the one article about the general location, but a set of nearby places of interest. Later in the book we'll show you how to do a nearby-ness query (in the Geodata chapter (REF)), which is fiendishly hard until you know how. You'll immediately find that an undifferentiated listing of points of interest is almost worse than only listing one. Later in the book, we'll show you how to attach a notion of "prominence" (in the event log chapter (REF)).
+
+To get us started, we're going to meet Chimpanzee & Elephant, some new friends whose adventures seem to curiously correspond to ours...
+
+=== Applications
+
+
+* E-commerce
+* Biotech
+* Manufacturing defects
+* Security
+* Reccommenders
+* Finance
+* Intelligence
+
+* Recommender
+  -
+* Defect patterns (security breach, manufacturing defect, insider security,
+  - anomaly detection
+  - causal analysis
+* Prediction
+  - patient likely to get sepsis
