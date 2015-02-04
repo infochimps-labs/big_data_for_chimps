@@ -1,0 +1,20 @@
+=== License ===
+
+TODO: actual license stuff
+
+Text and assets are released under CC-BY-NC-SA (Creative Commons Attribution, Non-commercial, derivatives encouraged but Share Alike)
+
+____
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
+____
+
+
+Code is Apache licensed unless specifically labeled otherwise.
+
+For access to the source code, visit http://github.com/infochimps-labs/big_data_for_chimps/
+
+==== Open Street Map ====
+
+Some map images taken from Open Street Map, via Stamen's wonderful http://maps.stamen.com/m2i/#toner-lite/768:512/11/30.2901/-97.7497["Map -> Image" tool].
+
+
