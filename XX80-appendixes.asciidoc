@@ -1,0 +1,529 @@
+[[appendix]]
+= Appendixes
+
+== Appendix 1: Acquiring a Hadoop Cluster ===
+
+* Elastic Map-Reduce
+* Brew
+* Amazon
+* CDH and HortonWorks
+* MortarData and TreasureData
+
+
+== Appendix 2: Overview of Datasets
+
+The examples in this book use a set of freely-redistributable datasets, converted to simple standard formats, with traceable provenance and documented schema. The datasets are:
+
+* Wikipedia English-language Article Corpus (`wikipedia_corpus`; 38 GB, 619 million records, 4 billion tokens): the full text of every English-language wikipedia article.
+
+* Wikipedia Pagelink Graph (`wikipedia_pagelinks`; ): every page-to-page hyperlink in wikipedia.
+
+* Wikipedia Pageview Stats (`wikipedia_pageviews`; 2.3 TB, about 250 billion records (FIXME: verify num records)): hour-by-hour pageviews for all of Wikipedia
+
+* ASA SC/SG Data Expo Airline Flights (`airline_flights`; 12 GB, 120 million records): every US airline flight from 1987-2008, with information on arrival/depature times and delay causes, and accompanying data on airlines, airports and airplanes.
+
+* NCDC Hourly Global Weather Measurements, 1929-2009 (`ncdc_weather_hourly`; 59 GB, XX billion records): hour-by-hour weather from the National Climate Data Center for the entire globe, with reasonably-dense spatial coverage back to the 1950s and in some case coverage back to 1929.
+
+* 1998 World Cup access logs (`access_logs/ita_world_cup_apachelogs`; 123 GB, 1.3 billion records): every request made to the 1998 World Cup Web site between April 30, 1998 and July 26, 1998, in apache log format.
+
+* 60,000 UFO Sightings
+
+* Retrosheet Game Logs -- every recorded baseball game back to the 1890s
+
+* Gutenberg Corpus
+
+==== Wikipedia Page Traffic Statistic V3
+  -
+  - a 150 GB sample of the data used to power trendingtopics.org. It includes a full 3 months of hourly page traffic statistics from Wikipedia (1/1/2011-3/31/2011).
+
+* Twilio/Wigle.net Street Vector Data Set --  -- geo -- Twilio/Wigle.net database of mapped US street names and address ranges.
+
+* 2008 TIGER/Line Shapefiles -- 125 GB -- geo -- This data set is a complete set of Census 2000 and Current shapefiles for American states, counties, subdivisions, districts, places, and areas. The data is available as shapefiles suitable for use in GIS, along with their associated metadata. The official source of this data is the US Census Bureau, Geography Division.
+
+==== ASA SC/SG Data Expo Airline Flights
+
+This data set is from the [ASA Statistical Computing / Statistical Graphics](http://stat-computing.org/dataexpo/2009/the-data.html) section 2009 contest, "Airline Flight Status -- Airline On-Time Statistics and Delay Causes". The documentation below is largely adapted from that site.
+
+The U.S. Department of Transportation's (DOT) Bureau of Transportation Statistics (BTS) tracks the on-time performance of domestic flights operated by large air carriers. Summary information on the number of on-time, delayed, canceled and diverted flights appears in DOT's monthly Air Travel Consumer Report, published about 30 days after the month's end, as well as in summary tables posted on this website. BTS began collecting details on the causes of flight delays in June 2003. Summary statistics and raw data are made available to the public at the time the Air Travel Consumer Report is released.
+
+The data consists of flight arrival and departure details for all commercial flights within the USA, from October 1987 to April 2008. This is a large dataset: there are nearly 120 million records in total, and takes up 1.6 gigabytes of space compressed and 12 gigabytes when uncompressed.
+
+The data comes originally from the DOT's [Research and Innovative Technology Administration (RITA)](http://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) group, where it is [described in detail](http://www.transtats.bts.gov/Fields.asp?Table_ID=236). You can download the original data there. The files here have <derivable variables removed, are packaged in yearly chunks and have been more heavily compressed than the originals.
+
+Here are a few ideas to get you started exploring the data:
+
+* When is the best time of day/day of week/time of year to fly to minimise delays?
+* Do older planes suffer more delays?
+* How does the number of people flying between different locations change over time?
+* How well does weather predict plane delays?
+* Can you detect cascading failures as delays in one airport create delays in others? Are there critical links in the system?
+
+===== Support data
+
+* **Openflights.org** (ODBL-licensed): user-generated datasets on the world of air flight.
+  ** `openflights_airports.tsv` (http://openflights.org/data.html#airport:[original]) -- info on about 7000 airports.
+  ** `openflights_airlines.tsv` (http://openflights.org/data.html#airline:[original]) -- info on about 6000 airline carriers
+  ** `openflights_routes.tsv` (http://openflights.org/data.html#route:[original]) -- info on about 60_000 routes between 3000 airports on 531 airlines.
+
+* **Dataexpo** (Public domain): The core airline flights database includes
+  ** `dataexpo_airports.tsv` (http://stat-computing.org/dataexpo/2009/supplemental-data.html:[original]) -- info on about 3400 US airlines; slightly cleaner but less comprehensive than the Openflights.org data.
+  ** `dataexpo_airplanes.tsv` (http://stat-computing.org/dataexpo/2009/supplemental-data.html:[original]) -- info on about 5030 US commercial airplanes by tail number.
+  ** `dataexpo_airlines.tsv` (http://stat-computing.org/dataexpo/2009/supplemental-data.html:[original]) -- info on about 1500 US airline carriers; slightly cleaner but less comprehensive than the Openflights.org data.
+
+* **Wikipedia.org** (CC-BY-SA license): Airport identifiers
+  ** `wikipedia_airports_iata.tsv` (http://en.wikipedia.org/wiki/List_of_airports_by_IATA_code[original]) -- user-generated dataset pairing airports with their IATA (and often ICAO and FAA) identifiers.
+  ** `wikipedia_airports_icao.tsv`(http://en.wikipedia.org/wiki/List_of_airports_by_ICAO_code[original]) -- user-generated dataset pairing airports with their ICAO (and often IATA and FAA) identifiers.
+
+The airport datasets contain errors and conflicts; we've done some hand-curation and verification to reconcile them. The file `wikipedia_conflicting.tsv` shows where my patience wore out.
+
+==== ITA World Cup Apache Logs
+
+* 1998 World Cup access logs (`access_logs/ita_world_cup_apachelogs`; 123 GB, 1.3 billion records): every request made to the 1998 World Cup Web site between April 30, 1998 and July 26, 1998, in apache log format.
+
+====  Daily Global Weather Measurements, 1929-2009 (NCDC, GSOD)
+
+20 GB
+geo, stats
+
+* http://blog.oldweather.org/results/[Old Weather project] --
+* http://philip.brohan.org.transfer.s3.amazonaws.com/oW_imma_20120801.tgz
+
+=== Supplementary Data
+
+US City Populations:
+
+* https://en.wikipedia.org/wiki/Cities_and_metropolitan_areas_of_the_United_States[The 100 most populous cities\, Metropolitan Statistical Areas\, and Primary Statistical Areas of the United States and Puerto Rico]
+* http://www.census.gov/popest/data/cities/totals/2011/tables/SUB-EST2011-01.csv[US Census -- Annual Estimates of the Resident Population for Incorporated Places Over 50_000 Population]
+
+    
+=== Retrosheet
+
+* Retrosheet: MLB play-by-play, high detail, 1840-2011	ripd/www.retrosheet.org-2007/boxesetc/2006
+* Retrosheet: MLB box scores, 1871-2011               	ripd/www.retrosheet.org-2007/boxesetc/2006
+
+=== Gutenberg corpus
+
+The main collection is about 650GB (as of October 2011) with nearly 2 million files, 60 languages, and dozens of different file formats.
+
+* http://www.gutenberg.org/feeds/catalog.rdf.bz2[Gutenberg collection catalog] as RDF
+* rsync, repeatable: http://www.gutenberg.org/wiki/Gutenberg:Mirroring_How-To[Mirroring How-To]
+* wget, zip files:   http://www.gutenberg.org/wiki/Gutenberg%3aInformation_About_Robot_Access_to_our_Pages[Gutenberg corpus download instructions]. From a helpful http://webapps.stackexchange.com/questions/12311/how-to-download-all-english-books-from-gutenberg[Stack Overflow thread], you can run `wget -r  -w 2 -m 'http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=en'`
+  - see also http://cotdp.com/2012/07/hadoop-processing-zip-files-in-mapreduce/[ZIP file input format]
+
+----
+    cd /mnt/gutenberg/ ; mkdir -p logs/gutenberg
+    nohup rsync -aviHS --max-size=10M --delete --delete-after --exclude=\*.{m4a,m4b,ogg,spx,tei,md5,db,mus,mid,rst,sib,xml,zip,pdf,jpg,jpeg,png,htm,html,mp3,rtf,wav,mov,mp4,avi,mpg,mpeg,doc,docx,xml,tex,ly,eps,iso,rar} --exclude={\*-h*,old,images} --exclude '*cache/generated' {ftp@ftp.ibiblio.org::gutenberg,/mnt/gutenberg/ftp.ibiblio.org}/2 >> /mnt/gutenberg/logs/gutenberg/rsync-gutenberg-`datename`-part_2.log 2>&1 &
+----
+
+* http://ftp.ibiblio.org/1/1/0/100/100.txt[Complete works of William Shakespeare]
+
+=== Ideas for other datasets you could harvest 
+
+* http://www.nrc.gov/reading-rm/doc-collections/event-status/event/ US Nuclear Regulatory Commission, collection of "events" (i.e. things that went wrong). Can you find features and predictive patterns of oopsies?
+
+
+[[cheatsheets]]
+== Appendix: Cheatsheets
+
+=== Regular Expressions
+
+http://www.debuggex.com/?re=big(.+)\bd...&str=big-data-for-chimps
+
+[[regexp_cheatsheet]]
+.Regular Expression Cheatsheet
+[options="header"]
+|=======
+| character			| meaning
+|				|
+| TODO				|
+|				|
+| `.`				| any character
+| `\w`				| any word character: a-z, A-Z, 0-9 or `_` underscore. Use `[:word:]` to match extended alphanumeric characters (accented characters and so forth)
+| `\s`				| any whitespace, whether space, tab (`\t`), newline (`\n`) or carriage return (`\r`).
+| `\d`				| 
+| `\x42` (or any number)	| the character with that hexadecimal encoding. 
+| `\b`				| word boundary (zero-width)
+| `^`				| start of line; use `\\A` for start of string (disregarding newlines). (zero-width)
+| `$`				| end of line; use `\\z` for end of string (disregarding newlines). (zero-width)
+| `[^a-mA-M]`			| match character in set
+| `[a-mA-M]`			| reject characters in set
+| `a\|b\|c`			| a or b or c
+| `(...)`			| group
+| `(?:...)`			| non-capturing group
+| `(?<varname>...)`		| named group
+|				|
+| `*`, `+`			| zero or more, one or more. greedy (captures the longest possible match)
+| `*?`, `+?`			| non-greedy zero-or-more, non-greedy one-or-more
+| `{n,m}`			| repeats `n` or more, but `m` or fewer times
+|				|
+|=======
+
+=== Simple Characters
+
+This shows the sort order of the simple (7-bit) ascii characters, along with the primary regular expression escapes they match.
+
+[[regexp_examples]]
+.Example Regular Expressions
+[options="header"]
+|=======
+| Name           	  | Hex 	| Representation          	| Word	| Whitespace	| Control
+| Control Characters I	  | `\x00-\x08`	| 				|   	| 		| \c	|
+| Whitespace		  | `\x09-\x0d`	| `\t`, `\n` `\v`, `\f`, `\r`	|   	| \s		| \c	|
+| Control Characters II	  | `\x0e-\x1f`	| 			        |   	| 		| \c	|
+| Space			  | `\x20`    	| ` `			        |   	| \s		| 	|
+| Punctuation I		  | `\x21-\x2f`	| `!"#$%&'()*+,-./`	        |   	| 		| 	|
+| Numerals		  | `\x30-\x39`	| `0-9`			       	|   \w	| 		| 	|
+| Punctuation II	  | `\x3a-\x40`	| `:;<=>?@`		        |   	| 		| 	|
+| Uppercase		  | `\x41-\x5a`	| `A-Z`			       	|   \w	| 		| 	|
+| Punctuation IV	  | `\x5b-\x60`	| `[\\]^_``			|   	| 		| 	|
+| Lowercase		  | `\x61-\x7a`	| `a-z`				|   \w	| 		| 	|
+| Punctuation V		  | `\x7b-\x7e`	| `{|}~`			|   	| 		| 	|
+| Control Characters III  | `\x7f-\x80`	| 				|   	| 		| \c	|
+|=======
+
+=== Useful Regular Expression Examples
+
+These <<regexp_examples>> are for practical _extraction_ (identifying potential examples), not validation (ensuring correctness). They may let nitpicks through that oughtn't: a time zone of `-0000` is illegal by the spec, but will pass the date regexp given below. As always, modify them in your actual code to be as restrictively brittle as reasonable.
+
+[[regexp_examples]]
+.Example Regular Expressions
+[options="header"]
+|=======
+| intent			| Regular Expression    				| Comment
+| Double-quoted string		| `%r{"((?:\\.|[^\"])*)"}`  		        	| all backslash-escaped character, or non-quotes, up to first quote
+| Decimal number with sign	| `%r{([\-\+\d]+\.\d+)}`                            	| optional sign; digits-dot-digits
+| Floating-point number 	| `%r{([\+\-]?\d+\.\d+(?:[eE][\+\-]?\d+)?)}`       	| optional sign; digits-dot-digits; optional exponent
+| ISO date               	| `%r{\b(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)([\+\-]\d\d:?\d\d|[\+\-]\d\d|Z)\b}`	| Capture groups are the year, month, day, hour, minute, second and time zone respectively.
+| URL |
+| Email Address | 
+| Emoticon | (see sample code)
+|=======
+
+=== Hadoop Filesystem Commands ===
+
+[[hadoop_filesystem_commands]]
+.Hadoop Filesystem Commands
+[options="header"]
+|=======
+| action			| command
+|				|
+| list files			| `hadoop fs -ls`
+| list files' disk usage	| `hadoop fs -du`
+| total HDFS usage/available	| visit namenode console
+|				|
+|				|
+| copy local -> HDFS		|
+| copy HDFS -> local		|
+| copy HDFS -> remote HDFS	|
+|				|
+| make a directory		| `hadoop fs -mkdir ${DIR}`
+| move/rename			| `hadoop fs -mv ${FILE}`
+| dump file to console		| `hadoop fs -cat ${FILE} \| cut -c 10000 \| head -n 10000`
+|				|
+|				|
+| remove a file			|
+| remove a directory tree	|
+| remove a file, skipping Trash	|
+| empty the trash NOW		|
+|				|
+| health check of HDFS		|
+| report block usage of files	|
+|				|
+| decommission nodes		|
+|				|
+|				|
+| list running jobs		|
+| kill a job			|
+| kill a task attempt		|
+|				|
+|				|
+| CPU usage by process		| `htop`, or `top` if that's not installed
+| Disk activity			|
+| Network activity		|
+|				|
+|				| `grep -e '[regexp]'`
+|				| `head`, `tail`
+|				| `wc`
+|				| `uniq -c`
+|				| `sort -n -k2`
+| tuning                        | csshX, htop, dstat, ulimit
+|
+| also useful:                  | cat, echo, true, false, yes, tee, time, watch, time
+| dos-to-unix line endings	| `ruby -ne 'puts $_.gsub(/\r\n?/, "\n")'`
+|				|
+|				|
+|======
+
+=== Unix Filesystem Commands ===
+
+[[commandline_tricks]]
+.UNIX commandline tricks
+[options="header"]
+|=======
+| action			| command             		| Flags
+| Sort data                     | `sort`              		| reverse the sort: `-r`; sort numerically: `-n`; sort on a field: `-t [delimiter] -k [index]` 
+| Sort large amount of data     | `sort --parallel=4 -S 500M` 	| use four cores and a 500 megabyte sort buffer
+| Cut delimited field           | `cut -f 1,3-7 -d ','`   	| emit comma-separated fields one and three through seven
+| Cut range of characters       | `cut -c 1,3-7`          	| emit characters one and three through seven
+| Split on spaces               | `| ruby -ne 'puts $_.split(/\\s+/).join("\t")'` | split on continuous runs of whitespace, re-emit as tab-separated
+| Distinct fields               | `| sort | uniq`      		| only dupes: `-d`
+| Quickie histogram             | `| sort | uniq -c`   		| TODO: check the rendering for backslash
+| Per-process usage             | `htop`                        | Installed 
+| Running system usage          | `dstat -drnycmf -t 5`  	| 5-second rolling system stats. You likely will have to http://dag.wieers.com/home-made/dstat/[install dstat] yourself. If that's not an option, use `iostat -x 5 & sleep 3 ; ifstat 5` for an interleaved 5-second running average.
+|======
+
+For example: `cat * | cut -c 1-4 | sort | uniq -c` cuts the first 4-character
+
+Not all commands available on all platforms; OSX users should use Homebrew, Windows users should use Cygwin.
+
+=== Pig Operators ===
+
+[[pig_cheatsheet]]
+.Pig Operator Cheatsheet
+[options="header"]
+|=======
+| action			| operator
+|				|
+|				| JOIN
+|				| FILTER
+|				|
+|=======
+
+
+=== Hadoop Tunables Cheatsheet
+
+
+
+
+=== SQL-to-Pig-to-Hive Cheatsheet
+
+* SELECT..WHERE
+* SELECT...LIMit
+* GROUP BY...HAVING
+* SELECT WHERE... ORDER BY
+* SELECT WHERE... SORT BY (just use reducer sort) ~~ (does reducer in Pig guarantee this?)
+* SELECT … DISTRIBUTE BY … SORT BY ...
+* SELECT ... CLUSTER BY (equiv of distribute by X sort by X)
+* Indexing tips
+* CASE...when...then
+* Block Sampling / Input pruning
+* SELECT country_name, indicator_name, `2011` AS trade_2011 FROM wdi WHERE (indicator_name = 'Trade (% of GDP)' OR indicator_name = 'Broad money (% of GDP)') AND `2011` IS NOT NULL CLUSTER BY indicator_name;
+
+SELECT columns or computations FROM table WHERE condition GROUP BY columns HAVING condition ORDER BY column  [ASC | DESC] LIMIT offset,count;
+
+
+=== References
+
+**Other Hadoop Books**
+
+* Hadoop the Definitive Guide, Tom White
+* Hadoop Operations, Eric Sammer
+* http://www.manning.com/holmes/[Hadoop In Practice] (Alex Holmes)
+
+
+* http://hadoop.apache.org/docs/mapreduce/current/streaming.html[Hadoop Streaming FAQ]
+* http://hadoop.apache.org/docs/r0.20.2/mapred-default.html[Hadoop Configuration defaults -- mapred]
+
+
+**Unreasonable Effectiveness of Data**
+
+* https://www.facebook.com/video/video.php?v=644326502463[Peter Norvig\'s Facebook Tech Talk]
+* http://www.youtube.com/watch?v=yvDCzhbjYWs[Later version of that talk at ??] -- I like the 
+* http://static.googleusercontent.com/media/research.google.com/en/us/pubs/archive/35179.pdf["On the Unreasonable effectiveness of data"]
+
+**Source material**
+
+* http://en.wikipedia.org/wiki/Lexington,_Texas[Wikipedia article on Lexington, Texas] (CC-BY-SA)
+
+* http://borrelli.org/2012/04/29/installing-hadoop-on-osx-lion/[Installing Hadoop on OSX Lion]
+
+* http://blog.markfeeney.com/2010/10/jmx-through-ssh-tunnel.html[JMX through a ssh tunnel]
+
+* http://www.amazon.com/dp/039334777X[Naked Statistics]
+* http://www.amazon.com/Head-First-Statistics-Dawn-Griffiths/dp/0596527586[Head First Statistics]
+
+
+* http://ercoppa.github.io/HadoopInternals/HadoopConfigurationParameters.html[Hadoop Configurations in context -- Flow diagrams]
+
+* http://www.slideshare.net/cloudera/mr-perf[Hadoop Summit 2012 | Optimizing MapReduce Job Performance] by Todd Lipcon (@tlipcon)
+
+**To Consider**
+
+* http://www.cse.unt.edu/~rada/downloads.html -- Texts semantically annotated with WordNet 1.6 senses (created at Princeton University), and automatically mapped to WordNet 1.7, WordNet 1.7.1, WordNet 2.0, WordNet 2.1, WordNet 3.0
+
+**Code Sources**
+
+* https://github.com/yohasebe/wp2txt[wp2txt], by http://yohasebe.com[Yoichiro Hasebe]
+
+the http://github.com/schacon/git-scribe[git-scribe toolchain] was very useful creating this book. Instructions on how to install the tool and use it for things like editing this book, submitting errata and providing translations can be found at that site.
+
+
+* James, Bill (2010-05-08). The New Bill James Historical Baseball Abstract (Kindle Locations 11684-11685). Free Press. Kindle Edition. 
+
+
+* map of the caribbean: https://en.wikipedia.org/wiki/Area_codes_in_the_Caribbean
+
+==== Patterns ====
+
+MySQL Cookbook
+SQL Cookbook
+
+
+
+=== Geographic Analysis
+
+-- http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
+-- http://bost.ocks.org/mike/example/
+-- http://infolab.usc.edu/csci585/Spring2008/den_ar/p182-samet.pdf
+-- http://www.geo.upm.es/postgrado/CarlosLopez/materiales/cursos/NCGIA_core/u37.html
+
+* http://kartoweb.itc.nl/geometrics/Introduction/introduction.html -- an excellent overview of projections, reference surfaces and other fundamentals of geospatial analysis.
+* http://msdn.microsoft.com/en-us/library/bb259689.aspx
+* http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
+* http://wiki.openstreetmap.org/wiki/QuadTiles
+* https://github.com/simplegeo/polymaps
+* http://www.slideshare.net/mmalone/scaling-gis-data-in-nonrelational-data-stores[Scaling GIS Data in Non-relational Data Stores] by Mike Malone
+
+* http://www.comp.lancs.ac.uk/~kristof/research/notes/voronoi/[Voronoi Diagrams]
+* http://bl.ocks.org/4122298[US County borders in GeoJSON]
+
+* http://sharpgis.net/post/2007/05/05/Spatial-references2c-coordinate-systems2c-projections2c-datums2c-ellipsoids-e28093-confusing.aspx[Spatial references, coordinate systems, projections, datums, ellipsoids] by Morten Nielsen
+
+* https://github.com/jsongeo[Public repository of geometry boundaries into text]
+
+* http://bost.ocks.org/mike/map/[Making a map in D3] ; see also http://stackoverflow.com/questions/14565963/topojson-for-congressional-districts[Guidance on making your own geographic bounaries].
+
+
+==== Text Analysis ====
+
+* http://thedatachef.blogspot.com/2011/04/tf-idf-with-apache-pig.html
+* http://hortonworks.com/blog/pig-as-duct-tape-part-three-tf-idf-topics-with-cassandra-python-streaming-and-flask/
+* http://hortonworks.com/blog/pig-macro-for-tf-idf-makes-topic-summarization-2-lines-of-pig/
+
+
+* http://en.wikipedia.org/wiki/Wikipedia:List_of_controversial_issues
+* http://wordnet.princeton.edu/wordnet/download/
+* http://www.infochimps.com/datasets/list-of-dirty-obscene-banned-and-otherwise-unacceptable-words
+* http://urbanoalvarez.es/blog/2008/04/04/bad-words-list
+* entity names within angle brackets. Where possible these are drawn from Appendix D to ISO 8879:1986, Information Processing - Text & Office Systems - Standard Generalized Markup Language (SGML).
+* http://faculty.cs.byu.edu/~ringger/CS479/papers/Gale-SimpleGoodTuring.pdf
+* http://www.aclweb.org/anthology-new/P/P11/P11-1096.pdf
+* http://www.ling.uni-potsdam.de/~gerlof/docs/npmi-pfd.pdf
+* http://nltk.googlecode.com/svn/trunk/doc/howto/collocations.html
+* Stanford Named Entity Parser - http://nlp.stanford.edu/software/CRF-NER.shtml
+* http://nlp.stanford.edu/software/corenlp.shtml - 
+  > Stanford CoreNLP provides a set of natural language analysis tools which can take raw English language text input and give the base forms of words, their parts of speech, whether they are names of companies, people, etc., normalize dates, times, and numeric quantities, and mark up the structure of sentences in terms of phrases and word dependencies, and indicate which noun phrases refer to the same entities. Stanford CoreNLP is an integrated framework, which make it very easy to apply a bunch of language analysis tools to a piece of text. Starting from plain text, you can run all the tools on it with just two lines of code. Its analyses provide the foundational building blocks for higher-level and domain-specific text understanding applications.
+  > 
+  > Stanford CoreNLP integrates all our NLP tools, including the part-of-speech (POS) tagger, the named entity recognizer (NER), the parser, and the coreference resolution system, and provides model files for analysis of English. The goal of this project is to enable people to quickly and painlessly get complete linguistic annotations of natural language texts. It is designed to be highly flexible and extensible. With a single option you can change which tools should be enabled and which should be disabled.
+  > 
+  > The Stanford CoreNLP code is written in Java and licensed under the GNU General Public License (v2 or later). Source is included. Note that this is the full GPL, which allows many free uses, but not its use in distributed proprietary software. The download is 259 MB and requires Java 1.6+.
+
+* http://cogcomp.cs.illinois.edu/page/software_view/4
+* http://opennlp.apache.org/
+
+* http://www.movable-type.co.uk/scripts/latlong.html Calculate distance, bearing and more between Latitude/Longitude points
+
+==== Locality-Sensitive Hashing & Sketching Algorithms ====
+
+* http://www.slaney.org/malcolm/yahoo/Slaney2008-LSHTutorial.pdf[Locality-Sensitive Hashing for Finding Nearest Neighbors] by Malcolm Slaney and Michael Casey
+* http://lingpipe-blog.com/2011/01/12/scaling-jaccard-distance-deduplication-shingling-minhash-locality-sensitive-hashi/
+* http://www.scribd.com/collections/2287653/Locality-Sensitive-Hashing
+* http://infolab.stanford.edu/~ullman/mmds/ch3a.pdf
+* http://infolab.stanford.edu/~ullman/mining/2009/similarity2.pdf
+* http://infolab.stanford.edu/~ullman/mining/2009/similarity1.pdf
+* http://metaoptimize.com/qa/questions/8930/basic-questions-about-locally-sensitive-hashinglsh
+* http://users.soe.ucsc.edu/~optas/papers/jl.pdf
+* http://www.win-vector.com/dfiles/LocalitySensitiveHashing.pdf[An Appreciation of Locality Sensitive Hashing]
+* http://www.cs.jhu.edu/~vandurme/papers/VanDurmeLallACL11.pdf[Efficient Online Locality Sensitive Hashing via Reservoir Counting]
+* http://blog.smola.org/post/1130198570/hashing-for-collaborative-filtering
+
+Johnson-Lindenstrauss Transform:
+
+* http://users.soe.ucsc.edu/~optas/papers/jl.pdf[Johnson-Lindenstrauss with binary coins]
+* https://www.cs.princeton.edu/~chazelle/pubs/stoc06.pdf
+* http://ecee.colorado.edu/~fmeyer/class/ecen5322/ailon-chazelle2009.pdf[The Fast Johnson–Lindenstrauss Transform And Approximate Nearest Neighbors]
+* http://scikit-learn.org/stable/auto_examples/plot_johnson_lindenstrauss_bound.html
+
+Counting Streams (Count-Min-Sketch and friends):
+
+* http://arxiv.org/pdf/0803.0473.pdf[Stream sampling for variance-optimal estimation of subset sums]
+
+
+
+* http://www.r-tutor.com[Excellent collection of R tutorials]
+* The split-apply-combine pattern in R
+* http://had.co.nz/reshape/paper-dsc2005.pdf[Reshape R Package]
+* 
+
+Principal Component Analysis:
+
+* http://en.wikipedia.org/wiki/Principal_component_analysis[Principal component analysis] Wikipedia entry
+
+
+
+=== Time Series
+
+
+* http://www.panz.in/2013/03/cep-hadoop.html[Correlating sequenced events for Hadoop and PIG]
+
+* Sorted Integer Sets -- ?? super-efficient storage of sorted integers, useful in DocID sets and time series --
+  - https://github.com/diegocaro/compression/blob/master/pfordelta.c[PForDelta algorithm for sorted integer arrays]
+  - http://cis.poly.edu/cs912/indexcomp.pdf
+
+
+=== Refs for outline
+
+
+* Art of SQL
+* SQL patterns
+* Baseball hacks
+* MySQL patterns
+* SQL Design Patterns http://www.rampant-books.com/book_0601_sql_coding_styles.htm http://www.nocoug.org/download/2006-11/sql_patterns.ppt
+* DB2 cookbook
+* Patterns for improving runtime: http://www.idi.ntnu.no/~noervaag/papers/VLDBJ2013_MapReduceSurvey.pdf
+* 
+
+  
+== End Material ==
+
+=== Author ===
+
+Philip (flip) Kromer is cofounder of Infochimps, a big data platform that makes acquiring, storing and analyzing massive data streams transformatively easier.  Infochimps became part of Computer Sciences Corporation in 2013, and their big data platform now serves customers such as Cisco, HGST and Infomart. He enjoys Bowling, Scrabble, working on old cars or new wood, and rooting for the Red Sox. 
+
+Graduate School, Dept. of Physics - University of Texas at Austin, 2001-2007
+Bachelor of Arts, Computer Science - Cornell University, Ithaca NY, 1992-1996
+
+* Cofounder of Infochimps, now Head of Technology and Architecture at Infochimps, a CSC Company.
+* Core committer for Storm, a framework for scalable stream processing and analytics
+* Core committer for Ironfan, a framework for provisioning complex distributed systems in the cloud or data center
+* Original author and core committer of Wukong, the leading Ruby library for Hadoop
+* Contributed chapter to _The Definitive Guide to Hadoop_ by Tom White
+
+TODO Russell: biography
+
+=== Colophon ===
+
+Writing a book with O'Reilly is magic in so many ways, but none moreso than their Atlas authoring platform. Rather than the XML hellscape that most publishers require, Atlas allows us to write simple text documents with readable markup, do a `git push`, and see a holy-smokes-that-looks-like-a-real-book PDF file moments later. 
+
+* Emacs, because a text editor that isn't its own operating system might as well be edlin.
+* Visuwords.com give good word when brain not able think word good. 
+* Posse East Bar and Epoch Coffee House in Austin provided us just the right amount of noise and focus for cranking out content.
+* http://dexy.it is a visionary tool for writing documentation. With it, we are able to directly use the runnable example scripts as the code samples for the book.
+
+=== Back Cover
+
+==== Short description
+
+Working with big data for the first time? This unique guide shows you how to use simple, fun, and elegant tools working with Apache Hadoop. You’ll learn how to break problems into efficient data transformations to meet most of your analysis needs. It’s an approach that not only works well for programmers just beginning to tackle big data, but for anyone using Hadoop.
+
+==== Long description
+
+This unique guide shows you how to use simple, fun, and elegant tools leveraging Apache Hadoop to answer big data questions. You’ll learn how to break problems into efficient data transformations to meet most of your analysis needs. Its developer-friendly approach works well for anyone using Hadoop, and flattens the learning curve for those working with big data for the first time.
+
+Written by Philip Kromer, founder and CTO at Infochimps, this book uses real data and real problems to illustrate patterns found across knowledge domains. It equips you with a fundamental toolkit for performing statistical summaries, text mining, spatial and time-series analysis, and light machine learning. For those working in an elastic cloud environment, you'll learn superpowers that make exploratory analytics especially efficient.
+
+* Learn from detailed example programs that apply Hadoop to interesting problems in context
+* Gain advice and best practices for efficient software development
+* Discover how to think at scale by understanding how data must flow through the cluster to effect transformations
+* Identify the tuning knobs that matter, and rules-of-thumb to know when they're needed.
+Learn how and when to tune your cluster to the job and 
