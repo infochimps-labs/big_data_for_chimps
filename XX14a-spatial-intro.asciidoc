@@ -1,0 +1,324 @@
+[[geographic]]
+== Analyzing Spatial and Geographic Data
+
+Having conquered time (or, at least, learned basics of timeseries analysis), let's move on to space.
+Spatial analysis works with _data attached to points, paths and regions_, where the _fundamentally interesting relationships are among nearby objects_. ////The trick being learning how to consider those shapes within the context of what is spatially nearby those objects (say a truck weigh station near a highway patrol station or a 7-11 store near a public shool, as examples).//// This is some of our favorite material in the book for two reasons: because it's really useful, and because it will extend your understanding of map-reduce in a significant way.
+
+// operations on data attached to shapes in the context of what is spatially nearby.
+
+===== What We'll Cover
+
+We'll start by demonstrating spatial aggregations on points: for example, counting the number of UFO sightings per area over a regular grid. This type of aggregation is a frontline tool of spatial analysis, a great way to summarize a large data set, and one of the first things you'll do to Know Thy Data. It draws on methods you've already learned, giving us a chance to introduce some terminology and necessary details. Then we'll go from spatial grouping of a single dataset to demonstrate a point-wise spatial join: matching points in a table with all nearby points in another table. 
+
+Next is a gallery tour of the basic spatial operations: how to find a shape's area or bounding box, its intersection with another shape, and so forth. We won't spend much of your time here, but it's worth having something to refer to. The real fun comes as the notion of "nearby" becomes less and less predictable in advance.
+
+Spatial aggregations on regions -- e.g. smoothing country-by-country crop production data onto a uniform grid -- demands more subtlety than aggregations of points. In places where multiple regions appear, you must weight their contributions correctly, and in places where only one region is present you'd like to avoid extra work. We handle that using a quad-tree tiling (aka "quadtiles"), a superbly elegant tool for partitioning spatially-nearby objects onto common reducers with minimal waste.
+
+The quadtile scheme not only helps to partition the data efficiently but also orders it so that spatially-nearby objects are generally nearby in quadtile order. That lets us perform a spatial join of points with _regions_ using nothing more than Hadoop's native sort and a low-memory-overhead data structure. This is the key material in the chapter, and we'll step through it in detail.
+
+Lastly, we'll demonstrate how to handle the case where it's difficult in advance to even know how to spatially partition data.
+You see, one way to determine which records are spatially relevant -- the one all the operations to that point in the chapter will have used -- is to define a fixed distance and only relate objects within that nearby-ness threshold.
+When you're matching shapes with objects less than a certain distance away,
+You can set an upper bound in advance on what "nearby" means: the specified distance.
+But when you want to map against not "_any nearby_" objects but against "_the nearest_" object -- which might be a three-minute walk or might be a three-day sail -- things get more complicated. There's a wonderful trick for doing these kinds of "nearest object" queries without overwhelming your cluster. We'll use it to combine our record of every baseball game played against the historical weather data, and learn an important truth about truth and error along the way.
+
+Let's start off in the best way possible: with a tool for turning lots of data into manageable insight.
+
+===== Spatial Analytics is a Useful Tool
+
+Problems with a directly geographic aspect appear naturally in all sorts of human endeavors: "Where should I put this cell tower / oil well / coffee shop?". Analysis across billions of GPS paths on millions of routes not only allows a driving directions app to direct you to the correct lane when changing roads, it will power the self-driving cars of the (near?) future. http://www.slideshare.net/Hadoop_Summit/grailer-hochmuth-june27515pmroom212v3[Farmers are improving crop yields and reducing environmental impact] by combining data from suppliers, other growers, satellite feeds, and government agencies to fine-tune what strains they plant and what pests and diseases they act to prevent. Wind farm companies use petabytes of weather data to predict http://www.ibmbigdatahub.com/blog/lords-data-storm-vestas-and-ibm-win-big-data-award[optimize turbine locations and predict their yield].
+It is an increasingly essential piece of any high-stakes effort in marketing, agriculture, security, politics, and any other field where location is a key variable.
+
+Geospatial analysis is also incredibly useful because geography is such a good proxy for many key features you can't easily measure.  You wouldn't think the 32 bits of an IP address described the weather.  But as you saw in the last chapter an IP address can (imperfectly but actionably) be related to a geolocation, and a geolocation can (imperfectly but actionably) be related to a weather report.  Without violating a person's privacy, you can know when to switch from promoting suncreen to Sydneysiders and galoshes to Glaswegians to quite profitably doing the reverse. With the right auxilliary dataset you can treat geographic coordinates as an imperfect but often actionable stand-in for census demographics, average daily temperature, political preference, crime rate -- you get the idea.
+
+To keep things concrete and relevant to the typical reader we're going to focus on geospatial analysis, where the data is specifically located on the surface of our Earth. But the methods we'll demonstrate here extend naturally to anything with a spatial aspect, like factory floor optimization, customer flow through a mall. What's more, it's surprisingly easy to extend these methods to three and higher dimensions (see the exercise at the end of the chapter (REF)), good news for anyone looking to analyze ocean currents, electronic chip layout or brain activity. And even beyond explicitly spatial problems, every reader looking to master machine learning techniques will find that this chapter provides an important reference point for thinking in the highly-dimensional spaces those algorithms work in.
+
+// Taking a step back, the fundamental idea this chapter introduces is a direct way to extend locality to two dimensions. It so happens we did so in the context of geospatial data, and required a brief prelude about how to map our nonlinear feature space to the plane. Browse any of the open data catalogs (REF) or data visualization blogs, and you'll see that geographic datasets and visualizations are by far the most frequent. Partly this is because there are these two big obvious feature components, highly explanatory and direct to understand. But you can apply these tools any time you have a small number of dominant features and a sensible distance measure mapping them to a flat space.
+
+===== Spatial Analytics is Good for Your Brain
+
+The essential element of spatial analytics is to operate on shapes within context of what is spatially nearby. We can do so by coaching Hadoop to:
+// even when the chain of ojects that are nearby is larger than 
+
+1. partition space into coarse-grained tiles
+2. assign each tile to a reducer (equivalently, group each tile's objects into a bag)
+3. ensure that everything potentially relevant for the objects on a tile finds its way there
+4. eliminate any potentially-but-not-actually relevant objects and any duplicated results
+
+Since a point has no extent, nominating its context is straightforward: send it to the tile it lives on. Spatially aggregating points on a tile requires exactly and only the occupants of that tile. As you'll see in our first example, that means it's no harder than the grouping operations you mastered back in Chapter 6 (REF).
+
+In contrast, a multi-point, a line, or any other shape having spatial extent might cross one or many tiles, or even wholly contain them. It might have gaps and holes, might cross from 180 degrees longitude to -180 degrees longitude (or by covering one of the poles) might even span all 360 degrees of longitude. And while it's cheap to determine whether pairs of points or rectangles intersect, touch, lie within a given distance, or whatever other definition of "spatially relevant" is in play, you need to perform the corresponding operations on the complex shapes eventually, which can be quite expensive. That leads to why bullet point number 4 appears above, and why we think this chapter is so important for a deep understanding of orchestrating big data operations.
+
+What we need to do is scatter each object to all the groups where it _might_ be relevant, knowing that (a) it might be grouped with objects that are not actually relevant, and (b) relevant operations may be duplicated within multiple groups.
+A person standing in Lesotho is within the South Africa's bounding box (and so potentially relevant) but is not actually within South Africa (and so is not relevant for the "Within" relationship). Territories of the UK and France lie within 60 km of each other not only from Dover to Calais in Europe but also from Montserrat to Guadeloupe in the Caribbean.
+
+The core spatial operations allow us to segment and .
+The key new skill as map/reduce coaches is to do so correctly and efficiently: without expensive processing, without requiring context that might reside on some other machine, and without an explosion of midstream data, or proliferation of not-actually-relevant objects to consider, or an infection of indeterminately duplicate output records.
+
+Those strategies aren't unique to the spatial case, and so what we're really trying to do in this chapter is equip you do deal with situations where determining which objects should be related in context is complex and can't be done locally. For example, one way to find pairs of similar documents involves deriving each document's most prominent keywords, then matching each document to all others that share a significant fraction of its keywords. In the spatial analytics case, our cascading love triangles from London to Paris to Lyon to Milan (REF (to E&C preamble)) threatened to crowd the whole world into a single dance hall. The document similarity case presents the same problem. A document mentioning Paris, Lyon, and Milan is a candidate match for one mentioning London+Paris+Lyon and for one mentioning Lyon+Milan+Rome -- but London+Paris+Lyon and Lyon+Milan+Rome don't need to be compared. We want to ensure the necessary pairings are considered, without allowing the chain of candidate matches from London+Paris+Lyon, through Lyon+Milan+Rome, on over to Busan+Osaka+Tokyo to land on the same library table. It's the same problem in different guise, and the essential intuition you build here will carry over.
+
+////The following illustrates...////
+
+.The territories of France and the UK are close by in Europe
+image::images/11a-france-uk-calais.png[height=120]
+
+.And also in the Caribbean
+image::images/11a-france-uk-caribbean.png[height=120]
+
+.South Africa contains Lesotho: Politics trumps Topology
+image::images/11a-south_africa-lesotho.png[height=150]
+
+// Features of Features
+// [NOTE]
+// ===============================
+// The term "feature" is somewhat muddied -- to a geographer, "feature" indicates a _thing_ being described (places, regions, paths are all geographic features). In the machine learning literature, "feature" describes a potentially-significant _attribute_ of a data element (manufacturer, top speed and weight are features of a car). Since we're here as data scientists dabbling in geography, we'll reserve the term "feature" for only its machine learning sense.
+// ===============================
+
+
+// Spatially aggregating points onto a grid is straightforward because each point only provides relevant context to the single grid cell it occupies.
+// Gather together each object with every relevant Nearby shape
+// Without ever accumulating a lopsided share of objects into the same group.
+
+// * Geometry is hard to do _right_
+// * Pretending the bumpy kinda-ellipsoid is a simple rectangle.
+// * You're working with two (or more) continuous dimensions
+// * Russia is big and Luxembourg is small; New York City has a lot of stuff, Siberia not so much; in Alabama you're never far from a church, but over most of the Pacific it can be quite a swim.
+//
+// This problem has been mostly solved for us,
+// There are superb open-source and commercial
+// Of course, they depend on having all relevant data together on the same machine, which is where it starts to get interesting.
+//
+// What we do is partition our world very cleverly, so that nearby shapes can be
+// A few of our Elephant friends had to attend multiple promenades
+// But we'll use something just like their conga line to
+//
+// When it's not just spatial data but *Geo*spatial data, you must deal wit
+//
+// Points exist on a bumpy, messy super-ellipsoid, but (a) our behavior is largely constrained to the surface, and (b) not generally concerned by elevation.
+// Because of this, we can project geographic shapes
+// to a more manageable reference frame.
+// Geographic data is usually given as
+// The simplest thing is to treat them as regular x, y coordinates on a grid
+// As long as your data stays away from the north and south poles (which is much commoner than you'd think), you can get away with this.
+// However, there are a couple important
+// This subject causes geographers all sorts of grief but
+// Our choice does not
+// In principle affect the data itself, only how it's divided up on machines.
+
+NOTE: Geographic Analysis is a well developed field.  The number of hard problems with valuable solutions in intelligence, petroleum, natural resources and other such industries gave rise to highly sophisticated products capable of processing massive quantities of data well before these kids with their Hadoops and their JSONs came along.  As you might expect, however these products possess a correspondingly steep price tag and learning curve and often integrate poorly outside their domain. Most importantly, they are bound by the limits of traditional database technology in many aspects. So even users of these powerful GIS tools can benefit by augmenting them with Big Data analytics. But our focus will be on the reader who needs to get stuff done with geographic data, and the less they have to learn a new field the better.  We're going to use GeoJSON, a newly-developed standard for geographic data (friendly to general purpose analytic tools and to rendering data in
+the browser), rather than Arcview shapefiles or other geospatial formats (seamless integration with industry products). We've simplified concepts and minimized jargon to keep the focus on readable, powerful scripts that give actionable insight.
+
+
+// Geospatial Information Science ("GIS") is a deep subject, ////Say how, like, ", which focuses on the study of..."  Amy////treated here shallowly -- we're interested in models that have a geospatial context, not in precise modeling of geographic features themselves. Without apology we're going to use the good-enough WGS-84 earth model and a simplistic map projection. We'll execute again the approach of using existing traditional tools on partitioned data, and Hadoop to reshape and orchestrate their output at large scale.  footnote:[If you can't find a good way to scale a traditional GIS approach, algorithms from Computer Graphics are surprisingly relevant.]
+
+// footnote:[You'll also see 'Spatial', 'Geospatial', 'Geodata', 'GIS' (Geographic Information Systems), and many other mashups with the prefix 'Geo-'. We chose 'Geographic' because it seems the friendliest term, and will reserve 'GIS' to mean "the highly sophisticated traditional geographic analysis toolset"]
+
+
+
+==== Smoothing Pointwise Data Locally (Spatial Aggregation of Points)
+
+Let's start by extending the group-and-aggregate pattern -- introduced in Chapter Six (REF) and ubiqitous since --
+
+
+
+ a great way to summarize a large data set, and one of the first things you’ll do to Know Thy Data.
+This type of aggregation is a frontline tool of spatial analysis
+It draws on methods you’ve already learned, giving us a chance to introduce some terminology and necessary details. 
+
+// * You want to "wash out" everything but the spatial variation -- even though the data was gathered for each
+// * Point measurement of effect with local extent -- for example, the temperature measured at a weather station is understood to be representative of the weather for several surrounding miles.
+// *
+// *
+// * data reduction, especially for a heatmap visualization;
+// * extracting a continuous measurement from a pointwise sample;
+// * providing a common basis for comparison of multiple datasets;
+// * smoothing out spatial variation;
+// * for all the other reasons you aggregate groups of related values in context
+// * You have sampled data at points in order to estimate something with spatial extent. The weather dataset is an example:
+// * Data that manifests at a single point
+//   represents a process with
+//   For example, the number of airline passengers in and out of the major airport
+//   are travelling to and from local destinations
+// * Smoothing pointwise data
+//   into a
+//   easier to compare or manage
+// * continuous approximation
+//   represents just the variation due to spatial
+//   variables
+
+The straightforward approach we'll take is to divide the world up into a grid of tiles and map the position of each point onto the unique grid tile it occupies. We can then group on each tile
+
+Area of a spherical segment is 2*pi*R*h --
+so for lat from equator to 60
+
+------
+%default binsz 2.0
+-- place into half-degree bins -- ~ 120x50 cells for US
+gridded = FOREACH sightings GENERATE
+    FLOOR(lng * $binsz) / $binsz AS bin_x,
+    FLOOR(lat * $binsz) / $binsz AS bin_y;
+-- number density
+grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
+  GENERATE
+    group.bin_x, group.bin_y,
+    COUNT_STAR(gridded) AS ct;
+------
+
+* US:	-125 24 to -66, 50	(-124.7625, 24.5210, -66.9326, 49.3845) -- about 60 x 26
+
+==== Creating a Spatial Density Map
+
+Map points to quad cells, plot number density of airports as a heat map
+
+Then geonames places -- show lakes and streams (or something nature-y) vs something urban-y
+
+(just call out that rollup, summing trick, or group-decorate-flatten would work: do no pursue)
+
+Do that again, but for a variable: airport flight volume -- researching
+epidemiology
+
+
+This would also be
+n epidemiologist or transportation analyst interested in knowing the large-scale flux of people could throughout the global transportation network
+Combining this with the weather data
+
+
+
+// FAA flight data http://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger/media/cy07_primary_np_comm.pdf
+
+We can plot the number of air flights handled by every airport
+
+------
+%default binsz 2.0
+-- place into half-degree bins -- ~ 120x50 cells for US
+gridded = FOREACH sightings GENERATE
+    FLOOR(lng * $binsz) / $binsz AS bin_x,
+    FLOOR(lat * $binsz) / $binsz AS bin_y,
+    n_flights;
+-- number density
+grid_cts = FOREACH (GROUP gridded BY (bin_x, bin_y))
+  GENERATE
+    group.bin_x, group.bin_y,
+    COUNT_STAR(gridded) AS ct,
+    SUM(n_flights) AS tot_flights;
+------
+
+===== Pattern Recap: Spatial Aggregation of Points
+
+* _Generic Example_ -- group on tile cell, then apply the appropriate aggregation function
+* _When You'll Use It_ -- as mentioned above: summarizing data; converting point samples into a continuous value; smoothing out spatial variation; reassigning spatial data to grid-aligned regions
+* _Exercises_ --
+* _Important to Know_ --
+  - A https://en.wikipedia.org/wiki/Dot_distribution_map[Dot Distribution Map] is in some sense the counterpart to a spatial average -- turning data over a region into data at synthesized points
+
+=== Matching Points within a Given Distance (Pointwise Spatial Join)
+
+Now that you've learned the spatial equivalent of a `GROUP BY` aggregation -- combining many records within a grid cell into a single summary record -- you'll probably be interested to
+learn the spatial equivalent of `COGROUP` and `JOIN` --
+collecting all records 
+
+
+In particular, let's demonstrate how to match all points in one table with every point in another table that are less than a given fixed distance apart.
+
+Our reindeer friends would like us to help determin what UFO pilots do while visiting Earth.
+Let's combine the NUFORC data set of 60,000+ documented UFO sightings with the 7 million points of interest from the Geonames dataset to
+determine whether UFOs are more frequently sighted nearby
+airports, parks, schools, or churches.
+
+It's up to us to define what "nearby" means.
+Let's start by casting a fairly wide 16km (10-mile) net. It's the distance of visibility on a pretty clear day, and seems like a reasonable upper bound on how far I'd travel to hide my UFO while sightseeing.
+// and though we don't know whether UFO pilots also use non-flying-object craft for ground transportation,
+
+What we're going to do is this:
+
+* For every UFO sighting, figure out all tiles that potentially contain points within 16 km of the sighting
+* For every point of interest, figure out the single tile it belongs to
+* Join the points of interest by tile with all UFO sightings potentially relevant to the tile
+* Select only the UFO sighting - point of interest matches that are actually within the 16km threshold.
+
+==== Distance on a Sphere
+
+To send each UFO sighting to all relevant grid cells, we need to find the bounding box of its circle of distance -- the highest and lowest excursionsin longitude and latitude. That purpose is answered by the `TilesForGeoCircle` UDF, which generates the list of relevant tiles given the point, distance and grid scheme.  So far, we've been casually pretending that our coordinates live on a uniform Cartesian grid, but that's not the case. Out longitude and latitude coordinates exist on a sphere, which can greatly complicate some operations and betray your intuition.  Finding the bounding box in longitude and latitude is a cardinal example of how spherical geometry can complicate matters, and so it's worth going into how the answer is calculated.
+
+Finding the latitude values is easy: the fraction of the earth's circumference that our given distance covers is the same as the fraction of 360 degrees that our range of latitudes cover.
+
+    earth_radius  = 6378.1370
+    earth_circum  = earth_radius * 2 * pi # pretty close to 40,000 km
+
+    # arc distance in degrees, along north-south arc
+    arc_dist_degs  = 360 * (distance in km / earth_circum)
+
+As an example, the drawing below shows a circle of 1400 km footnote:[the equivalent distance of
+Boston-Chicago or Paris-Warsaw] centered right on the equator near Libreville, Gabon.  Our 1400 km
+is about 3.5% of the earth's circumference, pretty near 12.5 degrees of arc: our bounding box will extend from -12.58 on the south to 12.58 on the north. You can count off grid cells in our diagram below to see that we've drawn it correctly so far.
+
+If we were on a regular flat Cartesian grid, finding the westmost extent would be obvious: hold the latitude constant and walk west for the given distance. (Or in this case, paddle.) Since we are at the equator, this works correctly, and in fact the extent of arc is the same east-west as it is north-south. At every place other than along the equator, however, this answer is wrong.
+
+.Two circles, both alike in radius, in Libreville and Reykjavik we lay our scene
+image::images/11-f-quad_decompositions/11-sphere_distance-all-ortho.png[Two circles, both alike in radius, in Libreville and Reykjavik we lay our scene]
+
+.Everything is greatly easier on the Equator because everything is a Great Circle
+image::images/11-f-quad_decompositions/11-sphere_distance-0-bbox-ortho.png[Everything is greatly easier on the Equator because everything is a Great Circle]
+
+.The point of westmost longitude is _not_ parallel to the center
+image::images/11-f-quad_decompositions/11-sphere_distance-65-toosmall-ortho.png[The point of westmost longitude is _not_ parallel to the center]
+
+.Gridline is tangent at the actual westmost longitude
+image::images/11-f-quad_decompositions/11-sphere_distance-65-bbox-ortho.png[Gridline is tangent at the actual westmost longitude]
+
+
+To see why, let's look at another 1400km-radius circle, centered on the same longitude but this time at 65 degrees north latitude -- extending roughtly from Reykjavik in Iceland to Arkhangelsk in Russia. 
+
+Applying the logic that worked at the equator, we've drawn a "horizontal" arc
+following the parallel of latitude from the center of our circle west towards Reykjavik.
+The great-circle distance of that arc is exactly 1400-km
+footnote:[There's another potential pitfall which we won't go into. If you actually flew strictly along the horizontal arc we drew from the center to its end, you would travel a bit over 1413 kilometers. The shortest route from the center to the endpoint has you deviate slightly north along a "great circle" path, and takes the expected 1400 km]
+and its endpoint is 30.042 degrees of longitude west of the center.
+
+But notice what happens when we apply those offsets (`[±30.042, ±12.58]`) to the circle's center (`[10 E, 65 N]`) to construct the bounding box from `[10 - 30.042, 65 - 12.58]` to `[10 + 30.042, 65 + 12.58]`. Parts of the circle jut outside of the box!
+// (REVIEWME: as above, or "box from `[-20.042, 52.42]` to `[40.042, 77.58]`"
+// This visibly prominent at northern latitudes, but applies to all points that don't lie on the equator.
+
+If you look carefully, you'll see that the lines of constant longitude "come together" faster than the curve of the circle does. 
+
+Travelling 1400 km (12.58 degrees of arc) north from the center along a meridian brought us to a point where the constant-latitude gridlines were perfectly tangent to the circle. That meant that travelling along the circle in either direction necessarily departed from that farthest gridline, making it the maximum gridline touched. In contrast, travelling 1400 km from the center along the 65th parallel did not bring us to a point where the constant-longitude gridlines were tangent to the circle. That location is given by the following equations:
+
+     # the arc distance
+     arc_dist_rad     = 2 * PI * distance_in_km / earth_circum
+     lat_rad          = lat * PI / 180
+     
+     tangent_lat      = arcsin( sin(lat_rad)      / cos(arc_dist_rad) ) * PI / 180
+     delta_lng        = arcsin( sin(arc_dist_rad) / cos(lat_rad) ) * PI / 180
+
+     bounding_box     = [ [lng-delta_lng, lat-arc_dist_degs], [lng+delta_lng, lat+arc_dist_degs] ]
+
+
+The `tangent_lat` statement provides the latitude where the constant-latitude gridlines are actually
+ tangent, making it the location of farthist longitude.
+ // It always lies towards the nearest pole by some amount.
+ The delta_lng statement finds proper the arc distance west and east for our bounding box,
+ which the last statement calculates explicitly.
+
+
+There are still other details to attend to -- the box could cross over the antimeridian from 180 to -180 degrees longitude, causing it to split into "two" bounding boxes; and it could extend north over the pole, causing it to extend through all 360 degrees(!) of longitude. We've written a UDF that finds the bounding box correctly and handles all those edge case, so that's what we'll use. But please learn the lesson from this particularly mild instance: spatial geometry operations can get astonishingly thorny. Going beyond what the libraries provide may cause you to learn more mathematics than you'd prefer. 
+
+
+// 1400 km radius: Boston-Chicago or Paris-Warsaw; 2800 km diameter: SF-St Louis
+
+.Min/Max Longitudes are not at the same latitude as the center
+image::images/11-circle_of_constant_distance.png[Min/Max Longitudes are not at the same latitude as the center]
+
+
+
+//        +---------+---------+
+//        |                 B |
+//        |                   |
+//        |                   |
+//        |                   |
+//        +         A         +
+//        |                   |   C
+//        |                   |
+//        |                   |
+//        |                   |           B is nearby A; C is not. Sorry, C.
+//        +---------+---------+
+//                  |- 10 km -|
