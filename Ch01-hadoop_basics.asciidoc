@@ -287,5 +287,9 @@ hadoop fs -tail ./translation.out/*
 
 === Outro
 
-In this chapter, we've covered the mechanics of HDFS and the map-only portion of MapReduce, and we've setup a virtual Hadoop cluster and run a single job on it. We're in good shape to learn more about Hadoop. In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm. Let's start by joining JT and Nannette with their next client.
+In this chapter, we've equipped you with two things: the necessary mechanics of working with Hadoop, and a physical intuition for how data and computation move around the cluster during a job. We started with a story about J.T. and Nanette, and learned about the Hadoop Job Tracker, Namenode and file system. We proceeded with a Pig Latin example, and ran it on a real Hadoop cluster.
+
+We've covered the mechanics of the Hadoop Distributed Filesystem (HDFS) and the map-only portion of MapReduce, and we've setup a virtual Hadoop cluster and run a single job on it. While we are just beginning, we're already in good shape to learn more about Hadoop. 
+
+In the next chapter, you'll learn about map/reduce jobs -- the full power of Hadoop's processing paradigm. Let's start by joining JT and Nannette with their next client.
 
