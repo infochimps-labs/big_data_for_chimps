@@ -6,7 +6,7 @@
 
 == Map/Reduce
 
-In this chapter we're going to build upon what we learned last chapter about HDFS and the map-only portion of map/reduce and introduce a full map/reduce job. This time we'll include the shuffle/sort phase, and the reduce phase. Once again, we begin with a physical metaphor in the form of a story. After that we'll walk you through building our first full-blown map/reduce job in Python. At the end of this chapter, you should have an intuitive understanding of how map/reduce works in its map, shuffle/sort and reduce phases.
+In this chapter we're going to build upon what we learned last chapter about HDFS and the map-only portion of map/reduce and introduce a full map/reduce job and the mechanics of map/reduce. This time we'll include both the shuffle/sort phase, and the reduce phase. Once again, we begin with a physical metaphor in the form of a story. After that we'll walk you through building our first full-blown map/reduce job in Python. At the end of this chapter, you should have an intuitive understanding of how map/reduce works, including its map, shuffle/sort and reduce phases.
 
 .Chimpanzee and Elephant Save Christmas
 ******
@@ -439,8 +439,8 @@ Once you understand the label-group-process data flow we've just introduced, you
 
 === Outro
 
-You've just seen how records move through a map/reduce workflow. It is normal to have to re-read this chapter until you get it straight. 
+You've just seen how records move through a map/reduce workflow, both in theory and in practice. This can be challenging material to grasp, so don't feel bad if you don't get all of it right away. While we did our best to simplify complex phenomenon, we hope we've still communicated the essentials. It is normal to have to re-read this chapter until you get it straight. You may also try re-visiting this chapter once you've read a bit further in the book. Once you've performed a few Pig `GROUP BY`s, this material may feel more natural.
 
-You now have an intuitive sense of the mechanics behind map/reduce. Remember and come back to this chapter as you read the rest of the book. This will aide you in acquiring a deep understanding of the operations that make up the strategies and tactics of the analytics toolkit. 
+You should now have an intuitive sense of the mechanics behind map/reduce. Remember and come back to this chapter as you read the rest of the book. This will aide you in acquiring a deep understanding of the operations that make up the strategies and tactics of the analytic toolkit. By the end of the book, you'll be converting Pig syntax into map/reduce jobs in your head! You'll be able to reason about the cost of different operations and optimize your Pig scripts accordingly.
 
-Next, we'll introduce you to the dataset we'll be working on: baseball! Then we'll introduce Apache Pig, a high level language and tool which will generate MapReduce jobs for you. 
+That covers Map/Reduce for now (don't worry, we'll revisit map/reduce in the chapter on Joins). Next, we'll introduce you to the dataset we'll be working on: baseball! Then we'll introduce Apache Pig, a high level language and tool which will generate MapReduce jobs for you. Having covered all that, we can move on to learning analytic patterns in Pig in Part 2 of the book.
