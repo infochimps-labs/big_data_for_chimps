@@ -10,7 +10,7 @@ In this chapter we will cover ordering operations, or operations that sort data 
 
 Ordering operations are a fundamental part of storytelling. A big part of telling stories with data is coming up with examples that prove a point. This means diving into the data to produce the most exceptional records. When data is big, this invariably means you need to sort the data to pick up the highest or lowest value(s) of some metric. 
 
-So far we've mostly limited ourselves to the ordering inherently provided by the map/reduce shuffle/sort operation, which does provide a sorted list on the reduce key for each file. If we're running a small job with a single reducer, that does provide a total sort. However, if we want an overall sort using multiple reducers (as we must, if we're working with 'big data'), we must employ Pig's `ORDER` command. 
+So far we've mostly limited ourselves to the ordering inherently provided by the map/reduce shuffle/sort operation, which does provide a sorted list on the reduce key for each file. If we're running a small job with a single reducer, that does provide a total sort. However, if we want an overall sort using multiple reducers (as we must, if we're working with 'big data'), we must employ Pig's `ORDER` command. Lets begin!
 
 === Preparing Career Epochs
 
@@ -433,10 +433,10 @@ We use a randomized hash function UDF for each record; then number each line wit
 
 === Outro
 
-In this chapter, we've learned to sort, rank and order data. We learned how to sort entire relations by one or more fields. We learned how to deal with sorting nulls and mixed-case strings. We showed how to sort within a group with `TOP` and a nested `ORDER..BY`. Finally, we learned how to shuffle, or sort randomly using a Hash.
+In this chapter, we've learned to sort, rank and order data. We learned how to sort entire relations by one or more fields. We learned how to prioritize certain records when sorting. We learned how to deal with sorting nulls and mixed-case strings. We showed how to sort within a group with `TOP` and a nested `ORDER BY`. Finally, we learned how to shuffle, or sort randomly using a Hash.
 
-Our bag-of-tricks is getting larger and larger. Soon there will be no data-processing problem you  face that you can't come up with a solution for using the patterns in this book.
+Our bag-of-tricks is getting larger and larger. Soon there will be no data-processing problem you face that you can't come up with a solution for using the patterns in this book. Your applied knowledge of Pig and Hadoop will constitute a working knowledge of analytics in general, and you'll be able to arbitrarily process data at scale and implement algorithms on big data. When you become as comfortable processing big data as you are small, there are boundless opportunities to work with the ever increasing onslaught of new, big data to create new insights, build new products and make better decisions.
 
-In the next chapter, we'll learn about creating unique values and relations, and working with sets.
+In the next chapter, we'll learn about creating unique values and relations, and working with sets. This will complete our analytic toolkit.
 
 
