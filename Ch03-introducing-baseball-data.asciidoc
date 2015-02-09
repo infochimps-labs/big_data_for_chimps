@@ -111,4 +111,6 @@ Just as a professional mechanic has an assortment of specialized and powerful to
 
 === Outro
 
-You now have enough information about baseball and its metrics to work through the examples in this book. If you're a baseball fan, feel free to filter the examples to tell stories about your favorite team. In the next section of the book, we'll use baseball examples to teach analytic patterns - those operations which enable most kinds of analysis.
+You now have enough information about baseball and its metrics to work through the examples in this book. Whether you're a baseball fan or not, this dataset should work well for teaching analytic patterns. If you are a baseball fan, feel free to filter the examples to tell stories about your favorite team. 
+
+In the next section of the book, we'll use baseball examples to teach analytic patterns - those operations which enable most kinds of analysis. First though, we're going to learn about Apache Pig, which will dramatically streamline our use of map/reduce.
