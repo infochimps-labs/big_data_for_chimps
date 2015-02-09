@@ -731,4 +731,6 @@ In contrast, any SQL user will immediately recognize the join formulation of thi
 
 In this chapter we've learned how to `JOIN` and `COGROUP`. These operations allow us to bring additional data-sources into our analysis. The INNER `JOIN` lets us combine records from multiple datasets with common join keys. The OUTER `JOIN` or semi-join decorates one relation with matches from another relation. An anti-join filters records with a match in another table, leaving only those that don't match. The self-join showed us how to explore groupings within a given relation. Taken together, these techniques constitute a powerful toolset for working with one or more sources of data.
 
-In the next chapter we'll learn about sorting, or ordering data.
+Joins are a fundamental data operation, and by adding them to our toolkit we've broadened our capabilities dramatically. Now we can look at hitting records in combination with player records, or ball park records in combination with city data. We've seen how to join relational data that is meant to be joined - and also how to join disparate data sources to bring in related data from the web. We've even learned how to join data to itself, to analyze pairs within groups.
+
+In the next chapter we'll learn about sorting, or ordering data. We'll be able to manipulate records individually with map-only patterns, group and join data using map/reduce, and to sort data within and without groups. Our data vocabulary is nearly complete!
