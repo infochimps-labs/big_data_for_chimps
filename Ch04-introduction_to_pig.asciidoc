@@ -5,6 +5,10 @@
 [[intro_to_pig]]
 == Introduction to Pig
 
+In this chapter, we introduce the tools we'll be using throughout the second part of the book to teach analytic patterns. We'll get you up and running chains of map/reduce jobs in the form of Pig scripts. We'll explain Pig's data model and tour the different data types. We'll cover basic operations like `LOAD` and `STORE`, to get you going. Next, we'll learn about UFOs and when people most often report them, and we'll dive into wikipedia usage data and compare different projects. We'll also briefly introduce the different kind of analytic operations in Pig that we'll be covering in the rest of the book. Finally, we'll introduce you to two libraries of UDFs or User-Defined-Functions: the Apache DataFu project and the Piggybank. 
+
+By the end of this chapter you will be able to perform basic data processing on Hadoop, with Pig.
+
 // === Olga, the Remarkable Calculating Pig
 //
 // JT and Nanette were enjoying the rising success of C&E Corp. The translation and SantaCorp projects were in full production, and they'd just closed two more deals that closely resembled the SantaCorp gig.
@@ -503,4 +507,8 @@ b = FOREACH a GENERATE COALESCE(field1, field2) AS coalesced;
 
 === Moving right along …
 
-This chapter was a gentle introduction to Pig and its basic operations. You can now write and run basic Pig scripts. In the next two chapters, we'll see Pig in action as we do more with the tool.
+This chapter was a gentle introduction to Pig and its basic operations. We introduced Pig's basic syntax: `LOAD`, `STORE`, `SAMPLE`, `DUMP`, `ILLUSTRATE` and `EXPLAIN`. We listed Pig's basic operations. We introduced the Apache DataFu and Piggybank libraries of Pig UDFs. Using this knowledge, you can now write and run basic Pig scripts. 
+
+We used this new ability to dive in and perform some basic queries; we determined in which months people report the most UFOs, and what are the most popular wikipedia projects. We've been able to do a lot already with very basic knowledge!
+
+In the next two chapters, we'll build on what we've learned and we'll see Pig in action as we do more with the tool as we learn analytics patterns.
