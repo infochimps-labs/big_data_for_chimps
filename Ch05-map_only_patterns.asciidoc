@@ -770,6 +770,8 @@ NOTE: The UNION operator is easy to over-use. For one example, in the next chapt
 
 === Outro
 
-The operations in this chapter do not require a reduce on their own, which makes them very efficient. These operations can be chained one after the other without causing a reduce to occur. Although we call them 'map-only' operations, they can be executed during either the map or at the tail of the reduce phase. The ability to chain map-only operations really helps map/reduce scale during complex operations. 
+The operations in this chapter do not require a reduce on their own, which makes them very efficient. These operations can be chained one after the other without causing a reduce to occur. Although we call them 'map-only' operations, they can be executed during either the map or at the tail of the reduce phase. The ability to chain map-only operations really helps map/reduce scale during complex operations. Arbitrarily long combinations of map-only operations can be chained one after the other and accomplished in a single phase of a Hadoop map/reduce job.
 
-You can now `LOAD`, `STORE`, `FILTER`, `UNION`, `SPLIT`, `LIMIT` and `FOREACH`/`GENERATE`. This gives you a powerful tool chest with which to modify individual records. The really interesting applications, however, come when we put data into context by grouping similar records. This is the subject of the next chapter.
+You can now `LOAD`, `STORE`, `FILTER`, `UNION`, `SPLIT`, `LIMIT` and `FOREACH`/`GENERATE`. You can accomplish quite a bit with these operations alone. For instance, you could open an Apache web server log file, search for a particular IP address, and print only those records. Or you could load stock ticker data, and hone in on just one or two stocks.
+
+This chapter gives you a powerful tool chest with which to modify individual records in isolation. The really interesting applications, however, come when we put data into context by grouping similar records in the reduce phase of map/reduce. This is the subject of the next chapter: grouping data.
