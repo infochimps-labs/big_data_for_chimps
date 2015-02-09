@@ -5,6 +5,8 @@
 [[grouping_patterns]]
 == Analytic Patterns: Grouping Operations
 
+In this chapter we will introduce grouping operations in Pig and map/reduce. We'll teach you the schemas behind grouped data, how to inspect and sample grouped data relations, how to count records in groups and how to use aggregate functions to calculate arbitrary statistics about groups. We'll teach you to describe and summarize individual records, fields or entire data tables. In so doing, we'll explore questions such as, "Does God hate Cleveland?" and "Who are the best players for each phase of their career?"
+
 The `GROUP BY` operation is fundamental to data-processing - both in map/reduce and in the world of SQL. In this chapter, we will cover grouping operations in Pig, which are 'one-liners' or one line of Pig code to perform. This is part of Pig's power. We'll learn how grouping operations relate to the reduce phase of map/reduce and how to combine map-only operations with `GROUP BY` operations to perform arbitrary operations on data relations.
 
 Grouping operations are at the heart of map/reduce - they make use of and define the 'reduce' operation of map/reduce, in which records with the same reduce key are grouped on a single reducer in sorted order. Thus is is possible to define a single map/reduce job that performs any number of map-only operations, followed by a grouping operation, followed by more map-only operations after the reduce. This simple pattern enables map/reduce to perform a wide array of operations, implementing a wide array of algorithms.
@@ -1498,7 +1500,11 @@ never_sox = FOREACH player_soxness_g GENERATE
 
 === Outro
 
-The operations in this chapter on grouping data are foundational, and help to put data in context - the 'trick' to map/reduce. In our next chapter, we'll look at a powerful extension of grouping techniques - JOINs.
+In this chapter we introduced grouping operations. We started with the basic Pig `GROUP BY` syntax, and worked through several baseball problems to explain how to group in practice. We learned not only to calculate statistics about grouped data, we also learned how to print and format these statistical summaries. We summarized records, groups, fields, and entire relations using aggregate functions such as `MIN`, `MAX`, `COUNT_STAR` and `SUM`. We used these aggregate functions to summarize the careers of every baseball player in the modern era!
+
+The operations in this chapter on grouping data are foundational, and help to put data in context. Putting data in context is the 'trick' to map/reduce. If we touched on some operations we didn't cover in detail - worry not! We'll get to operations like `DISTINCT` in another chapter.
+
+Now that we can group data, we can `COGROUP`, or group between data relations. In our next chapter, we'll look at a powerful extension of grouping techniques - JOINs. Inspired by SQL joins, Pig has extremely powerful joining capabilities that can pull additional data into the context of your analysis. We'll take this opportunity to once again dive into map/reduce and learn how joins work!
 
 === Refs
 
