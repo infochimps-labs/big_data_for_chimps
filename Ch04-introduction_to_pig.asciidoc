@@ -68,7 +68,7 @@ Apache Pig is an open-source, high-level language that enables you to create eff
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
 [source,sql]
-.UFO Sightings by Month (ch_03/ufos_by_month.pig)
+.UFO Sightings by Month (ch_04/ufos_by_month.pig)
 ------
 sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv'  AS (
     sighted_at: chararray,   reported_at: chararray,    location_str: chararray,
@@ -91,7 +91,7 @@ In a Python streaming or traditional Hadoop job, the focus is on the record and 
 To run the Pig job, go into the example code repository and run:
 
 ------
-pig examples/ch_03/ufos_by_month.pig
+pig examples/ch_04/ufos_by_month.pig
 ------
 
 If you consult the Job Browser, you should a single Map/Reduce jobs; the dataflow Pig instructed Hadoop to run is essentially similar to the Python script you ran. What Pig ran was, in all respects, a Hadoop job. It calls on some of Hadoop’s advanced features to help it operate but nothing you could not access through the standard Java API.
@@ -129,7 +129,7 @@ image::images/03-first-pig-run.png["First Pig Script Run, and Result"]
 Let’s put Pig to a sterner test. Here’s the script above, modified to run on the much-larger Wikipedia dataset, and this time to assemble counts by hour:
 
 [source,sql]
-.Wikipedia Page Views/Total Bytes by Project (ch_03/wikipedia_page_counts.pig)
+.Wikipedia Page Views/Total Bytes by Project (ch_04/wikipedia_page_counts.pig)
 ------
 /* Wikipedia pagecounts data described at https://dumps.wikimedia.org/other/pagecounts-raw/
    The first column is the project name. The second column is the title of the page retrieved, 
@@ -248,7 +248,7 @@ In the remainder of this chapter, we'll illustrate the mechanics of using Pig an
 In order to analyze data, we need data to analyze. In this case, we'll start by looking at a record of the outcome of baseball games using the `LOAD` statement in Pig. Pig scripts need data to process, and so your pig scripts will begin with a LOAD statement and have one or many STORE statements throughout. Here's a script to find all wikipedia articles that contain the word 'Hadoop':
 
 [source,sql]
-.LOADing, FILTERing and STORing Data (ch_03/load_filter_store.pig)
+.LOADing, FILTERing and STORing Data (ch_04/load_filter_store.pig)
 ------
 games = LOAD '/data/gold/sports/baseball/games_lite.tsv' AS (
   game_id:chararray,      year_id:int,
@@ -318,7 +318,7 @@ Tuples can contain values of any type, even bags and other tuples, but that's no
 A `bag` is an arbitrary-length collection of tuples, all of which are expected to have the same schema. Just like with tuples, they're ubiquitous yet rarely serialized. Below we demonstrate the creation and storing of bags, as well as how to load them again. Here we prepare, store and load a dataset listing for each team the year and park id of the ballparks it played in:
 
 [source,sql]
-.Create, STORE and LOAD a Bag (ch_03/create_store_load_bag.pig)
+.Create, STORE and LOAD a Bag (ch_04/create_store_load_bag.pig)
 ------
 park_team_years = LOAD '/data/gold/sports/baseball/park_team_years.tsv' 
     USING PigStorage('\t') AS (

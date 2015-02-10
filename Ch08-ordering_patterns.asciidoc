@@ -17,7 +17,7 @@ So far we've mostly limited ourselves to the ordering inherently provided by the
 In order to demonstrated ordering records, we're going to prepare a dataset detailing the performance of players at three phases of their career: young, prime and older. To do so, we'll be making use of familiar patterns. We use the map-only patterns of 'Selecting Records that Satisfy a Condition' and 'Selecting Records that Satisfy Multiple Conditions' with an initial `FILTER`, to include only seasons in the National or American leagues in our analysis. The map-only patterns 'Transform Records Individually using `FOREACH`' and 'A nested `FOREACH` Allows Intermediate Expressions' assist in calculating the properties of player seasons. Finally, we employ 'Summarizing Multiple Subsets of a Group Simultaneously' to compute career metrics across different age categories.
 
 [source,sql]
-.Career Epochs (ch_07/career_epochs.pig)
+.Career Epochs (ch_08/career_epochs.pig)
 ----
 mod_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND (lg_id == 'NL' OR lg_id == 'AL'));
 
@@ -101,7 +101,7 @@ sorted_records = ORDER records BY field1;
 For this analysis, we're only going to look at players who were able to make solid contributions over several years. We'll define this as playing for five or more seasons and 2000 or more plate appearances (enough to show statistical significance), and a OPS of 0.650 (an acceptable-but-not-allstar level) or better. This means we must `FILTER`, and then `ORDER` and finally to `LIMIT` to a data size we, as humans (as opposed to Mentats), can read:
 
 [source,sql]
-.Career Epochs (ch_07/order.pig)
+.Career Epochs (ch_08/order.pig)
 ------
 career_epochs = FILTER career_epochs BY
     ((PA_all >= 2000) AND (n_seasons >= 5) AND (OPS_all >= 0.650));
@@ -186,7 +186,7 @@ Real data has nulls (missing data), and to create sane, rational and consistent 
 
 For example, below we sort players' careers with nulls first, and then in another way with nulls last:
 
-.Handling Nulls When Sorting (ch_07/order.pig)
+.Handling Nulls When Sorting (ch_08/order.pig)
 ------
 nulls_sort_demo = FOREACH career_epochs GENERATE 
     (OPS_older IS NULL ? 0 : 1) AS has_older_epoch, 
@@ -241,7 +241,7 @@ Sorting an entire relation is powerful, but more often we want to sort data that
 
 We can sort records within a group using `ORDER BY` within a nested `FOREACH` (which we introduced in the Map-only Operations chapter). Rather than sorting all players, lets try sorting the players on each team in a given season. Here's a snippet to list the top four players for each team-season, in decreasing order by plate appearances:
 
-.Sorting Record within a Group (ch_07/bat_seasons.pig)
+.Sorting Record within a Group (ch_08/bat_seasons.pig)
 ------
 players_PA = FOREACH bat_seasons GENERATE 
     team_id, 
@@ -308,7 +308,7 @@ Use the `ORDER` operator before a `LIMIT` to guarantee this "top _K_" ordering. 
 Let's say you wanted to select the top 20 seasons by number of hits:
 
 [source,sql]
-.Top 20 Player Seasons by Hits (ch_07/bat_seasons.pig)
+.Top 20 Player Seasons by Hits (ch_08/bat_seasons.pig)
 ------
 sorted_seasons = ORDER (FILTER bat_seasons BY PA > 60 AND year_id > 1900) BY H DESC;
 top_20_seasons = LIMIT sorted_seasons 20;
@@ -328,7 +328,7 @@ There are two useful optimizations to make when the number of records you will k
 Pig's 'top' function accepts a bag and returns a bag with its top K elements.
 
 [source,sql]
-.Top 5 players per season by RBIs (ch_07/bat_seasons.pig)
+.Top 5 players per season by RBIs (ch_08/bat_seasons.pig)
 ----
 top_5_per_season = FOREACH (GROUP bat_seasons BY year_id) GENERATE 
     group AS year_id, 
@@ -386,7 +386,7 @@ gift_id gift      RANK   RANK gift_id  RANK gift DENSE
 
 Sometimes we want to find the record with the maximum value and preserve it. In Pig, we can do this with a nested `ORDER BY`/`LIMIT` inside a `FOREACH`. For example, for each player, find their best season by RBI:
 
-.Finding the Record with the Max Value (ch_07/bat_seasons.pig)
+.Finding the Record with the Max Value (ch_08/bat_seasons.pig)
 ------
 -- For each season by a player, select the team they played the most games for.
 -- In SQL, this is fairly clumsy (involving a self-join and then elimination of

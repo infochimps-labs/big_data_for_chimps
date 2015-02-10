@@ -20,7 +20,7 @@ The `GROUP BY` operation is at the heart of every structural operation. `GROUP B
 Lets dive right in. Grouping data in Pig is easy: it's a one-liner in Pig to collect all the stadiums a team has played for in its history:
 
 [source,sql]
-.GROUPing Data (ch_05/park_teams.pig)
+.GROUPing Data (ch_06/park_teams.pig)
 ------
 park_teams_g = GROUP park_team_years BY team_id;
 ------
@@ -30,7 +30,7 @@ The result of a `GROUP BY` operation is always a field called 'group', followed 
 Each of the following fields is a bag, holding tuples whose schema matches the corresponding table. Notice that the name we used to refer to the _table_ is now also the name for a _field_. This will confuse you at first, but soon become natural, especially if you use `DESCRIBE` liberally:
 
 [source,sql]
-.DESCRIBing data (ch_05/park_teams.pig)
+.DESCRIBing data (ch_06/park_teams.pig)
 ------
 DESCRIBE park_teams_g;
 
@@ -195,7 +195,7 @@ The typical reason to group records is to operate on the bag of values it forms,
 You'll notice from the result of the last query that sometimes a team has more than one "home" stadium in a season. That's a bit unexpected, but on consideration teams occasionally face stadium repairs or late-season makeups for cancelled games. But cases where there were even three home parks should be quite rare. Let's confirm our feel for the data using `COUNT_STAR`, which counts all elements of a bag:
 
 [source,sql]
-.Counting Occurrences of a Key (ch_05/park_teams.pig)
+.Counting Occurrences of a Key (ch_06/park_teams.pig)
 ------
 team_n_parks = FOREACH (GROUP park_team_years BY (team_id,year_id)) GENERATE
     group.team_id, 
@@ -244,7 +244,7 @@ The format Pig uses to dump bags and tuples to disk wastes characters and is not
 The BagToString function will serialize a bag of values into a single delimited field as follows:
 
 [source,sql]
-.Representing Collections as Delimited Strings (ch_05/park_teams.pig)
+.Representing Collections as Delimited Strings (ch_06/park_teams.pig)
 ------
 team_year_w_parks = FOREACH (GROUP park_teams BY (team_id, year_id)) GENERATE
   group.team_id,
@@ -294,7 +294,7 @@ Since the park ids are formed from the first characters of the city name, we can
 Instead of serializing the simple list of park ids we had before, we'd now like to prepare and serialize the collection of (park id, number of games) pairs. We can handle this by using two delimiters: one for separating list elements and one for delimiting its contents. (This is also how you would handle an object with simple attribute-value pairs such as a hash map.)
 
 [source,sql]
-.Representing Complex Data Structures (ch_05/park_teams.pig)
+.Representing Complex Data Structures (ch_06/park_teams.pig)
 --------
 team_year_w_pkgms = FOREACH (GROUP park_team_years BY (team_id, year_id)) {
     /* Create 'park ID'/'game count' field */
@@ -364,7 +364,7 @@ See Previous.
 So the result for the Spiders isn't a mistake. Is the team a sole anomalous outlier, or are there other cases, less extreme but similar? The Spiders' season stands out for at least these three reasons: an unusual number of alternate parks; "home" games played in other cities; and a pre-modern (1898) setting. So let's include a field for the city (we'll take the first three characters of the park id to represent the city name) and not throw away the field for year.
 
 [source,sql]
-.Representing a Complex Data Structure using JSON (ch_05/park_teams.pig)
+.Representing a Complex Data Structure using JSON (ch_06/park_teams.pig)
 ------
 -- Prepare the city field
 pktm_city = FOREACH park_team_years GENERATE
@@ -412,7 +412,7 @@ The records we're forming are significantly more complex this time. With fields 
 // TODO: Actually use the JSON function (I'll need to write it first). Also maybe make the record a bit less byzantine
 
 [source,sql]
-.Storing complex data as JSON (ch_05/park_teams.pig)
+.Storing complex data as JSON (ch_06/park_teams.pig)
 ------
 -- Next, assemble full picture:
 farhome_gms = FOREACH (GROUP pktm_stats BY (team_id, year_id)) {
@@ -493,7 +493,7 @@ Some of the happiest moments you can have analyzing a massive data set come when
 In the previous chapter, we used each player's seasonal counting stats -- hits, home runs, and so forth -- to estimate seasonal rate stats -- how well they get on base (OPS), how well they clear the bases (SLG) and an overall estimate of offensive performance (OBP). But since we were focused on pipeline operations, we only did so on a season-by-season basis. The group-and-aggregate pattern lets us combine those seasonal stats in order to characterize each player's career.
 
 [source,sql]
-.Aggregate Statistics of a Group (ch_05/bat_seasons.pig)
+.Aggregate Statistics of a Group (ch_06/bat_seasons.pig)
 ------
 bat_careers = FOREACH (GROUP bat_seasons BY player_id) {
     totG   = SUM(bat_seasons.G);
@@ -604,7 +604,7 @@ There are a few additional summary functions that aren't native features of Pig,
 The previous chapter (REF) has details on how to use UDFs, and so we're going to leave the details of that to the sample code. You'll also notice we list two functions for quantile and for median. Finding the exact median or other quantiles (as the Median/Quantile UDFs do) is costly at large scale, and so a good approximate algorithm (StreamingMedian/StreamingQuantile) is well appreciated. Since the point of this stanza is to characterize the values for our own sense-making, the approximate algorithms are appropriate. We'll have much more to say about why finding quantiles is costly, why finding averages isn't, and what to do about it in the Statistics chapter (REF).
 
 [source,sql]
-.Completely Summarizing a Field (ch_05/bat_seasons.pig)
+.Completely Summarizing a Field (ch_06/bat_seasons.pig)
 ------
 weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
   dist         = DISTINCT bat_seasons.weight;
@@ -650,7 +650,7 @@ weight_yr_stats = FOREACH (GROUP bat_seasons BY year_id) {
 To summarize the statistics of a full table, we use a `GROUP ALL` statement. That is, instead of `GROUP [table] BY [key]`, write `GROUP [table] ALL`. Everything else is as usual:
 
 [source,sql]
-.Summary of Weight Field (ch_05/people.pig)
+.Summary of Weight Field (ch_06/people.pig)
 ------
 REGISTER /usr/lib/pig/datafu.jar 
 
@@ -706,7 +706,7 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 We showed how to examine the constituents of a string field in the preceding chapter, under "Tokenizing a String" (REF). But for forensic purposes similar to the prior example, it's useful to summarize their length distribution.
 
 [source,sql]
-.Summary of a String Field (ch_05/bat_seasons.pig)
+.Summary of a String Field (ch_06/bat_seasons.pig)
 ------
 name_first_summary_0 = FOREACH (GROUP bat_seasons ALL) {
     dist       = DISTINCT bat_seasons.name_first;
@@ -768,7 +768,7 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 One of the most common uses of a group-and-aggregate is to create a histogram showing how often each value (or range of values) of a field occur. This calculates the distribution of seasons played -- that is, it counts the number of players whose career lasted only a single season; who played for two seasons; and so forth.
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/bat_career.pig)
+.Histogram of Number of Seasons (ch_06/bat_career.pig)
 ------
 vals = FOREACH bat_careers GENERATE n_seasons AS bin;
 seasons_hist = FOREACH (GROUP vals BY bin) GENERATE
@@ -793,7 +793,7 @@ DUMP vals;
 Referring back to the `bat_seasons` relation, we can compute a histogram with example data:
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/bat_career.pig)
+.Histogram of Number of Seasons (ch_06/bat_career.pig)
 ------
 vals = FOREACH (GROUP bat_seasons BY (player_id, name_first, name_last)) GENERATE
     COUNT_STAR(bat_seasons) AS bin, flatten(group);
@@ -831,7 +831,7 @@ So the pattern here is to:
 Generating a histogram for games just as above produces mostly-useless output. There's no material difference between a career of 2000 games and one of 2001 games, but each value receives its own count -- making it hard to distinguish the density of 1-, 2-, and 3-count bins near 1000 games from the 1-, 2-, and 3-count bins near 1500 games.
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/bat_career.pig)
+.Histogram of Number of Seasons (ch_06/bat_career.pig)
 ------
 -- Meaningless
 G_vals = FOREACH bat_careers GENERATE G AS val;
@@ -855,7 +855,7 @@ DUMP G_hist;
 Instead, we will bin the data: divide by the bin size (50 in this case), and then multiply back by the bin size. The result of the division is an integer (since both the value and the bin size are of type `int`), and so the resulting value of `bin` is always an even multiple of the bin size. Values of 0, 12 and 49 all go to the `0` bin; 150 games goes to the `150` bin; and Pete Rose's total of 3,562 games played becomes the only occupant of bin `3550`.
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/bat_career.pig)
+.Histogram of Number of Seasons (ch_06/bat_career.pig)
 ------
 -- Binning makes it sensible
 G_vals = FOREACH bat_careers GENERATE 50*FLOOR(G/50) AS val;
@@ -929,7 +929,7 @@ image::images/06-histograms-career_G-loglog.png[Histogram of Career Games, Log-L
 In contrast, webpage views known to be are one of many phenomena that obey the "long-tail" distribution, as we can see by generating a histogram of hourly pageview counts for each Wikipedia page footnote:[For 11pm UTC on November 26th, 2014, because that was what was nearby]. Since the data is so sharply exponential, we are better off binning it _logarithmically_. To do so we take the log of the value, chunk it (using the multiply-floor-undo method again), and then take the exponential to restore a representative value for the bin. (You'll notice we avoid trouble taking the logarithm of zero by feeding it an insignificantly small number instead. This lets zero be included in the processing without materially altering the result)
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/wikipedia.pig)
+.Histogram of Number of Seasons (ch_06/wikipedia.pig)
 ------
 pageviews = LOAD '/data/rawd/wikipedia/page_counts/pagecounts-20141126-230000.gz' USING PigStorage(' ') AS (
    project_name:chararray, 
@@ -967,7 +967,7 @@ See Pattern in Use for Histograms, above (REF)
 Rather than continuing to write the histogram recipe over and over, let's take a moment and generalize. Pig allows you to create macros that parameterize multiple statements:
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/bat_career.pig)
+.Histogram of Number of Seasons (ch_06/bat_career.pig)
 ------
 DEFINE histogram(table, key) RETURNS dist {
     vals = FOREACH $table GENERATE $key;
@@ -995,7 +995,7 @@ You'll notice we load a relation called `numbers`. This is a trick to fill in em
 Call the histogram macro on the batting career data as follows:
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/bat_career.pig)
+.Histogram of Number of Seasons (ch_06/bat_career.pig)
 ------
 career_G_hist     = binned_histogram(bat_careers, 'G', 50, 3600);
 career_G_hist_2   = binned_histogram(bat_careers, 'G', 2, 3600);
@@ -1005,7 +1005,7 @@ career_G_hist_200 = binned_histogram(bat_careers, 'G', 200, 3600);
 And on the people data as follows:
 
 [source,sql]
-.Histogram of Number of Seasons (ch_05/people.pig)
+.Histogram of Number of Seasons (ch_06/people.pig)
 ------
 height_hist	  = binned_histogram(people, 'height_in', 40, 80);
 weight_hist	  = binned_histogram(people, 'weight_lb', 10, 300);
@@ -1039,7 +1039,7 @@ Surely at least baseball players are born and die like the rest of us, though?
 With a little Pig action, we can generate some histograms to answer that question:
 
 [source,sql]
-.Vital Stats Part 1 (ch_05/people.pig)
+.Vital Stats Part 1 (ch_06/people.pig)
 ------
 vitals = FOREACH people GENERATE
     height_in,
@@ -1082,7 +1082,7 @@ So whenever you are examining populations of outliers, you cannot depend on thei
 The histograms we've calculated have results in terms of counts. The results do a better general job of enforcing comparisons if express them as relative frequencies: as fractions of the total count. You know how to find the total:
 
 [source,sql]
-.Vital Stats Part 1 (ch_05/cat_career.pig)
+.Vital Stats Part 1 (ch_06/cat_career.pig)
 ------
 HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n_players;
 ------
@@ -1119,7 +1119,7 @@ In the case of global counts, it would be so much faster if we could sum the gro
 If the global statistic is relatively static, there are occasions where we prefer to cheat. Write the portion of the script that finds the global count and stores it, then comment that part out and inject the values statically -- the sample code shows you how to do it using the `cat` Grunt shell statement. 
 
 [source,sql]
-.Re-injecting Global Values (ch_05/bat_career.pig)
+.Re-injecting Global Values (ch_06/bat_career.pig)
 ------
 -- cheat mode:
 -- HR_stats = FOREACH (GROUP bat_careers ALL) GENERATE COUNT_STAR(bat_careers) AS n_total;
@@ -1145,7 +1145,7 @@ As long as the groups in question do not rival the available memory, counting ho
 For reference, see http://datafu.incubator.apache.org/docs/datafu/guide/bag-operations.html
 
 [source,sql]
-.Calculating a Histogram within a Group (ch_05/bat_career.pig)
+.Calculating a Histogram within a Group (ch_06/bat_career.pig)
 ------
 sig_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND 
 																		 (lg_id == 'NL' OR lg_id == 'AL') AND 
@@ -1189,7 +1189,7 @@ The best current workaround is to generate the whole-group total in the form of 
 It's more verbose than we'd like, but the performance hit is limited to the CPU and GC overhead of creating three bags (`{(result,count)}`, `{(result,count,total)}`, `{(result,count,freq)}`) in quick order.
 
 [source,sql]
-.Histogram within a Group - Works (ch_05/bat_career.pig)
+.Histogram within a Group - Works (ch_06/bat_career.pig)
 ------
 hist_by_year_bags = FOREACH (GROUP binned BY year_bin) {
     H_hist_cts = CountVals(binned.H_bin);
@@ -1229,7 +1229,7 @@ hist_by_year = FOREACH hist_by_year_bags {
 
 We are of course terribly anxious to find out the results, so much so that having to switch over to R to graph our totals is more delay than we can bear. It's also often nice to have production jobs dump a visual summary of the results that an operator can easily scan and sanity-check. And so let's apply the "Formatting a String According to a Template" (REF) pattern to dump a readable summary of our results to the screen.
 
-.Dumping Readable Results (ch_05/bat_career.pig)
+.Dumping Readable Results (ch_06/bat_career.pig)
 ------
 year_hists_H = FOREACH year_hists {
 		-- put all bins in regular order
@@ -1334,7 +1334,7 @@ For our purposes, we can adopt 180 hits (H), 30 home runs (HR), 100 runs batted 
 One reasonable way to define a great career is to ask how many great seasons a player had. We can answer that by counting how often a player's season totals exceeded each figure of merit. The obvious tactic would seem to involve filtering and counting each bag of seasonal stats for a player's career; that is cumbersome to write, brings most of the data down to the reducer, and exerts GC pressure materializing multiple bags.
 
 [source,sql]
-.Create Indicator Fields on Each Figure of Merit for the Season (ch_05/career_season.pig)
+.Create Indicator Fields on Each Figure of Merit for the Season (ch_06/career_season.pig)
 ------
 mod_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND (lg_id == 'NL' OR lg_id == 'AL'));
 
@@ -1385,7 +1385,7 @@ The complication here over the previous exercise is that we are forming compound
 Project the numerator and denominator of each offensive stat into the field for that age bucket. Only one of the subset fields will be filled in; as an example, an age-25 season will have values for PA_all and PA_prime and zeros for PA_young and PA_older.
 
 [source,sql]
-.Summarizing Multiple Subsets of a Group Simultaneously (ch_05/bat_career.pig)
+.Summarizing Multiple Subsets of a Group Simultaneously (ch_06/bat_career.pig)
 ------
 age_seasons = FOREACH mod_seasons {
     young = (age <= 21               ? true : false);
@@ -1474,7 +1474,7 @@ onetime_sox     = DISTINCT onetime_sox_ids;
 The summing trick is useful for the complementary question "which players have _never_ played for the Red Sox?" You might think to repeat the above but filter for `team_id != 'BOS'` instead, but what that gives you is "which players have ever played for a non-Red Sox team?". The right approach is to generate a field with the value `1` for a Red Sox season and the irrelevant value `0` otherwise. The never-Sox are those with zeroes for every year.
 
 [source,sql]
-.Players Who Never Played for the Redsox (ch_05/bat_career.pig)
+.Players Who Never Played for the Redsox (ch_06/bat_career.pig)
 ------
 player_soxness = FOREACH bat_seasons GENERATE
     player_id, 

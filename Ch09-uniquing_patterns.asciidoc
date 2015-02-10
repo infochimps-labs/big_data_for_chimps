@@ -23,7 +23,7 @@ The `DISTINCT` operator in Pig performs this operation.
 Lets begin with a familiar example: the park_team_years table. It contains a row for every team for every season and every park in which the team played. Lets say we wanted to find what ballparks each team played in at least once. To find every distinct pair of team and home ballpark, we use Pig's `DISTINCT` operator:
 
 [source,sql]
-.Eliminating Duplicates (ch_08/park_teams.pig)
+.Eliminating Duplicates (ch_09/park_teams.pig)
 ------
 many_team_park_pairs = FOREACH park_team_years GENERATE 
     team_id, 
@@ -60,7 +60,7 @@ We've seen how to eliminate duplicate records in relations - but what about with
 This can be done with the `DISTINCT` operator inside a nested `FOREACH`. Instead of finding every distinct team/home ballpark pair in a relation as we just did, let's find the list of distinct home ballparks for each team, having performed a `GROUP..BY` on team_id:
 
 [source,sql]
-.Eliminating Duplicate Records from a Group (ch_08/park_teams.pig)
+.Eliminating Duplicate Records from a Group (ch_09/park_teams.pig)
 ------
 -- Eliminating Duplicate Records from a Group
 team_park_list = FOREACH (GROUP park_team_years BY team_id) {
@@ -136,7 +136,7 @@ record for its key, or to find only rows having multiple records for its key, do
 On a broadcast a couple years ago, announcer Tim McCarver paused from his regular delivery of the obvious and the officious to note that second baseman Asdrubal Cabrera "is the only player in the majors with that first name". This raises the question: how many other people in the history of baseball similarly are uniquely yclept footnote:[yclept /iˈklept/: by the name of; called.]? Let's create a table for the biography site awarding players the "Asdrubal" badge if they are the only one in possession of their first name.
 
 [source,sql]
-.Selecting Records with Unique Fields (ch_08/people.pig)
+.Selecting Records with Unique Fields (ch_09/people.pig)
 ------
 people = FOREACH people GENERATE name_first, name_last, player_id, beg_date, end_date;
 
@@ -197,7 +197,7 @@ To demonstrate full-table set operations, we can relate the set of major US citi
 with the set of US cities that have hosted a significant number (more than 50) of major-league games. To prove a point about set operations with duplicates, we will leave in the duplicates from the team cities (the Mets and Yankees both claim NY).
 
 [source,sql]
-.Preparation for Set Operations on Full Tables (ch_08/parks.pig)
+.Preparation for Set Operations on Full Tables (ch_09/parks.pig)
 ------
 main_parks = FILTER parks BY n_games >= 50 AND country_id == 'US';
 
@@ -230,7 +230,7 @@ For all the other set operations, or when the elements are keys within a record 
 // park_ids from the city.
 
 [source,sql]
-.Alternative Distinct Union (ch_08/parks.pig)
+.Alternative Distinct Union (ch_09/parks.pig)
 ------
 combined     = COGROUP major_cities BY city, main_parks BY city;
 
@@ -259,7 +259,7 @@ As we mentioned, there are potentially many park records for each city, and so t
 Having used `COGROUP` on the two datasets, set intersections means that records lie in the set intersection when neither bag is empty.
 
 [source,sql]
-.Set Intersection (ch_08/parks.pig)
+.Set Intersection (ch_09/parks.pig)
 ------
 combined = COGROUP major_cities BY name, main_parks BY city;
 
@@ -280,7 +280,7 @@ Two notes. First, we test against `COUNT_STAR(bag)`, and not `SIZE(bag)` or `IsE
 Having used `COGROUP` on the two datasets, set difference means that records lie in A minus B when the second bag is empty, and they lie in B minus A when the first bag is empty.
 
 [source,sql]
-.Set Difference (ch_08/parks.pig)
+.Set Difference (ch_09/parks.pig)
 ------
 combined = COGROUP major_cities BY name, main_parks BY city;
 
@@ -304,7 +304,7 @@ difference = UNION major_minus_parks, parks_minus_major;
 Having used `COGROUP` on the two datasets, records lie in the symmetric difference when one or the other bag is empty. (We don't have to test for them both being empty -- there wouldn't be a row if that were the case.)
 
 [source,sql]
-.Symmetric Set Difference (ch_08/parks.pig)
+.Symmetric Set Difference (ch_09/parks.pig)
 ------
 combined = COGROUP major_cities BY name, main_parks BY city;
 
@@ -369,7 +369,7 @@ To construct a sequence of sets, perform a self-`COGROUP` that collects the elem
 
 Since it's a self-`COGROUP`, we must do a dummy projection to make new aliases (see the earlier section on self-join for details).
 
-.Constructing a Sequence of Sets (ch_08/bat_seasons.pig)
+.Constructing a Sequence of Sets (ch_09/bat_seasons.pig)
 -----
 sig_seasons = FILTER bat_seasons BY 
     ((year_id >= 1900) AND 

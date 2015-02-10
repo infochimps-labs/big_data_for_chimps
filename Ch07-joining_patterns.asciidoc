@@ -25,7 +25,7 @@ In other words, an _inner join_ drops records that don't have matching keys in b
 There is a stereotypical picture in baseball of a "slugger": a big fat man who comes to plate challenging your notion of what an athlete looks like, and challenging the pitcher to prevent him from knocking the ball for multiple bases (or at least far enough away to lumber up to first base). To examine the correspondence from body type to ability to hit for power (i.e. high SLG), we will need to join the `people` table (listing height and weight) with their hitting stats.
 
 [source,sql]
-.Preparing the Relations to Join (ch_06/fat_hits.pig)
+.Preparing the Relations to Join (ch_07/fat_hits.pig)
 ------
 fatness = FOREACH people GENERATE
     player_id, name_first, name_last,
@@ -40,7 +40,7 @@ slugging_stats = FOREACH (FILTER bat_careers BY (PA > 1000))
 The syntax of the join statement itself shouldn't be much of a surprise:
 
 [source,sql]
-.An Inner Join (ch_06/fat_hits.pig)
+.An Inner Join (ch_07/fat_hits.pig)
 ------
 slugging_fatness_join = JOIN
     fatness        BY player_id,
@@ -132,7 +132,7 @@ In this sense, a `JOIN` is just a convenience - shorthand for a `COGROUP`/`FLATT
 
 The way to perform a join in map-reduce is similarly a particular application of the `COGROUP` we stepped through above. In the next example, we'll walk through it on its own in Python/MrJob. We'll be joining an example customers table (created by Joe Stein):
 
-.Customers (ch_06/customers.dat)
+.Customers (ch_07/customers.dat)
 ----
 Alice Bob|not bad|US
 Sam Sneed|valued|CA
@@ -147,7 +147,7 @@ Jim Davis|not so bad|JA
 
 to an example countries table:
 
-.Countries (ch_06/countries.dat)
+.Countries (ch_07/countries.dat)
 ----
 United States|US
 Canada|CA
@@ -197,7 +197,7 @@ if __name__ == '__main__':
 To run our join locally using MrJob:
 
 ----
-cd examples/ch_06
+cd examples/ch_07
 python ./join.py countries.dat customers.dat
 ----
 
@@ -290,7 +290,7 @@ In the previous examples there has been a direct pairing of each line in the mai
 Using the `GROUP ALL` trick we learned last chapter, we can count the total records before and after a many-to-many JOIN:
 
 [source,sql]
-.Many-to-Many Join (ch_06/many_to_many.pig)
+.Many-to-Many Join (ch_07/many_to_many.pig)
 ------
 -- Count the number of bat_seasons records
 total_bat_seasons = FOREACH (GROUP bat_seasons ALL) GENERATE 
@@ -438,7 +438,7 @@ footnote:[Please note that the `hof_bat` table excludes players admitted to the 
 Lets look at another example: lets `JOIN` ball park/team locations and generic geographic data from http://geonames.org[GeoNames]. 
 
 [source,sql]
-.LEFT OUTER JOIN (ch_06/park_locations.pig)
+.LEFT OUTER JOIN (ch_07/park_locations.pig)
 ----
 geonames = FILTER geonames BY feature_code == 'STDM';
 
@@ -483,7 +483,7 @@ Suppose we wanted to plot where each major-league player grew up -- perhaps as a
 There are geolocation services on the web, but they are imperfect, rate-limited and costly for commercial use footnote:[Put another way, "Accurate, cheap, fast: choose any two]. Meanwhile the freely-available geonames database gives geo-coordinates and other information on more than seven million points of interest across the globe, so for informal work it can make a lot of sense to opportunistically decorate whatever records match and then decide what to do with the rest.
 
 [source,sql]
-.Geolocation JOIN without Foreign-Key Relationship (ch_06/people_locations.pig)
+.Geolocation JOIN without Foreign-Key Relationship (ch_07/people_locations.pig)
 ------
 -- Filter to only populated places in the US, see http://www.geonames.org/export/codes.html
 geonames = FILTER geonames BY feature_code matches 'PPL.*' AND country_code == 'US';
@@ -579,7 +579,7 @@ SELECT bin, H, IFNULL(n_H,0)
 Regular old histogram of career hits, bin size 100:
 
 [source,sql]
-.Hits Histogram without Gaps Filled In (ch_06/filled_histogram.pig)
+.Hits Histogram without Gaps Filled In (ch_07/filled_histogram.pig)
 ------
 player_hits = FOREACH (GROUP bat_seasons BY player_id) GENERATE
     100 * ROUND(SUM(bat_seasons.H)/100.0) AS bin;
@@ -591,7 +591,7 @@ histogram = FOREACH (GROUP player_hits BY bin) GENERATE
 Generate a list of all the bins we want to keep, then perform a LEFT `JOIN` of bins with histogram counts. Missing rows will have a null `ct` value, which we can convert to zero.
 
 [source,sql]
-.Hits Histogram With Gaps Filled In (ch_06/filled_histogram.pig)
+.Hits Histogram With Gaps Filled In (ch_07/filled_histogram.pig)
 ------
 -- Numbers, from 0 to 9999
 numbers = LOAD '/data/gold/numbers10k.txt' AS (number:int);

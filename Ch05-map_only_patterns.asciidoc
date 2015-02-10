@@ -49,7 +49,7 @@ The first step to eliminating (or being selective about) data is to reject recor
 
 The baseball stats go back to 1871 (!), but it took a few decades for the game to reach its modern form.  Let's say we're only interested in seasons since 1900. In Pig, we apply the `FILTER` operation footnote:[In this and in further scripts, we're going omit the `LOAD`, `STORE` and other boilerplate except to prove a point. See the example code (REF) for fully-working snippets]:
 
-.Pig - Filter Data (ch_04/filtering_data.pig)
+.Pig - Filter Data (ch_05/filtering_data.pig)
 ------
 modern_bats = FILTER bats BY (year_id >= 1900);
 ------
@@ -63,7 +63,7 @@ In a data exploration, it's often important to exclude subjects with sparse data
 In Pig, you can also combine conditional statements with  `AND`, `OR`, `NOT`. The following selects we'll call "qualified modern seasons": regular players, competing in the modern era, in either of the two modern leagues.
 
 [source,sql]
-.Filter Data by Multiple Conditions (ch_04/filtering_data.pig)
+.Filter Data by Multiple Conditions (ch_05/filtering_data.pig)
 ------
 modsig_stats = FILTER bats BY
   (PA >= 450) AND (year_id >= 1900) AND ((lg_id == 'AL') OR (lg_id == 'NL'));
@@ -82,7 +82,7 @@ Another table we'll be working with is the `people` table. It describes players'
 We can exclude players whose birth year or birth place is unknown with a `FILTER` statement:
 
 [source,sql]
-.Filtering Nulls (ch_04/filtering_data.pig)
+.Filtering Nulls (ch_05/filtering_data.pig)
 ------
 borned = FILTER people BY (birth_year IS NOT NULL) AND (birth_place IS NOT NULL);
 ------
@@ -96,7 +96,7 @@ A `MATCHES` expression employs regular expression pattern matching against strin
 This operation uses a regular expression to select players with names similar to either of your authors' names:
 
 [source,sql]
-.Filtering via Regular Expressions (ch_04/filtering_data.pig)
+.Filtering via Regular Expressions (ch_05/filtering_data.pig)
 ------
 -- Name is `Russ`, or `Russell`; is `Flip` or anything in the Philip/Phillip/... family. (?i) means be case-insensitive:
 namesakes = FILTER people BY (name_first MATCHES '(?i).*(russ|russell|flip|phil+ip).*');
@@ -105,7 +105,7 @@ namesakes = FILTER people BY (name_first MATCHES '(?i).*(russ|russell|flip|phil+
 It's easy to forget that people's names can contain spaces, dots, dashes, apostrophes; start with lowercase letters or apostrophes, and have accented or other non-latin characters footnote:[A demonstration of the general principle that if you believe an analysis involving people will be simple, you're probably wrong.]. So as a less silly demonstration of `MATCHES`, this snippet extracts all names which do not start with a capital letter or which contain a non-word non-space character:
 
 [source,sql]
-.Filtering via Regular Expressions (ch_04/filtering_data.pig)
+.Filtering via Regular Expressions (ch_05/filtering_data.pig)
 ------
 funnychars = FILTER people BY (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 ------
@@ -147,7 +147,7 @@ NOTE: Sadly, the Nobel Prize-winning physicists Gerard 't Hooft, Louis-Victor Pi
 
 If you plan to filter by matching against a small static list of values, Pig offers the handy `IN` expression: true if the value is equal (case-sensitive) to any of the listed values. This selects the stadiums used each year by the current teams in baseball's AL-east division:
 
-.Pig - Filtering Against a List of Values (ch_04/filtering_data.pig)
+.Pig - Filtering Against a List of Values (ch_05/filtering_data.pig)
 ------
 al_east_parks = FILTER park_team_years BY
   team_id IN ('BAL', 'BOS', 'CLE', 'DET', 'ML4', 'NYA', 'TBA', 'TOR', 'WS2');
@@ -177,7 +177,7 @@ While a `FILTER` selects _rows_ based on an expression, Pig's `FOREACH` selects 
 The tables we're using come with an overwhelming wealth of stats, but we only need a few of them to do fairly sophisticated explorations. The gamelogs table has more than 90 columns; to extract just the teams and the final score, use a FOREACH:
 
 [source,sql]
-.Projecting Only Chosen Columns by Name (ch_04/data_elimination.pig)
+.Projecting Only Chosen Columns by Name (ch_05/data_elimination.pig)
 ------
 game_scores = FOREACH games GENERATE
   away_team_id, home_team_id, home_runs_ct, away_runs_ct;
@@ -188,7 +188,7 @@ game_scores = FOREACH games GENERATE
 You're not limited to simply restricting the number of columns; you can also rename and reorder them in a projection. Each record in the table above has _two_ game outcomes, one for the home team and one for the away team. We can represent the same data in a table listing outcomes purely from each team's perspective:
 
 [source,sql]
-.Altering Column Names (ch_04/data_elimination.pig)
+.Altering Column Names (ch_05/data_elimination.pig)
 ------
 games_a = FOREACH games GENERATE
   year_id, home_team_id AS team,
@@ -224,7 +224,7 @@ Another common operation is to extract a _uniform_ sample -- one where every rec
 The following Pig code will return a randomly-selected 10% (that is, 1/10 = 0.10) of the records from our baseball dataset:
 
 [source,sql]
-.Sampling Data (ch_04/data_elimination.pig)
+.Sampling Data (ch_05/data_elimination.pig)
 ------
 some_seasons_samp = SAMPLE bat_seasons 0.10;
 ------
@@ -251,7 +251,7 @@ A good way to stabilize the sample from run to run is to use a 'consistent hash 
 Unfortunately, Pig doesn't have a good built-in hash digest function! Do we have to give up all hope? You'll find the answer later in the chapter (REF) footnote:[Spoiler alert: No, you don't have to give up all hope when Pig lacks a built-in function you require.], but for now instead of using a good built-in hash digest function let's use a terrible hash digest function. A bit under 10% of player_ids start with the letter 's', and any coupling between a player's name and performance would be far more subtle than we need to worry about. So the following simple snippet gives a 10% sample of batting seasons whose behavior should reasonably match that of the whole:
 
 [source,sql]
-.Extracting a Consistent Sample (ch_04/data_elimination.pig)
+.Extracting a Consistent Sample (ch_05/data_elimination.pig)
 ------
 some_seasons  = FILTER bat_seasons BY (SUBSTRING(player_id, 0, 1) == 's');
 ------
@@ -274,7 +274,7 @@ Sometimes you just want to knock down the data size while developing your script
 A much blunter way to create a smaller dataset is to take some fixed number 'K' of records. Pig offers the `LIMIT` operator for this purpose. To select 25 records from our `bat_seasons` data, you would run:
 
 [source,sql]
-.Selecting N Arbitrary Records (ch_04/data_elimination.pig)
+.Selecting N Arbitrary Records (ch_05/data_elimination.pig)
 ------
 some_players = LIMIT bat_seasons 25;
 ------
@@ -299,7 +299,7 @@ The `FOREACH` lets you develop simple transformations based on each record. It's
 To start with a basic example, this `FOREACH` statement combines the fields giving the city, state and country of birth for each player into the familiar comma-space separated combined form (`Austin, TX, USA`) footnote:[The country field uses some ad-hoc mixture of full name and arbitrary abbreviations.  In practice, we would have converted the country fields to use ISO two-letter abbreviations -- and that's just what we'll do in a later section (REF)].
 
 [source,sql]
-.FOREACH Example One (ch_04/foreach.pig)
+.FOREACH Example One (ch_05/foreach.pig)
 ------
 birthplaces = FOREACH people GENERATE
     player_id,
@@ -345,7 +345,7 @@ The stats in the `bat_seasons` table are all "counting stats" -- total numbers o
 Doing this with the simple form of `FOREACH` we've been using would be annoying and hard to read -- for one thing, the expressions for OBP and SLG would have to be repeated in the expression for OPS, since the full statement is evaluated together. Pig provides a fancier form of `FOREACH` (a 'nested' `FOREACH`) that allows intermediate expressions:
 
 [source,sql]
-.Nested FOREACH (ch_04/foreach.pig)
+.Nested FOREACH (ch_05/foreach.pig)
 ------
 bat_seasons = FILTER bat_seasons BY PA > 0 AND AB > 0;
 core_stats  = FOREACH bat_seasons {
@@ -375,7 +375,7 @@ In addition to applying arithmetic expressions and functions, there are a set of
 The `SPRINTF` function is a great tool for assembling a string for humans to look at. It uses the printf-style templating convention common to C and many other languages to assemble strings with consistent padding and spacing. It's best learned by seeing it in action:
 
 [source,sql]
-.Formatting Strings (ch_04/foreach.pig)
+.Formatting Strings (ch_05/foreach.pig)
 ------
 formatted = FOREACH bat_seasons GENERATE
   SPRINTF('%4d\t%-9s %-19s\tOBP %5.3f / %-3s %-3s\t%4$012.3e',
@@ -424,7 +424,7 @@ Another reason you may need the nested form of `FOREACH` is to assemble a comple
 ===== Parsing a Date
 
 [source,sql]
-.Assembling Complex Types (ch_04/foreach.pig)
+.Assembling Complex Types (ch_05/foreach.pig)
 ------
 REGISTER /usr/lib/pig/datafu.jar
 DEFINE Coalesce datafu.pig.util.Coalesce();
@@ -485,7 +485,7 @@ Sometimes it can be useful to create complex objects to be referenced and proces
 We can take things further and assemble truly complex records of bags of tuples, and nested tuples.
 
 [source,sql]
-.Assembling Very Complex Types (ch_04/foreach.pig)
+.Assembling Very Complex Types (ch_05/foreach.pig)
 ------
 graphable = FOREACH people {
     birth_month = Coalesce(birth_month, 1); birth_day = Coalesce(birth_day, 1);
@@ -534,7 +534,7 @@ You can do this inline (non-nested `FOREACH`) but we wouldn't, as it is not read
 We used `StringConcat` to combine players' city, state and country of birth into a combined field without drama. But if we tried to do the same for their date of birth by writing `StringConcat(birth_year, '-', birth_month, '-', birth_day)`, Pig would throw an error: `Could not infer the matching function for org.apache.pig.builtin.StringConcat...`. You see, `StringConcat` understandably wants to consume and deliver strings, and so isn't in the business of guessing at and fixing up types. What we need to do is coerce the `int` values -- eg, `1961`, a 32-bit integer -- into `chararray` values -- eg `'1961'`, a string of four characters. You do so using C-style typecast expression: `(chararray)birth_year`. Here it is in action:
 
 [source,sql]
-.Manipulating Field Types (ch_04/types.pig)
+.Manipulating Field Types (ch_05/types.pig)
 ------
 birthplaces = FOREACH people GENERATE
     player_id,
@@ -549,7 +549,7 @@ birthplaces = FOREACH people GENERATE
 In other cases you don't need to manipulate the type going in to a function, you need to manipulate the type going out of your `FOREACH`. Here are several takes on a `FOREACH` statement to find the slugging average:
 
 [source,sql]
-.Managing Floating Point Schemas (ch_04/types.pig)
+.Managing Floating Point Schemas (ch_05/types.pig)
 ------
 obp_1 = FOREACH bat_seasons {
   OBP = 1.0f * (H + BB + HBP) / PA; -- constant is a float
@@ -593,7 +593,7 @@ Another occasion for type conversion comes when you are trying to round or trunc
 The first four fields of the following statement turn the full-precision result of calculating OBP (`0.31827113`) into a result with three fractional digits (`0.318`), as OBP is usually represented.
 
 [source,sql]
-.Rounding (ch_04/types.pig)
+.Rounding (ch_05/types.pig)
 ------
 rounded = FOREACH bat_seasons GENERATE
   (ROUND(1000.0f*(H + BB + HBP) / PA)) / 1000.0f AS round_and_typecast,
@@ -623,7 +623,7 @@ You must do two things to enable use of a UDF. First, so that pig can load the U
 Second, use the `DEFINE` command to construct it. `DEFINE` takes two arguments, separated by spaces: the short name you will use to invoke the command, and the fully-qualified package name of its class (eg `datafu.pig.hash.Hasher`). Some UDFs, including the one we're using, accept or require constructor arguments (always strings). These are passed function-call style, as shown below. There's nothing wrong with `DEFINE`-ing a UDF multiple times with different constructor arguments -- for example, adding a line `DEFINE DigestMD5 datafu.pig.hash.Hasher('md5');` would create a hash function that used the MD5 (REF) algorithm.
 
 [source,sql]
-.REGISTERing jars and Using UDFs (ch_04/udf.pig)
+.REGISTERing jars and Using UDFs (ch_05/udf.pig)
 ------
 -- Register the jar containing the UDFs
 REGISTER /usr/lib/pig/datafu.jar
@@ -660,7 +660,7 @@ The careers table gives the number of times each player was elected to the All-S
 Separating those records into different data flows isn't straightforward in map/reduce, but it's very natural using Pig's `SPLIT` operation.
 
 [source,sql]
-.Splitting Relations (ch_04/split_union.pig)
+.Splitting Relations (ch_05/split_union.pig)
 ----
 SPLIT bat_seasons
   INTO young   IF age <= 30,
@@ -703,7 +703,7 @@ The counterpart to splitting a table into pieces is to treat many pieces as a si
 In Pig, you can rejoin several pipelines using the `UNION` operation. The tables we've been using so far cover only batting stats; there are another set of tables covering stats for pitchers, and in rare cases a player may only appear in one or the other. To find the name and id of all players that appear in either table, we can project the fields we want (earning a uniform schema) and then unify the two streams:
 
 [source,sql]
-.Union Treats Several Tables as a Single Table (ch_04/split_union.pig)
+.Union Treats Several Tables as a Single Table (ch_05/split_union.pig)
 ------
 -- Unions can bring relations with the same schema together
 young_player_seasons = LOAD 'young_player_seasons' USING PigStorage('\t') AS (
@@ -740,7 +740,7 @@ A common use of the UNION statement comes in 'symmetrizing' a relationship. For 
 // TODO: This is the same snippet used at the top. Good or bad?
 
 [source,sql]
-.Symmetrizing a  Relationship (ch_04/split_union.pig)
+.Symmetrizing a  Relationship (ch_05/split_union.pig)
 ------
 games = LOAD '/data/gold/sports/baseball/games_lite.tsv' AS (
   game_id:chararray,      year_id:int,
