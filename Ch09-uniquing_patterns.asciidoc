@@ -493,6 +493,8 @@ is_equal = ( (COUNT_STAR(non_stayed) == 0L) ? 1 : 0);
 
 === Outro
 
-That wraps our chapter on Uniquing and Set Operations. We've started with simple definitions of unique and distinct, showed you how to make relations and then groups unique, and finally took a tour of set operations for both relations and between groups.
+That wraps our chapter on Uniquing and Set Operations. We've started with simple definitions of unique and distinct, showed you how to make relations and then groups unique, how to find unique records and finally took a tour of set operations for both relations and between groups. With these tools in hand you can work with unique sets of values to create ontologies, tags, and curated datasets. You can also use the set operations to combine different datasets with complex semantics - beyond the simple joins we covered in Chapter 6.
 
-This completes our presentation of analytic patterns in Pig. By now you should have an able toolkit of techniques fit for attacking any data-processing problem you encounter.
+We started with the basics: `LOAD`, `STORE`, `LIMIT`, `DESCRIBE`. Then we showed you map-only operations where you learned to `FILTER`, `SPLIT`, and `FOREACH`/`GENERATE`. Then we introduced grouping via the `GROUP BY` operation. Next we showed you how to `JOIN` and `COGROUP`. Next we covered sorting and introduces `ORDER BY`. Finally we taught you `DISTINCT` and set operations.
+
+This completes our presentation of analytic patterns in Pig. Congratulations! By now you should have an able toolkit of techniques fit for attacking any data-processing problem you encounter. You may use this book as a reference as you go forth and process data at scale.
