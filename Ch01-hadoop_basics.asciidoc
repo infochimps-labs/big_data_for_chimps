@@ -55,6 +55,10 @@ JT is the http://wiki.apache.org/hadoop/JobTracker[JobTracker]. He coordinates t
 
 Note that in YARN (Hadoop 2.0), the terminology changed. The JobTracker is called the Resource Manager, and nodes are managed by Node Managers. They run arbitrary apps via containers. In YARN, MapReduce is just one kind of computing framework. Hadoop has become an application platform. Confused? So are we. YARN's terminology is something of a disaster, so we'll stick with Hadoop 1.0 terminology.
 
+=== Setting up our Virtual Hadoop Environment ===
+To get to know Hadoop in practice, we're going to use docker to setup 
+
+
 === Pig Latin Map-Only Job ===
 
 To illustrate how Hadoop works, lets dive into some code with the simplest example possible. We may not be as clever as JT's multilingual chimpanzees, but even we can translate text into a language we'll call _Igpay Atinlay_. footnote:[Sharp-eyed readers will note that this language is really called _Pig Latin._ That term has another name in the Hadoop universe, though, so we've chosen to call it Igpay Atinlay -- Pig Latin for "Pig Latin".]. For the unfamiliar, here's how to http://en.wikipedia.org/wiki/Pig_latin#Rules[translate standard English into Igpay Atinlay]:
@@ -136,7 +140,95 @@ NOTE: There are even more reasons why it's best to begin developing jobs locally
 
 === Setting up a Docker Hadoop Cluster ===
 
-PLACEHOLDER FOR DOCKER CLUSTER SETUP INSTRUCTIONS.
+We've prepared a docker image you can use to create a Hadoop environment with Pig and Python already installed, and with the example data already mounted on a drive. You can begin by checking out the code. If you aren't familiar with Git, check out the [Git Home Page](http://git-scm.com/) and install git. Then proceed to clone the example code git repository, which includes the docker setup:
+
+-----
+git clone --recursive http://github.com/bd4c/big_data_for_chimps-code.git bd4c-code
+cd bd4c-code
+ls
+-----
+
+You should see:
+
+-----
+Gemfile		README.md	cluster		docker		examples	junk		notes		numbers10k.txt	vendor
+-----
+
+Now you will need to install [VirtualBox](https://www.virtualbox.org/) for your platform, which you can download [here](https://www.virtualbox.org/wiki/Downloads). Next you will need to install Boot2Docker, which you can find [here](https://docs.docker.com/installation/). Run boot2docker from your OS Menu, which (on OS X or Linux) will bring up a shell:
+
+image:images/boot2docker.png[Boot2Docker Shell]
+
+We use Ruby scripts to setup our docker environment, so you will need Ruby v >1.9.2 or >2.0. Returning to your original command prompt, from inside the `bd4c-code` directory, lets install the Ruby libraries needed to setup our docker images.
+
+-----
+gem install bundler # you may need to sudo
+bundle install
+-----
+
+Next, cd into the `cluster` directory, and repeat `bundle install`:
+
+-----
+cd cluster
+bundle install
+-----
+
+You can now run docker commands against this VirtualBox VM running the docker daemon. Lets start by setting up port forwarding from localhost to our docker VM. From the `cluster` directory:
+
+-----
+boot2docker down
+bundle exec rake docker:open_ports
+-----
+
+While we have the docker vm down, we're going to need to make an adjustment in VirtualBox. We need to increase the amount of RAM given to the VM to at least 4GB. Run Virtualbox from your OS's GUI, and you should see something like this:
+
+image:images/virtualbox_screen_1.png[Virtualbox GUI]
+
+Select the boot2docker VM, and then click Settings. Now select the System tab, and adjust the RAM slider right until it reads at least `4096 MB`. Click Ok.
+
+image:images/virtualbox_screen_2.png[Virtualbox Settings GUI]
+
+Now you can close VirtualBox, and bring boot2docker back up:
+
+-----
+boot2docker up
+-----
+
+This command will print something like:
+
+-----
+To connect the Docker client to the Docker daemon, please set:
+    export DOCKER_HOST=tcp://192.168.59.103:2376
+    export DOCKER_CERT_PATH=/Users/rjurney/.boot2docker/certs/boot2docker-vm
+    export DOCKER_TLS_VERIFY=1
+-----
+
+Now is a good time to put the following lines in your `~/.bashrc` file:
+
+----
+export DOCKER_IP=192.168.59.103
+export DOCKER_HOST=tcp://$DOCKER_IP:2375
+-----
+
+You can achieve that, and update your current environment, via:
+
+-----
+echo 'export DOCKER_IP=192.168.59.103' >> ~/.bashrc
+echo 'export DOCKER_HOST=tcp://$DOCKER_IP:2375' >> ~/.bashrc
+source ~/.bashrc
+-----
+
+Check that these environment variables are set via:
+
+-----
+echo $DOCKER_IP
+echo $DOCKER_HOST
+-----
+
+Now you're ready to setup the docker images.
+
+-----
+
+-----
 
 === Data on the Cluster ===
 
