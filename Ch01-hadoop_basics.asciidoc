@@ -191,62 +191,115 @@ Now you can close VirtualBox, and bring boot2docker back up:
 
 -----
 boot2docker up
+boot2docker shellinit
 -----
 
 This command will print something like:
 
 -----
-To connect the Docker client to the Docker daemon, please set:
+Writing /Users/rjurney/.boot2docker/certs/boot2docker-vm/ca.pem
+Writing /Users/rjurney/.boot2docker/certs/boot2docker-vm/cert.pem
+Writing /Users/rjurney/.boot2docker/certs/boot2docker-vm/key.pem
+    export DOCKER_TLS_VERIFY=1
     export DOCKER_HOST=tcp://192.168.59.103:2376
     export DOCKER_CERT_PATH=/Users/rjurney/.boot2docker/certs/boot2docker-vm
-    export DOCKER_TLS_VERIFY=1
 -----
 
-Now is a good time to put the following lines in your `~/.bashrc` file:
+Now is a good time to put these lines in your `~/.bashrc` file, substituting your home directory for `<home_directory>`:
 
 ----
+export DOCKER_TLS_VERIFY=1
 export DOCKER_IP=192.168.59.103
-export DOCKER_HOST=tcp://$DOCKER_IP:2375
+export DOCKER_HOST=tcp://$DOCKER_IP:2376
+export DOCKER_CERT_PATH=/<home_directory>/.boot2docker/certs/boot2docker-vm
 -----
 
 You can achieve that, and update your current environment, via:
 
 -----
+echo 'export DOCKER_TLS_VERIFY=1' >> ~/.bashrc
 echo 'export DOCKER_IP=192.168.59.103' >> ~/.bashrc
-echo 'export DOCKER_HOST=tcp://$DOCKER_IP:2375' >> ~/.bashrc
+echo 'export DOCKER_HOST=tcp://$DOCKER_IP:2376' >> ~/.bashrc
+echo 'export DOCKER_CERT_PATH=/<home_directory>/.boot2docker/certs/boot2docker-vm' >> ~/.bashrc
 source ~/.bashrc
 -----
 
-Check that these environment variables are set via:
+Check that these environment variables are set and that the docker client can connect via:
 
 -----
 echo $DOCKER_IP
 echo $DOCKER_HOST
+bundle exec rake ps
 -----
 
-Now you're ready to setup the docker images.
+Now you're ready to setup the docker images. This can take a while, so brew a cup of tea after running:
 
 -----
-
+bundle exec rake images:pull
 -----
 
-=== Data on the Cluster ===
+Once done, you should see:
 
-Now that we've setup a virtual Hadoop environment for you using Docker, you can develop and test Hadoop jobs using your laptop, just like having a real cluster. Your jobs will run in fully-distributed mode, making use of the cluster's HDFS.
+-----
+Status: Image is up to date for blalor/docker-hosts:latest
+-----
 
-Run the following commands to check out what lies on HDFS:
+Now, we need to do some minor setup on the boot2docker virtual machine. Change terminals to the boot2docker window, or from another shell run `boot2docker ssh`, and run these commands:
 
-------
-hadoop fs -ls .
-------
+-----
+mkdir -p          /tmp/bulk/hadoop       # view all logs there
+sudo touch        /var/lib/docker/hosts  # so that docker-hosts can make container hostnames resolvable
+sudo chmod 0644   /var/lib/docker/hosts
+sudo chown nobody /var/lib/docker/hosts
+-----
 
-The dot `.` is treated as your HDFS home directory (use it as you would `~` in Unix.). The `hadoop fs` command takes a command and a path, just like the *nix command. In addition to `-ls`, `-cp`, `-mv`, `-rm`, `-cat`, `-get`, `-put`, `-du` and `-tail` also work. Now check out /data:
+Now its time to start the cluster helpers, which setup hostnames among the containers.
 
-------
-hadoop fs -ls /data/gold
-------
+-----
+bundle exec rake helpers:run
+-----
 
-You'll see some of the data we'll be using throughout the book.
+If everything worked, you can now run `cat /var/lib/docker/hosts` on the boot2docker host, and it should be filled with information. Running `bundle exec rake ps` should show containers for `host_filer` and nothing else.
+
+Now lets setup our example data. Run:
+
+-----
+bundle exec rake data:create show_output=true
+-----
+
+Now you can run `bundle exec rake ps` and you should see five containers, all stopped. Start these containers using:
+
+-----
+bundle exec rake hadoop:run
+-----
+
+This will start the Hadoop containers. You can stop/start them with:
+
+-----
+bundle exec rake hadoop:stop
+bundle exec rake hadoop:start
+-----
+
+Now, ssh to your new Hadoop cluster:
+
+-----
+ssh -i insecure_key.pem chimpy@$DOCKER_IP -p 9022 # Password chimpy
+-----
+
+You can see that the example data is available both on the local filesystem:
+
+-----
+chimpy@lounge:~$ ls /data/gold/
+airline_flights/  demographic/  geo/  graph/  helpers/  serverlogs/  sports/  text/  twitter/  wikipedia/  CREDITS.md  README-archiver.md  README.md
+-----
+
+Now you can run Pig, in local mode: 
+
+-----
+pig -l /tmp -x local
+-----
+
+And we're off!
 
 ==== Run the Job ====
 
@@ -255,7 +308,7 @@ First, let's test on the same tiny little file we used at the command-line. This
 // Make sure to notice how much _longer_ it takes this elephant to squash a flea than it took to run without Hadoop.
 
 ------
-hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -file ./examples/ch_01/pig_latin.py -mapper ./examples/ch_01/pig_latin.py -input /data/gold/text/gift_of_the_magi.txt -output ./translation.out
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -Dmapreduce.cluster.local.dir=/home/chimpy/code -fs local -jt local -file ./examples/ch_01/pig_latin.py -mapper ./examples/ch_01/pig_latin.py -input /data/gold/text/gift_of_the_magi.txt -output ./translation.out
 ------
 
 You should see something like this:
