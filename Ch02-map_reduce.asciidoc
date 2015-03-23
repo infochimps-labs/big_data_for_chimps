@@ -300,13 +300,13 @@ Now that we've tested locally, we're ready to execute our map/reduce job on Hado
 The streaming command to run our Python mapper and reducer looks like this:
 
 ------
-hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files examples/ch_02/ufo_mapper.py,examples/ch_02/ufo_reducer.py -mapper ufo_mapper.py -reducer ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -Dmapreduce.cluster.local.dir=/home/chimpy/code -fs local -jt local -files examples/ch_02/ufo_mapper.py,examples/ch_02/ufo_reducer.py -mapper ufo_mapper.py -reducer ufo_reducer.py -input /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv -output ./ufo.out
 ------
 
 You'll see output similar to that you saw in the last chapter. When the job is complete, view the results:
 
 ------
-hadoop fs -cat ./ufo.out/* | sort -n
+cat ./ufo.out/* | sort -n
 ------
 
 The results should be identical to the output of the local execution:

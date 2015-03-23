@@ -65,12 +65,18 @@ By the end of this chapter you will be able to perform basic data processing on 
 
 Apache Pig is an open-source, high-level language that enables you to create efficient Map/Reduce jobs using clear, maintainable scripts. Its interface is similar to SQL, which makes it a great choice for folks with significant experience there. It’s not identical, though, and things that are efficient in SQL may not be so in Pig (we will try to highlight those traps).
 
+You can run Pig in local mode with the following command:
+
+------
+pig -l /tmp -x local
+------
+
 Let’s dive in with an example using the UFO dataset to estimate whether aliens tend to visit in some months over others:
 
 [source,sql]
 .UFO Sightings by Month (ch_04/ufos_by_month.pig)
 ------
-sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv'  AS (
+sightings = LOAD '/data/gold/geo/ufo_sightings/ufo_sightings.tsv.bz2'  AS (
     sighted_at: chararray,   reported_at: chararray,    location_str: chararray,
 		shape: chararray,        duration_str: chararray,   description: chararray,
 		lng: float,              lat: float,                city: chararray,
@@ -99,7 +105,7 @@ If you consult the Job Browser, you should a single Map/Reduce jobs; the dataflo
 To see the result of the Pig script:
 
 ------
-hadoop fs -cat ufos_by_month.out/*
+cat ./ufos_by_month.out/*
 ------
 
 Which will result in:
