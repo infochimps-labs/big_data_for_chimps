@@ -698,9 +698,6 @@ Everything we said for "Completely Summarizing a Group" (REF), plus
 * _Output Count_	 -- Single row
 * _Data Flow_		 -- Map, Combiner, and **single** reducer
 
-
-(TODO-qem: should "Note the syntax of the full-table group statement. There's no I in TEAM, and no `BY` in `GROUP ALL`. " be an "Important to Know" or a "NOTE\:"?
-
 ==== Summarizing a String Field
 
 We showed how to examine the constituents of a string field in the preceding chapter, under "Tokenizing a String" (REF). But for forensic purposes similar to the prior example, it's useful to summarize their length distribution.

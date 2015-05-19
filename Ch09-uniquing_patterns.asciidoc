@@ -2,8 +2,6 @@
 *Comment* Amy has reviewed.
 ////
 
-Text places here won't show up.
-
 == Analytic Patterns: Duplicate and Unique Records
 
 This chapter will cover the data-processing of duplicate and unique records. We define duplicate records as those with the same value in the same field across two or more records. Unique records are those which, for the value of a given field, no other records have the same value. Note that in each case we must describe which field(s) we mean when we say 'unique' or 'duplicate.' Pig is no different: by default the `DISTINCT` command uses all fields, but we can trim fields from data relations to evaluate uniqueness in different ways, in terms of different fields.

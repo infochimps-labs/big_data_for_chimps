@@ -2,11 +2,9 @@
 *Comment* Amy has read. 
 ////
 
-It is literally impossible to have text appear before a header. This will not show up in the book. If it does, please email me at russell.jurney@gmail.com and let me know.
-
 == Analytic Patterns: Ordering Operations
 
-In this chapter we will cover ordering operations, or operations that sort data according to some criteria. Pig has two concepts of order - entire datasets can be sorted, as can the contents of a bag. We'll learn how to sort relations and bags, and also how to calculate the top records of a relation by combining `ORDER` with `LIMIT`. With these skills in hand, we'll be one step closer to being able to solve any arbitrary data processing task using the set of patterns we've learned.
+In this chapter we will cover ordering operations, or operations that sort data according to some criteria. Pig has two concepts of order - entire datasets can be sorted, as can the contents of a bag. We'll learn how to sort relations and bags, and also how to calculate the top records of a relation by combining `ORDER` with `LIMIT`. *With these skills in hand, we'll be one step closer to being able to solve any arbitrary data processing task using the set of patterns we've learned.*
 
 Ordering operations are a fundamental part of storytelling. A big part of telling stories with data is coming up with examples that prove a point. This means diving into the data to produce the most exceptional records. When data is big, this invariably means you need to sort the data to pick up the highest or lowest value(s) of some metric. 
 
@@ -21,6 +19,7 @@ In order to demonstrated ordering records, we're going to prepare a dataset deta
 ----
 mod_seasons = FILTER bat_seasons BY ((year_id >= 1900) AND (lg_id == 'NL' OR lg_id == 'AL'));
 
+-- Create a season marked with the period of career it was in: young/prime/older
 age_seasons = FOREACH mod_seasons {
     young = (age <= 21               ? true : false);
     prime = (age >= 22 AND age <= 29 ? true : false);
@@ -46,6 +45,7 @@ age_seasons = FOREACH mod_seasons {
     ;
 };
 
+-- Calculate metrics by career epoch: young/prime/older
 career_epochs = FOREACH (GROUP age_seasons BY player_id) {
     PA_all    = SUM(age_seasons.PA_all  );
     PA_young  = SUM(age_seasons.PA_young);

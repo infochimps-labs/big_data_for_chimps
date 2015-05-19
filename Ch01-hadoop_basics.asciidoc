@@ -67,7 +67,22 @@ To illustrate how Hadoop works, lets dive into some code with the simplest examp
 We've written this example in Python, a language that has become the lingua franca of data science. You can run it over a text file from the command line -- or run it over petabytes on a cluster (should you for whatever reason have a petabyte of text crying out for pig-latinizing).
 
 [[pig_latin_translator]]
-.Igpay Atinlay translator (ch_01/pig_latin.rb)
+.Igpay Atinlay translator, pseudocode
+----
+for each line,
+  recognize each word in the line
+  and change it as follows:
+    separate the head consonants (if any) from the tail of the word
+    if there were no initial consonants, use 'w' as the head
+    give the tail the same capitalization as the word
+    thus changing the word to "tail-head-ay"
+  end
+  having changed all the words, emit the latinized version of the line
+end
+----
+
+[[pig_latin_translator]]
+.Igpay Atinlay translator (ch_01/pig_latin.py)
 ----
 #!/usr/bin/bash
 
@@ -92,21 +107,6 @@ if __name__ == '__main__':
   for line in sys.stdin:
     print mapper(line)
 
-----
-
-[[pig_latin_translator]]
-.Igpay Atinlay translator, pseudocode
-----
-for each line,
-  recognize each word in the line
-  and change it as follows:
-    separate the head consonants (if any) from the tail of the word
-    if there were no initial consonants, use 'w' as the head
-    give the tail the same capitalization as the word
-    thus changing the word to "tail-head-ay"
-  end
-  having changed all the words, emit the latinized version of the line
-end
 ----
 
 It's best to begin developing jobs locally on a subset of data, because they are faster and cheaper to run. To run the Python script locally, enter this into your terminal's command line:
