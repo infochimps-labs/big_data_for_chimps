@@ -387,20 +387,24 @@ The STORE operation writes your data to the destination you specify (typically a
 
 [source,sql]
 ------
-STORE my_records INTO './my/output/my_records.tsv';
+STORE my_records INTO './bag_of_park_years.txt';
 ------
 
 As with any Hadoop job, Pig creates a _directory_ (not a file) at the path you specify; each task generates a file named with its task ID into that directory. In a slight difference from vanilla Hadoop, If the last stage is a reduce, the files are named like `part-r-00000` (`r` for reduce, followed by the task ID); if a map, they are named like `part-m-00000`.
 
 Try removing the STORE line from the script above, and re-run the script. You'll see nothing happen! Pig is declarative: your statements inform Pig how it could produce certain tables, rather than command Pig to produce those tables in order.
 
-Note that we can view the files created by store using `hadoop fs -ls`:
+Note that we can view the files created by store using `ls`:
 
 ------
-hadoop fs -ls ./my/output/my_records.tsv
+ls ./bag_of_park_years.txt
 ------
 
+which gives us:
 
+----
+part-r-00000  _SUCCESS
+----
 
 [[checkpointing_your_data]]
 The behavior of only evaluating on demand is an incredibly useful feature for development work. One of the best pieces of advice we can give you is to checkpoint all the time. Smart data scientists iteratively develop the first few transformations of a project, then save that result to disk; working with that saved checkpoint, develop the next few transformations, then save it to disk; and so forth. Here's a demonstration:
@@ -496,7 +500,7 @@ Pig wouldn't be complete without a way to _act_ on the various fields. It offers
 
 === Piggybank
 
-Piggybank comes with Pig, all you have to do to access them is `REGISTER /usr/lib/pig/piggybank.jar;` At the time of writing, the Piggybank has the following Pig UDFs:
+Piggybank comes with Pig, all you have to do to access them is `REGISTER /usr/lib/pig/piggybank.jar;` To learn more about Pig, check https://cwiki.apache.org/confluence/display/PIG/PiggyBank[here]. At the time of writing, the Piggybank has the following Pig UDFs:
 
 `CustomFormatToISO`, `ISOToUnix`, `UnixToISO`, `ISODaysBetween`, `ISOHoursBetween`, `ISOMinutesBetween`, `ISOMonthsBetween`, `ISOSecondsBetween`, `ISOYearsBetween`, `DiffDate`, `ISOHelper`, `ISOToDay`, `ISOToHour`, `ISOToMinute`, `ISOToMonth`, `ISOToSecond`, `ISOToWeek`, `ISOToYear`, `Bin`, `BinCond`, `Decode`, `ExtremalTupleByNthField`, `IsDouble`, `IsFloat`, `IsInt`, `IsLong`, `IsNumeric`, `ABS`, `ACOS`, `ASIN`, `ATAN`, `ATAN2`, `Base`, `CBRT`, `CEIL`, `copySign`, `COS`, `COSH`, `DoubleAbs`, `DoubleBase`, `DoubleCopySign`, `DoubleDoubleBase`, `DoubleGetExponent`, `DoubleMax`, `DoubleMin`, `DoubleNextAfter`, `DoubleNextup`, `DoubleRound`, `DoubleSignum`, `DoubleUlp`, `EXP`, `EXPM1`, `FloatAbs`, `FloatCopySign`, `FloatGetExponent`, `FloatMax`, `FloatMin`, `FloatNextAfter`, `FloatNextup`, `FloatRound`, `FloatSignum`, `FloatUlp`, `FLOOR`, `getExponent`, `HYPOT`, `IEEEremainder`, `IntAbs`, `IntMax`, `IntMin`, `LOG`, `LOG10`, `LOG1P`, `LongAbs`, `LongMax`, `LongMin`, `MAX`, `MIN`, `nextAfter`, `NEXTUP`, `POW`, `RANDOM`, `RINT`, `ROUND`, `SCALB`, `SIGNUM`, `SIN`, `SINH`, `SQRT`, `TAN`, `TANH`, `toDegrees`, `toRadians`, `ULP`, `Util`, `MaxTupleBy1stField`, `Over`, `COR`, `COV`, `Stitch`, `HashFNV`, `HashFNV1`, `HashFNV2`, `INDEXOF`, `LASTINDEXOF`, `LcFirst`, `LENGTH`, `LookupInFiles`, `LOWER`, `RegexExtract`, `RegexExtractAll`, `RegexMatch`, `REPLACE`, `Reverse`, `Split`, `Stuff`, `SUBSTRING`, `Trim`, `UcFirst`, `UPPER`, `DateExtractor`, `HostExtractor`, `SearchEngineExtractor`, `SearchTermExtractor`, `SearchQuery`, `ToBag`, `Top`, `ToTuple`, `XPath`, `LoadFuncHelper`, `AllLoader`, `CombinedLogLoader`, `CommonLogLoader`, `AvroSchema2Pig`, `AvroSchemaManager`, `AvroStorage`, `AvroStorageInputStream`, `AvroStorageLog`, `AvroStorageUtils`, `PigAvroDatumReader`, `PigAvroDatumWriter`, `PigAvroInputFormat`, `PigAvroOutputFormat`, `PigAvroRecordReader`, `PigAvroRecordWriter`, `PigSchema2Avro`, `CSVExcelStorage`, `CSVLoader`, `DBStorage`, `FixedWidthLoader`, `FixedWidthStorer`, `HadoopJobHistoryLoader`, `HiveColumnarLoader`, `HiveColumnarStorage`, `HiveRCInputFormat`, `HiveRCOutputFormat`, `HiveRCRecordReader`, `HiveRCSchemaUtil`, `IndexedStorage`, `JsonMetadata`, `MultiStorage`, `MyRegExLoader`, `PathPartitioner`, `PathPartitionHelper`, `PigStorageSchema`, `RegExLoader`, `SequenceFileLoader`, `XMLLoader`, `TestOver`, `TestStitch`, `TestConvertDateTime`, `TestDiffDateTime`, `TestDiffDate`, `TestTruncateDateTime`, `TestDecode`, `TestHashFNV`, `TestLength`, `TestLookupInFiles`, `TestRegex`, `TestReverse`, `TestSplit`, `TestStuff`, `TestUcFirst`, `TestEvalString`, `TestExtremalTupleByNthField`, `TestIsDouble`, `TestIsFloat`, `TestIsInt`, `TestIsLong`, `TestIsNumeric`, `TestMathUDF`, `TestStat`, `TestDateExtractor`, `TestHostExtractor`, `TestSearchEngineExtractor`, `TestSearchTermExtractor`, `TestSearchQuery`, `TestToBagToTuple`, `TestTop`, `XPathTest`, `TestAvroStorage`, `TestAvroStorageUtils`, `TestAllLoader`, `TestCombinedLogLoader`, `TestCommonLogLoader`, `TestCSVExcelStorage`, `TestCSVStorage`, `TestDBStorage`, `TestFixedWidthLoader`, `TestFixedWidthStorer`, `TestHadoopJobHistoryLoader`, `TestHelper`, `TestHiveColumnarLoader`, `TestHiveColumnarStorage`, `TestIndexedStorage`, `TestLoadFuncHelper`, `TestMultiStorage`, `TestMultiStorageCompression`, `TestMyRegExLoader`, `TestPathPartitioner`, `TestPathPartitionHelper`, `TestRegExLoader`, `TestSequenceFileLoader`, and `TestXMLLoader`.
 
@@ -513,7 +517,7 @@ b = FOREACH a GENERATE Reverse(char_field) AS reversed_char_field;
 
 === Apache DataFu
 
-At the time of writing, Apache DataFu has the following Pig UDFs:
+Apache DataFu is a collection of libraries for Pig that includes statistical and utility functions. To learn more about DataFu, check https://datafu.incubator.apache.org/[here]. At the time of writing, Apache DataFu has the following Pig UDFs:
 
 `AppendToBag`, `BagConcat`, `BagGroup`, `BagJoin`, `BagLeftOuterJoin`, `BagSplit`, `CountEach`, `DistinctBy`, `EmptyBagToNull`, `EmptyBagToNullFields`, `Enumerate`, `FirstTupleFromBag`, `NullToEmptyBag`, `package-info`, `PrependToBag`, `ReverseEnumerate`, `UnorderedPairs`, `ZipBags`, `HaversineDistInMiles`, `package-info`, `HyperplaneLSH`, `package-info`, `CosineDistanceHash`, `LSH`, `LSHCreator`, `package-info`, `Sampler`, `L1PStableHash`, `L2PStableHash`, `LSHFamily`, `LSHFunc`, `Cosine`, `L1`, `L2`, `MetricUDF`, `package-info`, `AbstractStableDistributionFunction`, `L1LSH`, `L2LSH`, `package-info`, `package-info`, `RepeatingLSH`, `DataTypeUtil`, `package-info`, `MD5`, `package-info`, `SHA`, `package-info`, `PageRank`, `PageRankImpl`, `ProgressIndicator`, `package-info`, `RandInt`, `RandomUUID`, `package-info`, `Reservoir`, `ReservoirSample`, `SampleByKey`, `ScoredTuple`, `SimpleRandomSample`, `SimpleRandomSampleWithReplacementElect`, `SimpleRandomSampleWithReplacementVote`, `WeightedReservoirSample`, `WeightedSample`, `package-info`, `SessionCount`, `Sessionize`, `package-info`, `SetDifference`, `SetIntersect`, `SetOperationsBase`, `SetUnion`, `DoubleVAR`, `ChaoShenEntropyEstimator`, `CondEntropy`, `EmpiricalCountEntropy`, `EmpiricalEntropyEstimator`, `Entropy`, `EntropyEstimator`, `EntropyUtil`, `FloatVAR`, `HyperLogLogPlusPlus`, `IntVAR`, `LongVAR`, `MarkovPairs`, `Median`, `package-info`, `Quantile`, `QuantileUtil`, `StreamingMedian`, `StreamingQuantile`, `VAR`, `WilsonBinConf`, `CachedFile`, `POSTag`, `SentenceDetect`, `TokenizeME`, `TokenizeSimple`, `TokenizeWhitespace`, `package-info`, `URLInfo`, `UserAgentClassify`, `AliasableEvalFunc`, `Assert`, `AssertUDF`, `Base64Decode`, `Base64Encode`, `BoolToInt`, `Coalesce`, `ContextualEvalFunc`, `DataFuException`, `FieldNotFound`, `In`, `IntToBool`, `InUDF`, `SelectStringFieldByName`, `SimpleEvalFunc`, and `TransposeTupleToBag`.
 

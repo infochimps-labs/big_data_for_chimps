@@ -250,9 +250,12 @@ mkdir -p          /tmp/bulk/hadoop       # view all logs there
 sudo touch        /var/lib/docker/hosts  # so that docker-hosts can make container hostnames resolvable
 sudo chmod 0644   /var/lib/docker/hosts
 sudo chown nobody /var/lib/docker/hosts
+exit
 -----
 
-Now its time to start the cluster helpers, which setup hostnames among the containers.
+Now exit boot2docker shell. 
+
+Back in the clusters directory, it is time to start the cluster helpers, which setup hostnames among the containers.
 
 -----
 bundle exec rake helpers:run

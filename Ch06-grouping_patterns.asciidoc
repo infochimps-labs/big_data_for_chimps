@@ -51,6 +51,9 @@ park_teams_g: {
 }
 
 */
+
+A = LIMIT park_teams_g 2;
+dump A
 ------
 
 Notice that the _full record_ is kept, even including the keys:

@@ -20,7 +20,7 @@ Blocks like the following will show up after each of the patterns or groups of p
 
 * _Where You'll Use It_  -- (_The business or programming context._) Everywhere. Like the f-stop on your camera, composing a photo begins and ends with throttling its illumination.
 * _Standard Snippet_	 -- (_Just enough of the code to remind you how it's spelled._) `somerecords = FILTER myrecords BY (criteria AND criteria ...);`
-* _Hello, SQL Users_     -- (_A sketch of the corresponding SQL command, and important caveats for peopl coming from a SQL background._) `SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;`
+* _Hello, SQL Users_     -- (_A sketch of the corresponding SQL command, and important caveats for people coming from a SQL background._) `SELECT bat_season.* FROM bat_season WHERE year_id >= 1900;`
 * _Important to Know_	 -- (_Caveats about its use. Things that you won't understand / won't buy into the first time through the book but will probably like to know later._)
   - Filter early, filter often. The best thing you can do with a large data set is make it smaller.
   - SQL users take note: `==`, `!=` -- not `=` or anything else.
@@ -98,7 +98,8 @@ This operation uses a regular expression to select players with names similar to
 [source,sql]
 .Filtering via Regular Expressions (ch_05/filtering_data.pig)
 ------
--- Name is `Russ`, or `Russell`; is `Flip` or anything in the Philip/Phillip/... family. (?i) means be case-insensitive:
+-- Name is `Russ`, or `Russell`; is `Flip` or anything in the Philip/Phillip/... family.
+-- (?i) means be case-insensitive:
 namesakes = FILTER people BY (name_first MATCHES '(?i).*(russ|russell|flip|phil+ip).*');
 ------
 
@@ -378,7 +379,7 @@ The `SPRINTF` function is a great tool for assembling a string for humans to loo
 .Formatting Strings (ch_05/foreach.pig)
 ------
 formatted = FOREACH bat_seasons GENERATE
-  SPRINTF('%4d\t%-9s %-19s\tOBP %5.3f / %-3s %-3s\t%4$012.3e',
+  SPRINTF('%4d\t%-9s %-20s\tOBP %5.3f / %-3s %-3s\t%4$012.3e',
     year_id,  player_id,
     CONCAT(name_first, ' ', name_last),
     1.0f*(H + BB + HBP) / PA,
@@ -402,7 +403,7 @@ So you can follow along, here are some scattered lines from the results:
 The parts of the template are as follows:
 
 * `%4d`: render an integer, right-aligned, in a four character slot. All the `year_id` values have exactly four characters, but if Pliny the Elder's rookie season from 43 AD showed up in our dataset, it would be padded with two spaces: `  43`. Writing `%04d` (i.e. with a zero after the percent) causes zero-padding: `0043`.
-* `\\t` (backslash-t): renders a literal tab character. This is done by Pig, not in the `SPRINTF` function.
+* `\t` (backslash-t): renders a literal tab character. This is done by Pig, not in the `SPRINTF` function.
 * `%-9s`: a nine-character string. Like the next field, it ...
 * `%-20s`: has a minus sign, making it left-aligned. You usually want this for strings.
   - We prepared the name with a separate `CONCAT` statement and gave it a single string slot in the template, rather than using say `%-8s %-11s`. In our formulation, the first and last name are separated by only one space and share the same 20-character slot. Try modifying the script to see what happens with the alternative.
@@ -411,7 +412,7 @@ The parts of the template are as follows:
 * `%5.3f`: for floating point numbers, you supply two widths. The first is the width of the full slot, including the sign, the integer part, the decimal point, and the fractional part. The second number gives the width of the fractional part. A lot of scripts that use arithmetic to format a number to three decimal places (as in the prior section) should be using `SPRINTF` instead.
 * `%-3s %-3s`: strings indicating whether the season is pre-modern (\<\= 1900) and whether it is significant (>= 450 PA). We could have used true/false, but doing it as we did here -- one value tiny, the other with visual weight -- makes it much easier to scan the data.
   - By inserting the `/` delimiter and using different phrases for each indicator, it's easy to grep for matching lines later -- `grep -e '/.*sig'` -- without picking up lines having `'sig'` in the player id.
-* `%4$09.3e`: Two things to see here:
+* `%4$12.3e`: Two things to see here:
   - Each of the preceding has pulled its value from the next argument in sequence. Here, the `4$` part of the specifier uses the value of the fourth non-template argument (the OBP) instead.
   - The remaining `012.3e` part of the specifier says to use scienfific notation, with three decimal places and twelve total characters. Since the strings don't reach full width, their decimal parts are padded with zeroes. When you're calculating the width of a scientific notation field, don't forget to include the _two_ sign characters: one for the number and one for the exponent
 
@@ -420,6 +421,8 @@ We won't go any further into the details, as the `SPRINTF` function is http://pi
 ==== Assembling Literals with  Complex Types
 
 Another reason you may need the nested form of `FOREACH` is to assemble a complex literal. If we wanted to draw key events in a player's history -- birth, death, start and end of career -- on a timeline, or wanted to place the location of their birth and death on a map, it would make sense to prepare generic baskets of events and location records. We will solve this problem in a few different ways to demonstrate assembling complex types from simple fields.
+
+NOTE: To use the functions in Piggybank and DataFu, we have to REGISTER their jar files so Pig knows about them. This is accomplished with the REGISTER command, as in: `REGISTER /usr/lib/pig/datafu.jar`.
 
 ===== Parsing a Date
 
@@ -546,7 +549,9 @@ birthplaces = FOREACH people GENERATE
 ;
 ------
 
-In other cases you don't need to manipulate the type going in to a function, you need to manipulate the type going out of your `FOREACH`. Here are several takes on a `FOREACH` statement to find the slugging average:
+In other cases you don't need to manipulate the type going in to a function, you need to manipulate the type going out of your `FOREACH`. 
+
+Here are several takes on a `FOREACH` statement to find the slugging average:
 
 [source,sql]
 .Managing Floating Point Schemas (ch_05/types.pig)
@@ -556,25 +561,41 @@ obp_1 = FOREACH bat_seasons {
   GENERATE OBP;                     -- making OBP a float
 };
 -- obp_1: {OBP: float}
+------
 
+The first stanza matches what was above. We wrote the literal value as `1.0f` -- which signifies the `float` value 1.0 -- thus giving OBP the implicit type `float` as well. 
+
+------
 obp_2 = FOREACH bat_seasons {
   OBP = 1.0 * (H + BB + HBP) / PA;  -- constant is a double
   GENERATE OBP;                     -- making OBP a double
 };
 -- obp_2: {OBP: double}
+------
 
+In the second stanza, we instead wrote the literal value as `1.0` -- type `double` -- giving OBP the implicit type double as well.
+
+------
 obp_3 = FOREACH bat_seasons {
   OBP = (float)(H + BB + HBP) / PA; -- typecast forces floating-point arithmetic
   GENERATE OBP AS OBP;              -- making OBP a float
 };
 -- obp_3: {OBP: float}
+------
 
+The third stanza takes a different tack: it forces floating-point math by typecasting the result as a `float`, thus also implying type `float` for the generated value footnote:[As you can see, for most of the stanzas Pig picked up the name of the intermediate expression (OBP) as the name of that field in the schema. Weirdly, the typecast in the third stanza makes the current version of Pig lose track of the name, so we chose to provide it explicitly].
+
+------
 obp_4 = FOREACH bat_seasons {
   OBP = 1.0 * (H + BB + HBP) / PA;  -- constant is a double
   GENERATE OBP AS OBP:float;        -- but OBP is explicitly a float
 };
 -- obp_4: {OBP: float}
+------
 
+In the fourth stanza, the constant was given as a double. However, this time the `AS` clause specifies not just a name but an explicit type, and that takes precedence footnote:[Is the intermediate result calculated using double-precision math, because it starts with a `double`, and then converted to `float`? Or is it calculated with single-precision math, because the result is a `float`? We don't know, and even if we did we wouldn't tell you. Don't resolve language edge cases by consulting the manual, resolve them by using lots of parentheses and typecasts and explicitness. If you learn fiddly rules like that -- operator precedence is another case in point -- there's a danger you might actually rely on them. Remember, you write code for humans to read and only incidentally for robots to run.].
+
+------
 broken = FOREACH bat_seasons {
   OBP = (H + BB + HBP) / PA;        -- all int operands means integer math and zero as result
   GENERATE OBP AS OBP:float;        -- even though OBP is explicitly a float
@@ -582,9 +603,7 @@ broken = FOREACH bat_seasons {
 -- broken: {OBP: float}
 ------
 
-The first stanza matches what was above. We wrote the literal value as `1.0f` -- which signifies the `float` value 1.0 -- thus giving OBP the implicit type `float` as well. In the second stanza, we instead wrote the literal value as `1.0` -- type `double` -- giving OBP the implicit type double as well. The third stanza takes a different tack: it forces floating-point math by typecasting the result as a `float`, thus also implying type `float` for the generated value footnote:[As you can see, for most of the stanzas Pig picked up the name of the intermediate expression (OBP) as the name of that field in the schema. Weirdly, the typecast in the third stanza makes the current version of Pig lose track of the name, so we chose to provide it explicitly].
-
-In the fourth stanza, the constant was given as a double. However, this time the `AS` clause specifies not just a name but an explicit type, and that takes precedence footnote:[Is the intermediate result calculated using double-precision math, because it starts with a `double`, and then converted to `float`? Or is it calculated with single-precision math, because the result is a `float`? We don't know, and even if we did we wouldn't tell you. Don't resolve language edge cases by consulting the manual, resolve them by using lots of parentheses and typecasts and explicitness. If you learn fiddly rules like that -- operator precedence is another case in point -- there's a danger you might actually rely on them. Remember, you write code for humans to read and only incidentally for robots to run.]. The fifth stanza exists just to re-prove the point that if you care about the types Pig will use, say something. Although the output type is a float, the intermediate expression is calculated with integer math and so all the answers are zero. Even if that worked, you'd be a chump to rely on it: use any of the preceding four stanzas instead.
+The fifth and final stanza exists just to re-prove the point that if you care about the types Pig will use, say something. Although the output type is a float, the intermediate expression is calculated with integer math and so all the answers are zero. Even if that worked, you'd be a chump to rely on it: use any of the preceding four stanzas instead.
 
 ==== Ints and Floats and Rounding, Oh My!
 
