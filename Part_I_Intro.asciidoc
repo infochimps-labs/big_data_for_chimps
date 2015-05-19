@@ -2,3 +2,7 @@
 = Tactics: Analytic Patterns
 
 In the first four chapters of the book, we'll introduce you to the basics about Hadoop and MapReduce, and introduce you to the tools you'll be using to process data at scale using Hadoop.
+
+We'll start with an introduction to Hadoop and MapReduce, then we'll dive into Map/Reduce and explain how it works. Next, we'll introduce you to our primary dataset: baseball statistics. Finally, we'll introduce you to Apache Pig, the tool we use to process data in the rest of the book.
+
+Then in Part II we'll move on to cover different analytic patterns that you can employ to process any data in any way needed.
