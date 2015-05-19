@@ -84,7 +84,7 @@ end
 [[pig_latin_translator]]
 .Igpay Atinlay translator (ch_01/pig_latin.py)
 ----
-#!/usr/bin/bash
+#!/usr/bin/python
 
 import sys, re
 
@@ -99,7 +99,10 @@ def mapper(line):
     head, tail = word
     head = 'w' if not head else head
     pig_latin_word = tail + head + 'ay'
-    pig_latin_word = pig_latin_word.lower().capitalize() if CAPITAL_RE.match(pig_latin_word) else pig_latin_word.lower()
+    if CAPITAL_RE.match(pig_latin_word):
+      pig_latin_word = pig_latin_word.lower().capitalize() 
+    else: 
+      pig_latin_word = pig_latin_word.lower()
     pig_latin_words.append(pig_latin_word)
   return " ".join(pig_latin_words)
 

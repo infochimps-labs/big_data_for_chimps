@@ -72,6 +72,16 @@ In Doug Cutting's words, Hadoop is the "kernel of the big-data operating system"
 
 The code in this book will run unmodified on your laptop computer or on an industrial-strength Hadoop cluster. We'll provide you with a virtual Hadoop cluster using docker that will run on your own laptop. 
 
+==== Example Code ====
+
+he [source code for the book](https://github.com/bd4c/big_data_for_chimps-code) is available at `https://github.com/bd4c/big_data_for_chimps-code`. You can check it out with git via:
+
+----
+git clone https://github.com/bd4c/big_data_for_chimps-code
+----
+
+The code examples are then under the examples/ch_XX directories.
+
 ==== A Note on Python and MrJob ====
 
 We've chosen Python for two reasons. First, it's one of several high-level languages (along with Python, Scala, R and others) that have both excellent Hadoop frameworks and widespread support. More importantly, Python is a very readable language. The code samples provided should map cleanly to other high-level languages, and the approach we recommend is available in any language.

@@ -129,6 +129,8 @@ The UFO data is located on the docker HDFS we setup last chapter. Lets begin by 
 cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv|head -5
 ------
 
+Note that 'gold' in this path stands for 'gold standard data' - or in other words, 'data that has been checked and validated to be correct.' 
+
 The UFO data is in 'TSV' format - Tab Separated Values.
 
 ------
@@ -157,6 +159,12 @@ We're going to write a Hadoop _mapper_ which performs a similar purpose:
 
 In order to calculate the time delay in reporting UFOs, we've got to determine that delay by subtracting the time the UFO was sighted from the time the UFO was reported. As above, this occurs in the map phase of our map/reduce job. The mapper emits the time delay in days, and a counter - that is always one.
 
+You may need to install the `iso8601` library, via:
+
+----
+pip install iso8601
+----
+
 The mapper code in Python looks like this:
 
 .UFO Histogram Mapper (ch_02/ufo_mapper.py)
@@ -164,7 +172,7 @@ The mapper code in Python looks like this:
 #!/usr/bin/python
 # Example MapReduce job: count ufo sightings by location.
 
-import sys, re, time, iso8601
+import sys, re, time, iso8601 # You can get iso8601 from https://pypi.python.org/pypi/iso8601
 
 # Pull out city/state from ex: Town, ST
 word_finder = re.compile("([\w\s]+),\s(\w+)")
@@ -220,7 +228,8 @@ Moving on, our reducer looks like this:
 .UFO Histogram Reducer (ch_02/ufo_reducer.py)
 ------
 #!/usr/bin/python
-"""Example MapReduce job: count ufo sightings by hour. Based on example at http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
+"""Example MapReduce job: count ufo sightings by hour. Based on example at 
+http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
 """
 import sys, re
 
@@ -261,7 +270,8 @@ if current_days == days:
 Always test locally on a sample of data, if at all possible:
 
 ------
-cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv | python examples/ch_02/ufo_mapper.py | sort | python examples/ch_02/ufo_reducer.py|sort -n
+cat /data/gold/geo/ufo_sightings/ufo_sightings-sample.tsv | python examples/ch_02/ufo_mapper.py | \
+sort | python examples/ch_02/ufo_reducer.py|sort -n
 ------
 
 Note that we've added a `sort -n` to the end of the commands - to show the lowest values first. On Hadoop, this would take another map/reduce job.

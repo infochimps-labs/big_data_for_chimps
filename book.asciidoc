@@ -2,13 +2,15 @@
 
 include::Ch00-preface.asciidoc[]
 
+include::Part_I_Intro.asciidoc[]
+
 include::Ch01-hadoop_basics.asciidoc[]
 
 include::Ch02-map_reduce.asciidoc[]
 
 include::Ch03-introducing-baseball-data.asciidoc[]
 
-include::Part_II_intro-patterns.asciidoc[]
+include::Part_II-patterns.asciidoc[]
 
 include::Ch04-introduction_to_pig.asciidoc[]
 
