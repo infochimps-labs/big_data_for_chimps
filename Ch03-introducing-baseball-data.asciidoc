@@ -56,59 +56,6 @@ The above are all "counting stats", and generally the more games the more hits a
 
 Just as a professional mechanic has an assortment of specialized and powerful tools, modern baseball analysis uses statistics significantly more nuanced than these. But when it comes time to hang a picture, they use the same hammer as the rest of us. You might think that using the on-base, slugging, and OPS figures to estimate overall performance is a simplification we made for you. In fact, these are quite actionable metrics that analysts will reach for when they want to hang a sketch that anyone can interpret.
 
-== A Quick Look into Baseball
-
-Nate Silver calls Baseball the "perfect data set".  There are not many human-centered systems for which this comprehensive degree of detail is available, and no richer set of tables for truly demonstrating the full range of analytic patterns.
-
-For readers who are not avid baseball fans, we provide a simple -- some might say "oversimplified" -- description of the sport and its key statistics.  Please refer to Joseph Adler's _Baseball Hacks_ (O'Reilly) or Marchi and Albert's _Analyzing Baseball Data with R_ (Chapman & Hall) for more details.
-
-=== The Data
-
-Our baseball statistics come in tables at multiple levels of detail.
-
-Putting people first as we like to do, the `people` table lists each player's name and personal stats such as height and weight, birth year, and so forth. It has a primary key, the `player_id`, formed from the first five letters of their last name, first two letters of their first name, and a two digit disambiguation slug. There are also primary tables for ballparks (`parks`) listing information on every stadium that has ever hosted a game and for teams (`teams`) giving every major-league team back to the birth of the game.
-
-The core statistics table is `bat_seasons`, which gives each player's batting stats by season. (To simplify things, we only look at offensive performance.) The `player_id, year_id` fields form a primary key, and the `team_id` foreign key represents the team they played the most games for in a season. The `park_teams` table lists, for each team, all "home" parks they played in by season, along with the number of games and range of dates. We put "home" in quotes because technically it only signifies the team that bats last (a significant advantage), though teams nearly always play those home games at a single stadium in front of their fans. However, there are exceptions as you'll see in the next chapter (REF). The `park_id,team_id,year_id` fields form its primary key, so if a team did in fact have multiple home ballparks there will be multiple rows in the table.
-
-There are some demonstrations where we need data with some real heft -- not so much that you can't run it on a single-node cluster, but enough that parallelizing the computation becomes important. In those cases we'll go to the `games` table (100+ MB), which holds the final box score summary of every baseball game played, or to the full madness of the `events` table (1+ GB), which records every play for nearly every game back to the 1940s and before. These tables have nearly a hundred columns each in their original form. Not to carry the joke quite so far, we've pared them back to only a few dozen columns each, with only a handful seeing actual use.
-
-We denormalized the names of players, parks and teams into some of the non-prime tables to make their records more recognizeable. In many cases you'll see us carry along the name of a player, ballpark or team to make the final results more readable, even where they add extra heft to the job. We always try to show you sample code that represents the code we'd write professionally, and while we'd strip these fields from the script before it hit production, you're seeing just what we'd do in development. "Know your Data".
-
-=== Acronyms and Terminology
-
-We use the following acronyms (and, coincidentally, field names) in our baseball dataset:
-
-* `G`, 'Games'
-* `PA`: 'Plate Appearances', the number of completed chances to contribute offensively. For historical reasons, some stats use a restricted subset of plate appearances called AB (At Bats). You should generally prefer PA to AB, and can pretend they represent the same concept.
-* `H`: 'Hits', either singles (`h1B`), doubles (`h2B`), triples (`h3B`) or home runs (`HR`)
-* `BB`: 'Walks', pitcher presented too many unsuitable pitches
-* `HBP`: 'Hit by Pitch', like a walk but more painful
-* `OBP`: 'On-base Percentage', indicates effectiveness at becoming a potential run
-* `SLG`: 'Slugging Percentage', indicates effectiveness at converting potential runs into runs
-* `OPS`: 'On-base-plus-Slugging', a reasonable estimate of overall offensive contribution
-
-For those who consider sporting events to be the dull province of jocks, holding no interest at all: when we say the "On-Base Percentage" is a simple matter of finding `(H + BB + HBP) / AB`, just trust us that (a) it's a useful statistic; (b) that's how you find its value; and then (c) pretend it's the kind of numbers-in-a-table example abstracted from the real world that many books use.
-
-=== The Rules and Goals
-
-Major League Baseball teams play a game nearly every single day from the start of April to the end of September (currently, 162 per season). The team on offense sends its players to bat in order, with the goal of having its players reach base and advance the full way around the diamond. Each time a player makes it all the way to home, their team scores a run, and at the end of the game, the team with the most runs wins. We count these events as `G` (games), `PA` (plate appearances on offense) and `R` (runs).
-
-The best way to reach base is by hitting the ball back to the fielders and reaching base safely before they can retrieve the ball and chase you down -- a hit (`H`) . You can also reach base on a 'walk' (`BB`) if the pitcher presents too many unsuitable pitches, or from a 'hit by pitch' (`HBP`) which is like a walk but more painful. You advance on the basepaths when your teammates hit the ball or reach base; the reason a hit is valuable is that you can advance as many bases as you can run in time. Most hits are singles (h1B), stopping safely at first base. Even better are doubles (`h2B`: two bases), triples (`h3B`: three bases, which are rare and require very fast running), or home runs (`HR`: reaching all the way home, usually by clobbering the ball out of the park).
-
-Your goal as a batter is both becomes a potential run and helps to convert players on base into runs. If the batter does not reach base it counts as an out, and after three outs, all the players on base lose their chance to score and the other team comes to bat. (This threshold dynamic is what makes a baseball game exciting: the outcome of a single pitch could swing the score by several points and continue the offensive campaign, or it could squander the scoring potential of a brilliant offensive position.)
-
-=== Performance Metrics
-
-The above are all "counting stats", and generally the more games the more hits and runs and so forth. For estimating performance and comparing players, it's better to use "rate stats" normalized against plate appearances.
-
-'On-base percentage' (`OBP`) indicates how well the player meets offensive goal #1: get on base, thus becoming a potential run and _not_ consuming a precious out. It is given as the fraction of plate appearances that are successful: (`(H + BB + HBP) / PA`) footnote:[Although known as percentages, OBP and SLG are always given as fractions to 3 decimal places. For OBP, we're also using a slightly modified formula to reduce the number of stats to learn. It gives nearly identical results but you will notice small discrepancies with official figures]. An `OBP` over 0.400 is very good (better than 95% of significant seasons).
-
-'Slugging Percentage' (`SLG`) indicates how well the player meets offensive goal #2: advance the runners on base, thus converting potential runs into points towards victory. It is given by the total bases gained in hitting (one for a single, two for a double, etc) divided by the number of at bats: (`(H + h2B + 2*h3B + 3*HR) / AB`). An `SLG` over 0.500 is very good.
-
-'On-base-plus-slugging' (`OPS`) combines on-base and slugging percentages to give a simple and useful estimate of overall offensive contribution. It's found by simply adding the figures: (`OBP + SLG`). Anything above 0.900 is very good.
-
-Just as a professional mechanic has an assortment of specialized and powerful tools, modern baseball analysis uses statistics significantly more nuanced than these. But when it comes time to hang a picture, they use the same hammer as the rest of us. You might think that using the on-base, slugging, and OPS figures to estimate overall performance is a simplification we made for you. In fact, these are quite actionable metrics that analysts will reach for when they want to hang a sketch that anyone can interpret.
-
 === Outro
 
 You now have enough information about baseball and its metrics to work through the examples in this book. Whether you're a baseball fan or not, this dataset should work well for teaching analytic patterns. If you are a baseball fan, feel free to filter the examples to tell stories about your favorite team. 
