@@ -1,5 +1,5 @@
 [[analytic_patterns]]
-= Tactics: Analytic Patterns
+= Introduction: Theory and Tools
 
 In the first four chapters of the book, we'll introduce you to the basics about Hadoop and MapReduce, and introduce you to the tools you'll be using to process data at scale using Hadoop.
 
