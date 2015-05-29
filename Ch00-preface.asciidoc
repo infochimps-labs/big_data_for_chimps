@@ -8,18 +8,11 @@
 [[preface]]
 == Preface
 
-=== Mission Statement ===
+Big Data for Chimps will explain a practical, actionable view of big data. This view will be centered on tested best practices as well as give readers street fighting smarts with Hadoop.
 
-Big Data for Chimps will:
+Readers will come away with a useful, conceptual idea of big data. Insight is data in context. The key to understanding big data is scalability: infinite amounts of data can rest upon distinct pivot points. We will teach you how to manipulate data about these pivot points.
 
-1.  Explain a practical, actionable view of big data, centered on tested best practices as well as give readers street fighting smarts with Hadoop.
-
-2.  Readers will come away with a useful, conceptual idea of big data. Insight is data in context. The key to understanding big data is scalability: infinite amounts of data can rest upon distinct pivot points. We will teach you how to manipulate data about these pivot points.
-
-3.  Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life.
-
-[[about]]
-=== About  ===
+Finally, the book will contain examples with real data and real problems that will bring the concepts and applications for business to life.
 
 [[about_coverage]]
 ==== What this book covers ====
@@ -47,7 +40,7 @@ Many of the chapters have exercises included. If you're a beginning user, I high
 [[about_is_for]]
 ==== Who This Book Is For ====
 
-We'd like for you to be familiar with at least one programming language, but it doesn't have to be Python or Pig. Familiarity with SQL will help a bit, but isn't essential.
+We'd like for you to be familiar with at least one programming language, but it doesn't have to be Python or Pig. Familiarity with SQL will help a bit, but isn't essential. Some exposure to working with data in a business intelligence or analysis background will be helpful.
 
 Most importantly, you should have an actual project in mind that requires a big data toolkit to solve -- a problem that requires scaling out across multiple machines. If you don't already have a project in mind but really want to learn about the big data toolkit, take a look at the chapter on baseball data. It makes a great dataset for fun exploration.
 
