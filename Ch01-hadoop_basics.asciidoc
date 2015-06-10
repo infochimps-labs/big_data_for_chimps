@@ -19,7 +19,7 @@ The key to mastering Hadoop is an intuitive, physical understanding of how data 
 
 What does Hadoop do, and why should we learn about it? Hadoop enables the storage and processing of large amounts of data. Indeed, it is Apache Hadoop that stands at the middle of the 'Big Data' trend. The Hadoop Distributed Filesystem (HDFS) is the platform that enabled cheap storage of vast amounts of data (up to petabytes and beyond) cheaply using affordable, commodity machines. Before Hadoop, there simply wasn't a place to store terabytes and petabytes of data in a way that it could be easily accessed for processing. Hadoop changed everything.
 
-In this book we will teach you the mechanics of operating Hadoop, but first you need to understand the basics of how the Hadoop filesystem and MapReduce work together to create a computing platform. Along these lines, let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
+Throughout this book we will teach you the mechanics of operating Hadoop, but first you need to understand the basics of how the Hadoop filesystem and MapReduce work together to create a computing platform. Along these lines, let's kick things off by making friends with the good folks at Elephant and Chimpanzee, Inc. Their story should give you an essential physical understanding for the problems Hadoop addresses and how it solves them.
 
 .Chimpanzee and Elephant Start a Business
 ******
@@ -439,7 +439,7 @@ packageJobJar: [./examples/ch_01/pig_latin.py] [] /tmp/streamjob6991515537124916
 
 This is the output of the Hadoop streaming jar as it transmits your files and runs them on the cluster.
 
-=== Outro
+=== Wrapping Up
 
 In this chapter, we've equipped you with two things: the necessary mechanics of working with Hadoop, and a physical intuition for how data and computation move around the cluster during a job. We started with a story about J.T. and Nanette, and learned about the Hadoop Job Tracker, Namenode and file system. We proceeded with a Pig Latin example, and ran it on a real Hadoop cluster.
 

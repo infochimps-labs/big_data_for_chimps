@@ -787,7 +787,7 @@ The `UNION` operation does not remove duplicate rows as a set-wise union would. 
 
 NOTE: The UNION operator is easy to over-use. For one example, in the next chapter we'll extend the first part of this code to prepare win-loss statistics by team. A plausible first guess would be to follow the UNION statement above with a GROUP statement, but a much better approach would use a COGROUP instead (both operators are explained in the next chapter). The UNION statement is mostly harmless but fairly rare in use; give it a second look any time you find yourself writing it in to a script.
 
-=== Outro
+=== Wrapping Up
 
 The operations in this chapter do not require a reduce on their own, which makes them very efficient. These operations can be chained one after the other without causing a reduce to occur. Although we call them 'map-only' operations, they can be executed during either the map or at the tail of the reduce phase. The ability to chain map-only operations really helps map/reduce scale during complex operations. Arbitrarily long combinations of map-only operations can be chained one after the other and accomplished in a single phase of a Hadoop map/reduce job.
 

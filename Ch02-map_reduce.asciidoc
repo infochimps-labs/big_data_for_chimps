@@ -447,7 +447,7 @@ Once you understand the label-group-process data flow we've just introduced, you
 
 // TODO: would be cool to have an image here, showing a key/set-of-values entering a box, which outputs a key and value
 
-=== Outro
+=== Wrapping Up
 
 You've just seen how records move through a map/reduce workflow, both in theory and in practice. This can be challenging material to grasp, so don't feel bad if you don't get all of it right away. While we did our best to simplify complex phenomenon, we hope we've still communicated the essentials. It is normal to have to re-read this chapter until you get it straight. You may also try re-visiting this chapter once you've read a bit further in the book. Once you've performed a few Pig `GROUP BY`s, this material may feel more natural.
 

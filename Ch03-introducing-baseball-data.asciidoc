@@ -56,7 +56,7 @@ The above are all "counting stats", and generally the more games the more hits a
 
 Just as a professional mechanic has an assortment of specialized and powerful tools, modern baseball analysis uses statistics significantly more nuanced than these. But when it comes time to hang a picture, they use the same hammer as the rest of us. You might think that using the on-base, slugging, and OPS figures to estimate overall performance is a simplification we made for you. In fact, these are quite actionable metrics that analysts will reach for when they want to hang a sketch that anyone can interpret.
 
-=== Outro
+=== Wrapping Up
 
 You now have enough information about baseball and its metrics to work through the examples in this book. Whether you're a baseball fan or not, this dataset should work well for teaching analytic patterns. If you are a baseball fan, feel free to filter the examples to tell stories about your favorite team. 
 

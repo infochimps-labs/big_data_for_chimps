@@ -1500,7 +1500,7 @@ never_sox = FOREACH player_soxness_g GENERATE
 * _Records_		 -- List of keys
 * _Data Flow_		 -- Map, Combiner & Reducer. Combiners should be extremely effective.
 
-=== Outro
+=== Wrapping Up
 
 In this chapter we introduced grouping operations. We started with the basic Pig `GROUP BY` syntax, and worked through several baseball problems to explain how to group in practice. We learned not only to calculate statistics about grouped data, we also learned how to print and format these statistical summaries. We summarized records, groups, fields, and entire relations using aggregate functions such as `MIN`, `MAX`, `COUNT_STAR` and `SUM`. We used these aggregate functions to summarize the careers of every baseball player in the modern era!
 

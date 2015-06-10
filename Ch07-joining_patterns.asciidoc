@@ -727,7 +727,7 @@ Eliminating extra fields is almost always worth it, but the explicit projection 
 
 In contrast, any SQL user will immediately recognize the join formulation of this as an anti-join. Introducing a RIGHT OUTER join or choosing the cogroup version disrupts that familiarity. Choose the version you find most readable, and then find out if you care whether it's more performant; the simpler explain graph or the smaller left-hand join table _do not_ necessarily imply a faster dataflow. For this particular shape of data, even at much larger scale we'd be surprised to learn that either of the latter two optimizations mattered.
 
-=== Outro
+=== Wrapping Up
 
 In this chapter we've learned how to `JOIN` and `COGROUP`. These operations allow us to bring additional data-sources into our analysis. The INNER `JOIN` lets us combine records from multiple datasets with common join keys. The OUTER `JOIN` or semi-join decorates one relation with matches from another relation. An anti-join filters records with a match in another table, leaving only those that don't match. The self-join showed us how to explore groupings within a given relation. Taken together, these techniques constitute a powerful toolset for working with one or more sources of data.
 

@@ -431,7 +431,7 @@ You can run this script multiple times with different output paths to get differ
 
 We use a randomized hash function UDF for each record; then number each line within the split. The important difference here is that the hash function we generated accepts a seed that we can mix in to each record. If you supply a constant to the constructor (see the documentation) then the records will be put into an effectively random order, but the same random order each time. By supplying the string `'rand'` as the argument, the UDF will use a different seed on each run. What's nice about this approach is that although the ordering is different from run to run, it does not exhibit the anti-pattern of changing from task attempt to task attempt. The seed is generated once and then used everywhere. Rather than creating a new random number for each row, you use the hash to define an effectively random ordering, and the seed to choose which random ordering to apply.
 
-=== Outro
+=== Wrapping Up
 
 In this chapter, we've learned to sort, rank and order data. We learned how to sort entire relations by one or more fields. We learned how to prioritize certain records when sorting. We learned how to deal with sorting nulls and mixed-case strings. We showed how to sort within a group with `TOP` and a nested `ORDER BY`. Finally, we learned how to shuffle, or sort randomly using a Hash.
 
