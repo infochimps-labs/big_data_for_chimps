@@ -6,7 +6,11 @@
 
 == Map/Reduce
 
-In this chapter we're going to build upon what we learned last chapter about HDFS and the map-only portion of map/reduce and introduce a full map/reduce job and the mechanics of map/reduce. This time we'll include both the shuffle/sort phase, and the reduce phase. Once again, we begin with a physical metaphor in the form of a story. After that we'll walk you through building our first full-blown map/reduce job in Python. At the end of this chapter, you should have an intuitive understanding of how map/reduce works, including its map, shuffle/sort and reduce phases.
+=== Introduction
+
+In this chapter we're going to build upon what we learned last chapter about HDFS and the map-only portion of map/reduce and introduce a full map/reduce job and the mechanics of map/reduce. This time we'll include both the shuffle/sort phase, and the reduce phase. Once again, we begin with a physical metaphor in the form of a story. After that we'll walk you through building our first full-blown map/reduce job in Python. At the end of this chapter, you should have an intuitive understanding of how map/reduce works, including its map, shuffle/sort and reduce phases. 
+
+First, we begin with a metaphoric story... about how Chimpanzee and Elephant saved Christmas.
 
 .Chimpanzee and Elephant Save Christmas
 ******
@@ -104,8 +108,6 @@ Our map/reduce job is complete, and toy-making is back on track!
 
 ******
 // end of C&E save xmas
-
-=== Introduction
 
 Having previously introduced 'map only Hadoop' in our first story, in this story, we introduced the shuffle/sort and reduce operations of Hadoop MapReduce. The toymaker elves are the reducers - they receive all the mapped records (toy forms) corresponding to one or more group keys - the type of toy. The act of toy-making is the reduce operation. The pygmy elephants with are the shuffle/sort - the movement of data from mappers to reducers. That is how the MapReduce paradigm works! This simple abstraction powers Hadoop MapReduce programs. It is the simplicity of the scheme that makes it so powerful.
 

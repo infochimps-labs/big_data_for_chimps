@@ -10,9 +10,9 @@ include::Ch02-map_reduce.asciidoc[]
 
 include::Ch03-introducing-baseball-data.asciidoc[]
 
-include::Part_II-patterns.asciidoc[]
-
 include::Ch04-introduction_to_pig.asciidoc[]
+
+include::Part_II-patterns.asciidoc[]
 
 include::Ch05-map_only_patterns.asciidoc[]
 

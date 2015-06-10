@@ -77,9 +77,9 @@ team_pkyr_pairs = FOREACH (GROUP park_team_years BY team_id) GENERATE
 -- (ALT,{(ALT01,1884)})
 -- (ANA,{(ANA01,2001),(ANA01,2010),(ANA01,2002),...})
 ------
-Notice that we used an AS clause within our `FOREACH`/`GENERATE` call, to give an explicit name, `park_team_years`, to `park_team_years.(park_id, year_id)`. It is easier to give explicit names as a part of managing our schemas, so that a field can be explicitly referred to later on.
+Note that we used an AS clause within our `FOREACH`/`GENERATE` call, to give an explicit name, `park_team_years`, to `park_team_years.(park_id, year_id)`. It is easier to give explicit names as a part of managing our schemas, so that a field can be explicitly referred to later on.
 
-Notice the `park_team_years.(park_id, year_id)` form, which gives us a bag of `(park_id, year_id)` pairs. Using `park_teams.park_id, park_teams.year_id` instead gives two bags, one with park_id tuples and one with year_id tuples:
+Also notice the `park_team_years.(park_id, year_id)` form, which gives us a bag of `(park_id, year_id)` pairs. Using `park_teams.park_id, park_teams.year_id` instead gives two bags, one with park_id tuples and one with year_id tuples:
 
 [source,sql]
 ------
@@ -362,7 +362,7 @@ The http://www.baseballlibrary.com/chronology/byyear.php?year=1898[Baseball Libr
 
 ===== Pattern in Use
 
-See Previous.
+Same as previous, see Representing a Collection of Values with a Delimited String.
 
 ==== Representing a Complex Data Structure with a JSON-encoded String
 

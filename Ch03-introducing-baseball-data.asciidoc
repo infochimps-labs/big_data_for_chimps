@@ -5,6 +5,8 @@
 [[quick_look_at_baseball]]
 == A Quick Look into Baseball
 
+In this chapter we will introduce the dataset we use throughout the book: baseball performance statistics. We will explain the various metrics used in baseball (and in this book), such that if you aren't a baseball fan you can still follow along.
+
 Nate Silver calls Baseball the "perfect data set".  There are not many human-centered systems for which this comprehensive degree of detail is available, and no richer set of tables for truly demonstrating the full range of analytic patterns.
 
 For readers who are not avid baseball fans, we provide a simple -- some might say "oversimplified" -- description of the sport and its key statistics.  Please refer to Joseph Adler's _Baseball Hacks_ (O'Reilly) or Marchi and Albert's _Analyzing Baseball Data with R_ (Chapman & Hall) for more details.
@@ -58,6 +60,6 @@ Just as a professional mechanic has an assortment of specialized and powerful to
 
 === Wrapping Up
 
-You now have enough information about baseball and its metrics to work through the examples in this book. Whether you're a baseball fan or not, this dataset should work well for teaching analytic patterns. If you are a baseball fan, feel free to filter the examples to tell stories about your favorite team. 
+This this chapter we have introduced our dataset so that you can understand our examples without prior knowledge of baseball. You now have enough information about baseball and its metrics to work through the examples in this book. Whether you're a baseball fan or not, this dataset should work well for teaching analytic patterns. If you are a baseball fan, feel free to filter the examples to tell stories about your favorite team. 
 
 In the next section of the book, we'll use baseball examples to teach analytic patterns - those operations which enable most kinds of analysis. First though, we're going to learn about Apache Pig, which will dramatically streamline our use of map/reduce.

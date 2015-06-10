@@ -111,7 +111,7 @@ It's easy to forget that people's names can contain spaces, dots, dashes, apostr
 funnychars = FILTER people BY (name_first MATCHES '^([^A-Z]|.*[^\\w\\s]).*');
 ------
 
-There are many players with non-word, non-space characters, but none whose names are represented as starting with a lowercase character. However, in early drafts of the book this query caught a record with the value "name_first" -- the header rows from a source datafile had contaminated the table. *Sanity checks like these are a good idea always, even moreso in Big Data. When you have billions of records, a one-in-a-million exception will appear thousands of times.*
+There are many players with non-word, non-space characters, but none whose names are represented as starting with a lowercase character. However, in early drafts of the book this query caught a record with the value "name_first" -- the header rows from a source datafile had contaminated the table. Sanity checks like these are a good idea always, even more so in Big Data. When you have billions of records, a one-in-a-million exception will appear thousands of times.
 
 .Important Notes about String Matching
 ******
@@ -131,6 +131,8 @@ Regular expressions are incredibly powerful and we urge all readers to acquire b
 NOTE: Sadly, the Nobel Prize-winning physicists Gerard 't Hooft, Louis-Victor Pierre Raymond de Broglie, or Tomonaga Shin'ichirō never made the major leagues. Or tried out, as far as we know. But their names are great counter-examples to keep in mind when dealing with names. Prof de Broglie's full name is 38 characters long, has a last name that starts with a lowercase letter, and is non-trivial to segment. "Tomonaga" is a family name, though it comes first. You'll see Prof. Tomonaga's name given variously as "Tomonaga Shin'ichirō", "Sin-Itiro Tomonaga", or "朝永 振一郎", each one of them correct, and the others not, depending on context. Prof. 't Hooft\'s last name starts with an apostrophe, a lower-case-letter, and contains a space. You're well advised to start a little curio shelf in your workshop for counterexample collections such as these, and we'll share some of ours throughout the book.
 
 ===== Pattern in Use
+
+Note to production: Please ensure this comes WITH the preceding header/section, and not after the 'Important Notes on String Matching' sidebar.
 
 * _Where You'll Use It_  -- Wherever you need to select records by a string field. For selecting against small lists. For finding ill-formed records. Matching against a subsection of a composite key -- Can you figure out what `game_id MATCHES '...(19|20).*'` in the `games` table does?
 * _Standard Snippet_	 -- `FILTER recs BY (str MATCHES '.*pattern.*')`, sure, but also `FOREACH recs GENERATE (str MATCHES '.*(kitty|cat|meow).*' ? 'cat' : 'notcat') AS catness`.
@@ -425,6 +427,8 @@ Another reason you may need the nested form of `FOREACH` is to assemble a comple
 NOTE: To use the functions in Piggybank and DataFu, we have to REGISTER their jar files so Pig knows about them. This is accomplished with the REGISTER command, as in: `REGISTER /usr/lib/pig/datafu.jar`.
 
 ===== Parsing a Date
+
+Parsing dates in Pig is easy with the `ToDate` function, and `SPRINTF`.
 
 [source,sql]
 .Assembling Complex Types (ch_05/foreach.pig)

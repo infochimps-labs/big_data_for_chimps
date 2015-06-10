@@ -428,24 +428,26 @@ In development, once you've run the job past the `STORE important_milestone` lin
 
 These checkpoints bring another benefit: an inspect-able copy of your data at that checkpoint. Many newcomers to Big Data processing resist the idea of checkpointing often. It takes a while to accept that a terabyte of data on disk is cheap -- but the cluster time to generate that data is far less cheap, and *the programmer time to create the job to create the data is most expensive of all*. We won't include the checkpoint steps in the printed code snippets of the book, but we've left them in the example code.
 
-=== Development Aids: `DESCRIBE`, `ASSERT`, `EXPLAIN`, `LIMIT..DUMP`, `ILLUSTRATE`
+=== Development Aid Commands 
 
-==== `DESCRIBE` shows the schema of a table
+Pig comes with several 'helper' commands that assist you in writing Pig scripts, which we will now introduce: `DESCRIBE`, `ASSERT`, `EXPLAIN`, `LIMIT..DUMP` and `ILLUSTRATE`.
 
-You've already seen the `DESCRIBE` directive, which writes a description of a table's schema to the console. It's invaluable, and even as your project goes to production you shouldn't be afraid to leave these statements in where reasonable.
+==== `DESCRIBE`
 
-==== `DUMP` shows data on the console with great peril
+`DESCRIBE` shows the schema of a table. You've already seen the `DESCRIBE` directive, which writes a description of a table's schema to the console. It's invaluable, and even as your project goes to production you shouldn't be afraid to leave these statements in where reasonable.
 
-The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. So you should never use a `DUMP` statement except as in the following stanza: 
+==== `DUMP`
+
+`DUMP` shows data on the console, with great peril. The `DUMP` directive is actually equivalent to `STORE`, but (gulp) writes its output to your console. Very handy when you're messing with data at your console, but a trainwreck when you unwittingly feed it a gigabyte of data. So you should never use a `DUMP` statement except as in the following stanza: 
 
 ------
 dumpable = LIMIT table_to_dump 10; 
 DUMP dumpable;
 ------
 
-==== `SAMPLE` pulls a certain ratio of data from a relation
+==== `SAMPLE`
 
-The `SAMPLE` command does what it sounds like: given a relation and a ratio, randomly sample the proportion of the ratio from the relation. Sample is useful because it gives you a random sample of your data - as opposed to `LIMIT`/`DUMP`, which tends to give you a small, very 'local' sorted piece of the data. You can combine `SAMPLE`, `LIMIT` and `DUMP`:
+`SAMPLE` pulls a certain ratio of data from a relation. The `SAMPLE` command does what it sounds like: given a relation and a ratio, randomly sample the proportion of the ratio from the relation. Sample is useful because it gives you a random sample of your data - as opposed to `LIMIT`/`DUMP`, which tends to give you a small, very 'local' sorted piece of the data. You can combine `SAMPLE`, `LIMIT` and `DUMP`:
 
 [source,sql]
 ------
@@ -455,21 +457,21 @@ limited = LIMIT sampled 10;
 DUMP limited
 ------
 
-==== `ILLUSTRATE` magically simulates your script's actions, except when it fails to work
+==== `ILLUSTRATE`
 
-The `ILLUSTRATE` directive is one of our best-loved, and most-hated, Pig operations. When it works, it is amazing. Unfortunately, it is often unreliable.
+`ILLUSTRATE` magically simulates your script's actions, except when it fails to work. The `ILLUSTRATE` directive is one of our best-loved, and most-hated, Pig operations. When it works, it is amazing. Unfortunately, it is often unreliable.
 
 Even if you only want to see an example line or two of your output, using a `DUMP` or a `STORE` requires passing the full dataset through the processing pipeline. You might think, "OK, so just choose a few rows at random and run on that" -- but if your job has steps that try to match two datasets using a `JOIN`, it's exceptionally unlikely that any matches will survive the limiting. (For example, the players in the first few rows of the baseball players table belonged to teams that are not in the first few rows from the baseball teams table.)  `ILLUSTRATE` walks your execution graph to intelligently mock up records at each processing stage. If the sample rows would fail to join, Pig uses them to generate fake records that will find matches. It solves the problem of running on ad-hoc subsets, and that's why we love it.
 
 However, not all parts of Pig's functionality work with ILLUSTRATE, meaning that it often fails to run. When is the `ILLUSTRATE` command is most valuable? When applied to less-widely-used operations and complex sequences of statements, of course. What parts of Pig are most likely to lack `ILLUSTRATE` support or trip it up? Well, less-widely-used operations and complex sequences of statements, of course. And when it fails, it does so with perversely opaque error messages, leaving you to wonder if there's a problem in your script or if `ILLUSTRATE` has left you short. If you, eager reader, are looking for a good place to return some open-source karma: consider making `ILLUSTRATE` into the tool it could be. Until somebody does, you should checkpoint often (described along with the `STORE` command above).
 
-==== `EXPLAIN` shows Pig's execution graph
+==== `EXPLAIN`
 
-The `EXPLAIN` directive writes the "execution graph" of your job to the console. It's extremely verbose, showing _everything_ pig will do to your data, down to the typecasting it applies to inputs as they are read. We mostly find it useful when trying to understand whether Pig has applied some of the optimizations you'll learn about later.
+`EXPLAIN` shows Pig's execution graph. This command writes the "execution graph" of your job to the console. It's extremely verbose, showing _everything_ pig will do to your data, down to the typecasting it applies to inputs as they are read. We mostly find it useful when trying to understand whether Pig has applied some of the optimizations you'll learn about later.
 
-=== Pig Functions act on fields
+=== Pig Functions
 
-Pig wouldn't be complete without a way to _act_ on the various fields. It offers a sparse but essential set of built-in functions. Pig has builtin functions, as well as a rich collection of UDFs or 'User Defined Functions' in the https://github.com/apache/pig/tree/trunk/contrib/piggybank/java[Piggybank], and the http://datafu.incubator.apache.org/[Apache DataFu] project. The whole middle of the book is devoted to examples of Pig and map/reduce programs in practice, so we'll just list the highlights here:
+Pig functions act on fields. Pig wouldn't be complete without a way to _act_ on the various fields. It offers a sparse but essential set of built-in functions. Pig has builtin functions, as well as a rich collection of UDFs or 'User Defined Functions' in the https://github.com/apache/pig/tree/trunk/contrib/piggybank/java[Piggybank], and the http://datafu.incubator.apache.org/[Apache DataFu] project. The whole middle of the book is devoted to examples of Pig and map/reduce programs in practice, so we'll just list the highlights here:
 
 * *Math functions* for all the things you'd expect to see on a good calculator: `LOG`/`LOG10`/`EXP`, `RANDOM`, `ROUND`/’DOUND_TO`/`FLOOR`/`CEIL`, `ABS`, trigonometric functions, and so forth.
 * *String comparison*:
@@ -497,6 +499,8 @@ Pig wouldn't be complete without a way to _act_ on the various fields. It offers
   - `SUBTRACT(bag_a, bag_b)` returns a new bag having all the tuples that are in the first but not in the second, and `DIFF(bag_a, bag_b)` returns a new bag having all tuples that are in either but not in both. These are rarely used, as the bags must be of modest size -- in general us an inner JOIN as described below.
   - `TOP(num, column_index, bag)` selects the top `num` of elements from each tuple in the given bag, as ordered by `column_index`. This uses a clever algorithm that doesn't require an expensive total sort of the data -- you'll learn about it in the Statistics chapter (TODO ref)
 * *Conversion Functions* to perform higher-level type casting: `TOTUPLE`, `TOBAG`, `TOMAP`
+
+Pig has two libraries that add lots of features: Piggybank and Apache DataFu.
 
 === Piggybank
 
