@@ -53,13 +53,15 @@ That is because for almost everyone, the cost of the cluster is far less than th
 
 The book does have some content on provisioning and deploying Hadoop, and on a few important settings. But it does not cover advanced algorithms, operations or tuning in any real depth.
 
+We'll be presenting the theory behind Hadoop using an allegory, with our friends J.T. (as in Job Tracker) the chimpanzee and Nanette (as in Name Node) the elephant. Afterwards we'll cover the practice of operating Hadoop to perform simple operations and then move on to analytics patterns.
+
 ==== Theory: Chimpanzee and Elephant
 
-Starting with Chapter 2, you'll meet the zealous members of the Chimpanzee and Elephant Company. Elephants have prodigious memories and move large heavy volumes with ease. They'll give you a physical analogue for using relationships to assemble data into context, and help you understand what's easy and what's hard in moving around massive amounts of data. Chimpanzees are clever but can only think about one thing at a time. They'll show you how to write simple transformations with a single concern and how to analyze petabytes of data with no more than megabytes of working space.
+Starting in Chapter 1, you'll meet these zealous members of the Chimpanzee and Elephant Company. Elephants have prodigious memories and move large heavy volumes with ease. They'll give you a physical analogue for using relationships to assemble data into context, and help you understand what's easy and what's hard in moving around massive amounts of data. Chimpanzees are clever but can only think about one thing at a time. They'll show you how to write simple transformations with a single concern and how to analyze petabytes of data with no more than megabytes of working space.
 
 Together, they'll equip you with a physical metaphor for how to work with data at scale.
 
-==== Practice: Hadoop ====
+==== Practice: Hadoop
 
 In Doug Cutting's words, Hadoop is the "kernel of the big-data operating system". It is the dominant batch-processing solution, has both commercial enterprise support and a huge open source community, runs on every platform and cloud, and there are no signs any of that will change in the near term.
 
@@ -67,7 +69,7 @@ The code in this book will run unmodified on your laptop computer or on an indus
 
 ==== Example Code ====
 
-he [source code for the book](https://github.com/bd4c/big_data_for_chimps-code) is available at `https://github.com/bd4c/big_data_for_chimps-code`. You can check it out with git via:
+The https://github.com/bd4c/big_data_for_chimps-code[source code for the book] is available at `https://github.com/bd4c/big_data_for_chimps-code`. You can check it out with git via:
 
 ----
 git clone https://github.com/bd4c/big_data_for_chimps-code

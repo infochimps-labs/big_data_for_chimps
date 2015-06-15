@@ -6,8 +6,6 @@
 
 == Map/Reduce
 
-=== Introduction
-
 In this chapter we're going to build upon what we learned last chapter about HDFS and the map-only portion of map/reduce and introduce a full map/reduce job and the mechanics of map/reduce. This time we'll include both the shuffle/sort phase, and the reduce phase. Once again, we begin with a physical metaphor in the form of a story. After that we'll walk you through building our first full-blown map/reduce job in Python. At the end of this chapter, you should have an intuitive understanding of how map/reduce works, including its map, shuffle/sort and reduce phases. 
 
 First, we begin with a metaphoric story... about how Chimpanzee and Elephant saved Christmas.
